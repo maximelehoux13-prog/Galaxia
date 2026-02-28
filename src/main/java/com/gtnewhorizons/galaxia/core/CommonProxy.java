@@ -1,6 +1,7 @@
 package com.gtnewhorizons.galaxia.core;
 
 import com.gtnewhorizons.galaxia.handlers.DimensionEventHandler;
+import com.gtnewhorizons.galaxia.quests.QuestRegistry;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
 import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
@@ -31,6 +32,7 @@ public class CommonProxy {
 
     // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)
     public void init(FMLInitializationEvent event) {
+        QuestRegistry.init();
         EntityRegistry.registerModEntity(EntityRocket.class, "RocketEntity", 0, Galaxia.instance, 64, 1, false);
     }
 

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 
 import com.gtnewhorizons.galaxia.registry.block.planet.BlockPlanetGalaxia;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
@@ -63,6 +64,11 @@ public class GalaxiaBlock {
 
     public static Block get(DimensionEnum planet) {
         return planetBlocks.get(planet);
+    }
+
+    public static ItemStack getBlockStack(DimensionEnum planet, String variant, int count) {
+        BlockMeta bm = get(planet, variant);
+        return new ItemStack(bm.block(), count, bm.meta());
     }
 
     /**

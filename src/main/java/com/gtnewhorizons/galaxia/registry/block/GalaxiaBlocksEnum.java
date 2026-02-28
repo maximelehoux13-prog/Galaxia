@@ -4,6 +4,8 @@ import static com.gtnewhorizons.galaxia.registry.block.base.GalaxiaBlock.reg;
 
 import net.minecraft.block.Block;
 
+import com.gtnewhorizons.galaxia.quests.BlockResearchOutpost;
+import com.gtnewhorizons.galaxia.quests.TileEntityResearchOutpost;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockVariant;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
@@ -20,6 +22,7 @@ public enum GalaxiaBlocksEnum {
     // spotless:off
 
     SILO_CONTROLLER(new BlockSilo(), "silo_controller"),
+    RESEARCH_OUTPOST(new BlockResearchOutpost(), "research_outpost")
     ; // leave trailing semicolon
 
     // spotless:on
@@ -33,6 +36,7 @@ public enum GalaxiaBlocksEnum {
         }
 
         GameRegistry.registerTileEntity(TileEntitySilo.class, "galaxia_silo_controller");
+        GameRegistry.registerTileEntity(TileEntityResearchOutpost.class, "galaxia_research_outpost");
     }
 
     // spotless:off

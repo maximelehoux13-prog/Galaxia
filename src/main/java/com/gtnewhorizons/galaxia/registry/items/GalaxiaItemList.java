@@ -27,6 +27,9 @@ public enum GalaxiaItemList {
     SPACESUIT_CHESTPLATE("spacesuit_chestplate", () -> new ItemSpaceSuit(ItemSpaceSuit.SUIT_MATERIAL, 0, 1), 1),
     SPACESUIT_LEGGINGS("spacesuit_leggings", () -> new ItemSpaceSuit(ItemSpaceSuit.SUIT_MATERIAL, 0, 2), 1),
     SPACESUIT_BOOTS("spacesuit_boots", () -> new ItemSpaceSuit(ItemSpaceSuit.SUIT_MATERIAL, 0, 3), 1),
+    CINNABAR_BLOOD_SCALE("cinnabar_blood_scale"),
+    // CINNABAR_BLOOD_SCALE("cinnabar_blood_scale", () -> new
+    // Item().setTextureName("cinnabar_blood_scale").setUnlocalizedName("cinnabar_blood_scale"))
 
     ; // leave trailing semicolon
 
