@@ -1,6 +1,7 @@
 package com.gtnewhorizons.galaxia.core.oxygen.blocks;
 
 import com.cleanroommc.modularui.factory.GuiFactories;
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
 import com.gtnewhorizons.galaxia.core.oxygen.tile.TileOxygenFiller;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -36,4 +37,6 @@ public class BlockOxygenFiller extends Block {
             .open(player, x, y, z);
         return true;
     }
+
+
 }
