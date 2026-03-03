@@ -2,6 +2,9 @@ package com.gtnewhorizons.galaxia.core.oxygen.api;
 
 import net.minecraft.item.ItemStack;
 
+/**
+ * implement on Items that have oxygen capabilities
+ */
 public interface IOxygenItem extends IOxygenStorage{
 
 
