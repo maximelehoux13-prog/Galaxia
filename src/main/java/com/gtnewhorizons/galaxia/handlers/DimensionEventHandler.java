@@ -218,8 +218,9 @@ public class DimensionEventHandler {
             }
             if (tankItem.drainStack(tank, (100 - oxygenPercent) / 5)) {
                 couldDrainOxygen = true;
-                GALAXIA_NETWORK
-                    .sendTo(new OxygenSyncPacket(index, tankItem.currentOxygenFromStack(tank)), (EntityPlayerMP) player);
+                GALAXIA_NETWORK.sendTo(
+                    new OxygenSyncPacket(index, tankItem.currentOxygenFromStack(tank)),
+                    (EntityPlayerMP) player);
                 break;
             }
         }

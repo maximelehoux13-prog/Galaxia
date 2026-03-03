@@ -3,6 +3,8 @@ package com.gtnewhorizons.galaxia.core;
 import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank.BAUBLE_TYPE_OXYGEN_TANK;
 import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemThermalProtection.BAUBLE_TYPE_THERMAL_PROTECTION;
 
+import com.gtnewhorizons.galaxia.core.oxygen.api.OxygenTankWailaProvider;
+import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 import com.gtnewhorizons.galaxia.handlers.DimensionEventHandler;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
@@ -15,10 +17,12 @@ import baubles.api.expanded.BaubleExpandedSlots;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLInterModComms;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
+import mcp.mobius.waila.api.IWailaRegistrar;
 
 public class CommonProxy {
 
@@ -43,6 +47,9 @@ public class CommonProxy {
 
     // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)
     public void init(FMLInitializationEvent event) {
+        //
+        FMLInterModComms.sendMessage("Waila", "register", CommonProxy.class.getName() + ".registerWailaProviders");
+
         EntityRegistry.registerModEntity(EntityRocket.class, "RocketEntity", 0, Galaxia.instance, 64, 1, false);
     }
 
@@ -62,4 +69,6 @@ public class CommonProxy {
         BaubleExpandedSlots.tryRegisterType(BAUBLE_TYPE_THERMAL_PROTECTION);
         BaubleExpandedSlots.tryAssignSlotOfType(BAUBLE_TYPE_THERMAL_PROTECTION);
     }
+
+
 }

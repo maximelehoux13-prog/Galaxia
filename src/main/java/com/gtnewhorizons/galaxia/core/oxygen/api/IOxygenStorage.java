@@ -4,14 +4,15 @@ import net.minecraft.item.ItemStack;
 
 public interface IOxygenStorage {
 
-    /** size of the o2 tank
+    /**
+     * size of the o2 tank
      */
     int tankSize();
 
     /**
      *
      * @return int speed to transfer oxygen to this machine
-     * default 20
+     *         default 20
      */
     default int transferAmount() {
         return 20;
@@ -37,15 +38,16 @@ public interface IOxygenStorage {
     /**
      *
      * @param amount amount to fill
-     * override this to fill ur o2 tank with the desired amount
+     *               override this to fill ur o2 tank with the desired amount
      */
     default void fill(int amount) {}
 
-    /** for items
+    /**
+     * for items
      *
-     * @param stack - the itemstack being filled e.g. an o2 tank
+     * @param stack  - the itemstack being filled e.g. an o2 tank
      * @param amount - the amount filled
-     * this is to fill items that hold oxygen
+     *               this is to fill items that hold oxygen
      */
     default void fillStack(ItemStack stack, int amount) {
         fill(amount);
@@ -67,17 +69,12 @@ public interface IOxygenStorage {
      * implement this to allow draining oxygen from an ItemStack.
      *
      * @param amount Amount of oxygen to consume.
-     * @param  stack stack to drain from
+     * @param stack  stack to drain from
      * @return If the full amount was successfully drained.
      */
 
     default boolean drainStack(ItemStack stack, int amount) {
         return drain(amount);
     }
-
-
-
-
-
 
 }

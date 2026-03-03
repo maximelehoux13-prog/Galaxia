@@ -2,7 +2,6 @@ package com.gtnewhorizons.galaxia.registry.items.baubles;
 
 import java.util.List;
 
-import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -12,6 +11,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.StatCollector;
 
 import org.jetbrains.annotations.NotNull;
+
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
 
 import baubles.api.BaubleType;
 import baubles.api.expanded.IBaubleExpanded;
@@ -45,11 +46,9 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded, IOxygenStor
         return stack;
     }
 
-
     public float getPercentFull(ItemStack stack) {
         return (float) currentOxygenFromStack(stack) / oxygenStorage;
     }
-
 
     @Override
     public double getDurabilityForDisplay(ItemStack stack) {
@@ -65,8 +64,10 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded, IOxygenStor
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> tooltip, boolean p_77624_4_) {
         super.addInformation(stack, player, tooltip, p_77624_4_);
         tooltip.add(
-            StatCollector
-                .translateToLocalFormatted("item.galaxia.oxygen_tank.desc", currentOxygenFromStack(stack), oxygenStorage));
+            StatCollector.translateToLocalFormatted(
+                "item.galaxia.oxygen_tank.desc",
+                currentOxygenFromStack(stack),
+                oxygenStorage));
     }
 
     // IOxygenStorage Implementations so other things can pull from the o2
@@ -148,6 +149,5 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded, IOxygenStor
     public boolean canUnequip(ItemStack itemstack, EntityLivingBase player) {
         return true;
     }
-
 
 }

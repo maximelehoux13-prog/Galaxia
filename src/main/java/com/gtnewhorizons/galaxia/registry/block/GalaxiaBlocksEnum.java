@@ -2,10 +2,13 @@ package com.gtnewhorizons.galaxia.registry.block;
 
 import static com.gtnewhorizons.galaxia.registry.block.base.GalaxiaBlock.reg;
 
-import com.gtnewhorizons.galaxia.core.oxygen.blocks.BlockOxygenFiller;
+import com.gtnewhorizons.galaxia.core.oxygen.blocks.BlockOxygenStorage;
+import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenFiller;
+import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 import net.minecraft.block.Block;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.core.oxygen.blocks.BlockOxygenFiller;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockNoduleController;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockSpaceAir;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockSpaceStation;
@@ -34,7 +37,9 @@ public enum GalaxiaBlocksEnum {
     SPACE_STATION_GLASS(new BlockSpaceStationGlass(), "space_station_glass"),
     SPACE_AIR(new BlockSpaceAir(), "space_air"),
     ASSEMBLER_CONTROLLER(new BlockModuleAssembler(), "module_assembler_controller"),
-    OXYGEN_FILLER(new BlockOxygenFiller(), "oxygen filler")
+    OXYGEN_FILLER(new BlockOxygenFiller(), "oxygen filler"),
+    OXYGEN_STORAGE(new BlockOxygenStorage(), "oxygen tank")
+
     ; // leave trailing semicolon
 
     // spotless:on
@@ -51,6 +56,8 @@ public enum GalaxiaBlocksEnum {
         GameRegistry.registerTileEntity(TileEntitySilo.class, "galaxia_silo_controller");
         GameRegistry.registerTileEntity(TileNoduleController.class, "galaxia_nodule_controller");
         GameRegistry.registerTileEntity(TileEntityModuleAssembler.class, "galaxia_module_assembler_controller");
+        GameRegistry.registerTileEntity(TileEntityOxygenStorage.class, "galaxia_oxygen_tank");
+        GameRegistry.registerTileEntity(TileEntityOxygenFiller.class, "galaxia_oxygen_filler");
     }
 
     // spotless:off
