@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import baubles.api.BaubleType;
 import baubles.api.expanded.IBaubleExpanded;
 
-public class ItemOxygenTank extends Item implements IBaubleExpanded {
+public class ItemOxygenTank extends Item implements IBaubleExpanded{
 
     public static final String BAUBLE_TYPE_OXYGEN_TANK = "oxygen_tank";
     public static final String NBT_OXYGEN = "current_oxygen";
@@ -64,7 +64,7 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded {
     /**
      * Drain oxygen from an ItemStack containing an ItemOxygenTank. If the full amount cannot be drained, it will
      * drain as much as possible!
-     * 
+     *
      * @param amount Amount of oxygen to consume.
      * @return If the full amount was successfully drained.
      */

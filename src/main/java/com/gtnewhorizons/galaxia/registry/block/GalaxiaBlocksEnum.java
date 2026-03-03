@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.registry.block;
 
 import static com.gtnewhorizons.galaxia.registry.block.base.GalaxiaBlock.reg;
 
+import com.gtnewhorizons.galaxia.core.oxygen.blocks.BlockOxygenFiller;
 import net.minecraft.block.Block;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
@@ -32,7 +33,8 @@ public enum GalaxiaBlocksEnum {
     SPACE_STATION_BLOCK(new BlockSpaceStation(), "space_station_block"),
     SPACE_STATION_GLASS(new BlockSpaceStationGlass(), "space_station_glass"),
     SPACE_AIR(new BlockSpaceAir(), "space_air"),
-    ASSEMBLER_CONTROLLER(new BlockModuleAssembler(), "module_assembler_controller")
+    ASSEMBLER_CONTROLLER(new BlockModuleAssembler(), "module_assembler_controller"),
+    OXYGEN_FILLER(new BlockOxygenFiller(), "oxygen filler")
     ; // leave trailing semicolon
 
     // spotless:on
