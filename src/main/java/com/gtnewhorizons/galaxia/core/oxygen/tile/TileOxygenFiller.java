@@ -11,11 +11,12 @@ import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.layout.Column;
 import com.cleanroommc.modularui.widgets.slot.ItemSlot;
 import com.cleanroommc.modularui.widgets.slot.ModularSlot;
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 
-public class TileOxygenFiller extends TileEntity implements IGuiHolder<PosGuiData> {
+public class TileOxygenFiller extends TileEntity implements IGuiHolder<PosGuiData>  {
 
     ItemStackHandler oxygenSlot = new LimitingItemStackHandler(1);
 
@@ -46,15 +47,16 @@ public class TileOxygenFiller extends TileEntity implements IGuiHolder<PosGuiDat
         if(oxygenSlot.getStackInSlot(0) == null){
             return;
         }
-
         // need the stack sometimes :/
         ItemStack tankStack = oxygenSlot.getStackInSlot(0);
-        ItemOxygenTank tank = (ItemOxygenTank) oxygenSlot.getStackInSlot(0).getItem();
+        IOxygenStorage tank = (IOxygenStorage) oxygenSlot.getStackInSlot(0).getItem();
 
-        int currentOxygen = tank.getCurrentOxygen(tankStack);
+        int currentOxygen = tank.currentOxygenFromStack(tankStack);
         //this should just work
-        if (currentOxygen < tank.getMaxOxygen()) {
-            tank.fillTank(tankStack, 30);
+        if (currentOxygen < tank.tankSize()) {
+            tank.fillStack(tankStack, 30);
         }
     }
+
+
 }

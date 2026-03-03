@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.registry.items.baubles;
 
 import java.util.List;
 
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import baubles.api.BaubleType;
 import baubles.api.expanded.IBaubleExpanded;
 
-public class ItemOxygenTank extends Item implements IBaubleExpanded{
+public class ItemOxygenTank extends Item implements IBaubleExpanded, IOxygenStorage {
 
     public static final String BAUBLE_TYPE_OXYGEN_TANK = "oxygen_tank";
     public static final String NBT_OXYGEN = "current_oxygen";
@@ -44,38 +45,11 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded{
         return stack;
     }
 
-    public int getCurrentOxygen(ItemStack stack) {
-        if (!stack.hasTagCompound()) return 0;
-        return stack.getTagCompound()
-            .getInteger(NBT_OXYGEN);
-    }
 
     public float getPercentFull(ItemStack stack) {
-        return (float) getCurrentOxygen(stack) / oxygenStorage;
+        return (float) currentOxygenFromStack(stack) / oxygenStorage;
     }
 
-    public void fillTank(ItemStack stack, int amount) {
-        if (!stack.hasTagCompound()) stack.setTagCompound(new NBTTagCompound());
-        int newAmount = Math.min(getCurrentOxygen(stack) + amount, oxygenStorage);
-        stack.getTagCompound()
-            .setInteger(NBT_OXYGEN, newAmount);
-    }
-
-    /**
-     * Drain oxygen from an ItemStack containing an ItemOxygenTank. If the full amount cannot be drained, it will
-     * drain as much as possible!
-     *
-     * @param amount Amount of oxygen to consume.
-     * @return If the full amount was successfully drained.
-     */
-    public boolean drainTank(ItemStack stack, int amount) {
-        int current = getCurrentOxygen(stack);
-        int drained = Math.min(current, amount);
-        if (!stack.hasTagCompound()) stack.setTagCompound(new NBTTagCompound());
-        stack.getTagCompound()
-            .setInteger(NBT_OXYGEN, current - drained);
-        return drained == amount;
-    }
 
     @Override
     public double getDurabilityForDisplay(ItemStack stack) {
@@ -92,7 +66,50 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded{
         super.addInformation(stack, player, tooltip, p_77624_4_);
         tooltip.add(
             StatCollector
-                .translateToLocalFormatted("item.galaxia.oxygen_tank.desc", getCurrentOxygen(stack), oxygenStorage));
+                .translateToLocalFormatted("item.galaxia.oxygen_tank.desc", currentOxygenFromStack(stack), oxygenStorage));
+    }
+
+    // IOxygenStorage Implementations so other things can pull from the o2
+    @Override
+    public int tankSize() {
+        return oxygenStorage;
+    }
+
+    @Override
+    public int transferAmount() {
+        return oxygenStorage / 1000;
+    }
+
+    @Override
+    public void fillStack(ItemStack stack, int amount) {
+        if (!stack.hasTagCompound()) stack.setTagCompound(new NBTTagCompound());
+        int newAmount = Math.min(currentOxygenFromStack(stack) + amount, oxygenStorage);
+        stack.getTagCompound()
+            .setInteger(NBT_OXYGEN, newAmount);
+    }
+
+    /**
+     * Drain oxygen from an ItemStack containing an ItemOxygenTank. If the full amount cannot be drained, it will
+     * drain as much as possible!
+     *
+     * @param amount Amount of oxygen to consume.
+     * @return If the full amount was successfully drained.
+     */
+    @Override
+    public boolean drainStack(ItemStack stack, int amount) {
+        int current = currentOxygenFromStack(stack);
+        int drained = Math.min(current, amount);
+        if (!stack.hasTagCompound()) stack.setTagCompound(new NBTTagCompound());
+        stack.getTagCompound()
+            .setInteger(NBT_OXYGEN, current - drained);
+        return drained == amount;
+    }
+
+    @Override
+    public int currentOxygenFromStack(ItemStack stack) {
+        if (!stack.hasTagCompound()) return 0;
+        return stack.getTagCompound()
+            .getInteger(NBT_OXYGEN);
     }
 
     @Override
@@ -131,4 +148,6 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded{
     public boolean canUnequip(ItemStack itemstack, EntityLivingBase player) {
         return true;
     }
+
+
 }
