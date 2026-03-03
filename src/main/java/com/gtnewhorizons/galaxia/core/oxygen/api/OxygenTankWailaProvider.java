@@ -48,7 +48,7 @@ public class OxygenTankWailaProvider implements IWailaDataProvider {
     @Override
     public NBTTagCompound getNBTData(EntityPlayerMP player, TileEntity te, NBTTagCompound tag, World world,
                                      int x, int y, int z) {
-        if (te instanceof IOxygenStorage teOxygen) {
+        if (te instanceof IOxygenTile teOxygen) {
             tag.setInteger("OxygenStored", teOxygen.currentOxygen());
             tag.setInteger("MaxOxygen", teOxygen.tankSize());
         }

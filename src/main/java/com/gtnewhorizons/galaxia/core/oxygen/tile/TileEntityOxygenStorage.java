@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.core.oxygen.tile;
 
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenItem;
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenTile;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -18,7 +20,7 @@ import com.cleanroommc.modularui.widgets.slot.ModularSlot;
 import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank;
 
-public class TileEntityOxygenStorage extends TileEntity implements IOxygenStorage, IGuiHolder<PosGuiData> {
+public class TileEntityOxygenStorage extends TileEntity implements IOxygenTile, IGuiHolder<PosGuiData> {
 
     ItemStackHandler oxygenSlot = new LimitingItemStackHandler(1);
 
@@ -123,16 +125,15 @@ public class TileEntityOxygenStorage extends TileEntity implements IOxygenStorag
         ItemStack tankStack = oxygenSlot.getStackInSlot(0);
         if (tankStack == null || !(tankStack.getItem() instanceof IOxygenStorage)) return;
 
-        IOxygenStorage storage = (IOxygenStorage) tankStack.getItem();
+        IOxygenItem storage = (IOxygenItem) tankStack.getItem();
 
-        // Calculate how much we can take from the item
-        int spaceInMachine = this.tankSize() - this.currentOxygen();
-        int availableInItem = storage.currentOxygenFromStack(tankStack); // <-- use the stack-specific method
-        int toTransfer = Math.min(this.transferAmount(), Math.min(spaceInMachine, availableInItem));
+        int space = this.tankSize() - this.currentOxygen();
+        int available = storage.currentOxygen(tankStack);
+        int toTransfer = Math.min(this.transferAmount(), Math.min(space, available));
 
         if (toTransfer > 0) {
-            // Drain from the item stack, not the item class
-            if (storage.drainStack(tankStack, toTransfer)) {
+            // Drain from the item stack,
+            if (storage.drain(tankStack, toTransfer)) {
                 this.fill(toTransfer);
             }
         }

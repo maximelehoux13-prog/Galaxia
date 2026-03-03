@@ -1,6 +1,8 @@
 package com.gtnewhorizons.galaxia.core.oxygen.tile;
 
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenTile;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 
 import com.cleanroommc.modularui.api.IGuiHolder;
@@ -17,10 +19,22 @@ import com.cleanroommc.modularui.widgets.slot.ModularSlot;
 import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank;
 
-public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<PosGuiData> {
+public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<PosGuiData>, IOxygenTile {
+
+    private static final String CURRENT_OXYGEN = "current oxygen";
+    private static final String MAX_OXYGEN = "max oxygen";
+
+    private int oxygenStored = 0;
+    private final int capacity;
 
     ItemStackHandler oxygenSlot = new LimitingItemStackHandler(1);
 
+    public TileEntityOxygenFiller() {
+        capacity = 10000;
+    }
+
+
+    //mui2 ui
     @Override
     public ModularPanel buildUI(PosGuiData data, PanelSyncManager syncManager, UISettings settings) {
 
@@ -37,26 +51,78 @@ public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<Pos
                             .align(Alignment.CENTER)));
     }
 
+
+
+
+    //syncing :rollingeyes
+
     @Override
-    public void updateEntity() {
-        if (worldObj.isRemote) {
-            return;
-        }
-
-        // cant cast something if it doesnt exist :Clueless:
-        if (oxygenSlot.getStackInSlot(0) == null) {
-            return;
-        }
-        // need the stack sometimes :/
-        ItemStack tankStack = oxygenSlot.getStackInSlot(0);
-        IOxygenStorage tank = (IOxygenStorage) oxygenSlot.getStackInSlot(0)
-            .getItem();
-
-        int currentOxygen = tank.currentOxygenFromStack(tankStack);
-        // this should just work
-        if (currentOxygen < tank.tankSize()) {
-            tank.fillStack(tankStack, 30);
+    public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt);
+        this.oxygenStored = nbt.getInteger(CURRENT_OXYGEN);
+        if (nbt.hasKey("Inventory")) {
+            oxygenSlot.deserializeNBT(nbt.getCompoundTag("Inventory"));
         }
     }
 
+    @Override
+    public void writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
+        nbt.setInteger(CURRENT_OXYGEN, this.oxygenStored);
+        nbt.setInteger(MAX_OXYGEN, this.capacity);
+        nbt.setTag("Inventory", oxygenSlot.serializeNBT());
+    }
+
+
+    //oxygen interfacing
+    @Override
+    public int tankSize() {
+        return this.capacity;
+    }
+
+    @Override
+    public int transferAmount() {
+        return 20;
+    }
+
+    @Override
+    public int currentOxygen() {
+        return this.oxygenStored;
+    }
+
+
+    @Override
+    public void fill(int amount) {
+        if (amount <= 0) {
+            return;
+        }
+
+        this.oxygenStored = Math.min(this.oxygenStored + amount, this.capacity);
+        NBTTagCompound nbt = new NBTTagCompound();
+        nbt.setInteger("CurrentOxygen", this.oxygenStored);
+        nbt.setInteger("MaxOxygen", this.capacity);
+        this.writeToNBT(nbt);
+        this.markDirty();
+    }
+
+
+
+
+    @Override
+    public boolean drain(int amount) {
+        int toDrain = Math.min(this.oxygenStored, amount);
+        if (toDrain <= 0)  {
+            return false;
+        }
+
+        this.oxygenStored -= toDrain;
+        NBTTagCompound nbt = new NBTTagCompound();
+        nbt.setInteger("CurrentOxygen", this.oxygenStored);
+        nbt.setInteger("MaxOxygen", this.capacity);
+        this.writeToNBT(nbt);
+        this.markDirty();
+        return toDrain == amount;
+    }
+
 }
+

@@ -4,10 +4,10 @@ import com.gtnewhorizons.galaxia.core.oxygen.api.OxygenTankWailaProvider;
 import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenFiller;
 import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 import cpw.mods.fml.common.event.FMLInterModComms;
-import mcp.mobius.waila.Waila;
 import mcp.mobius.waila.api.IWailaRegistrar;
 
 public class WailaRegistar {
+    @SuppressWarnings("unused")
     public static void callbackRegister(IWailaRegistrar registrar) {
         OxygenTankWailaProvider provider = new OxygenTankWailaProvider();
         registrar.registerNBTProvider(provider, TileEntityOxygenStorage.class);
