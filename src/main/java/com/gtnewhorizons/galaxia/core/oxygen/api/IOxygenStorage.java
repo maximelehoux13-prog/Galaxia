@@ -1,9 +1,8 @@
 package com.gtnewhorizons.galaxia.core.oxygen.api;
 
-
 /*
-    this interface is used to grab the tank
-    u should either implement IOxygenTile or IOxygenItem NOT this
+ * this interface is used to grab the tank
+ * u should either implement IOxygenTile or IOxygenItem NOT this
  */
 public interface IOxygenStorage {
 

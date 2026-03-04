@@ -1,7 +1,5 @@
 package com.gtnewhorizons.galaxia.core.oxygen.tile;
 
-import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenItem;
-import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenTile;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -17,7 +15,9 @@ import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.layout.Column;
 import com.cleanroommc.modularui.widgets.slot.ItemSlot;
 import com.cleanroommc.modularui.widgets.slot.ModularSlot;
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenItem;
 import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenTile;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank;
 
 public class TileEntityOxygenStorage extends TileEntity implements IOxygenTile, IGuiHolder<PosGuiData> {
@@ -65,8 +65,6 @@ public class TileEntityOxygenStorage extends TileEntity implements IOxygenTile, 
                             .align(Alignment.CENTER)));
     }
 
-
-
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
@@ -104,7 +102,6 @@ public class TileEntityOxygenStorage extends TileEntity implements IOxygenTile, 
     @Override
     public void fill(int amount) {
         if (amount <= 0) return;
-
 
         NBTTagCompound nbt = new NBTTagCompound();
         writeToNBT(nbt);

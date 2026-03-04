@@ -2,13 +2,13 @@ package com.gtnewhorizons.galaxia.registry.block;
 
 import static com.gtnewhorizons.galaxia.registry.block.base.GalaxiaBlock.reg;
 
-import com.gtnewhorizons.galaxia.core.oxygen.blocks.BlockOxygenStorage;
-import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenFiller;
-import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 import net.minecraft.block.Block;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.oxygen.blocks.BlockOxygenFiller;
+import com.gtnewhorizons.galaxia.core.oxygen.blocks.BlockOxygenStorage;
+import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenFiller;
+import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockNoduleController;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockSpaceAir;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockSpaceStation;

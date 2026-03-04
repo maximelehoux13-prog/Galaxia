@@ -1,7 +1,5 @@
 package com.gtnewhorizons.galaxia.core;
 
-import cpw.mods.fml.common.event.FMLInterModComms;
-import mcp.mobius.waila.Waila;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 

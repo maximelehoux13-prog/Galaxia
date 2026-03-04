@@ -21,13 +21,13 @@ public class OxygenTankWailaProvider implements IWailaDataProvider {
 
     @Override
     public List<String> getWailaHead(ItemStack itemStack, List<String> currenttip, IWailaDataAccessor accessor,
-                                     IWailaConfigHandler config) {
+        IWailaConfigHandler config) {
         return currenttip;
     }
 
     @Override
     public List<String> getWailaBody(ItemStack itemStack, List<String> currenttip, IWailaDataAccessor accessor,
-                                     IWailaConfigHandler config) {
+        IWailaConfigHandler config) {
 
         NBTTagCompound tag = accessor.getNBTData();
 
@@ -39,15 +39,16 @@ public class OxygenTankWailaProvider implements IWailaDataProvider {
 
         return currenttip;
     }
+
     @Override
     public List<String> getWailaTail(ItemStack itemStack, List<String> currenttip, IWailaDataAccessor accessor,
-                                     IWailaConfigHandler config) {
+        IWailaConfigHandler config) {
         return currenttip;
     }
 
     @Override
-    public NBTTagCompound getNBTData(EntityPlayerMP player, TileEntity te, NBTTagCompound tag, World world,
-                                     int x, int y, int z) {
+    public NBTTagCompound getNBTData(EntityPlayerMP player, TileEntity te, NBTTagCompound tag, World world, int x,
+        int y, int z) {
         if (te instanceof IOxygenTile teOxygen) {
             tag.setInteger("OxygenStored", teOxygen.currentOxygen());
             tag.setInteger("MaxOxygen", teOxygen.tankSize());

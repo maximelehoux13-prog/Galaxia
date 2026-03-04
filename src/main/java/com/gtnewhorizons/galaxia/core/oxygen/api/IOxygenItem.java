@@ -5,8 +5,7 @@ import net.minecraft.item.ItemStack;
 /**
  * implement on Items that have oxygen capabilities
  */
-public interface IOxygenItem extends IOxygenStorage{
-
+public interface IOxygenItem extends IOxygenStorage {
 
     /**
      *
@@ -14,7 +13,6 @@ public interface IOxygenItem extends IOxygenStorage{
      * @return get the current o2
      */
     int currentOxygen(ItemStack stack);
-
 
     /**
      * for items
@@ -24,8 +22,6 @@ public interface IOxygenItem extends IOxygenStorage{
      *               this is to fill items that hold oxygen
      */
     void fill(ItemStack stack, int amount);
-
-
 
     /**
      * implement this to allow draining oxygen from an ItemStack.

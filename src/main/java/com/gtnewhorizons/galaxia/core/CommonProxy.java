@@ -3,8 +3,6 @@ package com.gtnewhorizons.galaxia.core;
 import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank.BAUBLE_TYPE_OXYGEN_TANK;
 import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemThermalProtection.BAUBLE_TYPE_THERMAL_PROTECTION;
 
-import com.gtnewhorizons.galaxia.core.oxygen.api.OxygenTankWailaProvider;
-import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 import com.gtnewhorizons.galaxia.handlers.DimensionEventHandler;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
@@ -22,7 +20,6 @@ import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
-import mcp.mobius.waila.api.IWailaRegistrar;
 
 public class CommonProxy {
 
@@ -69,6 +66,5 @@ public class CommonProxy {
         BaubleExpandedSlots.tryRegisterType(BAUBLE_TYPE_THERMAL_PROTECTION);
         BaubleExpandedSlots.tryAssignSlotOfType(BAUBLE_TYPE_THERMAL_PROTECTION);
     }
-
 
 }

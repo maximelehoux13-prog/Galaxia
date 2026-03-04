@@ -3,7 +3,7 @@ package com.gtnewhorizons.galaxia.core.oxygen.api;
 /**
  * use for tiles that interface with oxygen. E.G Oxygen Tank Fillers
  */
-public interface IOxygenTile extends IOxygenStorage{
+public interface IOxygenTile extends IOxygenStorage {
 
     /**
      *

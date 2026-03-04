@@ -1,7 +1,5 @@
 package com.gtnewhorizons.galaxia.core.oxygen.tile;
 
-import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenTile;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 
@@ -16,7 +14,7 @@ import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.layout.Column;
 import com.cleanroommc.modularui.widgets.slot.ItemSlot;
 import com.cleanroommc.modularui.widgets.slot.ModularSlot;
-import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenStorage;
+import com.gtnewhorizons.galaxia.core.oxygen.api.IOxygenTile;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank;
 
 public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<PosGuiData>, IOxygenTile {
@@ -33,8 +31,7 @@ public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<Pos
         capacity = 10000;
     }
 
-
-    //mui2 ui
+    // mui2 ui
     @Override
     public ModularPanel buildUI(PosGuiData data, PanelSyncManager syncManager, UISettings settings) {
 
@@ -51,10 +48,7 @@ public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<Pos
                             .align(Alignment.CENTER)));
     }
 
-
-
-
-    //syncing :rollingeyes
+    // syncing :rollingeyes
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
@@ -73,8 +67,7 @@ public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<Pos
         nbt.setTag("Inventory", oxygenSlot.serializeNBT());
     }
 
-
-    //oxygen interfacing
+    // oxygen interfacing
     @Override
     public int tankSize() {
         return this.capacity;
@@ -90,7 +83,6 @@ public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<Pos
         return this.oxygenStored;
     }
 
-
     @Override
     public void fill(int amount) {
         if (amount <= 0) {
@@ -105,13 +97,10 @@ public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<Pos
         this.markDirty();
     }
 
-
-
-
     @Override
     public boolean drain(int amount) {
         int toDrain = Math.min(this.oxygenStored, amount);
-        if (toDrain <= 0)  {
+        if (toDrain <= 0) {
             return false;
         }
 
@@ -125,4 +114,3 @@ public class TileEntityOxygenFiller extends TileEntity implements IGuiHolder<Pos
     }
 
 }
-

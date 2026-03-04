@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import net.minecraft.item.Item;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.core.oxygen.item.ItemOxygenLinker;
 import com.gtnewhorizons.galaxia.registry.items.armor.ItemSpaceSuit;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemThermalProtection;
@@ -29,6 +30,7 @@ public enum GalaxiaItemList {
     SPACESUIT_CHESTPLATE("spacesuit_chestplate", () -> new ItemSpaceSuit(ItemSpaceSuit.SUIT_MATERIAL, 0, 1), 1),
     SPACESUIT_LEGGINGS("spacesuit_leggings", () -> new ItemSpaceSuit(ItemSpaceSuit.SUIT_MATERIAL, 0, 2), 1),
     SPACESUIT_BOOTS("spacesuit_boots", () -> new ItemSpaceSuit(ItemSpaceSuit.SUIT_MATERIAL, 0, 3), 1),
+    TETHER_LINKER("linking_tool", () -> new ItemOxygenLinker()),
 
     OXYGEN_TANK_T1("oxygen_tank_1", () -> new ItemOxygenTank(1000), 1),
     OXYGEN_TANK_T2("oxygen_tank_2", () -> new ItemOxygenTank(4000), 1),

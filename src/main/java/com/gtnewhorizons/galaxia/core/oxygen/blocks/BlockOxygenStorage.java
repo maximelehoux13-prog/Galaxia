@@ -1,14 +1,14 @@
 package com.gtnewhorizons.galaxia.core.oxygen.blocks;
 
-import com.cleanroommc.modularui.factory.GuiFactories;
-import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenFiller;
-import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+
+import com.cleanroommc.modularui.factory.GuiFactories;
+import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenStorage;
 
 public class BlockOxygenStorage extends Block {
 
@@ -20,7 +20,6 @@ public class BlockOxygenStorage extends Block {
         setCreativeTab(Galaxia.creativeTab);
     }
 
-
     @Override
     public boolean hasTileEntity(int metadata) {
         return true;
@@ -31,10 +30,9 @@ public class BlockOxygenStorage extends Block {
         return new TileEntityOxygenStorage();
     }
 
-
     @Override
     public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
-                                    float hitY, float hitZ) {
+        float hitY, float hitZ) {
         if (world.isRemote) return true;
         TileEntity te = world.getTileEntity(x, y, z);
         if (te instanceof TileEntityOxygenStorage) GuiFactories.tileEntity()
