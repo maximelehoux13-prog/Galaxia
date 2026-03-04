@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.core.oxygen.item;
 
+import java.util.List;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -11,14 +13,11 @@ import net.minecraft.world.World;
 
 import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenTether;
 
-import java.util.List;
-
 public class ItemOxygenLinker extends Item {
 
     private static final String STORED_X = "stored x";
     private static final String STORED_Y = "stored y";
     private static final String STORED_Z = "stored z";
-
 
     @Override
     public boolean onItemUseFirst(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side,
@@ -31,29 +30,26 @@ public class ItemOxygenLinker extends Item {
         if (te == null) {
             return false;
         }
-        //find me the tethers
+        // find me the tethers
         if (te instanceof TileEntityOxygenTether tether) {
-          if(player.isSneaking()){
-              // create nbt tag if this doesnt have the tag
-              if(!stack.hasTagCompound()){
-                  stack.setTagCompound(new NBTTagCompound());
-              }
-              // grab previous tag that either exists or is created
-              NBTTagCompound tag = stack.getTagCompound();
-              //add new coordinates to the tag
-              tag.setInteger(STORED_X, tether.xCoord);
-              tag.setInteger(STORED_Y, tether.yCoord);
-              tag.setInteger(STORED_Z, tether.zCoord);
+            if (player.isSneaking()) {
+                // create nbt tag if this doesnt have the tag
+                if (!stack.hasTagCompound()) {
+                    stack.setTagCompound(new NBTTagCompound());
+                }
+                // grab previous tag that either exists or is created
+                NBTTagCompound tag = stack.getTagCompound();
+                // add new coordinates to the tag
+                tag.setInteger(STORED_X, tether.xCoord);
+                tag.setInteger(STORED_Y, tether.yCoord);
+                tag.setInteger(STORED_Z, tether.zCoord);
 
-              player.addChatMessage(new ChatComponentText(
-                  "Stored tether at: " +
-                      tether.xCoord + ", " +
-                      tether.yCoord + ", " +
-                      tether.zCoord
-              ));
+                player.addChatMessage(
+                    new ChatComponentText(
+                        "Stored tether at: " + tether.xCoord + ", " + tether.yCoord + ", " + tether.zCoord));
 
-              return true;
-          }
+                return true;
+            }
         }
 
         return false;
@@ -66,10 +62,11 @@ public class ItemOxygenLinker extends Item {
             return stack;
         }
 
+        //possible better way here ? not sure
         var mop = this.getMovingObjectPositionFromPlayer(world, player, true);
-       if(mop != null) {
+        if (mop != null) {
             TileEntity te = world.getTileEntity(mop.blockX, mop.blockY, mop.blockZ);
-            if(te instanceof TileEntityOxygenTether){
+            if (te instanceof TileEntityOxygenTether) {
                 return stack;
             }
         }
@@ -85,8 +82,6 @@ public class ItemOxygenLinker extends Item {
         return stack;
     }
 
-
-
     @Override
     public void addInformation(ItemStack stack, EntityPlayer player, List tooltip, boolean advanced) {
         if (!stack.hasTagCompound()) {
@@ -101,7 +96,7 @@ public class ItemOxygenLinker extends Item {
             int y = tag.getInteger(STORED_Y);
             int z = tag.getInteger(STORED_Z);
 
-            tooltip.add(EnumChatFormatting.BOLD + "" +  EnumChatFormatting.GREEN + "Stored Tether:");
+            tooltip.add(EnumChatFormatting.BOLD + "" + EnumChatFormatting.GREEN + "Stored Tether:");
             tooltip.add("X: " + x);
             tooltip.add("Y: " + y);
             tooltip.add("Z: " + z);
@@ -110,5 +105,3 @@ public class ItemOxygenLinker extends Item {
         }
     }
 }
-
-

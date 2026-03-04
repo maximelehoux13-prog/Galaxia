@@ -1,13 +1,12 @@
 package com.gtnewhorizons.galaxia.core.oxygen.blocks;
 
-import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenTether;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.core.oxygen.tile.TileEntityOxygenTether;
 
 public class BlockOxygenTether extends Block {
 

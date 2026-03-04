@@ -4,8 +4,6 @@ import net.minecraft.tileentity.TileEntity;
 
 public class TileEntityOxygenTether extends TileEntity {
 
-    public TileEntityOxygenTether() {
-    }
-
+    public TileEntityOxygenTether() {}
 
 }
