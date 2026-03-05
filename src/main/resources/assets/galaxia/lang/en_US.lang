@@ -24,6 +24,9 @@ itemGroup.galaxia=§9Galaxia§r
 #$$$ Baubles
 slot.oxygen_tank=Oxygen Tank
 slot.thermal_protection=Thermal Protection
+slot.protection_shield=Protection Shielding
+slot.oxygen_mask=Oxygen Mask
+slot.spore_filter=Spore Filter
 
 #$$$ Blocks
 
@@ -144,11 +147,6 @@ item.galaxia.amber_shard.name=Amber Shard
 item.galaxia.psychedelic_amber_shard.name=[?] Enchanted Amber Shard
 item.galaxia.pyrite_cubes.name=Pyrite Cubes
 
-# Armor
-item.galaxia.spacesuit_helmet.name=Space Suit Helmet
-item.galaxia.spacesuit_chestplate.name=Space Suit Chestplate
-item.galaxia.spacesuit_leggings.name=Space Suit Leggings
-item.galaxia.spacesuit_boots.name=Space Suit Boots
 
 # Gear / Baubles
 item.galaxia.oxygen_tank_1.name=Small Oxygen Tank
