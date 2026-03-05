@@ -1,14 +1,17 @@
 package com.gtnewhorizons.galaxia.registry.block.planet;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
+import net.minecraftforge.fluids.Fluid;
 
+import com.gtnewhorizons.galaxia.registry.block.planet.fluid.FluidFiniteBuilder;
 import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
 
 public final class PlanetBlocks {
 
     // spotless:off
     /*
-     THEIA blocks
+        THEIA blocks
      */
     public static final Block THEIA_REGOLITH = PlanetBlockBuilder.create("theia/theia_regolith")
         .falling()
@@ -66,7 +69,7 @@ public final class PlanetBlocks {
         .build();
 
     /*
-     HEMATERIA blocks
+        HEMATERIA blocks
      */
     public static final Block HEMATERIA_REGOLITH = PlanetBlockBuilder.create("hemateria/hemateria_regolith")
         .falling()
@@ -165,7 +168,7 @@ public final class PlanetBlocks {
         .build();
 
     /*
-     PANSPIRA blocks
+        PANSPIRA blocks
      */
     public static final Block PANSPIRA_REGOLITH = PlanetBlockBuilder.create("panspira/panspira_regolith")
         .falling()
@@ -209,7 +212,7 @@ public final class PlanetBlocks {
         .build();
 
     /*
-    TENEBRAE blocks
+        TENEBRAE blocks
      */
 
     public static final Block TENEBRAE_BASALT = PlanetBlockBuilder.create("tenebrae/tenebrae_basalt")
@@ -283,7 +286,7 @@ public final class PlanetBlocks {
         .build();
 
     /*
-    FROZEN BELT blocks
+        FROZEN BELT blocks
      */
 
     public static final Block FROZEN_BELT_ICE = PlanetBlockBuilder.create("frozen_belt/frozen_belt_ice")
@@ -321,6 +324,82 @@ public final class PlanetBlocks {
         .hardness(1.5F)
         .harvest(1)
         .build();
+
+    /*
+        ASTEROIDS
+     */
+
+    public static final Block ASTEROID_SHELL_BLACK = PlanetBlockBuilder.create("asteroid_belt/black_asteroid_shell")
+        .dropSelf()
+        .hardness(2F)
+        .harvest(2)
+        .build();
+
+    public static final Block ASTEROID_SHELL_FROZEN = PlanetBlockBuilder.create("asteroid_belt/frozen_asteroid_shell")
+        .dropSelf()
+        .hardness(2F)
+        .harvest(2)
+        .build();
+
+    public static final Block ASTEROID_SHELL_GREY = PlanetBlockBuilder.create("asteroid_belt/grey_asteroid_shell")
+        .dropSelf()
+        .hardness(2F)
+        .harvest(2)
+        .build();
+
+    public static final Block ASTEROID_SHELL_NAQUADAH = PlanetBlockBuilder.create("asteroid_belt/naquadah_asteroid_shell")
+        .dropSelf()
+        .hardness(4F)
+        .harvest(2)
+        .build();
+
+    public static final Block ASTEROID_SHELL_OLIVINE = PlanetBlockBuilder.create("asteroid_belt/olivine_asteroid_shell")
+        .dropSelf()
+        .hardness(3F)
+        .harvest(2)
+        .build();
+
+    public static final Block ASTEROID_SHELL_RED = PlanetBlockBuilder.create("asteroid_belt/red_asteroid_shell")
+        .dropSelf()
+        .hardness(2F)
+        .harvest(2)
+        .build();
+
+    public static final Block ASTEROID_SHELL_ROCKY = PlanetBlockBuilder.create("asteroid_belt/rocky_asteroid_shell")
+        .dropSelf()
+        .hardness(2F)
+        .harvest(2)
+        .build();
+
+    public static final Block ASTEROID_SHELL_SILVER = PlanetBlockBuilder.create("asteroid_belt/silver_asteroid_shell")
+        .dropSelf()
+        .hardness(2F)
+        .harvest(2)
+        .build();
+
+    /*
+        FLUIDS
+     */
+
+    public static final Fluid LIQUID_LAHAR = FluidFiniteBuilder.create("fluids/lahar/lahar")
+        .buildAndRegister()
+        .getFluid();
+
+    public static final Fluid LIQUID_MERCURY = FluidFiniteBuilder.create("fluids/mercury/liquid_mercury")
+        .buildAndRegister()
+        .getFluid();
+
+    public static final Fluid LIQUID_RESIN = FluidFiniteBuilder.create("fluids/resin/molten_resin")
+        .lightLevel(1)
+        .material(Material.lava)
+        .buildAndRegister()
+        .getFluid();
+
+    public static final Fluid LAVA_TENEBRAE = FluidFiniteBuilder.create("fluids/tenebrae_lava/tenebrae_lava")
+        .lightLevel(1)
+        .material(Material.lava)
+        .buildAndRegister()
+        .getFluid();
 
     //spotless:on
 
