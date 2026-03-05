@@ -59,6 +59,12 @@ public class ItemOxygenMask extends Item implements IBaubleExpanded {
                 return true;
             }
 
+        }
+
+        // No slots found - Look for potential swap
+        for (int i : Galaxia.oxygenMaskSlots) {
+            if (!baubles.isItemValidForSlot(i, stack)) continue;
+            ItemStack inSlot = baubles.getStackInSlot(i);
             boolean added = player.inventory.addItemStackToInventory(inSlot.copy());
             if (!added) return false;
             baubles.setInventorySlotContents(i, stack.copy());
@@ -67,6 +73,7 @@ public class ItemOxygenMask extends Item implements IBaubleExpanded {
             return true;
         }
 
+        // No swaps or empty slots
         return false;
     }
 

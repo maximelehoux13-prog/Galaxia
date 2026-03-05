@@ -9,6 +9,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
+
 import baubles.api.BaubleType;
 import baubles.api.expanded.IBaubleExpanded;
 import baubles.common.container.InventoryBaubles;
@@ -54,7 +56,8 @@ public class ItemThermalProtection extends Item implements IBaubleExpanded {
     private boolean tryEquipOrReplace(EntityPlayer player, ItemStack stack) {
         InventoryBaubles baubles = PlayerHandler.getPlayerBaubles(player);
 
-        for (int i = 0; i < baubles.getSizeInventory(); i++) {
+        // First look for empty slots
+        for (int i : Galaxia.thermalSlot) {
             if (!baubles.isItemValidForSlot(i, stack)) continue;
 
             ItemStack inSlot = baubles.getStackInSlot(i);
@@ -66,6 +69,12 @@ public class ItemThermalProtection extends Item implements IBaubleExpanded {
                 return true;
             }
 
+        }
+
+        // No slots found - Look for potential swap
+        for (int i : Galaxia.thermalSlot) {
+            if (!baubles.isItemValidForSlot(i, stack)) continue;
+            ItemStack inSlot = baubles.getStackInSlot(i);
             boolean added = player.inventory.addItemStackToInventory(inSlot.copy());
             if (!added) return false;
             baubles.setInventorySlotContents(i, stack.copy());
@@ -74,6 +83,7 @@ public class ItemThermalProtection extends Item implements IBaubleExpanded {
             return true;
         }
 
+        // No swaps or empty slots
         return false;
     }
 

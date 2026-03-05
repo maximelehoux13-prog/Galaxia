@@ -172,7 +172,8 @@ public class ItemOxygenTank extends Item implements IBaubleExpanded {
     }
 
     /**
-     * Drain oxygen from an ItemStack containing an ItemOxygenTank. If the full amount cannot be drained, it will
+     * Drain oxygen from an ItemStack containing an ItemOxygenTank. If the full
+     * amount cannot be drained, it will
      * drain as much as possible!
      *
      * @param amount Amount of oxygen to consume.
