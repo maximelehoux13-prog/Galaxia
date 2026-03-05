@@ -9,30 +9,23 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
+
 import baubles.api.BaubleType;
 import baubles.api.expanded.IBaubleExpanded;
 import baubles.common.container.InventoryBaubles;
 import baubles.common.lib.PlayerHandler;
 
-public class ItemThermalProtection extends Item implements IBaubleExpanded {
+public class ItemOxygenMask extends Item implements IBaubleExpanded {
 
-    public static final String BAUBLE_TYPE_THERMAL_PROTECTION = "thermal_protection";
+    public static final String BAUBLE_TYPE_OXYGEN_MASK = "oxygen_mask";
 
-    int coldProtection;
-    int heatProtection;
-
-    public ItemThermalProtection(int heatProtection, int coldProtection) {
-        this.heatProtection = heatProtection;
-        this.coldProtection = coldProtection;
-    }
+    public ItemOxygenMask() {}
 
     @Override
     public void addInformation(ItemStack stack, EntityPlayer player, List<String> tooltip, boolean p_77624_4_) {
         super.addInformation(stack, player, tooltip, p_77624_4_);
-        if (coldProtection > 0) tooltip
-            .add(StatCollector.translateToLocalFormatted("item.galaxia.thermal_protection.desc.cold", coldProtection));
-        if (heatProtection > 0) tooltip
-            .add(StatCollector.translateToLocalFormatted("item.galaxia.thermal_protection.desc.hot", heatProtection));
+        tooltip.add(StatCollector.translateToLocalFormatted("item.galaxia.oxygen_mask.desc"));
     }
 
     @Override
@@ -54,7 +47,7 @@ public class ItemThermalProtection extends Item implements IBaubleExpanded {
     private boolean tryEquipOrReplace(EntityPlayer player, ItemStack stack) {
         InventoryBaubles baubles = PlayerHandler.getPlayerBaubles(player);
 
-        for (int i = 0; i < baubles.getSizeInventory(); i++) {
+        for (int i : Galaxia.oxygenMaskSlots) {
             if (!baubles.isItemValidForSlot(i, stack)) continue;
 
             ItemStack inSlot = baubles.getStackInSlot(i);
@@ -79,7 +72,7 @@ public class ItemThermalProtection extends Item implements IBaubleExpanded {
 
     @Override
     public String[] getBaubleTypes(ItemStack itemstack) {
-        return new String[] { BAUBLE_TYPE_THERMAL_PROTECTION };
+        return new String[] { BAUBLE_TYPE_OXYGEN_MASK };
     }
 
     // This is for the old Baubles system that I am forced to implement. We dep
@@ -115,11 +108,4 @@ public class ItemThermalProtection extends Item implements IBaubleExpanded {
         return true;
     }
 
-    public int getColdProtection() {
-        return this.coldProtection;
-    }
-
-    public int getHeatProtection() {
-        return this.heatProtection;
-    }
 }

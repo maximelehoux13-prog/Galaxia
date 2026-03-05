@@ -11,10 +11,13 @@ import com.github.bsideup.jabel.Desugar;
  *
  * @param baseTemp          The temperature of the planet (in Kelvin)
  * @param withering         Whether withering is enabled on the planet
- * @param oxygenPercent     The relative oxygen level of the planet (Overworld = 100)
- * @param radiation         The relative radiation level of the planet (Overworld = 0)
+ * @param oxygenPercent     The relative oxygen level of the planet (Overworld =
+ *                          100)
+ * @param radiation         The relative radiation level of the planet
+ *                          (Overworld = 0)
  * @param spores            Whether fungal spores are present in the atmosphere
- * @param pressure          The relative atmospheric pressure on the planet (Overworld = 1)
+ * @param pressure          The relative atmospheric pressure on the planet
+ *                          (Overworld = 1)
  * @param tempModifier      Optional modifier for temperature (can be null)
  * @param oxygenModifier    Optional modifier for oxygen (can be null)
  * @param radiationModifier Optional modifier for radiation (can be null)

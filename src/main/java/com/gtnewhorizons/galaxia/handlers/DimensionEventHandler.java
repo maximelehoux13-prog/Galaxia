@@ -1,7 +1,12 @@
 package com.gtnewhorizons.galaxia.handlers;
 
-import static com.gtnewhorizons.galaxia.core.Galaxia.GALAXIA_NETWORK;
+import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.checkOxygenAndDrain;
 import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.getPlayerOxygenLevel;
+import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.getPressureProtection;
+import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.getRadiationProtection;
+import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.getThermalProtection;
+import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.hasOxygenmask;
+import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.hasSporeFilter;
 import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.isInGalaxiaDimension;
 
 import java.util.Arrays;
@@ -9,21 +14,15 @@ import java.util.List;
 import java.util.Random;
 
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.DamageSource;
 
-import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.core.network.OxygenSyncPacket;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
 import com.gtnewhorizons.galaxia.registry.dimension.builder.EffectBuilder;
-import com.gtnewhorizons.galaxia.registry.items.baubles.ItemOxygenTank;
 import com.gtnewhorizons.galaxia.utility.effects.GalaxiaEffects;
 
-import baubles.api.BaublesApi;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 
@@ -48,8 +47,10 @@ public class DimensionEventHandler {
     }
 
     /**
-     * Event Handler method that runs every tick, primarily used at the moment to apply dimensional transfer effects
-     * USE WITH CAUTION - this method runs every player tick on the server, use guard clauses where possible to not
+     * Event Handler method that runs every tick, primarily used at the moment to
+     * apply dimensional transfer effects
+     * USE WITH CAUTION - this method runs every player tick on the server, use
+     * guard clauses where possible to not
      * waste computation
      *
      * @param event The player tick event
@@ -75,8 +76,6 @@ public class DimensionEventHandler {
      * @param player The player entity
      */
     private void applyEffects(EffectBuilder def, EntityPlayer player) {
-        // TODO: Implement equipment - currently assumes base player with no inventory
-        // Temperature Handling
         applyTemperature(def, player);
 
         // Pressure Handling
@@ -115,6 +114,9 @@ public class DimensionEventHandler {
      */
     private void applySpores(EffectBuilder def, EntityPlayer player) {
         if (!def.getSpore(player)) return;
+        boolean hasFilter = hasSporeFilter(player);
+
+        if (hasFilter) return;
         List<Integer> possibleEffects = Arrays.asList(2, 4, 15, 17, 18, 19, 20);
         /*
          * 2 = Slowness
@@ -127,11 +129,6 @@ public class DimensionEventHandler {
          */
 
         // Check if one of above conditions already applied
-        for (PotionEffect effect : player.getActivePotionEffects()) {
-            if (possibleEffects.contains(effect.getPotionID())) {
-                return;
-            }
-        }
 
         // Add a random effect from list
         Random random = new Random();
@@ -155,14 +152,15 @@ public class DimensionEventHandler {
         final int DEFAULT_MAX = 323; // 50 Celsius
 
         int temp = def.getTemperature(player);
-        int acceptableMax;
-        int acceptableMin;
+        int acceptableMax = DEFAULT_MAX;
+        int acceptableMin = DEFAULT_MIN;
 
-        // TODO add proper logic to it, replacing space suit with heat/frost protection
-        if (true) {
-            acceptableMin = DEFAULT_MIN;
-            acceptableMax = DEFAULT_MAX;
-        }
+        int heatProtection = getThermalProtection(player, true);
+        int coldProtection = getThermalProtection(player, false);
+
+        acceptableMax += heatProtection;
+        acceptableMin -= coldProtection;
+
         if (temp < acceptableMax && temp > acceptableMin) return;
 
         int diff;
@@ -197,27 +195,19 @@ public class DimensionEventHandler {
         int oxygenPercent = def.getOxygenPercent(player);
         if (oxygenPercent == 100) return;
 
-        boolean couldDrainOxygen = false;
-        for (int index : Galaxia.oxygenSlots) {
-            ItemStack tank = BaublesApi.getBaubles(player)
-                .getStackInSlot(index);
-            if (tank == null || !(tank.getItem() instanceof ItemOxygenTank tankItem)) {
-                continue;
-            }
-            if (tankItem.drainTank(tank, (100 - oxygenPercent) / 5)) {
-                couldDrainOxygen = true;
-                GALAXIA_NETWORK
-                    .sendTo(new OxygenSyncPacket(index, tankItem.getCurrentOxygen(tank)), (EntityPlayerMP) player);
-                break;
-            }
+        boolean hasOxygenToDrain = false;
+        boolean hasMask = hasOxygenmask(player);
+        if (hasMask) {
+            hasOxygenToDrain = checkOxygenAndDrain(player, oxygenPercent);
         }
 
         float oxygenLevel = getPlayerOxygenLevel(player);
-        if (oxygenLevel > 0.1) lowOxygenDuration = 0;
+        if (oxygenLevel > 0.1 && hasMask) lowOxygenDuration = 0;
         else lowOxygenDuration++;
 
         // Apply low oxygen effects if oxygen is too low
-        // java8 doesn't support switches for stuff like this and i don't want to make it look messy so here it is
+        // java8 doesn't support switches for stuff like this and i don't want to make
+        // it look messy so here it is
         if (oxygenLevel < 0.02)
             player.addPotionEffect(new PotionEffect(GalaxiaEffects.lowOxygen.getId(), BASE_EFFECT_DURATION, 4));
         else if (oxygenLevel < 0.04)
@@ -229,8 +219,9 @@ public class DimensionEventHandler {
         else if (oxygenLevel < 0.1)
             player.addPotionEffect(new PotionEffect(GalaxiaEffects.lowOxygen.getId(), BASE_EFFECT_DURATION, 0));
 
-        if (couldDrainOxygen) return;
-        // Apply damage if no tank could be drained (tank is empty or no tanks available)
+        if (hasOxygenToDrain) return;
+        // Apply damage if no tank could be drained (tank is empty or no tanks
+        // available)
         // damage scaled linearly so it can't be bypassed long-term by most of armors
         player.attackEntityFrom(this.noOxygen, lowOxygenDuration * 2);
     }
@@ -242,10 +233,16 @@ public class DimensionEventHandler {
      * @param player The Player entity
      */
     private void applyPressure(EffectBuilder def, EntityPlayer player) {
+        int DEFAULT_MIN = 1;
+        int DEFAULT_MAX = 2;
         // Temp until space suit added:
-        int acceptableMin = 1;
-        int acceptableMax = 2;
+        int acceptableMin = DEFAULT_MIN;
+        int acceptableMax = DEFAULT_MAX;
         int pressure = def.getPressure(player);
+
+        acceptableMax += getPressureProtection(player, true);
+        acceptableMin -= getPressureProtection(player, false);
+
         if (pressure <= acceptableMax && pressure >= acceptableMin) return;
         if (player.isPotionActive(Potion.moveSlowdown)) return;
         if (player.isPotionActive(Potion.digSlowdown)) return;
@@ -263,9 +260,11 @@ public class DimensionEventHandler {
     private void applyRadiation(EffectBuilder def, EntityPlayer player) {
         int radiation = def.getRadiation(player);
         if (radiation == 0) return;
-        // Temp until radiation suit added
-        boolean hasRadSuit = false;
-        if (hasRadSuit) return;
+        final int DEFAULT_MAX = 0;
+        int acceptableMax = DEFAULT_MAX;
+
+        acceptableMax += getRadiationProtection(player);
+        if (radiation <= acceptableMax) return;
         player.attackEntityFrom(this.radiation, 5.0f);
     }
 
