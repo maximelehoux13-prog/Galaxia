@@ -2,14 +2,15 @@ package com.gtnewhorizons.galaxia.registry.dimension.worldgen;
 
 import java.util.Random;
 
-import net.minecraft.world.gen.NoiseGeneratorOctaves;
+import com.gtnewhorizons.galaxia.utility.MathUtil;
+import com.gtnewhorizons.galaxia.utility.Noise;
 
 /**
  * Class to deal with actual application of different feature types
  */
 public final class TerrainFeatureApplier {
 
-    private static NoiseGeneratorOctaves generationNoise;
+    private static Noise generationNoise;
 
     // TODO improve formulas for all features
 
@@ -25,13 +26,13 @@ public final class TerrainFeatureApplier {
      */
     public static void applyToHeightmap(TerrainFeature feature, double[] heightMap, int chunkX, int chunkZ, Random rand,
         double[] terrainRelevance) {
-        if (generationNoise == null) {
-            generationNoise = new NoiseGeneratorOctaves(rand, 4);
-        }
         TerrainPreset preset = feature.preset();
         double height = feature.height();
         double width = feature.width();
         long seed = (chunkX * 341873128712L + chunkZ * 132897987541L) ^ rand.nextLong();
+        if (generationNoise == null) {
+            generationNoise = new Noise(512, rand.nextLong());
+        }
         Random localRand = new Random(seed);
 
         switch (preset) {
@@ -93,16 +94,14 @@ public final class TerrainFeatureApplier {
      */
     private static void applySandDunes(double[] hm, double height, double width, int chunkX, int chunkZ,
         double[] terrainRelevance) {
-        double[] noise = generatePerlinNoise(chunkX, chunkZ, 1 / (width * 4));
+        double[] noise = generateSimplexNoise(chunkX, chunkZ, width);
         chunkX *= 16;
         chunkZ *= 16;
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 double localRelevance = terrainRelevance[x + z * 16];
-                if (localRelevance == 0) {
-                    continue;
-                }
-                double localNoise = (noise[x + z * 16] + 5) / 10;
+                if (localRelevance == 0) continue;
+                double localNoise = (noise[x + z * 16] + 1.0) * 0.5;
                 double wave = Math.sin(((chunkX + x) * 0.7 + (chunkZ + z) * 0.4) / (width * 4)) * localNoise;
                 hm[x + z * 16] += wave * height * localRelevance;
             }
@@ -162,14 +161,14 @@ public final class TerrainFeatureApplier {
      */
     private static void applyMountainRanges(double[] hm, double height, double width, int chunkX, int chunkZ,
         double[] terrainRelevance) {
-        double[] noise = generatePerlinNoise(chunkX, chunkZ, 1 / (width * 4));
+        double[] noise = generateSimplexNoise(chunkX, chunkZ, width);
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 double localRelevance = terrainRelevance[x + z * 16];
                 if (localRelevance == 0) {
                     continue;
                 }
-                hm[x + z * 16] += ((noise[x + z * 16] * height) * localRelevance);
+                hm[x + z * 16] += (((noise[x + z * 16] + 1.0) * 0.5 * height) * localRelevance);
             }
         }
     }
@@ -183,18 +182,17 @@ public final class TerrainFeatureApplier {
      */
     private static void applyCanyons(double[] hm, double width, double height, int chunkX, int chunkZ,
         double[] terrainRelevance) {
-        double[] noise = generatePerlinNoise(chunkX, chunkZ, 1 / (width * 4));
+        double[] noise = generateSimplexNoise(chunkX, chunkZ, width);
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 double localRelevance = terrainRelevance[x + z * 16];
-                if (localRelevance == 0) {
-                    continue;
-                }
-                double localNoise = noise[x + z * 16];
+                if (localRelevance == 0) continue;
+                double localNoise = (noise[x + (z << 4)] + 1.0) * 0.5;
                 localNoise = Math.abs(localNoise - 0.5);
                 localNoise *= 10;
                 if (localNoise < 3 && localNoise > 2) {
                     localNoise = 0.5 - Math.abs(localNoise - 2.5);
+                    localNoise = MathUtil.smoothStep(localNoise);
                     hm[x + z * 16] -= (((localNoise) * 2 * height) * localRelevance);
                 }
             }
@@ -255,29 +253,32 @@ public final class TerrainFeatureApplier {
     }
 
     /**
-     * Applies mountain ranges to the height map
+     * Applies shield volcanoes to the height map
      *
      * @param hm               The height map
-     * @param height           Target mountain range height
-     * @param width            Target mountain range width
+     * @param height           Target shield volcano height
+     * @param width            Target shield volcano width
      * @param chunkX           Chunk x coordinates
      * @param chunkZ           Chunk z coordinates
      * @param terrainRelevance Matrix holding the terrain precedence
      */
     private static void applyShieldVolcanoes(double[] hm, double height, double width, int chunkX, int chunkZ,
         double[] terrainRelevance) {
-        double[] noise = generatePerlinNoise(chunkX, chunkZ, 1 / (width * 4));
+        double[] noise = generateSimplexNoise(chunkX, chunkZ, width);
+        // double[] craters = generateCraterNoise(chunkX, chunkZ, 1 / (width * 32768), 1, 1.0, 0.2, 0.3);
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 double localRelevance = terrainRelevance[x + z * 16];
-                if (localRelevance == 0) {
-                    continue;
-                }
-                double localNoise = noise[x + z * 16];
-                if (localNoise > 0.75) {
-                    continue;
-                }
+                if (localRelevance == 0) continue;
+                // double smoothCrater = craters[x + (z << 4)];
+                // // most of the time it's just 1, and we don't want to spend too much time on that
+                // if (smoothCrater != 1.D)
+                // smoothCrater = 2 * smoothCrater * smoothCrater * smoothCrater - 3 * smoothCrater * smoothCrater;
+                // smoothCrater = 1.0 - (1.0 - Math.max(smoothCrater, 0.7)) * localRelevance;
+                double localNoise = (noise[x + z * 16] + 1.0) * 0.5;
+                if (localNoise > 0.85) localNoise = (0.8 - (localNoise * 8 - 6.4));
                 hm[x + z * 16] += ((localNoise * height) * localRelevance);
+                // hm[x + (z << 4)] *= smoothCrater;
             }
         }
     }
@@ -297,27 +298,35 @@ public final class TerrainFeatureApplier {
     }
 
     /**
-     * Generates Perlin noise for a given chunk
+     * Generates Simplex noise for a given chunk
      *
      * @param chunkX Chunk x coordinates
      * @param chunkZ Chunk y coordinates
-     * @param scale  the scale of the perlin noise effect
+     * @param scale  the scale of the simplex noise effect
      * @return A matrix of variations based on noise output
      */
-    private static double[] generatePerlinNoise(int chunkX, int chunkZ, double scale) {
-        chunkX *= 16;
-        chunkZ *= 16;
-        double[] noise = generationNoise.generateNoiseOctaves(new double[256], chunkZ, chunkX, 16, 16, scale, scale, 0);
-        for (int i = 0; i < noise.length; i++) {
-            double localNoise = noise[i];
-            localNoise += 8;
-            localNoise /= 16;
-            if (localNoise < 0) {
-                localNoise = 0;
-            } else if (localNoise > 1) {
-                localNoise = 1;
+    private static double[] generateSimplexNoise(int chunkX, int chunkZ, double scale) {
+        generationNoise.setScale(scale * 16);
+        return Noise.simplexOctaves2D(chunkX * 16, chunkZ * 16, 16, 16, 4, generationNoise)[0];
+    }
+
+    /**
+     * Generates Crater noise for a given chunk
+     *
+     * @param chunkX Chunk x coordinates
+     * @param chunkZ Chunk y coordinates
+     * @param scale  the scale of the crater noise effect
+     * @return A matrix of variations based on noise output
+     */
+    private static double[] generateCraterNoise(int chunkX, int chunkZ, double scale, double depth, double density,
+        double minSize, double maxSize) {
+        generationNoise.setScale(scale * 16);
+        double[] noise = new double[16 * 16];
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                noise[x + (z << 4)] = (generationNoise
+                    .craterNoise2D(chunkX * 16 + x, chunkZ * 16 + z, density, maxSize, minSize)[0] - 1.0) * depth + 1.0;
             }
-            noise[i] = localNoise;
         }
         return noise;
     }

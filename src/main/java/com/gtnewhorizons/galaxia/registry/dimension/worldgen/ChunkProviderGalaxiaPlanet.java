@@ -13,11 +13,12 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
-import net.minecraft.world.gen.NoiseGeneratorOctaves;
 
 import com.gtnewhorizons.galaxia.registry.dimension.biome.BiomeGenSpace;
 import com.gtnewhorizons.galaxia.registry.dimension.provider.WorldChunkManagerSpace;
 import com.gtnewhorizons.galaxia.utility.BlockMeta;
+import com.gtnewhorizons.galaxia.utility.MathUtil;
+import com.gtnewhorizons.galaxia.utility.Noise;
 
 /**
  * ChunkProvider implementation for Galaxia Planets
@@ -26,8 +27,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
 
     private final World worldObj;
     private final Random rand;
-    private final NoiseGeneratorOctaves baseNoise;
-    private final NoiseGeneratorOctaves caveNoise;
+    private final Noise baseNoise;
+    private final Noise caveNoise;
     private final boolean showDebug = false;
     private final BlockMeta air = new BlockMeta(Blocks.air, 0);
     private final BlockMeta bedrock = new BlockMeta(Blocks.bedrock, 0);
@@ -38,7 +39,7 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
     private final BlockMeta sand = new BlockMeta(Blocks.sand, 0);
     private final BlockMeta gravel = new BlockMeta(Blocks.gravel, 0);
 
-    private double[][] caveCache = new double[256][256];
+    private double[] caveCache = new double[256 * 256];
 
     /**
      * Constructor to initialize the world and noise/random generators
@@ -49,8 +50,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         this.worldObj = world;
 
         this.rand = new Random(world.getSeed());
-        this.baseNoise = new NoiseGeneratorOctaves(rand, 4);
-        this.caveNoise = new NoiseGeneratorOctaves(rand, 4);
+        this.baseNoise = new Noise(512, world.getSeed());
+        this.caveNoise = new Noise(512 * 512 * 512, world.getSeed() + 1);
         if (showDebug) writeDebug();
     }
 
@@ -73,23 +74,23 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         BiomeGenBase[] chunkBiomes = new BiomeGenBase[256];
         double[][] biomeContrib = new double[biomeCount][];
         List<BiomeGenBase> biomeList = new ArrayList<>();
-        // between 0 and 1, smooth range between biome (0 is not smoothed, vertical cliffs, 1 is indistinguishable
-        // between biomes)
-        final double allowedDivergence = 1;
+        Noise diverNoise = new Noise(2048, worldObj.getSeed());
+        double[] allowedDivergences = Noise.simplexOctaves2D((chunkX << 4), (chunkZ << 4), 16, 16, 3, diverNoise)[0];
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 // Get relevant data for biome blending
+                // between 0 and 1, smooth range between biome (0 is not smoothed, vertical cliffs, 1 is
+                // indistinguishable between biomes)
                 BiomeGenBase[] blockBiomes = ((WorldChunkManagerSpace) worldObj.getWorldChunkManager())
-                    .getLocalBiomes(chunkX * 16 + x, chunkZ * 16 + z);
+                    .getLocalBiomes((chunkX << 4) + x, (chunkZ << 4) + z);
+                double allowedDivergence = (allowedDivergences[x + (z << 4)] + 1.0) * 0.4 + 0.0625;
                 double[] blockContrib = ((WorldChunkManagerSpace) worldObj.getWorldChunkManager())
                     .getLocalBiomeSignificance(allowedDivergence);
                 // smoothing
                 double sum = 0;
                 for (int i = 0; i < 4; i++) {
-                    final double t = blockContrib[i];
-                    final double t2 = t * t;
-                    blockContrib[i] = t2 * t * 2 + t2 * 3;
-                    sum += blockContrib[i] = t2 * t * 2 + t2 * 3;
+                    blockContrib[i] = MathUtil.smoothStep(blockContrib[i]);
+                    sum += blockContrib[i];
                 }
                 // renormalizing
                 for (int i = 0; i < 4; i++) {
@@ -115,6 +116,12 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
             BiomeGenBase currentBiome = biomeList.get(biomeIndex);
             if (currentBiome instanceof BiomeGenSpace spaceBiome) {
                 double[] terrainRelevance = biomeContrib[biomeIndex];
+                boolean doWork = false;
+                for (double d : terrainRelevance) if (d != 0) {
+                    doWork = true;
+                    break;
+                }
+                if (!doWork) continue;
                 TerrainConfiguration terrain = spaceBiome.getTerrain();
                 for (TerrainFeature f : terrain.getMacroFeatures()) {
                     TerrainFeatureApplier.applyToHeightmap(f, heightMap, chunkX, chunkZ, rand, terrainRelevance);
@@ -202,34 +209,12 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
     }
 
     private void prepareCaveCache(int chunkX, int chunkZ) {
-        double[] horizontalLayer = caveNoise
-            .generateNoiseOctaves(new double[256], chunkZ * 16, chunkX * 16, 16, 16, 0.1, 0.1, 0);
-        for (int i = 0; i < horizontalLayer.length; i++) {
-            double noise = horizontalLayer[i];
-            noise += 8;
-            noise /= 16;
-            caveCache[i][0] = noise;
-        }
-        double[] verticalSlice = caveNoise.generateNoiseOctaves(new double[256], chunkZ, chunkX, 256, 1, 0.1, 0.1, 0);
-        for (int i = 0; i < verticalSlice.length; i++) {
-            double noise = verticalSlice[i];
-            noise += 8;
-            noise /= 16;
-            verticalSlice[i] = noise;
-        }
-        for (int i = 0; i < caveCache.length; i++) {
-            double baseNoise = caveCache[i][0];
-            for (int j = 1; j < verticalSlice.length; j++) {
-                caveCache[i][j] = (baseNoise + verticalSlice[j]) / 2;
-            }
-        }
+        caveCache = Noise.simplexOctaves3D(chunkX * 16, 0, chunkZ * 16, 16, 256, 16, 3, caveNoise)[0];
     }
 
     private boolean generateCave(int localX, int localY, int localZ, int height) {
-        if (localY >= 256) {
-            return false;
-        }
-        double localNoise = caveCache[localX + localZ * 16][localY];
+        if (localY >= 256) return false;
+        double localNoise = caveCache[localX + (localY << 4) + (localZ << 8)];
         double boundTightening;
         int ceilingDistance = height - localY;
         if (ceilingDistance > 0 && ceilingDistance < 16) {
@@ -239,8 +224,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         } else {
             boundTightening = (double) 1 / (Math.max(localY - 1, 1));
         }
-        double lowerBound = 0.45;
-        double upperBound = 0.5 - 0.05 * boundTightening;
+        double lowerBound = -0.7 + 0.05 * boundTightening;
+        double upperBound = 0.7 - 0.05 * boundTightening;
         return localNoise < upperBound && localNoise > lowerBound;
     }
 
@@ -250,7 +235,7 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
             return blockMetas.get(0);
         }
         BlockMeta surfaceBlock;
-        double noise = baseNoise.generateNoiseOctaves(new double[1], z, x, 1, 1, 0.2, 0.2, 0)[0];
+        double noise = Noise.simplexOctaves2D(x, z, 1, 1, 8, baseNoise)[0][0];
         noise += 8;
         noise *= surfaceBlockCount;
         noise /= 16;
@@ -295,29 +280,29 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
      */
     @Override
     public void populate(IChunkProvider provider, int cx, int cz) {
-        long seed = (cx * 341873128712L + cz * 132897987541L) ^ worldObj.getSeed();
-        rand.setSeed(seed);
-
-        // Convert chunk coordinates to 'regular' coordinates
-        int x = cx * 16;
-        int z = cz * 16;
-
-        // Get local biome
-        BiomeGenBase localBiome = worldObj.getWorldChunkManager()
-            .getBiomeGenAt(x, z);
-        if (localBiome instanceof BiomeGenSpace spaceBiome) {
-            if (spaceBiome.getSurfaceFeatures()
-                .isEmpty()) {
-                return;
-            }
-            // Generate features in locally random points within the chunk
-            for (WorldGenGalaxia feature : spaceBiome.getSurfaceFeatures()) {
-                int localX = x + this.rand.nextInt(16) - 8;
-                int localZ = z + this.rand.nextInt(16) - 8;
-                int localY = worldObj.getHeightValue(x, z);
-                feature.generate(worldObj, rand, localX, localY, localZ);
-            }
-        }
+        // long seed = (cx * 341873128712L + cz * 132897987541L) ^ worldObj.getSeed();
+        // rand.setSeed(seed);
+        //
+        // // Convert chunk coordinates to 'regular' coordinates
+        // int x = cx * 16;
+        // int z = cz * 16;
+        //
+        // // Get local biome
+        // BiomeGenBase localBiome = worldObj.getWorldChunkManager()
+        // .getBiomeGenAt(x, z);
+        // if (localBiome instanceof BiomeGenSpace spaceBiome) {
+        // if (spaceBiome.getSurfaceFeatures()
+        // .isEmpty()) {
+        // return;
+        // }
+        // // Generate features in locally random points within the chunk
+        // for (WorldGenGalaxia feature : spaceBiome.getSurfaceFeatures()) {
+        // int localX = x + this.rand.nextInt(16) - 8;
+        // int localZ = z + this.rand.nextInt(16) - 8;
+        // int localY = worldObj.getHeightValue(x, z);
+        // feature.generate(worldObj, rand, localX, localY, localZ);
+        // }
+        // }
     }
 
     /**

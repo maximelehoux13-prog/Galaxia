@@ -62,7 +62,7 @@ public class Theia extends BasePlanet {
      */
     @Override
     protected void configureProvider(WorldProviderBuilder builder) {
-        builder.sky(true)
+        builder.sky(false)
             .fog(0.03f, 0.02f, 0.06f)
             .skyColor(0.015f, 0.01f, 0.03f)
             .avgGround(80)
@@ -77,12 +77,12 @@ public class Theia extends BasePlanet {
                         .height(64)
                         .endFeature()
                         .feature(TerrainPreset.MOUNTAIN_RANGES)
-                        .width(32)
+                        .width(64)
                         .height(32)
                         .endFeature()
                         .feature(TerrainPreset.CANYONS)
-                        .width(4)
-                        .height(32)
+                        .width(48)
+                        .height(16)
                         .endFeature()
                         .build(),
                     2,
@@ -100,11 +100,11 @@ public class Theia extends BasePlanet {
                         .height(64)
                         .endFeature()
                         .feature(TerrainPreset.MOUNTAIN_RANGES)
-                        .width(3)
+                        .width(16)
                         .height(16)
                         .endFeature()
                         .feature(TerrainPreset.MOUNTAIN_RANGES)
-                        .width(12)
+                        .width(64)
                         .height(64)
                         .endFeature()
                         .build(),
@@ -120,15 +120,15 @@ public class Theia extends BasePlanet {
                     false,
                     TerrainConfiguration.builder()
                         .feature(TerrainPreset.BASE_HEIGHT)
-                        .height(32)
+                        .height(48)
                         .endFeature()
                         .feature(TerrainPreset.SHIELD_VOLCANOES)
-                        .width(2)
+                        .width(8)
                         .height(16)
                         .endFeature()
                         .build(),
                     8,
-                    56),
+                    60),
                 1,
                 0)
             .biome(
@@ -139,15 +139,15 @@ public class Theia extends BasePlanet {
                     false,
                     TerrainConfiguration.builder()
                         .feature(TerrainPreset.BASE_HEIGHT)
-                        .height(32)
+                        .height(48)
                         .endFeature()
                         .feature(TerrainPreset.SHIELD_VOLCANOES)
-                        .width(4)
-                        .height(64)
+                        .width(24)
+                        .height(32)
                         .endFeature()
                         .build(),
                     8,
-                    56),
+                    60),
                 1,
                 1)
             .name(ENUM)

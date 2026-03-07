@@ -1,10 +1,9 @@
 package com.gtnewhorizons.galaxia.registry.dimension.provider;
 
-import java.util.Random;
-
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.biome.WorldChunkManager;
-import net.minecraft.world.gen.NoiseGeneratorOctaves;
+
+import com.gtnewhorizons.galaxia.utility.Noise;
 
 /**
  * A specific implementation of the WorldChunkManager to be used on Galaxia planets
@@ -12,8 +11,8 @@ import net.minecraft.world.gen.NoiseGeneratorOctaves;
 public class WorldChunkManagerSpace extends WorldChunkManager {
 
     private BiomeGenBase[][] biomeGeneratorMatrix;
-    private NoiseGeneratorOctaves xBiomeNoise;
-    private NoiseGeneratorOctaves zBiomeNoise;
+    private Noise xBiomeNoise;
+    private Noise zBiomeNoise;
 
     private boolean cacheCreated = false;
     private int cacheX = 0;
@@ -33,8 +32,8 @@ public class WorldChunkManagerSpace extends WorldChunkManager {
         if (xBiomeNoise != null) {
             return;
         }
-        xBiomeNoise = new NoiseGeneratorOctaves(new Random(seed), 4);
-        zBiomeNoise = new NoiseGeneratorOctaves(new Random(seed + 1), 4);
+        xBiomeNoise = new Noise(2048, seed);
+        zBiomeNoise = new Noise(2048, -seed ^ 1234567);
     }
 
     /**
@@ -85,18 +84,18 @@ public class WorldChunkManagerSpace extends WorldChunkManager {
      * @param firstIndex     Whether this biome is the first index or not
      * @return The index of the biome in the matrix
      */
-    private int getBiomeIndex(int x, int z, int matrixLength, NoiseGeneratorOctaves noiseGenerator,
-        boolean firstIndex) {
-        double noise = noiseGenerator.generateNoiseOctaves(null, z, x, 1, 1, 0.02, 0.02, 0)[0];
-        // normalize
-        noise = (noise + 8) / 16;
+    private int getBiomeIndex(int x, int z, int matrixLength, Noise noiseGenerator, boolean firstIndex) {
+        double noise = Noise.simplexOctaves2D(x, z, 1, 1, 6, noiseGenerator)[0][0];
+        noise = (noise + 1.0) / 2.0;
+        if (noise < 0) noise = 0;
+        if (noise > 1) noise = 1;
         noise *= matrixLength;
         if (firstIndex) {
             cacheNoiseX = noise;
         } else {
             cacheNoiseZ = noise;
         }
-        return (int) Math.floor(noise);
+        return (int) noise;
     }
 
     /**
