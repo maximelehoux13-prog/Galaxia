@@ -17,6 +17,7 @@ import com.gtnewhorizons.galaxia.registry.dimension.worldgen.TerrainConfiguratio
 import com.gtnewhorizons.galaxia.registry.dimension.worldgen.TerrainPreset;
 import com.gtnewhorizons.galaxia.registry.dimension.worldgen.WorldGenCrater;
 import com.gtnewhorizons.galaxia.registry.dimension.worldgen.WorldGenTheiaStalactite;
+import com.gtnewhorizons.galaxia.rocketmodules.rocket.EnumTiers;
 import com.gtnewhorizons.galaxia.utility.BiomeIdOffsetter;
 
 /**
@@ -55,7 +56,8 @@ public class Theia extends BasePlanet {
                     .baseTemp(225)
                     .oxygenPercent(0)
                     .pressure(0)
-                    .build());
+                    .build())
+            .tier(EnumTiers.TIER_1);
     }
 
     /**
