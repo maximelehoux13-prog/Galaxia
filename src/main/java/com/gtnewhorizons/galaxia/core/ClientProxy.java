@@ -5,6 +5,8 @@ import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.common.MinecraftForge;
 
 import com.gtnewhorizons.galaxia.core.config.ConfigMain;
+import com.gtnewhorizons.galaxia.core.nei.GalaxiaMultiblockHandler;
+import com.gtnewhorizons.galaxia.core.nei.IMCForNEI;
 import com.gtnewhorizons.galaxia.handlers.GalaxiaOverlayHandler;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.rocketmodules.client.render.GantryItemRenderer;
@@ -15,6 +17,7 @@ import com.gtnewhorizons.galaxia.rocketmodules.rocket.entities.EntityRocket;
 import com.gtnewhorizons.galaxia.rocketmodules.tileentities.TileEntitySilo;
 import com.gtnewhorizons.galaxia.rocketmodules.tileentities.gantry.TileEntityGantry;
 
+import codechicken.nei.api.API;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -34,6 +37,7 @@ public class ClientProxy extends CommonProxy {
     public void init(FMLInitializationEvent event) {
         super.init(event);
         MinecraftForge.EVENT_BUS.register(new GalaxiaOverlayHandler());
+        IMCForNEI.IMCSender();
 
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntitySilo.class, new SiloRenderer());
         RenderingRegistry.registerEntityRenderingHandler(EntityRocket.class, new RocketRenderer());
@@ -45,6 +49,12 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void postInit(FMLPostInitializationEvent event) {
         super.postInit(event);
+
+        GalaxiaMultiblockHandler.register(new TileEntitySilo());
+
+        GalaxiaMultiblockHandler handler = new GalaxiaMultiblockHandler();
+        API.registerRecipeHandler(handler);
+        API.registerUsageHandler(handler);
     }
 
     @Override
