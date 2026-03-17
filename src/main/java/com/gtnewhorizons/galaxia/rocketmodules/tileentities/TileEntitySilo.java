@@ -29,6 +29,7 @@ import com.cleanroommc.modularui.widgets.PageButton;
 import com.cleanroommc.modularui.widgets.PagedWidget;
 import com.cleanroommc.modularui.widgets.ToggleButton;
 import com.cleanroommc.modularui.widgets.layout.Flow;
+import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
@@ -76,49 +77,143 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
 
     private TileEntityGantryTerminal gantryTerminal;
     private TileEntityModuleAssembler moduleAssembler;
-    private int[] pendingTerminalCoords;
     private int[] pendingAssemblerCoords;
     private boolean hasAssembler = false;
+    private int foundTerminalCount = 0;
+
+    public static final int SILO_CENTER_X_OFFSET = 0;
+    public static final int SILO_CENTER_Y_OFFSET = 1;
+    public static final int SILO_CENTER_Z_OFFSET = 2;
+
+    private static final String STRUCTURE_PIECE_MAIN = "main";
 
     private static final IStructureDefinition<TileEntitySilo> STRUCTURE_DEFINITION = StructureDefinition
         .<TileEntitySilo>builder()
         // spotless:off
-        .addShape("main", new String[][] {
-            {"CCC", "CCC", "CCC"},
-            {"C C", "C C", "C C"},
-            {"C C", "C C", "C C"},
-            {"C C", "C C", "C C"},
-            {"CCC", "C~C", "CCC"}
-        })
-        //spotless:on
+            .addShape(STRUCTURE_PIECE_MAIN, StructureUtility.transpose(new String[][] {
+                    { "  T  ", "     ", "T   T", "     ", "  T  " },
+                    { "  T  ", "     ", "T   T", "     ", "  T  " },
+                    { "  C  ", "     ", "C   C", "     ", "  C  " },
+                    { " CCC ", "C   C", "C   C", "C   C", " CCC " },
+                    { " C~C ", "CCCCC", "CCCCC", "CCCCC", " CCC " }
+
+            }))
+            // spotless:on
         .addElement('C', StructureUtility.ofBlock(GalaxiaBlocksEnum.RUSTY_PANEL.get(), 0))
+        .addElement('T', StructureUtility.ofChain(StructureUtility.ofTileAdder((silo, te) -> {
+            if (te instanceof TileEntityGantryTerminal terminal) {
+                silo.setGantryTerminal(terminal);
+                terminal.connectSilo(silo);
+                return true;
+            }
+            return false;
+        }, GalaxiaBlocksEnum.GANTRY_TERMINAL.get(), 0),
+            StructureUtility.ofBlock(GalaxiaBlocksEnum.RUSTY_PANEL.get(), 0)))
         .build();
 
+    /**
+     * Gets the structure definition of the Silo multi
+     *
+     * @return The structure definition for the multi
+     */
     @Override
     public IStructureDefinition<TileEntitySilo> getStructureDefinition() {
         return STRUCTURE_DEFINITION;
     }
 
+    /**
+     * Gets the x offset from the origin of the multi to the controller block
+     *
+     * @return X offset
+     */
     @Override
     protected int getControllerOffsetX() {
-        return 1;
+        return 2;
     }
 
+    /**
+     * Gets the y offset from the origin of the multi to the controller block
+     *
+     * @return Y offset
+     */
     @Override
     protected int getControllerOffsetY() {
-        return 1;
-    }
-
-    @Override
-    protected int getControllerOffsetZ() {
         return 4;
     }
 
+    /**
+     * Gets the z offset from the origin of the multi to the controller block
+     *
+     * @return Z offset
+     */
+    @Override
+    protected int getControllerOffsetZ() {
+        return 0;
+    }
+
+    /**
+     * Runs whenever the structure forms - here updates the assembler linking and
+     * sets the rendering
+     */
     @Override
     protected void onStructureFormed() {
+        updateLinkedAssembler();
         shouldRender = true;
     }
 
+    /**
+     * Runs whenever a previously formed structure disforms - updates assembler and
+     * removes rendering
+     */
+    @Override
+    protected void onStructureDisformed() {
+        updateLinkedAssembler();
+        shouldRender = false;
+    }
+
+    /**
+     * Checks the structure of the multi against the definition. Overridden to
+     * detect terminal counts being correct. Forms structure if correct, disforms
+     * otherwise
+     *
+     * @return Boolean : True => valid structure
+     */
+    @Override
+    protected boolean checkStructure() {
+        if (worldObj == null || worldObj.isRemote) return structureValid;
+        // Reset terminals as recounted in definition check
+        foundTerminalCount = 0;
+        gantryTerminal = null;
+
+        boolean valid = getStructureDefinition().check(
+            (TileEntitySilo) this,
+            "main",
+            worldObj,
+            ExtendedFacing.DEFAULT,
+            xCoord,
+            yCoord,
+            zCoord,
+            getControllerOffsetX(),
+            getControllerOffsetY(),
+            getControllerOffsetZ(),
+            false);
+
+        if (valid != structureValid) {
+            structureValid = valid;
+            if (valid && foundTerminalCount != 1) valid = false;
+            if (valid) onStructureFormed();
+            else onStructureDisformed();
+            markDirty();
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+        }
+        return valid;
+    }
+
+    /**
+     * Gets the controller block to be used
+     *
+     * @return The block to be used as the block for this TE/multi controller
+     */
     @Override
     public Block getControllerBlock() {
         return GalaxiaBlocksEnum.SILO_CONTROLLER.get();
@@ -134,9 +229,7 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
         if (gantryTerminal == null) {
             moduleAssembler = null;
             hasAssembler = false;
-            if (worldObj != null) {
-                worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-            }
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
             return;
         }
         // If not a valid graph, cannot walk it
@@ -184,6 +277,8 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
 
         ModularPanel panel = ModularPanel.defaultPanel("galaxia:rocket_silo_main")
             .size(240, 160);
+        // Check validity of assembler path on UI build
+        updateLinkedAssembler();
 
         if (!hasAssembler) {
             return panel.child(
@@ -456,7 +551,10 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
     private void spawnRocket() {
         entityRocket = new EntityRocket(worldObj);
         entityRocket.bindSilo(this);
-        entityRocket.setPosition(xCoord + 0.5, yCoord + 1.0, zCoord + 0.5);
+        entityRocket.setPosition(
+            xCoord + SILO_CENTER_X_OFFSET + 0.5,
+            yCoord + SILO_CENTER_Y_OFFSET,
+            zCoord + SILO_CENTER_Z_OFFSET + 0.5);
         worldObj.spawnEntityInWorld(entityRocket);
     }
 
@@ -499,18 +597,6 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
                 spawnRocket();
             }
 
-            if (pendingTerminalCoords != null) {
-                TileEntity te = worldObj
-                    .getTileEntity(pendingTerminalCoords[0], pendingTerminalCoords[1], pendingTerminalCoords[2]);
-
-                if (te instanceof TileEntityGantryTerminal terminal) {
-                    gantryTerminal = terminal;
-                    updateLinkedAssembler();
-                }
-
-                pendingTerminalCoords = null;
-            }
-
             if (pendingAssemblerCoords != null) {
                 TileEntity te = worldObj
                     .getTileEntity(pendingAssemblerCoords[0], pendingAssemblerCoords[1], pendingAssemblerCoords[2]);
@@ -542,12 +628,6 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
     public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         nbt.setBoolean("shouldRender", shouldRender);
-        // gantry
-        if (gantryTerminal != null) {
-            nbt.setInteger("terminalX", gantryTerminal.xCoord);
-            nbt.setInteger("terminalY", gantryTerminal.yCoord);
-            nbt.setInteger("terminalZ", gantryTerminal.zCoord);
-        }
         // assembler
         if (moduleAssembler != null) {
             nbt.setInteger("assemblerX", moduleAssembler.xCoord);
@@ -585,12 +665,6 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
         }
         assembly = null;
 
-        // Get Gantry Terminal
-        if (nbt.hasKey("terminalX")) {
-            pendingTerminalCoords = new int[] { nbt.getInteger("terminalX"), nbt.getInteger("terminalY"),
-                nbt.getInteger("terminalZ") };
-        }
-
         // Get Module Assembler
         if (nbt.hasKey("assemblerX")) {
             pendingAssemblerCoords = new int[] { nbt.getInteger("assemblerX"), nbt.getInteger("assemblerY"),
@@ -602,7 +676,7 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
 
     public void setGantryTerminal(TileEntityGantryTerminal teg) {
         this.gantryTerminal = teg;
-        updateLinkedAssembler();
+        foundTerminalCount++;
     }
 
     /**
