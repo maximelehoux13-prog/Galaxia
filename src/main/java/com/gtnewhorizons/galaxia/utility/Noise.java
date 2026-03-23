@@ -67,21 +67,18 @@ public class Noise {
         // xi = xi' - (x₁'+x₂'+...xn') * G
         contribX -= unskew;
         contribZ -= unskew;
-        // distances between the point and corner, max spacing is cell size (SQRT_2 / 4.) so need to renormalize later
+        // distances between the point and corner
         MathUtil.Vec2D delta = new MathUtil.Vec2D(x - contribX, z - contribZ);
         // only calculate the contribution if the corner is close enough
-        double s = 0.5 - delta.distSquare();
-        s *= (int) (s + 1); // scuffed fast max(0, s) for 0 branch, since s is between 0.5 and -1
+        double s = 1 - (delta.distSquare() * 2.D);
+        s *= (int) (s + 1); // scuffed fast max(0, s) for 0 branch, since s is between 1 and -1
         // dot product of the distance vector and the chosen corner gradient
         double dot = delta.dot(grad);
-        double s2 = s * s, s4 = s2 * s2, s3dot = 8.0 * s * s2 * dot;
-        // s⁴×dot for each corner, ÷ 0.5⁴ to normalize it
-        double res = s4 * dot * 16.0 * 8.0 / MathUtil.SQRT_2;
-        // partial derivative in x is (Δx×s⁴-8Δx×s³×dot)
-        MathUtil.Vec2D deriv = grad.mul(s4)
-            .sub(delta.mul(s3dot));
-        /// divided by 5/6 I guess?!?
-        return new double[] { res * 6.0 / 5.0, deriv.x, deriv.y };
+        double s2 = s * s, s4 = s2 * s2, s3dot = 16.0 * s * s2 * dot;
+        // s⁸×dot for each corner, to normalize it needs to divide by 2048*sqrt(2)/19683 (I'm not joking)
+        double res = s4 * dot / (2048 * MathUtil.SQRT_2 / 19683) / 3; // divided by 3 because 3 contributions
+        // partial derivative in x is (Δx×s⁸-16Δx×s⁶×dot)
+        return new double[] { res, (grad.x * s4 - delta.x * s3dot) / 3, (grad.y * s4 - delta.y * s3dot) / 3 };
     }
 
     /**
@@ -101,13 +98,15 @@ public class Noise {
         double xp = x + skew_factor, zp = z + skew_factor;
 
         // get the corners and the position of the point inside the cell
-        int xb = (int) xp, zb = (int) zp;
+        int xb = (int) Math.floor(xp), zb = (int) Math.floor(zp);
         double xi = xp - xb, zi = zp - zb;
 
+        // branchless comparison and choosing the right 2nd corner
+        int xz = (int) (xi - zi + 1.0);
         // chose which cell we are in
         // a, b and c are the three corners of the 2D cell
         double[] res_a = getSimplexContrib2D(x, z, xb, zb);
-        double[] res_b = getSimplexContrib2D(x, z, xb + (xi > zi ? 1 : 0), zb + (xi > zi ? 0 : 1));
+        double[] res_b = getSimplexContrib2D(x, z, xb + xz, zb + (1 - xz));
         double[] res_c = getSimplexContrib2D(x, z, xb + 1, zb + 1);
 
         // sum everything together
@@ -118,12 +117,8 @@ public class Noise {
     /**
      * gets the 3d value and derivative of a single corner of a simplex cell
      *
-     * @param x        pos x
-     * @param y        pos y
-     * @param z        pos z
-     * @param contribX corner to calculate from
-     * @param contribY corner to calculate from
-     * @param contribZ corner to calculate from
+     * @param point   point inside the simplex
+     * @param contrib corner to calculate from
      * @return 4 value array containing the value then the part derivative along x, y and z
      */
     protected double[] getSimplexContrib3D(MathUtil.Vec3D point, MathUtil.Vec3D contrib) {
@@ -133,22 +128,21 @@ public class Noise {
         // unskew the corner back to their original position
         double unskew = (contrib.x + contrib.y + contrib.z) * G3D;
         // xi = xi' - (x₁'+x₂'+...xn') * G
-        contrib.x -= unskew;
-        contrib.y -= unskew;
-        contrib.z -= unskew;
-        // distances between the point and corner, max spacing is cell size (SQRT_6 / 6.) so need to renormalize later
-        MathUtil.Vec3D delta = new MathUtil.Vec3D(point.x - contrib.x, point.y - contrib.y, point.z - contrib.z);
+        contrib = contrib.sub(new MathUtil.Vec3D(unskew, unskew, unskew));
+        // distances between the point and corner
+        MathUtil.Vec3D delta = point.sub(contrib);
         // only calculate the contribution if the corner is close enough
-        double s = 0.5 - delta.distSquare();
-        s *= (int) (s + 1); // scuffed fast max(0, s) for 0 branch, since s is between 0.5 and -1
+        double s = 1 - (delta.distSquare() * 2.D);
+        s *= (int) (s + 1); // scuffed fast max(0, s2) for 0 branch, since s2 is between 1 and -1
         // dot product of the distance vector and the chosen corner gradient
         double dot = delta.dot(grad);
-        double s2 = s * s, s4 = s2 * s2, s3dot = 8.0 * s * s2 * dot;
-        // s⁴×dot for each corner, ÷ 0.5⁴ to normalize it
-        double res = s4 * dot * 16.0 * 12.0 / MathUtil.SQRT_6;
-        // partial derivative in x is (Δx×s⁴-8Δx×s³×dot)
+        double s2 = s * s, s4 = s2 * s2, s3dot = 16.0 * s * s2 * dot;
+        // s⁸×dot for each corner, to normalize it needs to divide by 2048*sqrt(2)/19683 (I'm not joking)
+        double res = s4 * dot / (2048 * MathUtil.SQRT_2 / 19683) / 4; // /4 because 4 contributions
+        // partial derivative in x is (Δx×s⁴-16Δx×s³×dot)
         MathUtil.Vec3D deriv = grad.mul(s4)
-            .sub(delta.mul(s3dot)); // TODO: actually recalculate for 3D (it might be ok already)
+            .sub(delta.mul(s3dot))
+            .mul(0.25);
         return new double[] { res, deriv.x, deriv.y, deriv.z };
     }
 
@@ -170,7 +164,7 @@ public class Noise {
         double xp = x + skew_factor, yp = y + skew_factor, zp = z + skew_factor;
 
         // get the corners and the position of the point inside the cell
-        int xb = (int) xp, yb = (int) yp, zb = (int) zp;
+        int xb = (int) Math.floor(xp), yb = (int) Math.floor(yp), zb = (int) Math.floor(zp);
         double xi = xp - xb, yi = yp - yb, zi = zp - zb;
 
         // branchless comparison and choosing the right 2nd and 3rd corners
@@ -210,18 +204,18 @@ public class Noise {
         result[0] = new double[sizeX * sizeZ];
         result[1] = new double[sizeX * sizeZ];
         result[2] = new double[sizeX * sizeZ];
-        double amplitude = 0.25;
-        for (int o = 1; o <= octaves; ++o) {
-            for (int x1 = 0; x1 < sizeX; ++x1) {
-                for (int z1 = 0; z1 < sizeZ; ++z1) {
-                    // TODO: change that (don't use the same seed for all octaves !!!
-                    double[] current = noise.simplex2D((x1 + x) / amplitude, (z1 + z) / amplitude);
+        for (int x1 = 0; x1 < sizeX; ++x1) {
+            for (int z1 = 0; z1 < sizeZ; ++z1) {
+                double amplitude = 0.5;
+                for (int o = 1; o <= octaves; ++o) {
+                    // TODO: change that (don't use the same seed for all octaves !!!)
+                    double[] current = noise.simplex2D((x + x1) / amplitude, (z + z1) / amplitude);
                     result[0][x1 + (z1 << 4)] += current[0] * amplitude;
                     result[1][x1 + (z1 << 4)] += current[1] * amplitude;
                     result[2][x1 + (z1 << 4)] += current[2] * amplitude;
+                    amplitude /= 2.0;
                 }
             }
-            amplitude /= 2.0;
         }
         return result;
     }
@@ -245,24 +239,25 @@ public class Noise {
         result[1] = new double[sizeX * sizeY * sizeZ];
         result[2] = new double[sizeX * sizeY * sizeZ];
         result[3] = new double[sizeX * sizeY * sizeZ];
-        double amplitude = 0.25;
-        for (int o = 1; o <= octaves; ++o) {
-            for (int x1 = 0; x1 < sizeX; ++x1) {
-                for (int y1 = 0; y1 < sizeY; ++y1) {
-                    for (int z1 = 0; z1 < sizeZ; ++z1) {
+        for (int x1 = 0; x1 < sizeX; ++x1) {
+            for (int y1 = 0; y1 < sizeY; ++y1) {
+                for (int z1 = 0; z1 < sizeZ; ++z1) {
+                    double amplitude = 0.5;
+                    for (int o = 1; o <= octaves; ++o) {
                         // TODO: change that (don't use the same seed for all octaves !!!
                         double[] current = noise.simplex3D(
                             (x + (double) x1) / amplitude,
                             (y + (double) y1) / amplitude,
                             (z + (double) z1) / amplitude);
-                        result[0][x1 + (y1 << 4) + (z1 << 8)] += current[0] * amplitude;
-                        result[1][x1 + (y1 << 4) + (z1 << 8)] += current[1] * amplitude;
-                        result[2][x1 + (y1 << 4) + (z1 << 8)] += current[2] * amplitude;
-                        result[3][x1 + (y1 << 4) + (z1 << 8)] += current[2] * amplitude;
+                        int index = x1 + (y1 * sizeX) + (z1 * sizeX * sizeY);
+                        result[0][index] += current[0] * amplitude;
+                        result[1][index] += current[1] * amplitude;
+                        result[2][index] += current[2] * amplitude;
+                        result[3][index] += current[2] * amplitude;
+                        amplitude /= 2.0;
                     }
                 }
             }
-            amplitude /= 2.0;
         }
         return result;
     }

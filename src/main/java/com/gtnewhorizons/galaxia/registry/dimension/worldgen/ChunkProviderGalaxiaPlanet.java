@@ -50,8 +50,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         this.worldObj = world;
 
         this.rand = new Random(world.getSeed());
-        this.baseNoise = new Noise(512, world.getSeed());
-        this.caveNoise = new Noise(512 * 512 * 512, world.getSeed() + 1);
+        this.baseNoise = new Noise(512, this.rand.nextLong());
+        this.caveNoise = new Noise(512, this.rand.nextLong());
         if (showDebug) writeDebug();
     }
 
@@ -214,7 +214,7 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
 
     private boolean generateCave(int localX, int localY, int localZ, int height) {
         if (localY >= 256) return false;
-        double localNoise = caveCache[localX + (localY << 4) + (localZ << 8)];
+        double localNoise = caveCache[localX + (localY * 16) + (localZ * 16 * 256)];
         double boundTightening;
         int ceilingDistance = height - localY;
         if (ceilingDistance > 0 && ceilingDistance < 16) {
@@ -224,8 +224,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         } else {
             boundTightening = (double) 1 / (Math.max(localY - 1, 1));
         }
-        double lowerBound = -0.7 + 0.05 * boundTightening;
-        double upperBound = 0.7 - 0.05 * boundTightening;
+        double lowerBound = -0.05 + 0.05 * boundTightening;
+        double upperBound = 0.05 - 0.05 * boundTightening;
         return localNoise < upperBound && localNoise > lowerBound;
     }
 
@@ -235,10 +235,10 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
             return blockMetas.get(0);
         }
         BlockMeta surfaceBlock;
-        double noise = Noise.simplexOctaves2D(x, z, 1, 1, 8, baseNoise)[0][0];
-        noise += 8;
+        double noise = Noise.simplexOctaves2D(x, z, 1, 1, 4, baseNoise)[0][0];
+        noise += 1;
+        noise /= 2;
         noise *= surfaceBlockCount;
-        noise /= 16;
         int pickedSurface = (int) Math.floor(noise);
         if (pickedSurface >= surfaceBlockCount) {
             pickedSurface = surfaceBlockCount - 1;

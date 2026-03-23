@@ -11,8 +11,7 @@ import com.gtnewhorizons.galaxia.utility.Noise;
 public class WorldChunkManagerSpace extends WorldChunkManager {
 
     private BiomeGenBase[][] biomeGeneratorMatrix;
-    private Noise xBiomeNoise;
-    private Noise zBiomeNoise;
+    private Noise biomeNoise;
 
     private boolean cacheCreated = false;
     private int cacheX = 0;
@@ -29,11 +28,10 @@ public class WorldChunkManagerSpace extends WorldChunkManager {
      */
     public void assignSeed(long seed) {
         // Ignore if no required noise
-        if (xBiomeNoise != null) {
+        if (biomeNoise != null) {
             return;
         }
-        xBiomeNoise = new Noise(2048, seed);
-        zBiomeNoise = new Noise(2048, -seed ^ 1234567);
+        biomeNoise = new Noise(2048, seed);
     }
 
     /**
@@ -60,15 +58,21 @@ public class WorldChunkManagerSpace extends WorldChunkManager {
             if (biomeGeneratorMatrix.length == 1 && biomeGeneratorMatrix[0].length == 1) {
                 cacheX = x;
                 cacheZ = z;
-                cacheCreated = true;
                 cacheBiomeIndexX = 0;
                 cacheBiomeIndexZ = 0;
+                cacheCreated = true;
                 return biomeGeneratorMatrix[cacheBiomeIndexX][cacheBiomeIndexZ];
             }
-            cacheBiomeIndexX = getBiomeIndex(x, z, biomeGeneratorMatrix.length, xBiomeNoise, true);
-            cacheBiomeIndexZ = getBiomeIndex(x, z, biomeGeneratorMatrix[0].length, zBiomeNoise, false);
+            int[] cacheBiomeIndex = getBiomeIndex(
+                x,
+                z,
+                biomeGeneratorMatrix.length,
+                biomeGeneratorMatrix[0].length,
+                biomeNoise);
             cacheX = x;
             cacheZ = z;
+            cacheBiomeIndexX = cacheBiomeIndex[0];
+            cacheBiomeIndexZ = cacheBiomeIndex[1];
             cacheCreated = true;
         }
         return biomeGeneratorMatrix[cacheBiomeIndexX][cacheBiomeIndexZ];
@@ -79,23 +83,22 @@ public class WorldChunkManagerSpace extends WorldChunkManager {
      *
      * @param x              The x index of the matrix to check
      * @param z              The z index of the matrix to check
-     * @param matrixLength   The size of the matrix (i.e. 3 for a 3x3)
+     * @param matrixLengthX  The size of the matrix (i.e. 3 for a 3x3)
+     * @param matrixLengthZ  The size of the matrix (i.e. 3 for a 3x3)
      * @param noiseGenerator The noise generator used for biome distribution
-     * @param firstIndex     Whether this biome is the first index or not
      * @return The index of the biome in the matrix
      */
-    private int getBiomeIndex(int x, int z, int matrixLength, Noise noiseGenerator, boolean firstIndex) {
-        double noise = Noise.simplexOctaves2D(x, z, 1, 1, 6, noiseGenerator)[0][0];
-        noise = (noise + 1.0) / 2.0;
-        if (noise < 0) noise = 0;
-        if (noise > 1) noise = 1;
-        noise *= matrixLength;
-        if (firstIndex) {
-            cacheNoiseX = noise;
-        } else {
-            cacheNoiseZ = noise;
-        }
-        return (int) noise;
+    private int[] getBiomeIndex(int x, int z, int matrixLengthX, int matrixLengthZ, Noise noiseGenerator) {
+        double[][] noise = Noise.simplexOctaves2D(x, z, 1, 1, 4, noiseGenerator);
+        double noiseX = noise[1][0];
+        double noiseZ = noise[2][0];
+        noiseX = (noiseX + 1.D) / 2.D;
+        noiseZ = (noiseZ + 1.D) / 2.D;
+        noiseX *= matrixLengthX;
+        noiseZ *= matrixLengthZ;
+        cacheNoiseX = noiseX;
+        cacheNoiseZ = noiseZ;
+        return new int[] { (int) noiseX, (int) noiseZ };
     }
 
     /**
@@ -106,8 +109,8 @@ public class WorldChunkManagerSpace extends WorldChunkManager {
     public BiomeGenBase[] getLocalBiomes(int x, int z) {
         BiomeGenBase[] localBiomes = new BiomeGenBase[4];
         localBiomes[0] = this.getBiomeGenAt(x, z);
-        int adjacentIndexX = cacheBiomeIndexX + 1 >= biomeGeneratorMatrix.length ? 0 : cacheBiomeIndexX + 1;
-        int adjacentIndexZ = cacheBiomeIndexZ + 1 >= biomeGeneratorMatrix[0].length ? 0 : cacheBiomeIndexZ + 1;
+        int adjacentIndexX = cacheBiomeIndexX + 1 == biomeGeneratorMatrix.length ? 0 : cacheBiomeIndexX + 1;
+        int adjacentIndexZ = cacheBiomeIndexZ + 1 == biomeGeneratorMatrix[0].length ? 0 : cacheBiomeIndexZ + 1;
         localBiomes[1] = biomeGeneratorMatrix[adjacentIndexX][cacheBiomeIndexZ];
         localBiomes[2] = biomeGeneratorMatrix[cacheBiomeIndexX][adjacentIndexZ];
         localBiomes[3] = biomeGeneratorMatrix[adjacentIndexX][adjacentIndexZ];
