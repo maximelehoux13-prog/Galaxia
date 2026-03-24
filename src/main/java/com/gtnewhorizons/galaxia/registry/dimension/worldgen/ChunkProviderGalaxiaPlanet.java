@@ -205,7 +205,9 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
                     }
                     if (block != null) {
                         storage[sy].func_150818_a(localX, y & 15, localZ, block);
-                        storage[sy].setExtBlockMetadata(localX, y & 15, localZ, meta);
+                        if (meta != 0) {
+                            storage[sy].setExtBlockMetadata(localX, y & 15, localZ, meta);
+                        }
                     }
                 }
             }
