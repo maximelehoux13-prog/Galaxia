@@ -1,5 +1,9 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
+import com.gtnewhorizons.galaxia.vaporchamber.BlockVaporChamber;
+import com.gtnewhorizons.galaxia.vaporchamber.BlockVaporChamberController;
+import com.gtnewhorizons.galaxia.vaporchamber.TileEntityVaporChamber;
+import com.gtnewhorizons.galaxia.vaporchamber.TileEntityVaporChamberController;
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
 
@@ -39,6 +43,8 @@ public enum GalaxiaBlocksEnum {
     FUMAROLE(new BlockFumarole(), TileEntityFumarole.class, "fumarole"),
     GANTRY(new BlockGantry(), TileEntityGantry.class, "gantry_block"),
     GANTRY_TERMINAL(new BlockGantryTerminal(), TileEntityGantryTerminal.class, "gantry_terminal"),
+    VAPOR(new BlockVaporChamber(), TileEntityVaporChamber.class, "vapor_chamber"),
+    VAPORCONTROLLER(new BlockVaporChamberController(), TileEntityVaporChamberController.class, "vapor_chamber_controller"),
 
     // NON-TE
     SPACE_STATION_BLOCK(new BlockSpaceStation(), "space_station_block"),

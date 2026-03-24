@@ -163,6 +163,7 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
                 }
                 int height = Math.max(1, (int) heightMap[localX + (localZ << 4)]);
                 for (int y = 0; y < Math.max(oceanHeight, height); y++) {
+                    int meta = 0;
                     int sy = y >> 4;
                     if (storage[sy] == null) {
                         storage[sy] = new ExtendedBlockStorage(sy << 4, !worldObj.provider.hasNoSky);
@@ -174,28 +175,22 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
                     if (y <= oceanHeight) {
                         if (y > height - 1) {
                             if (y == oceanHeight - 2 && oceanHeight - height >= 2) {
-                                block = getOceanSurfaceBlock(
-                                    oceanFiller,
-                                    oceanCrackBlock,
-                                    oceanCrackThickness,
-                                    oceanCrackComplexity,
-                                    chunkX * 16 + localX,
-                                    chunkZ * 16 + localZ);
-                            } else if (y == oceanHeight - 1 && oceanHeight - height >= 2) {
-                                block = getOceanSurfaceBlock(
-                                    oceanFiller,
-                                    oceanCrackBlock,
-                                    oceanCrackThickness,
-                                    oceanCrackComplexity,
-                                    chunkX * 16 + localX,
-                                    chunkZ * 16 + localZ);
+                                block = getOceanSurfaceBlock(oceanFiller, oceanCrackBlock, oceanCrackThickness, oceanCrackComplexity, chunkX * 16 + localX, chunkZ * 16 + localZ);
+                                if (block == oceanCrackBlock) {
+                                    meta = 1;
+                                }
+                            }
+                            else if (y == oceanHeight - 1 && oceanHeight - height >= 2) {
+                                block = getOceanSurfaceBlock(oceanFiller, oceanCrackBlock, oceanCrackThickness, oceanCrackComplexity, chunkX * 16 + localX, chunkZ * 16 + localZ);
                                 if (block != oceanFiller) {
                                     block = Blocks.air;
                                 }
-                            } else {
+                            }
+                            else {
                                 block = oceanFiller;
                             }
-                        } else if (y == height - 1) {
+                        }
+                        else if (y == height - 1) {
                             if (y > seabedHeight) {
                                 block = oceanSurface;
                             } else {
@@ -210,6 +205,7 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
                     }
                     if (block != null) {
                         storage[sy].func_150818_a(localX, y & 15, localZ, block);
+                        storage[sy].setExtBlockMetadata(localX, y & 15, localZ, meta);
                     }
                 }
             }
