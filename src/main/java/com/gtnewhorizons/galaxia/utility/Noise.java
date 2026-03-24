@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class Noise {
 
-    protected double scale = 1;
+    protected double scale;
     protected long seed;
     protected int[] perm;
     // each line is x1, y1, z1, x2, y2, z2
@@ -71,14 +71,14 @@ public class Noise {
         MathUtil.Vec2D delta = new MathUtil.Vec2D(x - contribX, z - contribZ);
         // only calculate the contribution if the corner is close enough
         double s = 1 - (delta.distSquare() * 2.D);
-        s *= (int) (s + 1); // scuffed fast max(0, s) for 0 branch, since s is between 1 and -1
+        s *= (int) (s + 0.999999); // scuffed fast max(0, s) for 0 branch, since s is between 1 and -1
         // dot product of the distance vector and the chosen corner gradient
         double dot = delta.dot(grad);
         double s2 = s * s, s4 = s2 * s2, s3dot = 16.0 * s * s2 * dot;
-        // s⁸×dot for each corner, to normalize it needs to divide by 2048*sqrt(2)/19683 (I'm not joking)
+        // s⁸×dot for each corner, to normalize it needs to be divided by 2048*sqrt(2)/19683 (I'm not joking)
         double res = s4 * dot / (2048 * MathUtil.SQRT_2 / 19683) / 3; // divided by 3 because 3 contributions
         // partial derivative in x is (Δx×s⁸-16Δx×s⁶×dot)
-        return new double[] { res, (grad.x * s4 - delta.x * s3dot) / 3, (grad.y * s4 - delta.y * s3dot) / 3 };
+        return new double[] { res, (grad.x * s4 - delta.x * s3dot), (grad.y * s4 - delta.y * s3dot) };
     }
 
     /**
@@ -207,12 +207,13 @@ public class Noise {
         for (int x1 = 0; x1 < sizeX; ++x1) {
             for (int z1 = 0; z1 < sizeZ; ++z1) {
                 double amplitude = 0.5;
+                int index = x1 + (z1 << 4);
                 for (int o = 1; o <= octaves; ++o) {
                     // TODO: change that (don't use the same seed for all octaves !!!)
                     double[] current = noise.simplex2D((x + x1) / amplitude, (z + z1) / amplitude);
-                    result[0][x1 + (z1 << 4)] += current[0] * amplitude;
-                    result[1][x1 + (z1 << 4)] += current[1] * amplitude;
-                    result[2][x1 + (z1 << 4)] += current[2] * amplitude;
+                    result[0][index] += current[0] * amplitude;
+                    result[1][index] += current[1] * amplitude;
+                    result[2][index] += current[2] * amplitude;
                     amplitude /= 2.0;
                 }
             }
@@ -291,7 +292,7 @@ public class Noise {
         double size = (rand.nextDouble() * (maxSize - minSize) + minSize) * MathUtil.SQRT_2 / 4.;
 
         // distances between the point and circle center
-        double[] delta = new double[] { x - contribX - grad[0], x - contribZ - grad[1] };
+        double[] delta = new double[] { x - contribX - grad[0], z - contribZ - grad[1] };
 
         double distance = delta[0] * delta[0] + delta[1] * delta[1] + size * size;
         if (distance > 0D) return new double[] { 0D, 1D, 0D };

@@ -29,6 +29,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
     private final Random rand;
     private final Noise baseNoise;
     private final Noise caveNoise;
+    private final Noise caveNoise2;
+    private final Noise caveNoise3;
     private final boolean showDebug = false;
     private final BlockMeta air = new BlockMeta(Blocks.air, 0);
     private final BlockMeta bedrock = new BlockMeta(Blocks.bedrock, 0);
@@ -40,6 +42,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
     private final BlockMeta gravel = new BlockMeta(Blocks.gravel, 0);
 
     private double[] caveCache = new double[256 * 256];
+    private double[] caveCache2 = new double[256 * 256];
+    private double[] caveCache3 = new double[256 * 256];
 
     /**
      * Constructor to initialize the world and noise/random generators
@@ -50,8 +54,10 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         this.worldObj = world;
 
         this.rand = new Random(world.getSeed());
-        this.baseNoise = new Noise(512, this.rand.nextLong());
-        this.caveNoise = new Noise(512, this.rand.nextLong());
+        this.baseNoise = new Noise(256, this.rand.nextLong());
+        this.caveNoise = new Noise(256, this.rand.nextLong());
+        this.caveNoise2 = new Noise(256, this.rand.nextLong());
+        this.caveNoise3 = new Noise(1024, this.rand.nextLong());
         if (showDebug) writeDebug();
     }
 
@@ -66,7 +72,7 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
     public Chunk provideChunk(int chunkX, int chunkZ) {
         Chunk chunk = new Chunk(worldObj, chunkX, chunkZ);
         ExtendedBlockStorage[] storage = chunk.getBlockStorageArray();
-        prepareCaveCache(chunkX, chunkZ);
+        int chunkMaxHeight = 0;
 
         // Get local biomes
         double[] heightMap = generateBaseHeightmap(chunkX, chunkZ);
@@ -133,7 +139,9 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         }
         for (int i = 0; i < 256; i++) {
             heightMap[i] = Math.max(1, Math.min(256, heightMap[i]));
+            if (heightMap[i] > chunkMaxHeight) chunkMaxHeight = (int) heightMap[i];
         }
+        prepareCaveCache(chunkX, chunkZ, chunkMaxHeight);
 
         // Generate blocks
         BlockMeta topBlock = grass;
@@ -193,7 +201,7 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
                         }
                     }
                     if (generateCaves && (blockMeta == fillerBlock || blockMeta == topBlock || blockMeta == snowBlock)
-                        && generateCave(localX, y, localZ, height)) {
+                        && generateCave(localX, y, localZ, height, chunkMaxHeight)) {
                         blockMeta = air;
                     }
                     if (blockMeta.block() != null) {
@@ -208,13 +216,18 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         return chunk;
     }
 
-    private void prepareCaveCache(int chunkX, int chunkZ) {
-        caveCache = Noise.simplexOctaves3D(chunkX * 16, 0, chunkZ * 16, 16, 256, 16, 3, caveNoise)[0];
+    private void prepareCaveCache(int chunkX, int chunkZ, int maxHeight) {
+        caveCache = Noise.simplexOctaves3D(chunkX * 16, 0, chunkZ * 16, 16, maxHeight, 16, 3, caveNoise)[0];
+        caveCache2 = Noise.simplexOctaves3D(chunkX * 16, 0, chunkZ * 16, 16, maxHeight, 16, 3, caveNoise2)[0];
+        caveCache3 = Noise.simplexOctaves3D(chunkX * 16, 0, chunkZ * 16, 16, maxHeight, 16, 3, caveNoise3)[0];
     }
 
-    private boolean generateCave(int localX, int localY, int localZ, int height) {
+    private boolean generateCave(int localX, int localY, int localZ, int height, int maxHeight) {
         if (localY >= 256) return false;
-        double localNoise = caveCache[localX + (localY * 16) + (localZ * 16 * 256)];
+        int index = localX + (localY * 16) + (localZ * 16 * maxHeight);
+        double localNoise = Math.pow(caveCache[index], 2);
+        localNoise += Math.pow(caveCache2[index], 2);
+        localNoise += Math.pow(caveCache3[index], 2) / 2.;
         double boundTightening;
         int ceilingDistance = height - localY;
         if (ceilingDistance > 0 && ceilingDistance < 16) {
@@ -224,9 +237,8 @@ public class ChunkProviderGalaxiaPlanet implements IChunkProvider {
         } else {
             boundTightening = (double) 1 / (Math.max(localY - 1, 1));
         }
-        double lowerBound = -0.05 + 0.05 * boundTightening;
-        double upperBound = 0.05 - 0.05 * boundTightening;
-        return localNoise < upperBound && localNoise > lowerBound;
+        double bound = 0.0005 - 0.0005 * boundTightening;
+        return localNoise < bound;
     }
 
     private BlockMeta getSurfaceBlock(List<BlockMeta> blockMetas, int x, int z) {
