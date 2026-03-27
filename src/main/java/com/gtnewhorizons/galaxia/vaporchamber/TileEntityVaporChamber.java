@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import com.gtnewhorizon.gtnhlib.blockpos.IBlockPos;
 import com.gtnewhorizons.galaxia.registry.block.PlanetBlocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -26,11 +27,8 @@ public class TileEntityVaporChamber extends TileEntity {
         Vec3.createVectorHelper(0, 0, 1), Vec3.createVectorHelper(0, 0, -1),
         Vec3.createVectorHelper(0, 1, 0), Vec3.createVectorHelper(0, -1, 0)};
 
-    private List<int[]> pendingNeighbourCoords = new ArrayList<>();
-
     List<TileEntityVaporChamber> neighbours = new ArrayList<>();
     public Set<BlockPos> notNeighbours = new HashSet<>();
-    public List<Vec3> neighbourDirs = new ArrayList<>();
 
     private int refrigerantAmount = 1000;
 
@@ -46,7 +44,7 @@ public class TileEntityVaporChamber extends TileEntity {
         }
 
         try {
-            worldObj.playerEntities.get(0).addChatMessage(new ChatComponentText(Integer.toString(neighbours.size())));
+            //worldObj.playerEntities.get(0).addChatMessage(new ChatComponentText(Integer.toString(neighbours.size())));
         }
         catch (Exception e) {
 
@@ -88,14 +86,8 @@ public class TileEntityVaporChamber extends TileEntity {
     public void updateNeighbourDirs() {
         if (worldObj.isRemote) return;
 
-        // Clear list and go through neighbours getting vectors
-        neighbourDirs.clear();
+        // Clear list and go through neighbours
         for (TileEntityVaporChamber neighbour : neighbours) {
-            neighbourDirs.add(
-                Vec3.createVectorHelper(
-                    neighbour.xCoord - xCoord,
-                    neighbour.yCoord - yCoord,
-                    neighbour.zCoord - zCoord));
             notNeighbours.remove(new BlockPos(neighbour.xCoord, neighbour.yCoord, neighbour.zCoord));
         }
 
@@ -126,47 +118,50 @@ public class TileEntityVaporChamber extends TileEntity {
     @Override
     public void writeToNBT(NBTTagCompound tag) {
         super.writeToNBT(tag);
-        NBTTagList neighbourList = new NBTTagList();
+
+        int[] array = new int[]{};
         for (TileEntityVaporChamber neighbour : neighbours) {
-            NBTTagCompound neighbourTag = new NBTTagCompound();
-            neighbourTag.setInteger("x", neighbour.xCoord);
-            neighbourTag.setInteger("y", neighbour.yCoord);
-            neighbourTag.setInteger("z", neighbour.zCoord);
-            neighbourList.appendTag(neighbourTag);
+            array = ArrayUtils.addAll(array, neighbour.xCoord, neighbour.yCoord, neighbour.zCoord);
         }
-        tag.setTag("neighbours", neighbourList);
 
-        NBTTagList dirList = new NBTTagList();
-        for (Vec3 dir : neighbourDirs) {
-            NBTTagCompound entry = new NBTTagCompound();
-            entry.setDouble("x", dir.xCoord);
-            entry.setDouble("y", dir.yCoord);
-            entry.setDouble("z", dir.zCoord);
-            dirList.appendTag(entry);
+        tag.setIntArray("neighbours", array);
+
+        array = new int[]{};
+        for (BlockPos pos : notNeighbours) {
+            array = ArrayUtils.addAll(array, pos.x, pos.y, pos.z);
         }
-        tag.setTag("neighbourDirs", dirList);
 
+        tag.setIntArray("notNeighbours", array);
     }
 
     @Override
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
 
-        NBTTagList neighbourList = tag.getTagList("neighbours", NBT.TAG_COMPOUND);
-        pendingNeighbourCoords = new ArrayList<>();
-
-        for (int i = 0; i < neighbourList.tagCount(); i++) {
-            NBTTagCompound entry = neighbourList.getCompoundTagAt(i);
-            pendingNeighbourCoords
-                .add(new int[]{entry.getInteger("x"), entry.getInteger("y"), entry.getInteger("z"),});
+        if (tag.hasKey("neighbours")) {
+            int[] array = {};
+            for (int integer : tag.getIntArray("neighbours")) {
+                array = ArrayUtils.add(array, integer);
+                if (array.length == 3) {
+                    if (worldObj.getTileEntity(array[0], array[1], array[2]) instanceof TileEntityVaporChamber teev) {
+                        neighbours.add(teev);
+                    }
+                    array = new int[]{};
+                }
+            }
         }
 
-        neighbourDirs.clear();
-        NBTTagList list = tag.getTagList("neighbourDirs", NBT.TAG_COMPOUND);
-        for (int i = 0; i < list.tagCount(); i++) {
-            NBTTagCompound entry = list.getCompoundTagAt(i);
-            neighbourDirs
-                .add(Vec3.createVectorHelper(entry.getDouble("x"), entry.getDouble("y"), entry.getDouble("z")));
+        if (tag.hasKey("notNeighbours")) {
+            int[] array = {};
+            for (int integer : tag.getIntArray("notNeighbours")) {
+                array = ArrayUtils.add(array, integer);
+                if (array.length == 3) {
+                    if (!(worldObj.getTileEntity(array[0], array[1], array[2]) instanceof TileEntityVaporChamber)){
+                        notNeighbours.add(new BlockPos(array[0], array[1], array[2]));
+                    }
+                    array = new int[]{};
+                }
+            }
         }
     }
 
@@ -177,7 +172,7 @@ public class TileEntityVaporChamber extends TileEntity {
 
         int[] array = new int[]{};
         for (TileEntityVaporChamber neighbour : neighbours) {
-            array = ArrayUtils.addAll(array, new int[]{neighbour.xCoord, neighbour.yCoord, neighbour.zCoord});
+            array = ArrayUtils.addAll(array, neighbour.xCoord, neighbour.yCoord, neighbour.zCoord);
         }
 
         tag.setIntArray("neighbours", array);

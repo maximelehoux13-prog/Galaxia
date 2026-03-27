@@ -84,17 +84,10 @@ public class BlockVaporChamber extends Block implements ITileEntityProvider {
         }
 
         // Iterate through neighbours and disconnect them
-        for (Vec3 check_offset : new ArrayList<>(terminal.neighbourDirs)) {
-            int cx = x + (int) check_offset.xCoord;
-            int cy = y + (int) check_offset.yCoord;
-            int cz = z + (int) check_offset.zCoord;
-
-            TileEntity checkTileEntity = world.getTileEntity(cx, cy, cz);
-            if (checkTileEntity instanceof TileEntityVaporChamber checkVaporChamber) {
-                terminal.disconnect(checkVaporChamber);
-            }
+        for (TileEntityVaporChamber unlink : new ArrayList<>(terminal.neighbours)) {
+            terminal.disconnect(unlink);
+            unlink.notNeighbours.add(new BlockPos(x, y, z));
         }
-
     }
 
     @Override

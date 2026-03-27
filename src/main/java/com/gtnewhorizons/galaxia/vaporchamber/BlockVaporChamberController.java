@@ -29,8 +29,6 @@ public class BlockVaporChamberController extends Block implements ITileEntityPro
             return;
         }
 
-        if (world.getTileEntity(x, y - 1, z) instanceof TileEntityVaporChamber tevc) {
-            tevcc.bfs(tevc);
-        }
+        tevcc.genGrid();
     }
 }
