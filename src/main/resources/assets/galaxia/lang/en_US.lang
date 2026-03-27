@@ -218,6 +218,7 @@ galaxia.gui.rocket_silo.builder.enter_rocket=Enter Rocket
 galaxia.gui.rocket_silo.button.viridis=Viridis
 
 # Elements - GUI - "Rocket Silo Validator"
+galaxia.gui.rocket_silo.validator.lander_none=Requires a Lander module
 galaxia.gui.rocket_silo.validator.too_heavy=This rocket is too heavy to lift off
 galaxia.gui.rocket_silo.validator.capsule_none=Requires at least one Capsule module
 galaxia.gui.rocket_silo.validator.too_many_modules=Only %d %s supported in a %s rocket
@@ -257,6 +258,11 @@ galaxia.effect.overcooling=Freezing
 death.attack.galaxia.temperature=%1$s succumbed to extreme temperature
 death.attack.galaxia.noOxygen=%1$s ran out of oxygen
 death.attack.galaxia.radiation=%1$s died from radiation exposure
+
+### Entities
+# Entities - Rocket
+entity.galaxia.EntityRocket.lander=Lander
+entity.galaxia.EntityRocket.name=Rocket
 
 #### Config
 # Config - "Rocket"
