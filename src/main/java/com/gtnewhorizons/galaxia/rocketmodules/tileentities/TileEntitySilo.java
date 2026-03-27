@@ -53,6 +53,7 @@ import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.CapsuleRequired
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.EngineToTankRatioValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.EnoughFuelValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.IRocketValidator;
+import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.LanderRequiredValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.ModulesFitInCoreValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.SingleRocketCoreValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.TierMatchesDestinationValidator;
@@ -76,6 +77,7 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
         new TierMatchesDestinationValidator(),
         new SingleRocketCoreValidator(),
         new ModulesFitInCoreValidator(),
+        new LanderRequiredValidator(),
         new EnoughFuelValidator());
     private int destination = -1;
     private final IntValue.Dynamic selectedDim = new IntValue.Dynamic(() -> destination, v -> {
