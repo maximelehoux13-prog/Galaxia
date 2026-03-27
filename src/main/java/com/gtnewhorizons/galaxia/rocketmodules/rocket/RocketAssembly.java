@@ -22,7 +22,9 @@ public final class RocketAssembly {
 
     private final List<RocketModule> modules;
     private List<ModulePlacement> placements;
-    private int destination = 0;
+    private int currentDim = 0;
+    private int destination = -1;
+    private double storedFuel = 0;
 
     public RocketAssembly(List<Integer> moduleIds) {
         this.modules = moduleIds.stream()
@@ -31,8 +33,29 @@ public final class RocketAssembly {
             .collect(Collectors.toList());
     }
 
+    public void updateCurrentDim(int dim) {
+        this.currentDim = dim;
+    }
+
+    public int getCurrentDim() {
+        return this.currentDim;
+    }
+
     public void updateDestination(int dim) {
         this.destination = dim;
+    }
+
+    public void addFuel(double fuelVolume) {
+        storedFuel += fuelVolume;
+    }
+
+    public double getStoredFuel() {
+        return this.storedFuel;
+    }
+
+    public double getFuelWeight() {
+        // TODO: Change this once fuel types are added to reflect weight of fuels
+        return this.storedFuel;
     }
 
     public int getDestination() {
@@ -175,5 +198,11 @@ public final class RocketAssembly {
 
     public List<RocketModule> getStructuralModules() {
         return new ArrayList<>();
+    }
+
+    public double getTotalFuelCapacity() {
+        return getFuelTankModules().stream()
+            .mapToDouble(m -> m.getFuelCapacity())
+            .sum();
     }
 }

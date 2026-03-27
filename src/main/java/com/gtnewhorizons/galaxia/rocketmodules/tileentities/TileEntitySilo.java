@@ -51,6 +51,7 @@ import com.gtnewhorizons.galaxia.rocketmodules.rocket.entities.EntityRocket;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.modules.CapsuleModule;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.CapsuleRequiredValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.EngineToTankRatioValidator;
+import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.EnoughFuelValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.IRocketValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.ModulesFitInCoreValidator;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.validators.SingleRocketCoreValidator;
@@ -74,7 +75,8 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
         new WeightLimitValidator(),
         new TierMatchesDestinationValidator(),
         new SingleRocketCoreValidator(),
-        new ModulesFitInCoreValidator());
+        new ModulesFitInCoreValidator(),
+        new EnoughFuelValidator());
     private int destination = -1;
     private final IntValue.Dynamic selectedDim = new IntValue.Dynamic(() -> destination, v -> {
         destination = v;
@@ -448,6 +450,7 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
                                 .tooltipDynamic(t -> {
                                     // Flag to indicate validity of rocket launching
                                     boolean validFlag = true;
+                                    getAssembly().updateCurrentDim(worldObj.provider.dimensionId);
                                     getAssembly().updateDestination(destination);
                                     if (getAssembly().getModules()
                                         .isEmpty()) {
@@ -588,7 +591,7 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
         return assembler.moduleMap.getOrDefault(id, 0) > 0;
     }
 
-    public void setDesination(int dim) {
+    public void setDestination(int dim) {
         this.destination = dim;
     }
 

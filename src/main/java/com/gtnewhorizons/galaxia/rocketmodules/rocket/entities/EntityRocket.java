@@ -64,6 +64,9 @@ public class EntityRocket extends Entity {
 
     private String lastKnownModules = "";
 
+    private double totalFuelCapacity;
+    private double storedFuel;
+
     public EntityRocket(World world) {
         super(world);
         this.noClip = true;
@@ -113,6 +116,14 @@ public class EntityRocket extends Entity {
 
     public Phase getPhase() {
         return Phase.values()[dataWatcher.getWatchableObjectByte(DW_PHASE)];
+    }
+
+    public double getStoredFuel() {
+        return storedFuel;
+    }
+
+    public double getTotalFuelCapacity() {
+        return totalFuelCapacity;
     }
 
     public List<Integer> getModuleTypes() {

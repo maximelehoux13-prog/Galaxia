@@ -225,6 +225,7 @@ galaxia.gui.rocket_silo.validator.multi_core=Only one rocket core per rocket
 galaxia.gui.rocket_silo.validator.engine_tank_ratio=Requires 1 engine per fuel tank stack
 galaxia.gui.rocket_silo.validator.destination_none=Destination not selected
 galaxia.gui.rocket_silo.validator.wrong_tier=Rocket of tier %d cannot reach %s (Tier %d)
+galaxia.gui.rocket_silo.validator.not_enough_fuel=Not enough fuel to reach %s
 
 # Elements - GUI - "Module Controller"
 galaxia.gui.module_controller.title=Module Controller

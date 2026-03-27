@@ -10,6 +10,7 @@ import net.minecraftforge.common.DimensionManager;
 import com.gtnewhorizons.galaxia.registry.dimension.asteroidbelts.FrozenBelt;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.BasePlanet;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Hemateria;
+import com.gtnewhorizons.galaxia.registry.dimension.planets.OverworldPlanet;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Panspira;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Theia;
 
@@ -34,6 +35,8 @@ public final class SolarSystemRegistry {
         if (registered) return;
         registered = true;
 
+        registerDimensionLocal(new OverworldPlanet());
+
         registerDimensions(new SpaceStation());
         registerDimensions(new Theia());
         registerDimensions(new Hemateria());
@@ -41,6 +44,26 @@ public final class SolarSystemRegistry {
         registerDimensions(new Panspira());
 
         FMLLog.info("[Galaxia] Registered %d celestial bodies", BODIES.size());
+    }
+
+    /**
+     * Registers a planet EXCLUSIVELY in local registry. Used where making a
+     * "planet" of a pre-existing dimension for consistency in calculations.
+     * These planets WILL NOT be registered as dimensions as they are presumed to
+     * already exist
+     *
+     * @param planet The planet to locally register
+     */
+    private static void registerDimensionLocal(BasePlanet planet) {
+        DimensionEnum planetEnum = planet.getPlanetEnum();
+        int id = planetEnum.getId();
+        String name = planetEnum.getName()
+            .toLowerCase();
+
+        BODIES.add(planet);
+        BY_ID.put(id, planet);
+        BY_NAME.put(name, planet);
+        GALAXIA_DIMENSIONS.add(id);
     }
 
     /**
