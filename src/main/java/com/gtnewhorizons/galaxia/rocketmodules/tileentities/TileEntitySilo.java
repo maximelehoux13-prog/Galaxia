@@ -625,7 +625,7 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo> implem
      *
      * @param dim The ID of the selected dimension
      */
-    public void setDesination(int dim) {
+    public void setDestination(int dim) {
         this.destination = dim;
     }
 

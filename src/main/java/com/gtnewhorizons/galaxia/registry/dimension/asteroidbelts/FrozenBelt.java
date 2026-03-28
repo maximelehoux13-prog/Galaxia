@@ -45,7 +45,10 @@ public class FrozenBelt extends BaseAsteroidBelt {
                 .baseTemp(67)
                 .oxygenPercent(0)
                 .pressure(1)
-                .build());
+                .build())
+            .mass(1)
+            .orbitalRadius(3 * earthRadiusToAU)
+            .radius(2);
     }
 
     /**

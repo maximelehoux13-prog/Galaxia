@@ -19,6 +19,9 @@ public class SpaceStation extends BasePlanet {
     protected DimensionBuilder customizeDimension(DimensionBuilder builder) {
         return builder.provider(getProviderClass())
             .airResistance(0)
+            .mass(1)
+            .radius(1)
+            .orbitalRadius(1.5 * earthRadiusToAU)
             .gravity(0)
             .effects(
                 EffectBuilder.builder()

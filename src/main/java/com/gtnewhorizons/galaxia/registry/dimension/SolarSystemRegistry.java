@@ -25,6 +25,7 @@ public final class SolarSystemRegistry {
     private static final Map<Integer, BasePlanet> BY_ID = new HashMap<>();
     private static final Map<String, BasePlanet> BY_NAME = new HashMap<>();
     public static final List<Integer> GALAXIA_DIMENSIONS = new ArrayList<>();
+    public static final List<Integer> GALAXIA_FAKE_DIMS = new ArrayList<>();
 
     private static boolean registered = false;
 
@@ -64,6 +65,7 @@ public final class SolarSystemRegistry {
         BY_ID.put(id, planet);
         BY_NAME.put(name, planet);
         GALAXIA_DIMENSIONS.add(id);
+        GALAXIA_FAKE_DIMS.add(id);
     }
 
     /**

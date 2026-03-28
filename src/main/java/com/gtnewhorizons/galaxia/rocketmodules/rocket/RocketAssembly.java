@@ -51,7 +51,9 @@ public final class RocketAssembly {
     }
 
     public double getStoredFuel() {
-        return this.storedFuel;
+        // TODO: REMOVE THIS ONCE FUEL IS IN AS A SYSTEM
+        return getTotalFuelCapacity();
+        // return this.storedFuel;
     }
 
     public double getFuelWeight() {

@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.utility;
 
 import static com.gtnewhorizons.galaxia.core.Galaxia.GALAXIA_NETWORK;
 import static com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry.GALAXIA_DIMENSIONS;
+import static com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry.GALAXIA_FAKE_DIMS;
 
 import javax.annotation.Nonnull;
 
@@ -257,7 +258,7 @@ public final class GalaxiaAPI {
     }
 
     public static boolean isInGalaxiaDimension(Entity e) {
-        return GALAXIA_DIMENSIONS.contains(e.dimension);
+        return GALAXIA_DIMENSIONS.contains(e.dimension) && !GALAXIA_FAKE_DIMS.contains(e.dimension);
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.utility;
 
+import static com.gtnewhorizons.galaxia.core.Galaxia.LOG;
+
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionDef;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.RocketAssembly;
 
@@ -19,9 +21,6 @@ public class OrbitalCalculatorHelper {
     // Corrective factor for unit conversion in escape velocities
     static final double escapeCorrectiveFactor = 1.65;
 
-    // Corrective factor for calculating effective exhaust velocity
-    static final double effectiveCorrectiveFactor = 2.7;
-
     // TODO: REMOVE THIS and replace as a property of different fuels
     static final double specificImpulse = 3000;
 
@@ -35,11 +34,8 @@ public class OrbitalCalculatorHelper {
      * @param launchAltitude The altitude above the body from which to launch
      * @return Effective Exhaust Velocity (v_e)
      */
-    public static double calculateEffectiveExhaustVelocity(DimensionDef launchBody, RocketAssembly assembly,
-        double launchAltitude) {
-        return effectiveCorrectiveFactor * specificImpulse
-            * (launchBody.mass())
-            / Math.pow((launchAltitude + launchBody.orbitalRadius()), 2);
+    public static double calculateEffectiveExhaustVelocity(DimensionDef launchBody, RocketAssembly assembly) {
+        return specificImpulse * launchBody.gravity() * 9.81;
     }
 
     /**
@@ -54,7 +50,7 @@ public class OrbitalCalculatorHelper {
      */
     public static double calculateMaxDeltaVelocity(DimensionDef launchBody, RocketAssembly assembly,
         double launchAltitude) {
-        final double effectiveExhaustVelocity = calculateEffectiveExhaustVelocity(launchBody, assembly, launchAltitude);
+        final double effectiveExhaustVelocity = calculateEffectiveExhaustVelocity(launchBody, assembly);
         final double dryMass = assembly.getTotalWeight();
         final double totalMass = dryMass + assembly.getFuelWeight();
 
@@ -79,7 +75,7 @@ public class OrbitalCalculatorHelper {
         // calculation, and legibility
 
         // GM of the center body
-        final double mu_s = centerBody.getMass();
+        final double mu_s = centerBody.mass();
 
         // GM of departure body
         final double mu_1 = launchBody.mass();
@@ -122,7 +118,7 @@ public class OrbitalCalculatorHelper {
          */
 
         // GM of center body
-        final double mu_s = centerBody.getMass();
+        final double mu_s = centerBody.mass();
 
         // GM of target body
         final double mu_2 = targetBody.mass();
@@ -158,6 +154,7 @@ public class OrbitalCalculatorHelper {
         SystemCenter centerBody, double startRadius, double endRadius) {
         final double v_1 = calculateHohmannV1(launchBody, targetBody, centerBody, startRadius);
         final double v_2 = calculateHohmannV2(launchBody, targetBody, centerBody, endRadius);
+        LOG.info("V2: " + v_2);
         return (Math.round((v_1 + v_2) * 100) / 100.0);
     }
 
@@ -183,7 +180,10 @@ public class OrbitalCalculatorHelper {
             centerBody,
             launchBody.radius(),
             targetBody.radius());
-        double v_e = calculateEffectiveExhaustVelocity(launchBody, assembly, launchBody.radius());
+
+        LOG.info("Required Delta V: " + requiredDeltaV);
+        double v_e = calculateEffectiveExhaustVelocity(launchBody, assembly);
+        LOG.info("v_e: " + v_e);
 
         return assembly.getTotalWeight() * (Math.exp(requiredDeltaV / v_e) - 1);
 

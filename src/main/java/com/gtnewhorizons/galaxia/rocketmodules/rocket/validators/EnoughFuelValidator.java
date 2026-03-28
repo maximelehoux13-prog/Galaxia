@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.rocketmodules.rocket.validators;
 
+import static com.gtnewhorizons.galaxia.core.Galaxia.LOG;
+
 import net.minecraft.util.StatCollector;
 
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionDef;
@@ -22,6 +24,8 @@ public class EnoughFuelValidator implements IRocketValidator {
 
         double requiredFuel = OrbitalCalculatorHelper
             .calculateFuelRequiredForTravel(assembly, launchBody, targetBody, new SystemCenter(1));
+        LOG.info(storedFuel);
+        LOG.info(requiredFuel);
         return storedFuel >= requiredFuel ? ValidationResult.success()
             : new ValidationResult(
                 false,

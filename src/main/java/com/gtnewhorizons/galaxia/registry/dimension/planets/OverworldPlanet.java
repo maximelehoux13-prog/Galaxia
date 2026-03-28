@@ -22,6 +22,7 @@ public class OverworldPlanet extends BasePlanet {
         return builder.mass(1)
             .radius(1)
             .orbitalRadius(1 * earthRadiusToAU)
+            .gravity(1)
             .tier(EnumTiers.TIER_1);
     }
 
