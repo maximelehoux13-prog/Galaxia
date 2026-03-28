@@ -33,14 +33,16 @@ public class TileEntityVaporChamberController extends TileEntity {
                         if ((cells[x][y][z] & (byte) 0b00000001) != 0) {
                             //worldObj.spawnParticle("crit", x, y + 10, z, 0, 0, 0);
 
-                            worldObj.spawnParticle("reddust", x - 0.5, y + 10, z, 1, Math.max(0f, grid.u[x][y][z]), Math.min(0f, grid.u[x][y][z]));
-                            worldObj.spawnParticle("reddust", x + 0.5, y + 10, z, 1, Math.max(0f, grid.u[x + 1][y][z]), Math.min(0f, grid.u[x + 1][y][z]));
+                            float t = 210000f;
 
-                            worldObj.spawnParticle("reddust", x, y + 9.5, z, 1, Math.max(0f, grid.v[x][y][z]), Math.min(0f, grid.v[x][y][z]));
-                            worldObj.spawnParticle("reddust", x, y + 10.5, z, 1, Math.max(0f, grid.v[x][y + 1][z]), Math.min(0f, grid.v[x][y + 1][z]));
+                            worldObj.spawnParticle("reddust", x - 0.5, y + 10, z, 1, Math.max(0f, grid.u[x][y][z]) * t, Math.min(0f, grid.u[x][y][z]) * t);
+                            worldObj.spawnParticle("reddust", x + 0.5, y + 10, z, 1, Math.max(0f, grid.u[x + 1][y][z]) * t, Math.min(0f, grid.u[x + 1][y][z]) * t);
 
-                            worldObj.spawnParticle("reddust", x, y + 10, z - 0.5, 1, Math.max(0f, grid.w[x][y][z]), Math.min(0f, grid.w[x][y][z]));
-                            worldObj.spawnParticle("reddust", x, y + 10, z + 0.5, 1, Math.max(0f, grid.w[x][y][z + 1]), Math.min(0f, grid.w[x][y][z + 1]));
+                            worldObj.spawnParticle("reddust", x, y + 9.5, z, 1, Math.max(0f, grid.v[x][y][z]) * t, Math.min(0f, grid.v[x][y][z]) * t);
+                            worldObj.spawnParticle("reddust", x, y + 10.5, z, 1, Math.max(0f, grid.v[x][y + 1][z]) * t, Math.min(0f, grid.v[x][y + 1][z]) * t);
+
+                            worldObj.spawnParticle("reddust", x, y + 10, z - 0.5, 1, Math.max(0f, grid.w[x][y][z]) * t, Math.min(0f, grid.w[x][y][z]) * t);
+                            worldObj.spawnParticle("reddust", x, y + 10, z + 0.5, 1, Math.max(0f, grid.w[x][y][z + 1]) * t, Math.min(0f, grid.w[x][y][z + 1]) * t);
                         }
                     }
                 }

@@ -4,6 +4,7 @@ import com.cleanroommc.modularui.widgets.layout.Grid;
 import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
 import net.minecraft.block.Block;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // formulas extrapolated from https://matthias-research.github.io/pages/tenMinutePhysics/17-fluidSim.pdf
@@ -62,34 +63,15 @@ public class EulerianSimAPI {
 
     public static void run(GridWrapper grid) {
         applyForces(grid);
-        for (int i = 0; i <= 20; i++) {
+        for (int i = 0; i <= 5; i++) {
             projection(grid);
         }
-        double sum = 0.0;
 
-        for (float[][] plane : grid.v) {
-            for (float[] row : plane) {
-                for (float value : row) {
-                    sum += value;
-                }
-            }
-        }
-        sum = 0.0;
         advection(grid);
-
-        for (float[][] plane : grid.v) {
-            for (float[] row : plane) {
-                for (float value : row) {
-                    sum += value;
-                }
-            }
-        }
-        sum +=1;
-        sum = sum + 1;
     }
 
     public static GridWrapper createGrid(List<BlockPos> internals, List<BlockPos> externals, BlockPos heat) {
-        List<BlockPos> combined = internals;
+        List<BlockPos> combined = new ArrayList<>(internals);
         combined.addAll(externals);
         combined.add(heat);
 
@@ -158,7 +140,9 @@ public class EulerianSimAPI {
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[i].length; j++) {
                 for (int k = 0; k < cells[i][j].length; k++) {
-                    grid.v[i][j][k] = grid.v[i][j][k] + (27.31f * dT);
+                    if (j % 2 == 0 && grid.getS(i, j, k) == 1) {
+                        grid.v[i][j][k] = grid.v[i][j][k] + (-10f * dT);
+                    }
                 }
             }
         }
@@ -185,14 +169,21 @@ public class EulerianSimAPI {
 
         byte[][][] cells = grid.getCells();
 
+//        float[][][] newU = new float[grid.dX + 1][grid.dY][grid.dZ];
+//        float[][][] newV = new float[grid.dX][grid.dY + 1][grid.dZ];
+//        float[][][] newW = new float[grid.dX][grid.dY][grid.dZ + 1];
+
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[i].length; j++) {
                 for (int k = 0; k < cells[i][j].length; k++) {
+                    if (grid.getS(i, j, k) == 0) {
+                        continue;
+                    }
                     float d =
                         1.8f *
-                        ((grid.u[i+1][j][k] - grid.u[i][j][k]) +
-                        (grid.v[i][j+1][k] - grid.v[i][j][k]) +
-                        (grid.w[i][j][k+1] - grid.w[i][j][k]));
+                        (grid.u[i+1][j][k] - grid.u[i][j][k] +
+                        grid.v[i][j+1][k] - grid.v[i][j][k] +
+                        grid.w[i][j][k+1] - grid.w[i][j][k]);
                     // s is the scalar for differentiating walls and other non-fluids
                     // if s is 6 then it scales the divergence normally because all 6 axis are fluids
                     float s =
@@ -205,17 +196,20 @@ public class EulerianSimAPI {
                     if (s == 0)
                         continue;
 
-                    s = 1 / s;
+                    s = 1f / s;
 
-                    grid.u[i][j][k] = grid.u[i][j][k] + d * (grid.getS(i-1, j, k) * s); // east
-                    grid.u[i+1][j][k] = grid.u[i+1][j][k] - d * (grid.getS(i+1, j, k) * s); // west
-                    grid.v[i][j][k] = grid.v[i][j][k] + d * (grid.getS(i, j-1, k) * s); // north
-                    grid.v[i][j+1][k] = grid.v[i][j+1][k] - d * (grid.getS(i, j+1, k) * s); // south
-                    grid.w[i][j][k] = grid.w[i][j][k] + d * (grid.getS(i, j, k-1) * s); // top
-                    grid.w[i][j][k+1] = grid.w[i][j][k+1] - d * (grid.getS(i, j, k+1) * s); // bottom
+                    grid.u[i][j][k] = grid.u[i][j][k] + (d * (grid.getS(i-1, j, k) * s)); // east
+                    grid.u[i+1][j][k] = grid.u[i+1][j][k] - (d * (grid.getS(i+1, j, k) * s)); // west
+                    grid.v[i][j][k] = grid.v[i][j][k] + (d * (grid.getS(i, j-1, k) * s)); // north
+                    grid.v[i][j+1][k] = grid.v[i][j+1][k] - (d * (grid.getS(i, j+1, k) * s)); // south
+                    grid.w[i][j][k] = grid.w[i][j][k] + (d * (grid.getS(i, j, k-1) * s)); // top
+                    grid.w[i][j][k+1] = grid.w[i][j][k+1] - (d * (grid.getS(i, j, k+1) * s)); // bottom
                 }
             }
         }
+//        grid.u = newU;
+//        grid.v = newV;
+//        grid.w = newW;
     }
 
     public static float velAt(GridWrapper grid, float x, float y, float z, byte component) {
