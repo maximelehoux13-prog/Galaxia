@@ -27,8 +27,6 @@ public class EulerianSimAPI {
         int dZ;
 
         public GridWrapper(byte[][][] _cells, float[][][] _u, float[][][] _v, float[][][] _w, int _dX, int _dY, int _dZ) {
-            cells = _cells;
-
             u = _u;
             v = _v;
             w = _w;
@@ -36,12 +34,19 @@ public class EulerianSimAPI {
             dX = _dX;
             dY = _dY;
             dZ = _dZ;
+
+            if (_cells == null) {
+                cells = new byte[][][]{};
+            }
+            else {
+                cells = _cells;
+            }
         }
         public byte getCell(int x, int y, int z) {
             return cells[x][y][z];
         }
         public int getS(int x, int y, int z) {
-            if (x < 0 || y < 0 || z < 0 || x == cells.length || y == cells[x].length || z == cells[x][y].length) {
+            if (x < 0 || y < 0 || z < 0 || x >= cells.length || y >= cells[x].length || z >= cells[x][y].length) {
                 return 0;
             }
             return ((cells[x][y][z] & (byte) 0b00000010) == 0 && (cells[x][y][z] & (byte) 0b00000001) != 0) ? 1 : 0;
@@ -57,8 +62,30 @@ public class EulerianSimAPI {
 
     public static void run(GridWrapper grid) {
         applyForces(grid);
-        projection(grid);
+        for (int i = 0; i <= 20; i++) {
+            projection(grid);
+        }
+        double sum = 0.0;
+
+        for (float[][] plane : grid.v) {
+            for (float[] row : plane) {
+                for (float value : row) {
+                    sum += value;
+                }
+            }
+        }
+        sum = 0.0;
         advection(grid);
+
+        for (float[][] plane : grid.v) {
+            for (float[] row : plane) {
+                for (float value : row) {
+                    sum += value;
+                }
+            }
+        }
+        sum +=1;
+        sum = sum + 1;
     }
 
     public static GridWrapper createGrid(List<BlockPos> internals, List<BlockPos> externals, BlockPos heat) {
@@ -131,7 +158,7 @@ public class EulerianSimAPI {
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[i].length; j++) {
                 for (int k = 0; k < cells[i][j].length; k++) {
-                    grid.v[i][j][k] = grid.v[i][j][k] + (0.31f * dT);
+                    grid.v[i][j][k] = grid.v[i][j][k] + (27.31f * dT);
                 }
             }
         }
@@ -139,7 +166,7 @@ public class EulerianSimAPI {
 //            for (int j = 0; j < cells[i].length; j++) {
 //                for (int k = 0; k < cells[i][j].length; k++) {
 //                    if ((cells[i][j][k] & 0b00000100) != 0) {
-//                        grid.v[i][j][k] = 12;
+//                        grid.v[i][j][k] = 2;
 //                    }
 //                }
 //            }
@@ -158,18 +185,14 @@ public class EulerianSimAPI {
 
         byte[][][] cells = grid.getCells();
 
-        float[][][] u = grid.u;
-        float[][][] v = grid.v;
-        float[][][] w = grid.w;
-
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[i].length; j++) {
                 for (int k = 0; k < cells[i][j].length; k++) {
                     float d =
                         1.8f *
-                        ((u[i+1][j][k] - u[i][j][k]) +
-                        (v[i][j+1][k] - v[i][j][k]) +
-                        (w[i][j][k+1] - w[i][j][k]));
+                        ((grid.u[i+1][j][k] - grid.u[i][j][k]) +
+                        (grid.v[i][j+1][k] - grid.v[i][j][k]) +
+                        (grid.w[i][j][k+1] - grid.w[i][j][k]));
                     // s is the scalar for differentiating walls and other non-fluids
                     // if s is 6 then it scales the divergence normally because all 6 axis are fluids
                     float s =
@@ -181,12 +204,15 @@ public class EulerianSimAPI {
                         grid.getS(i, j, k-1);
                     if (s == 0)
                         continue;
-                    u[i][j][k] = u[i][j][k] + d * (grid.getS(i-1, j, k) / s); // east
-                    u[i+1][j][k] = u[i+1][j][k] - d * (grid.getS(i+1, j, k) / s); // west
-                    v[i][j][k] = v[i][j][k] + d * (grid.getS(i, j-1, k) / s); // north
-                    v[i][j+1][k] = v[i][j+1][k] - d * (grid.getS(i, j+1, k) / s); // south
-                    w[i][j][k] = w[i][j][k] + d * (grid.getS(i, j, k-1) / s); // top
-                    w[i][j][k+1] = w[i][j][k+1] - d * (grid.getS(i, j, k+1) / s); // bottom
+
+                    s = 1 / s;
+
+                    grid.u[i][j][k] = grid.u[i][j][k] + d * (grid.getS(i-1, j, k) * s); // east
+                    grid.u[i+1][j][k] = grid.u[i+1][j][k] - d * (grid.getS(i+1, j, k) * s); // west
+                    grid.v[i][j][k] = grid.v[i][j][k] + d * (grid.getS(i, j-1, k) * s); // north
+                    grid.v[i][j+1][k] = grid.v[i][j+1][k] - d * (grid.getS(i, j+1, k) * s); // south
+                    grid.w[i][j][k] = grid.w[i][j][k] + d * (grid.getS(i, j, k-1) * s); // top
+                    grid.w[i][j][k+1] = grid.w[i][j][k+1] - d * (grid.getS(i, j, k+1) * s); // bottom
                 }
             }
         }
@@ -266,11 +292,12 @@ public class EulerianSimAPI {
         byte[][][] cells = grid.getCells();
 
         float[][][] u = grid.u;
-        float[][][] newU = u.clone();
         float[][][] v = grid.v;
-        float[][][] newV = v.clone();
         float[][][] w = grid.w;
-        float[][][] newW = w.clone();
+
+        float[][][] newU = new float[grid.dX + 1][grid.dY][grid.dZ];
+        float[][][] newV = new float[grid.dX][grid.dY + 1][grid.dZ];
+        float[][][] newW = new float[grid.dX][grid.dY][grid.dZ + 1];
 
         // for each vector component, compute its velocity: V
         // use averages of all surrounding vector components in each respective axis: uBar, vBar, wBar
@@ -292,8 +319,8 @@ public class EulerianSimAPI {
                         float VdTz = wBar * dT;
 
                         float x = i * h;
-                        float y = j * (h / 2);
-                        float z = k * (h / 2);
+                        float y = j * h + (h / 2);
+                        float z = k * h + (h / 2);
 
                         newU[i][j][k] = velAt(grid, x - VdTx, y - VdTy, z - VdTz, (byte) 0);
                     }
@@ -305,9 +332,9 @@ public class EulerianSimAPI {
                         float VdTy = v[i][j][k] * dT;
                         float VdTz = wBar * dT;
 
-                        float x = i * (h / 2);
+                        float x = i * h + (h / 2);
                         float y = j * h;
-                        float z = k * (h / 2);
+                        float z = k * h + (h / 2);
 
                         newV[i][j][k] = velAt(grid, x - VdTx, y - VdTy, z - VdTz, (byte) 1);
                     }
@@ -319,8 +346,8 @@ public class EulerianSimAPI {
                         float VdTy = vBar * dT;
                         float VdTz = w[i][j][k] * dT;
 
-                        float x = i * (h / 2);
-                        float y = j * (h / 2);
+                        float x = i * h + (h / 2);
+                        float y = j * h + (h / 2);
                         float z = k * h;
 
                         newW[i][j][k] = velAt(grid, x - VdTx, y - VdTy, z - VdTz, (byte) 2);
@@ -328,8 +355,8 @@ public class EulerianSimAPI {
                 }
             }
         }
-        u = newU;
-        v = newV;
-        w = newW;
+        grid.u = newU;
+        grid.v = newV;
+        grid.w = newW;
     }
 }
