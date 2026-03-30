@@ -63,7 +63,7 @@ public class EulerianSimAPI {
 
     public static void run(GridWrapper grid) {
         applyForces(grid);
-        for (int i = 0; i <= 5; i++) {
+        for (int i = 0; i <= 100; i++) {
             projection(grid);
         }
 
