@@ -21,11 +21,11 @@ public class TileEntityVaporChamberController extends TileEntity {
             genGrid();
         }
 
-        if (ticks > 20) {
+        if (ticks > 20 && ticks % 5 == 0) {
             EulerianSimAPI.run(grid);
         }
 
-        if (ticks % 6 == 0 && grid != null) {
+        if (ticks % 5 == 0 && grid != null) {
             byte[][][] cells = grid.getCells();
             for (int x = 0; x < cells.length; x++) {
                 for (int y = 0; y < cells[x].length; y++) {
@@ -33,16 +33,21 @@ public class TileEntityVaporChamberController extends TileEntity {
                         if ((cells[x][y][z] & (byte) 0b00000001) != 0) {
                             //worldObj.spawnParticle("crit", x, y + 10, z, 0, 0, 0);
 
-                            float t = 210000f;
+                            float t = 3f;
+                            float eps = 0.18f;
 
-                            worldObj.spawnParticle("reddust", x - 0.5, y + 10, z, 1, Math.max(0f, grid.u[x][y][z]) * t, Math.min(0f, grid.u[x][y][z]) * t);
-                            worldObj.spawnParticle("reddust", x + 0.5, y + 10, z, 1, Math.max(0f, grid.u[x + 1][y][z]) * t, Math.min(0f, grid.u[x + 1][y][z]) * t);
+                            if (grid.u[x][y][z] > eps || grid.u[x+1][y][z] > eps || grid.v[x][y][z] > eps || grid.v[x][y+1][z] > eps || grid.w[x][y][z] > eps || grid.w[x][y][z+1] > eps ||
+                            grid.u[x][y][z] < -eps || grid.u[x+1][y][z] < -eps || grid.v[x][y][z] < -eps || grid.v[x][y+1][z] < -eps || grid.w[x][y][z] < -eps || grid.w[x][y][z+1] < -eps
+                            ) {
+                                worldObj.spawnParticle("reddust", x - 0.5, y + 10, z, 1, Math.max(0f, grid.u[x][y][z]) * t, Math.min(0f, grid.u[x][y][z]) * t);
+                                worldObj.spawnParticle("reddust", x + 0.5, y + 10, z, 1, Math.max(0f, grid.u[x + 1][y][z]) * t, Math.min(0f, grid.u[x + 1][y][z]) * t);
 
-                            worldObj.spawnParticle("reddust", x, y + 9.5, z, 1, Math.max(0f, grid.v[x][y][z]) * t, Math.min(0f, grid.v[x][y][z]) * t);
-                            worldObj.spawnParticle("reddust", x, y + 10.5, z, 1, Math.max(0f, grid.v[x][y + 1][z]) * t, Math.min(0f, grid.v[x][y + 1][z]) * t);
+                                worldObj.spawnParticle("reddust", x, y + 9.5, z, 1, Math.max(0f, grid.v[x][y][z]) * t, Math.min(0f, grid.v[x][y][z]) * t);
+                                worldObj.spawnParticle("reddust", x, y + 10.5, z, 1, Math.max(0f, grid.v[x][y + 1][z]) * t, Math.min(0f, grid.v[x][y + 1][z]) * t);
 
-                            worldObj.spawnParticle("reddust", x, y + 10, z - 0.5, 1, Math.max(0f, grid.w[x][y][z]) * t, Math.min(0f, grid.w[x][y][z]) * t);
-                            worldObj.spawnParticle("reddust", x, y + 10, z + 0.5, 1, Math.max(0f, grid.w[x][y][z + 1]) * t, Math.min(0f, grid.w[x][y][z + 1]) * t);
+                                worldObj.spawnParticle("reddust", x, y + 10, z - 0.5, 1, Math.max(0f, grid.w[x][y][z]) * t, Math.min(0f, grid.w[x][y][z]) * t);
+                                worldObj.spawnParticle("reddust", x, y + 10, z + 0.5, 1, Math.max(0f, grid.w[x][y][z + 1]) * t, Math.min(0f, grid.w[x][y][z + 1]) * t);
+                            }
                         }
                     }
                 }

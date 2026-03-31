@@ -13,8 +13,9 @@ import java.util.List;
 // made by me! (chloe)
 
 public class EulerianSimAPI {
-    public static final float dT = 0.05f;
-    public static final float h = 1f;
+    public static final float dT = 1/60f;
+    public static final float h = 0.25f;
+    public static final int hINT = (int) (1 / h);
 
     public static class GridWrapper {
         private byte[][][] cells;
@@ -63,7 +64,7 @@ public class EulerianSimAPI {
 
     public static void run(GridWrapper grid) {
         applyForces(grid);
-        for (int i = 0; i <= 100; i++) {
+        for (int i = 0; i <= 40; i++) {
             projection(grid);
         }
 
@@ -106,9 +107,9 @@ public class EulerianSimAPI {
             return null;
         }
 
-        int dX = rightBound - leftBound + 1;
-        int dY = upperBound - lowerBound + 1;
-        int dZ = forwardBound - backwardBound + 1;
+        int dX = ((rightBound - leftBound + 1) * hINT);
+        int dY = ((upperBound - lowerBound + 1) * hINT);
+        int dZ = ((forwardBound - backwardBound + 1) * hINT);
 
         byte[][][] cells = new byte[dX][dY][dZ];
 
@@ -116,13 +117,32 @@ public class EulerianSimAPI {
         // bit 1: is a wall
 
         for (BlockPos internal : internals) {
-            cells[internal.getX() - leftBound][internal.getY() - lowerBound][internal.getZ() - backwardBound] = (byte) 0b00000001;
+            for (int i = 0; i < h; i++) {
+                for (int dx = 0; dx < hINT; dx++)
+                    for (int dy = 0; dy < hINT; dy++)
+                        for (int dz = 0; dz < hINT; dz++) {
+                            cells[(internal.getX() - leftBound) * hINT + dx][(internal.getY() - lowerBound) * hINT + dy][(internal.getZ() - backwardBound) * hINT + dz] = (byte) 0b00000001;
+                        }
+            }
         }
         for (BlockPos external : externals) {
-            cells[external.getX() - leftBound][external.getY() - lowerBound][external.getZ() - backwardBound] = (byte) 0b00000010;
+            for (int i = 0; i < h; i++) {
+                for (int dx = 0; dx < hINT; dx++)
+                    for (int dy = 0; dy < hINT; dy++)
+                        for (int dz = 0; dz < hINT; dz++) {
+                             cells[(external.getX() - leftBound) * hINT + dx][(external.getY() - lowerBound) * hINT + dy][(external.getZ() - backwardBound) * hINT + dz] = (byte) 0b00000010;
+                }
+            }
         }
 
-            cells[heat.getX() - leftBound][heat.getY() - lowerBound][heat.getZ() - backwardBound] = (byte) 0b00000101;
+//        cells[heat.getX() - leftBound][heat.getY() - lowerBound][heat.getZ() - backwardBound] = (byte) 0b00000101;
+
+        int a = 4;
+        cells[dX/2][hINT+1][dZ/2] = (byte) 0b00000101;
+        //cells[6+a][5][5+a] = (byte) 0b00000101;
+        //cells[5+a][5][6+a] = (byte) 0b00000101;
+        //cells[6+a][5][6+a] = (byte) 0b00000101;
+
 
         // create 3 arrays, 1 for each component of a vector at pos xyz
 
@@ -137,24 +157,25 @@ public class EulerianSimAPI {
         // maybe apply gravity here if i want, will do heating walls and cooling walls here later
         byte[][][] cells = grid.getCells();
 
-        for (int i = 0; i < cells.length; i++) {
-            for (int j = 0; j < cells[i].length; j++) {
-                for (int k = 0; k < cells[i][j].length; k++) {
-                    if (j % 2 == 0 && grid.getS(i, j, k) == 1) {
-                        grid.v[i][j][k] = grid.v[i][j][k] + (-10f * dT);
-                    }
-                }
-            }
-        }
+        grid.u[2][2][2] = 1;
 //        for (int i = 0; i < cells.length; i++) {
 //            for (int j = 0; j < cells[i].length; j++) {
 //                for (int k = 0; k < cells[i][j].length; k++) {
-//                    if ((cells[i][j][k] & 0b00000100) != 0) {
-//                        grid.v[i][j][k] = 2;
+//                    if (j % 2 == 0 && grid.getS(i, j, k) == 1) {
+//                        grid.v[i][j][k] = grid.v[i][j][k] + (-10f * dT);
 //                    }
 //                }
 //            }
 //        }
+        for (int i = 0; i < cells.length; i++) {
+            for (int j = 0; j < cells[i].length; j++) {
+                for (int k = 0; k < cells[i][j].length; k++) {
+                    if ((cells[i][j][k] & 0b00000100) != 0) {
+                        grid.v[i][j][k] = 16;
+                    }
+                }
+            }
+        }
     }
 
     public static void projection(GridWrapper grid) {
@@ -180,7 +201,7 @@ public class EulerianSimAPI {
                         continue;
                     }
                     float d =
-                        1.8f *
+                        1.98f *
                         (grid.u[i+1][j][k] - grid.u[i][j][k] +
                         grid.v[i][j+1][k] - grid.v[i][j][k] +
                         grid.w[i][j][k+1] - grid.w[i][j][k]);
