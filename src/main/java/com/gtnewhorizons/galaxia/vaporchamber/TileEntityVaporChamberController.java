@@ -12,7 +12,7 @@ import java.util.*;
 
 public class TileEntityVaporChamberController extends TileEntity {
     private int ticks = 0;
-    public EulerianSimAPI.GridWrapper grid;
+    public EulerianSimAPI grid;
 
     @Override
     public void updateEntity() {
@@ -21,8 +21,8 @@ public class TileEntityVaporChamberController extends TileEntity {
             genGrid();
         }
 
-        if (ticks > 20 && ticks % 5 == 0) {
-            EulerianSimAPI.run(grid);
+        if (ticks > 20 && ticks % 20 == 0) {
+            grid.run();
         }
 
         if (ticks % 5 == 0 && grid != null) {
