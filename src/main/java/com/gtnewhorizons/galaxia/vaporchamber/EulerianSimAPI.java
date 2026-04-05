@@ -69,7 +69,7 @@ public class EulerianSimAPI {
     public void run() {
         applyForces();
         long start = System.nanoTime();
-        for (int i = 0; i <= 10; i++) {
+        for (int i = 0; i <= 20; i++) {
             projection();
         }
         long end = System.nanoTime();
@@ -209,13 +209,57 @@ public class EulerianSimAPI {
 //        float[][][] newV = new float[dX][dY + 1][dZ];
 //        float[][][] newW = new float[dX][dY][dZ + 1];
 
+        // uses a red/black pattern for SIMD parallelization
 
+        // RED
         int lengthX = cells.length;
         for (int i = 0; i < lengthX; i++) {
             int lengthY = cells[i].length;
             for (int j = 0; j < lengthY; j++) {
-                int lengthZ = cells[i][j].length;
-                for (int k = 0; k < lengthZ; k++) {
+
+                int start = 1 + ((i + j) & 1);
+
+                for (int k = start; k < dZ - 1; k += 2) {
+                    if (s[i][j][k] == 0) {
+                        continue;
+                    }
+                    float d =
+                        1.95f *
+                            (u[i+1][j][k] - u[i][j][k] +
+                                v[i][j+1][k] - v[i][j][k] +
+                                w[i][j][k+1] - w[i][j][k]);
+                    // s is the scalar for differentiating walls and other non-fluids
+                    // if s is 6 then it scales the divergence normally because all 6 axis are fluids
+                    float S =
+                        s[i + 1][j][k] +
+                            s[i - 1][j][k] +
+                            s[i][j + 1][k] +
+                            s[i][j - 1][k] +
+                            s[i][j][k + 1] +
+                            s[i][j][k - 1];
+                    if (S == 0)
+                        continue;
+
+                    S = 1f / S;
+
+                    u[i][j][k] = u[i][j][k] + (d * (s[i - 1][j][k] * S)); // east
+                    u[i+1][j][k] = u[i+1][j][k] - (d * (s[i + 1][j][k] * S)); // west
+                    v[i][j][k] = v[i][j][k] + (d * (s[i][j - 1][k] * S)); // north
+                    v[i][j+1][k] = v[i][j+1][k] - (d * (s[i][j + 1][k] * S)); // south
+                    w[i][j][k] = w[i][j][k] + (d * (s[i][j][k - 1] * S)); // top
+                    w[i][j][k+1] = w[i][j][k+1] - (d * (s[i][j][k + 1] * S)); // bottom
+                }
+            }
+        }
+
+        // BLACK
+        for (int i = 0; i < lengthX; i++) {
+            int lengthY = cells[i].length;
+            for (int j = 0; j < lengthY; j++) {
+
+                int start = 1 + ((i + j + 1) & 1);
+
+                for (int k = start; k < dZ - 1; k += 2) {
                     if (s[i][j][k] == 0) {
                         continue;
                     }

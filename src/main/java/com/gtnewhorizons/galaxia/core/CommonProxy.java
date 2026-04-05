@@ -13,6 +13,7 @@ import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.PlanetBlocks;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
 import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
+import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest.EntityTest;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.ModuleRegistry;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.entities.EntityRocket;
 import com.gtnewhorizons.galaxia.utility.effects.GalaxiaEffects;
@@ -56,6 +57,7 @@ public class CommonProxy {
     // Register recipes." (Remove if not needed)
     public void init(FMLInitializationEvent event) {
         EntityRegistry.registerModEntity(EntityRocket.class, "RocketEntity", 0, Galaxia.instance, 64, 1, false);
+        EntityRegistry.registerModEntity(EntityTest.class, "TestEntity", 1, Galaxia.instance, 64, 1, false);
     }
 
     // postInit "Handle interaction with other mods, complete your setup based on

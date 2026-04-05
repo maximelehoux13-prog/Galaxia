@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.core;
 
+import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest.EntityTest;
+import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest.RenderEntityTest;
 import net.minecraft.item.Item;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.common.MinecraftForge;
@@ -45,6 +47,7 @@ public class ClientProxy extends CommonProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityGantry.class, new GantryRenderer());
         MinecraftForgeClient
             .registerItemRenderer(Item.getItemFromBlock(GalaxiaBlocksEnum.GANTRY.get()), new GantryItemRenderer());
+        RenderingRegistry.registerEntityRenderingHandler(EntityTest.class, new RenderEntityTest());
     }
 
     @Override

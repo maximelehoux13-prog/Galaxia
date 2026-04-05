@@ -1,12 +1,14 @@
 package com.gtnewhorizons.galaxia.vaporchamber;
 
 import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import org.apache.commons.lang3.ArrayUtils;
+import org.lwjgl.opengl.GL11;
 
 import java.util.*;
 
@@ -16,6 +18,13 @@ public class TileEntityVaporChamberController extends TileEntity {
 
     @Override
     public void updateEntity() {
+//        final Tessellator tess = Tessellator.instance;
+//        tess.startDrawing(GL11.GL_LINE_STRIP);
+//
+//        tess.addVertex(10, 10, 10);
+//        tess.addVertex(10, 11, 11);
+//
+//        tess.draw();
         ticks = ticks + 1;
         if (worldObj.isRemote && ticks == 20) {
             genGrid();
