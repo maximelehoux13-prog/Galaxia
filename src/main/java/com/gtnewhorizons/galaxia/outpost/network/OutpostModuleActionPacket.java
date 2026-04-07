@@ -1,0 +1,94 @@
+package com.gtnewhorizons.galaxia.outpost.network;
+
+import java.util.List;
+
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
+
+/**
+ * Client → Server: requests an action on a specific module in an outpost.
+ */
+public final class OutpostModuleActionPacket implements IMessage {
+
+    private String assetId;
+    private int moduleIndex;
+    private String action;
+
+    public OutpostModuleActionPacket() {}
+
+    public OutpostModuleActionPacket(String assetId, int moduleIndex, String action) {
+        this.assetId = assetId;
+        this.moduleIndex = moduleIndex;
+        this.action = action;
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        writeString(buf, assetId);
+        buf.writeInt(moduleIndex);
+        writeString(buf, action);
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        assetId = readString(buf);
+        moduleIndex = buf.readInt();
+        action = readString(buf);
+    }
+
+    public static final class Handler implements IMessageHandler<OutpostModuleActionPacket, IMessage> {
+
+        @Override
+        public IMessage onMessage(OutpostModuleActionPacket packet, MessageContext ctx) {
+            AutomatedOutpostState state = OutpostDataStore.get()
+                .getByAssetId(packet.assetId);
+            if (state == null) return null;
+
+            List<AutomatedOutpostModule> modules = state.modules();
+            if (packet.moduleIndex < 0 || packet.moduleIndex >= modules.size()) return null;
+
+            AutomatedOutpostModule module = modules.get(packet.moduleIndex);
+
+            switch (packet.action) {
+                case "ENABLE":
+                    // If it was disabled, set it to OPERATIONAL.
+                    // If it was IN_CONSTRUCTION, maybe it should stay that way?
+                    // User said "Toggle module status" for DISABLE/ENABLE.
+                    if (module.getStatus() == AutomatedOutpostModule.Status.DISABLED) {
+                        module.setStatus(AutomatedOutpostModule.Status.OPERATIONAL);
+                    }
+                    break;
+                case "DISABLE":
+                    module.setStatus(AutomatedOutpostModule.Status.DISABLED);
+                    break;
+                case "DESTROY":
+                    state.modulesInternal()
+                        .remove(packet.moduleIndex);
+                    break;
+                case "CONFIGURE":
+                    // Placeholder as requested
+                    break;
+            }
+            return new OutpostFullSyncPacket(state);
+        }
+    }
+
+    private static void writeString(ByteBuf buf, String s) {
+        byte[] bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        buf.writeShort(bytes.length);
+        buf.writeBytes(bytes);
+    }
+
+    private static String readString(ByteBuf buf) {
+        int len = buf.readUnsignedShort();
+        byte[] bytes = new byte[len];
+        buf.readBytes(bytes);
+        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+    }
+}

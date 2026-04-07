@@ -9,6 +9,8 @@ import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemWitherProtect
 
 import com.gtnewhorizons.galaxia.core.network.ServerTickTaskQueue;
 import com.gtnewhorizons.galaxia.handlers.DimensionEventHandler;
+import com.gtnewhorizons.galaxia.outpost.logistics.OutpostLogisticsEngine;
+import com.gtnewhorizons.galaxia.outpost.persistence.OutpostPersistenceManager;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.PlanetBlocks;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialRegistry;
@@ -17,6 +19,8 @@ import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.ModuleRegistry;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.entities.EntityRocket;
 import com.gtnewhorizons.galaxia.utility.effects.GalaxiaEffects;
+
+import net.minecraftforge.common.MinecraftForge;
 
 import baubles.api.expanded.BaubleExpandedSlots;
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -43,6 +47,12 @@ public class CommonProxy {
         FMLCommonHandler.instance()
             .bus()
             .register(new ServerTickTaskQueue());
+
+        OutpostPersistenceManager outpostPersistence = new OutpostPersistenceManager();
+        MinecraftForge.EVENT_BUS.register(outpostPersistence);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(OutpostLogisticsEngine.get());
 
         GalaxiaItemList.registerAll();
         GalaxiaBlocksEnum.registerBlocks();

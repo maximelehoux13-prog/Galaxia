@@ -195,8 +195,8 @@ galaxia.gui.planet_teleporter.teleport=Teleport
 galaxia.gui.planet_teleporter.selected=Selected: %s
 
 # Elements - GUI - "Orbital GUI"
-# I GUESS YOU WANT THIS OFF? galaxia.gui.orbital.search=Search
-# I GUESS YOU WANT THIS OFF? galaxia.gui.orbital.search.placeholder=Enter name...
+galaxia.gui.orbital.search=Search
+galaxia.gui.orbital.search.placeholder=Enter name...
 # I GUESS YOU WANT THIS OFF? galaxia.gui.orbital.status=Zoom: ×%.2f   Speed: %s
 # I GUESS YOU WANT THIS OFF? galaxia.gui.orbital.paused=§cPAUSED§r
 # I GUESS YOU WANT THIS OFF? galaxia.gui.orbital.speed_multiplier=§a×%.1f§r

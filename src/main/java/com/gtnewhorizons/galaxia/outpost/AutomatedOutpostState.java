@@ -1,0 +1,131 @@
+package com.gtnewhorizons.galaxia.outpost;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Complete runtime state for a single automated outpost.
+ *
+ * <p>The outpost is the operational layer on top of a {@code CelestialManagedAsset}.
+ * It adds logistics, inventory, and module state that only exist while the outpost is OPERATIONAL.
+ */
+public final class AutomatedOutpostState {
+
+    /** Matches the {@code assetId} in {@code CelestialManagedAsset}. */
+    public final String assetId;
+
+    /** Owner team UUID resolved via NHLib. */
+    public final UUID teamId;
+
+    /** Parent celestial body id (key in CelestialRegistry). */
+    public final String celestialBodyId;
+
+    /**
+     * The stellar system id used to bucket this outpost in {@code LocalSystemRegistry}.
+     */
+    public final String systemId;
+
+    /** Installed modules; ordering is significant for multi-module interactions. */
+    private final List<AutomatedOutpostModule> modules;
+
+    /** Virtual item inventory. */
+    public final AutomatedOutpostInventory inventory;
+
+    /** Per-resource logistics configuration. */
+    public final LogisticsConfiguration logisticsConfig;
+
+    /** Internal energy storage in EU. Max 1,000,000 EU. */
+    private long energyStored;
+    /** Client-side/UI revision bumped when a sync packet rewrites this state. */
+    private int syncRevision;
+
+    public static final long MAX_ENERGY = 1_000_000L;
+    public static final long PASSIVE_GENERATION = 512L;
+
+    public AutomatedOutpostState(String assetId, UUID teamId, String celestialBodyId, String systemId) {
+        this.assetId = assetId;
+        this.teamId = teamId;
+        this.celestialBodyId = celestialBodyId;
+        this.systemId = systemId;
+        this.modules = new ArrayList<>();
+        this.inventory = new AutomatedOutpostInventory();
+        this.logisticsConfig = new LogisticsConfiguration();
+        this.energyStored = 0;
+        this.syncRevision = 0;
+    }
+
+    /** Returns an unmodifiable view of installed modules. */
+    public List<AutomatedOutpostModule> modules() {
+        return Collections.unmodifiableList(modules);
+    }
+
+    /** Adds a module to this outpost. */
+    public void addModule(AutomatedOutpostModule module) {
+        modules.add(module);
+    }
+
+    /** Returns {@code true} if at least one module of the given kind is installed. */
+    public boolean hasModule(OutpostModuleKind kind) {
+        for (AutomatedOutpostModule m : modules) if (m.kind == kind) return true;
+        return false;
+    }
+
+    public boolean hasOperationalModule(OutpostModuleKind kind) {
+        for (AutomatedOutpostModule m : modules) {
+            if (m.kind == kind && m.isOperational()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the first module of the given kind, or {@code null} if not installed.
+     */
+    public AutomatedOutpostModule firstModule(OutpostModuleKind kind) {
+        for (AutomatedOutpostModule m : modules) if (m.kind == kind) return m;
+        return null;
+    }
+
+    public AutomatedOutpostModule firstOperationalModule(OutpostModuleKind kind) {
+        for (AutomatedOutpostModule m : modules) {
+            if (m.kind == kind && m.isOperational()) return m;
+        }
+        return null;
+    }
+
+    /** Package-internal mutable list accessor; used by persistence and migration only. */
+    public List<AutomatedOutpostModule> modulesInternal() {
+        return modules;
+    }
+
+    public long getEnergyStored() {
+        return energyStored;
+    }
+
+    public void setEnergyStored(long energyStored) {
+        this.energyStored = Math.min(MAX_ENERGY, Math.max(0, energyStored));
+    }
+
+    public void addEnergy(long delta) {
+        setEnergyStored(energyStored + delta);
+    }
+
+    public int getSyncRevision() {
+        return syncRevision;
+    }
+
+    public void bumpSyncRevision() {
+        syncRevision++;
+    }
+
+    /**
+     * Ticks the outpost logic, including passive power generation.
+     */
+    public void tick() {
+        energyStored = Math.min(MAX_ENERGY, energyStored + PASSIVE_GENERATION);
+        for (AutomatedOutpostModule module : modules) {
+            module.tick(this);
+        }
+    }
+}

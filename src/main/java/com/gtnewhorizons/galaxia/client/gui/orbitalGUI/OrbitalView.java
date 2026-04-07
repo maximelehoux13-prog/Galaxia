@@ -915,6 +915,11 @@ public class OrbitalView {
             return viewRoot;
         }
 
+        /** Returns the currently focused (selected) celestial body, or {@code null} if none. */
+        public OrbitalCelestialBody getFocusedBody() {
+            return focusedBody;
+        }
+
         public boolean isCreativeModeAvailable() {
             return Minecraft.getMinecraft().thePlayer != null
                 && Minecraft.getMinecraft().thePlayer.capabilities.isCreativeMode;
