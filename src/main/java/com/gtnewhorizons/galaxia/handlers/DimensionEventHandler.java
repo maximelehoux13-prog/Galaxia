@@ -1,6 +1,6 @@
 package com.gtnewhorizons.galaxia.handlers;
 
-import static com.gtnewhorizons.galaxia.utility.GalaxiaAPI.isInGalaxiaDimension;
+import static com.gtnewhorizons.galaxia.api.GalaxiaAPI.isInGalaxiaDimension;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,19 +10,19 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 
+import com.gtnewhorizons.galaxia.api.GalaxiaAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.network.HazardWarningPacket;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
 import com.gtnewhorizons.galaxia.registry.dimension.builder.EffectBuilder;
-import com.gtnewhorizons.galaxia.utility.GalaxiaAPI;
-import com.gtnewhorizons.galaxia.utility.hazards.EnvironmentalHazard;
-import com.gtnewhorizons.galaxia.utility.hazards.HazardOxygen;
-import com.gtnewhorizons.galaxia.utility.hazards.HazardPressure;
-import com.gtnewhorizons.galaxia.utility.hazards.HazardSpores;
-import com.gtnewhorizons.galaxia.utility.hazards.HazardTemperature;
-import com.gtnewhorizons.galaxia.utility.hazards.HazardWarnings;
-import com.gtnewhorizons.galaxia.utility.hazards.HazardWithering;
-import com.gtnewhorizons.galaxia.utility.hazards.HazardZeroG;
+import com.gtnewhorizons.galaxia.registry.hazards.EnvironmentalHazard;
+import com.gtnewhorizons.galaxia.registry.hazards.HazardOxygen;
+import com.gtnewhorizons.galaxia.registry.hazards.HazardPressure;
+import com.gtnewhorizons.galaxia.registry.hazards.HazardSpores;
+import com.gtnewhorizons.galaxia.registry.hazards.HazardTemperature;
+import com.gtnewhorizons.galaxia.registry.hazards.HazardWarnings;
+import com.gtnewhorizons.galaxia.registry.hazards.HazardWithering;
+import com.gtnewhorizons.galaxia.registry.hazards.HazardZeroG;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
