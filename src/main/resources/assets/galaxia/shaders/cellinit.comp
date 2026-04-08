@@ -1,0 +1,23 @@
+#version 430 core
+
+layout(local_size_x = 2, local_size_y = 2, local_size_z = 2) in;
+
+layout(std430, binding = 4) buffer s {
+    bool S[];
+};
+
+uniform int maxWidth;
+uniform int maxHeight;
+
+void main() {
+    int x = int(gl_GlobalInvocationID.x);
+    int y = int(gl_GlobalInvocationID.y);
+    int z = int(gl_GlobalInvocationID.z);
+
+    if (x != maxWidth - 1 && x != 0 && y != maxHeight - 1 && y != 0 && z != maxWidth - 1 && z != 0) {
+        S[x + (y * maxWidth) + (z * maxWidth * maxHeight)] = true;
+    }
+    else {
+        S[x + (y * maxWidth) + (z * maxWidth * maxHeight)] = false;
+    }
+}

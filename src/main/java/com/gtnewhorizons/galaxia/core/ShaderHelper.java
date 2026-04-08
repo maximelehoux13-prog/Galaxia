@@ -2,13 +2,13 @@ package com.gtnewhorizons.galaxia.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
+import java.awt.*;
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.IntBuffer;
 
 public class ShaderHelper {
     private static final Logger LOG = LogManager.getLogger(ShaderHelper.class);
@@ -35,6 +35,65 @@ public class ShaderHelper {
         GL20.glValidateProgram(program);
 
         if (GL20.glGetProgrami(program, GL20.GL_VALIDATE_STATUS) == GL11.GL_FALSE) {
+            // return 0 to run fallback instead
+            return 0;
+        }
+
+        return program;
+    }
+
+    public static int createProgram(String vert, String geom, String frag) {
+        int program = GL20.glCreateProgram();
+
+        int vertShader = createShader(GL20.GL_VERTEX_SHADER, vert);
+        int geomShader = createShader(GL32.GL_GEOMETRY_SHADER, geom);
+        int fragShader = createShader(GL20.GL_FRAGMENT_SHADER, frag);
+
+        GL20.glAttachShader(program, vertShader);
+        GL20.glAttachShader(program, geomShader);
+        GL20.glAttachShader(program, fragShader);
+
+        GL20.glLinkProgram(program);
+
+
+        // maybe good practice?
+        GL20.glDetachShader(program, vertShader);
+        GL20.glDetachShader(program, geomShader);
+        GL20.glDetachShader(program, fragShader);
+        GL20.glDeleteShader(vertShader);
+        GL20.glDeleteShader(geomShader);
+        GL20.glDeleteShader(fragShader);
+
+
+        GL20.glValidateProgram(program);
+
+        if (GL20.glGetProgrami(program, GL20.GL_VALIDATE_STATUS) == GL11.GL_FALSE) {
+            // return 0 to run fallback instead
+            return 0;
+        }
+
+        return program;
+    }
+
+    public static int createComputeProgram(String comp) {
+        int program = GL20.glCreateProgram();
+
+        int compShader = createShader(GL43.GL_COMPUTE_SHADER, comp);
+
+        GL20.glAttachShader(program, compShader);
+
+        GL20.glLinkProgram(program);
+
+        // maybe good practice?
+        GL20.glDetachShader(program, compShader);
+        GL20.glDeleteShader(compShader);
+
+
+        GL20.glValidateProgram(program);
+
+        if (GL20.glGetProgrami(program, GL20.GL_VALIDATE_STATUS) == GL11.GL_FALSE) {
+            String out = GL20.glGetProgramInfoLog(program, 8192);
+            System.out.println(out);
             // return 0 to run fallback instead
             return 0;
         }

@@ -8,7 +8,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
 public class RenderEntityTest extends Render {
     private static int program = 0;
@@ -20,7 +19,7 @@ public class RenderEntityTest extends Render {
 
     public RenderEntityTest() {
         if (program == 0) {
-            program = ShaderHelper.createProgram("/assets/galaxia/shaders/test.vert", "/assets/galaxia/shaders/test.frag");
+            program = ShaderHelper.createProgram("/assets/galaxia/shaders/test.vert", "/assets/galaxia/shaders/test.geom", "/assets/galaxia/shaders/test.frag");
         }
 
         GL20.glUseProgram(program);
@@ -35,29 +34,37 @@ public class RenderEntityTest extends Render {
 
     public void VAOInit() {
         //FloatBuffer dataBuffer = FloatBuffer.wrap(vertices);
-        FloatBuffer dataBuffer = BufferUtils.createFloatBuffer(vertices.length);
-        dataBuffer.put(vertices).flip();
+//        FloatBuffer dataBuffer = BufferUtils.createFloatBuffer(vertices.length);
+//        dataBuffer.put(vertices).flip();
 
         vaoID = GL30.glGenVertexArrays();
         GL30.glBindVertexArray(vaoID);
 
-        vboID = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, dataBuffer, GL15.GL_DYNAMIC_DRAW);
-
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
+//        vboID = GL15.glGenBuffers();
+//        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID);
+//        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, dataBuffer, GL15.GL_DYNAMIC_DRAW);
+//
+//        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
         GL20.glEnableVertexAttribArray(0);
-
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+//
+//        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         GL30.glBindVertexArray(0);
     }
 
     @Override
     public void doRender(Entity entity, double x, double y, double z, float yaw, float ticks) {
+        if (!(entity instanceof EntityTest entityTest)) {
+            return;
+        }
+
+        if (entityTest.ssboOUT == 0) {
+            return;
+        }
+
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_DEPTH_BUFFER_BIT);
         GL11.glPushMatrix();
 
-        GL11.glTranslated(x, y + entity.getYOffset(), z);
+        GL11.glTranslated(x + 0.25, y, z + 0.25);
 
 
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -78,8 +85,13 @@ public class RenderEntityTest extends Render {
         GL20.glUniformMatrix4(projectionID, false, projection);
 
         GL30.glBindVertexArray(vaoID);
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertices.length / 3);
 
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, entityTest.ssboOUT);
+        GL20.glVertexAttribPointer(0, 1, GL11.GL_FLOAT, false, 4, 0);
+
+        GL11.glDrawArrays(GL11.GL_POINTS, 0, 100);
+
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         GL30.glBindVertexArray(0);
         GL20.glUseProgram(0);
 

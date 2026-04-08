@@ -1,0 +1,32 @@
+#version 430 core
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer FloatBuffer {
+    float vertices[];
+};
+
+uniform float u_Time;
+
+int width = 50;
+int height = 100;
+float spacing = 0.25;
+int cubeLength = int(1.0 / spacing);
+int perCube = cubeLength * cubeLength;
+
+void main() {
+
+
+
+
+
+    int numCubes = int(mod(u_Time, 50.0)) + 1;
+
+    for (int i = 0; i < numCubes; i++) {
+        int base = i * 3;
+
+        vertices[base + 0] = float(i) * 0.25;
+        vertices[base + 1] = 0.0;
+        vertices[base + 2] = 0.0;
+    }
+}
