@@ -34,6 +34,8 @@ import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.outpost.logistics.OutpostLogisticsEngine;
+import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
+import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingMode;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
@@ -230,7 +232,11 @@ public final class OutpostPersistenceManager {
                             resource,
                             tj.amount,
                             tj.remainingTicks,
-                            tj.transportKind));
+                            tj.transportKind,
+                            tj.fromBodyId != null ? tj.fromBodyId : "",
+                            tj.toBodyId != null ? tj.toBodyId : "",
+                            tj.departureOrbitalTime,
+                            tj.tofOrbitalSeconds));
                 }
             }
         } catch (IOException | JsonParseException e) {
@@ -326,6 +332,10 @@ public final class OutpostPersistenceManager {
             tj.amount = task.amount();
             tj.remainingTicks = task.remainingTicks();
             tj.transportKind = task.transportKind();
+            tj.fromBodyId = task.fromBodyId();
+            tj.toBodyId = task.toBodyId();
+            tj.departureOrbitalTime = task.departureOrbitalTime();
+            tj.tofOrbitalSeconds = task.tofOrbitalSeconds();
             list.add(tj);
         }
         writeJson(file, list);
@@ -382,6 +392,11 @@ public final class OutpostPersistenceManager {
         long amount;
         int remainingTicks;
         String transportKind;
+        // Trajectory metadata (optional – absent in legacy saves)
+        String fromBodyId;
+        String toBodyId;
+        double departureOrbitalTime;
+        double tofOrbitalSeconds;
     }
 
     // -------------------------------------------------------------------------

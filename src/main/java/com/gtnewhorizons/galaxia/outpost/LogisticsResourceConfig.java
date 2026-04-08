@@ -16,7 +16,7 @@ import com.github.bsideup.jabel.Desugar;
 public record LogisticsResourceConfig(int minReserve, int orderSize, boolean isImportEnabled,
     boolean isSupplyEnabled) {
 
-    public static final LogisticsResourceConfig DEFAULT = new LogisticsResourceConfig(0, 64, false, false);
+    public static final LogisticsResourceConfig DEFAULT = new LogisticsResourceConfig(0, 1, false, false);
 
     public LogisticsResourceConfig {
         if (minReserve < 0) throw new IllegalArgumentException("minReserve must be >= 0");

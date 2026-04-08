@@ -23,7 +23,7 @@ public final class AutomatedOutpostState {
     public final String celestialBodyId;
 
     /**
-     * The stellar system id used to bucket this outpost in {@code LocalSystemRegistry}.
+     * The stellar system id (host star body id) used to bucket this outpost in {@code LogisticsSignalStore}.
      */
     public final String systemId;
 
@@ -111,6 +111,13 @@ public final class AutomatedOutpostState {
         setEnergyStored(energyStored + delta);
     }
 
+    public boolean tryConsumeEnergy(long amount) {
+        if (amount <= 0) return true;
+        if (energyStored < amount) return false;
+        energyStored -= amount;
+        return true;
+    }
+
     public int getSyncRevision() {
         return syncRevision;
     }
@@ -124,8 +131,9 @@ public final class AutomatedOutpostState {
      */
     public void tick() {
         energyStored = Math.min(MAX_ENERGY, energyStored + PASSIVE_GENERATION);
-        for (AutomatedOutpostModule module : modules) {
-            module.tick(this);
+        for (int i = 0; i < modules.size(); i++) {
+            modules.get(i)
+                .tick(this);
         }
     }
 }

@@ -4,7 +4,10 @@ import java.util.UUID;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
+import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
@@ -51,11 +54,13 @@ public final class OutpostRequestSyncPacket implements IMessage {
                 if (asset != null && asset.status() == CelestialAssetStatus.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
+                    String bodyId = asset.celestialObjectId();
+                    String systemId = resolveSystemId(bodyId);
                     state = new AutomatedOutpostState(
                         asset.assetId(),
                         teamId,
-                        asset.celestialObjectId(),
-                        asset.celestialObjectId());
+                        bodyId,
+                        systemId);
                     OutpostDataStore.get().put(state);
                     Galaxia.LOG.info(
                         "[Outpost] Auto-created state for outpost {} (player {})",
@@ -68,6 +73,19 @@ public final class OutpostRequestSyncPacket implements IMessage {
             }
             return null;
         }
+    }
+
+    /**
+     * Resolves the stellar system id (host star body id) for a given celestial body id.
+     * Falls back to {@code bodyId} itself if the tree or host star cannot be found.
+     */
+    static String resolveSystemId(String bodyId) {
+        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
+        if (root == null || bodyId == null) return bodyId;
+        OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        if (body == null) return bodyId;
+        OrbitalCelestialBody star = OrbitalTransferPlanner.findHostStar(root, body);
+        return star != null ? star.id() : bodyId;
     }
 
     private static void writeString(ByteBuf buf, String s) {

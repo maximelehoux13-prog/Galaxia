@@ -11,8 +11,14 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
  * to the destination buffer on arrival (when {@code remainingTicks} reaches zero).
  *
  * <p>Tasks are persisted to JSON so that in-flight shipments survive world restarts.
- * The task state is the source of truth for "items in transit" – resources are consumed
- * from the source buffer immediately on task creation and added to the destination on arrival.
+ * Resources are consumed from the source buffer immediately on task creation and added
+ * to the destination on arrival.
+ *
+ * <h3>Trajectory metadata</h3>
+ * {@code fromBodyId}, {@code toBodyId}, {@code departureOrbitalTime} and
+ * {@code tofOrbitalSeconds} are optional trajectory metadata used by the client to
+ * render the in-flight arc on the starmap. They may be empty/zero for legacy tasks or
+ * same-body instant transfers.
  */
 @Desugar
 public record LogisticsTask(
@@ -24,7 +30,7 @@ public record LogisticsTask(
     String toAssetId,
     /** What is being transported. */
     ItemStackWrapper resourceId,
-    /** Number of resource units in this shipment (max 64 for HAMMER tasks). */
+    /** Number of resource units in this shipment. */
     long amount,
     /**
      * Ticks until delivery. Decremented once per server tick.
@@ -35,21 +41,49 @@ public record LogisticsTask(
      * The transport module type that created this task.
      * Used to distinguish HAMMER tasks from BIG_HAMMER tasks in logging/UI.
      */
-    String transportKind) {
+    String transportKind,
+    /** Celestial body id of the departure outpost (for arc rendering). Empty = unknown. */
+    String fromBodyId,
+    /** Celestial body id of the destination outpost (for arc rendering). Empty = unknown. */
+    String toBodyId,
+    /**
+     * Orbital departure time (in orbital simulation units = world ticks × 2.1).
+     * Used to anchor the trajectory arc on the client starmap.
+     */
+    double departureOrbitalTime,
+    /**
+     * Lambert time-of-flight in orbital simulation units.
+     * Convert to real seconds via {@code tofOrbitalSeconds / 42.0}.
+     */
+    double tofOrbitalSeconds) {
 
     /** Creates a new task with a freshly generated task id. */
     public static LogisticsTask create(String fromAssetId, String toAssetId, ItemStackWrapper resourceId,
         long amount, int deliveryTicks, String transportKind) {
-        String taskId = "task_" + java.util.UUID.randomUUID()
+        String taskId = makeId();
+        return new LogisticsTask(taskId, fromAssetId, toAssetId, resourceId, amount, deliveryTicks, transportKind,
+            "", "", 0.0, 0.0);
+    }
+
+    /** Creates a new task with trajectory metadata for arc rendering. */
+    public static LogisticsTask createWithTrajectory(String fromAssetId, String toAssetId, ItemStackWrapper resourceId,
+        long amount, int deliveryTicks, String transportKind, String fromBodyId, String toBodyId,
+        double departureOrbitalTime, double tofOrbitalSeconds) {
+        return new LogisticsTask(makeId(), fromAssetId, toAssetId, resourceId, amount, deliveryTicks, transportKind,
+            fromBodyId, toBodyId, departureOrbitalTime, tofOrbitalSeconds);
+    }
+
+    private static String makeId() {
+        return "task_" + java.util.UUID.randomUUID()
             .toString()
             .replace("-", "")
             .substring(0, 12);
-        return new LogisticsTask(taskId, fromAssetId, toAssetId, resourceId, amount, deliveryTicks, transportKind);
     }
 
     /** Returns a copy of this task with {@code remainingTicks} decremented by one. */
     public LogisticsTask tick() {
-        return new LogisticsTask(taskId, fromAssetId, toAssetId, resourceId, amount, remainingTicks - 1, transportKind);
+        return new LogisticsTask(taskId, fromAssetId, toAssetId, resourceId, amount, remainingTicks - 1, transportKind,
+            fromBodyId, toBodyId, departureOrbitalTime, tofOrbitalSeconds);
     }
 
     public boolean isArrived() {

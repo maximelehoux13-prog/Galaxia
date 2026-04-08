@@ -65,6 +65,8 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private double cachedRowLayoutScrollOffset = Double.NaN;
     private int cachedRowLayoutHeight = -1;
     private int cachedRowLayoutWidth = -1;
+    private int cachedSearchOffset = Integer.MIN_VALUE;
+    private long lastSupplyDebugClickMs = 0L;
 
     private static final int LAYER_BUTTON_TOP = 14;
     private static final int LAYER_BUTTON_HEIGHT = 18;
@@ -318,6 +320,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             && localX >= 18
             && localX <= 18 + width) {
             map.toggleCreativeBuildMode();
+            rowLayoutsDirty = true;
             return true;
         }
         return false;
@@ -428,7 +431,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             }
             return;
         }
-        int amountFieldTop = DEBUG_PANEL_TOP + 58;
+        int amountFieldTop = DEBUG_PANEL_TOP + 60;
         int ghostSlotTop = DEBUG_PANEL_TOP + 28;
         if (supplyDebugAmountField != null) {
             supplyDebugAmountField.top(amountFieldTop);
@@ -446,7 +449,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         int panelWidth = panelRight - panelLeft;
 
         // Panel background
-        Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 120, 0xAA101820);
+        Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 126, 0xAA101820);
         Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 1, EnumColors.MapSidebarListHovered.getColor());
 
         // Resolve target asset
@@ -474,7 +477,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(
             "Amount:",
             panelLeft + 4,
-            DEBUG_PANEL_TOP + 56,
+            DEBUG_PANEL_TOP + 46,
             EnumColors.MapSidebaSearchLabel.getColor());
 
         // Ghost slot background
@@ -483,7 +486,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         drawInlineButton(DEBUG_PICK_BUTTON_LEFT, DEBUG_PANEL_TOP + 28, DEBUG_PICK_BUTTON_WIDTH, 18, "Select", true);
 
         // Confirm button
-        int confirmTop = DEBUG_PANEL_TOP + 80;
+        int confirmTop = DEBUG_PANEL_TOP + 86;
         boolean canConfirm = resolveSupplyDebugAsset() != null
             && supplyDebugGhostHandler != null
             && supplyDebugGhostHandler.getStackInSlot(0) != null;
@@ -534,6 +537,9 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     }
 
     private void confirmSupplyDebug() {
+        long now = System.currentTimeMillis();
+        if (now - lastSupplyDebugClickMs < 200L) return;
+        lastSupplyDebugClickMs = now;
         CelestialManagedAsset asset = resolveSupplyDebugAsset();
         if (asset == null) return;
         String amountText = supplyDebugAmountField == null ? "64" : supplyDebugAmountField.getText()
@@ -583,6 +589,11 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     @Override
     public void drawBackground(ModularGuiContext context, WidgetThemeEntry widgetTheme) {
         super.drawBackground(context, widgetTheme);
+        int currentSearchOffset = getSearchOffset();
+        if (currentSearchOffset != cachedSearchOffset) {
+            cachedSearchOffset = currentSearchOffset;
+            rowLayoutsDirty = true;
+        }
         String newQuery = searchField == null ? ""
             : searchField.getText()
                 .toLowerCase();

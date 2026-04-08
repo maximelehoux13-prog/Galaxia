@@ -130,9 +130,9 @@ public final class OutpostBuildModulePacket implements IMessage {
         private OutpostModuleData createModuleData(OutpostModuleKind kind) {
             switch (kind) {
                 case HAMMER:
-                    return new HammerModuleData();
+                    return HammerModuleData.getDefault();
                 case BIG_HAMMER:
-                    return new BigHammerModuleData();
+                    return BigHammerModuleData.getDefault();
                 case MINER:
                     return new MinerModuleData();
                 case POWER:

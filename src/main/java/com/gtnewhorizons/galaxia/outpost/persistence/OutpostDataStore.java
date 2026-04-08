@@ -76,6 +76,7 @@ public final class OutpostDataStore {
                 newTeamId,
                 old.celestialBodyId,
                 old.systemId);
+            migrated.setEnergyStored(old.getEnergyStored());
             // Transfer modules.
             for (com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule m : old.modulesInternal()) {
                 migrated.addModule(m);

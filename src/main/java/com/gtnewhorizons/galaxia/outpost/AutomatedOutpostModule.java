@@ -156,6 +156,9 @@ public final class AutomatedOutpostModule {
     }
 
     private void updateOperational(AutomatedOutpostState outpost) {
+        if (kind.powerDrawEuPerTick > 0 && !outpost.tryConsumeEnergy(kind.powerDrawEuPerTick)) {
+            return;
+        }
         switch (kind) {
             case MINER -> tickMiner(outpost);
             case POWER -> tickPower(outpost);
@@ -186,36 +189,33 @@ public final class AutomatedOutpostModule {
         MinerModuleData minerData = data instanceof MinerModuleData typed ? typed : new MinerModuleData();
         if (body.properties().usesGtOreVeins()) {
             List<GtOreVeinDefinition> veins = body.properties().gtOreVeins();
-            if (veins.isEmpty()) return null;
-
-            GtOreVeinDefinition vein = veins.get(RANDOM.nextInt(veins.size()));
-            List<ItemStack> validStacks = new java.util.ArrayList<>();
-            for (String oreName : vein.ores()) {
-                if (oreName == null || oreName.isEmpty()) continue;
-                ItemStack stack = GTUtility.getRawOreStack(oreName);
-                if (stack == null) continue;
-                ItemStackWrapper wrapper = ItemStackWrapper.of(stack);
-                if (wrapper == null || minerData.isBlacklisted(wrapper.toKey())) continue;
-                validStacks.add(stack);
+            if (!veins.isEmpty()) {
+                GtOreVeinDefinition vein = veins.get(RANDOM.nextInt(veins.size()));
+                List<String> oreNames = vein.ores();
+                if (!oreNames.isEmpty()) {
+                    String chosenOre = oreNames.get(RANDOM.nextInt(oreNames.size()));
+                    if (chosenOre == null || chosenOre.isEmpty()) return null;
+                    if (minerData.isBlacklisted(chosenOre)) return null;
+                    ItemStack stack = GTUtility.getRawOreStack(chosenOre);
+                    if (stack == null) return null;
+                    ItemStack ore = stack.copy();
+                    ore.stackSize = 1;
+                    return ore;
+                }
             }
-            if (validStacks.isEmpty()) return null;
-            ItemStack ore = validStacks.get(RANDOM.nextInt(validStacks.size())).copy();
-            ore.stackSize = 1;
-            return ore;
-        } else {
-            List<ItemStack> validOres = new java.util.ArrayList<>();
-            for (ItemStack stack : body.properties().ores()) {
-                if (stack == null) continue;
-                ItemStackWrapper wrapper = ItemStackWrapper.of(stack);
-                if (wrapper == null || minerData.isBlacklisted(wrapper.toKey())) continue;
-                validOres.add(stack);
-            }
-            if (validOres.isEmpty()) return null;
-
-            ItemStack ore = validOres.get(RANDOM.nextInt(validOres.size())).copy();
-            ore.stackSize = 1;
-            return ore;
+            return null;
         }
+
+        List<ItemStack> ores = body.properties().ores();
+        if (ores.isEmpty()) return null;
+        ItemStack chosen = ores.get(RANDOM.nextInt(ores.size()));
+        if (chosen == null) return null;
+        ItemStackWrapper wrapper = ItemStackWrapper.of(chosen);
+        if (wrapper == null || minerData.isBlacklisted(wrapper.toKey())) return null;
+
+        ItemStack ore = chosen.copy();
+        ore.stackSize = 1;
+        return ore;
     }
 
     public long getDisplayedPowerEuPerTick() {

@@ -200,8 +200,8 @@ public final class OutpostFullSyncPacket implements IMessage {
     private static com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData createModuleData(OutpostModuleKind kind,
         ModuleSyncData syncData) {
         return switch (kind) {
-            case HAMMER -> new com.gtnewhorizons.galaxia.outpost.module.HammerModuleData();
-            case BIG_HAMMER -> new com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData();
+            case HAMMER -> com.gtnewhorizons.galaxia.outpost.module.HammerModuleData.getDefault();
+            case BIG_HAMMER -> com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData.getDefault();
             case MINER -> new MinerModuleData(syncData.minerBlacklist());
             case POWER -> new PowerModuleData();
         };

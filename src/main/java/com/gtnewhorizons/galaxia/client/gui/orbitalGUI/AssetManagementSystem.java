@@ -1,13 +1,20 @@
 package com.gtnewhorizons.galaxia.client.gui.orbitalGUI;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import java.util.regex.Pattern;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.item.ItemStack;
+
+import org.lwjgl.input.Keyboard;
 
 import com.cleanroommc.modularui.api.UpOrDown;
 import com.cleanroommc.modularui.api.drawable.IDrawable;
@@ -20,10 +27,15 @@ import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widget.ScrollWidget;
 import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
+import com.cleanroommc.modularui.value.StringValue;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.cleanroommc.modularui.widgets.TextWidget;
+import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
+import codechicken.nei.recipe.GuiCraftingRecipe;
+import codechicken.nei.recipe.GuiUsageRecipe;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
@@ -33,6 +45,7 @@ import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsConfigUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
+import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryRemovePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleActionPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
@@ -47,6 +60,8 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
+import com.gtnewhorizons.galaxia.utility.GTUtility;
 import com.gtnewhorizons.galaxia.utility.EnumColors;
 
 @Desugar
@@ -104,6 +119,14 @@ record PinnedInfoRow(String label, String value, List<ItemStack> items, boolean 
     PinnedInfoRow(String label, String value, List<ItemStack> items) {
         this(label, value, items, false);
     }
+}
+
+@Desugar
+record MinerOreOption(String key, String displayName, ItemStack displayStack, boolean blacklisted) {}
+
+enum InventorySortMode {
+    NAME,
+    AMOUNT
 }
 
 public final class AssetManagementSystem {
@@ -457,6 +480,16 @@ public final class AssetManagementSystem {
         int assetManagementTab = 0;
         /** Index of the module whose configuration sub-menu is open; -1 when none. */
         int configuringModuleIndex = -1;
+        boolean selectingModuleBuild = false;
+        InventorySortMode inventorySortMode = InventorySortMode.NAME;
+        boolean inventorySortAscending = true;
+        int armedModuleDestroyIndex = -1;
+        String armedDumpResourceKey;
+        int modulesScrollPosition = 0;
+        int inventoryScrollPosition = 0;
+        int logisticsScrollPosition = 0;
+        int minerConfigScrollPosition = 0;
+        int buildModuleScrollPosition = 0;
 
         boolean isAssetManagementOpen() {
             return assetManagementBody != null;
@@ -489,6 +522,16 @@ public final class AssetManagementSystem {
             pendingAssetRename = null;
             assetManagementTab = 0;
             configuringModuleIndex = -1;
+            selectingModuleBuild = false;
+            inventorySortMode = InventorySortMode.NAME;
+            inventorySortAscending = true;
+            armedModuleDestroyIndex = -1;
+            armedDumpResourceKey = null;
+            modulesScrollPosition = 0;
+            inventoryScrollPosition = 0;
+            logisticsScrollPosition = 0;
+            minerConfigScrollPosition = 0;
+            buildModuleScrollPosition = 0;
         }
     }
 
@@ -563,8 +606,8 @@ public final class AssetManagementSystem {
             void showActionStatus(String message);
         }
 
-        private static final int MODAL_MAX_WIDTH = 520;
-        private static final int MODAL_MAX_HEIGHT = 420;
+        private static final int MODAL_MAX_WIDTH = 620;
+        private static final int MODAL_MAX_HEIGHT = 440;
         private static final int MODAL_MARGIN_X = 80;
         private static final int MODAL_MARGIN_Y = 60;
         private static final int HEADER_HEIGHT = 28;
@@ -588,6 +631,7 @@ public final class AssetManagementSystem {
         private int lastContentVersion = -1;
         private boolean lastOutpostStatePresent = false;
         private int lastOutpostSyncRevision = -1;
+        private int deferredOutpostSyncRevision = -1;
 
         private int modalLeft, modalTop, modalRight, modalBottom;
         private int scrollLeft, scrollTop, scrollRight, scrollBottom;
@@ -595,7 +639,11 @@ public final class AssetManagementSystem {
         private ScrollWidget<?> mainScrollWidget;
         private ParentWidget<?> mainScrollContent;
         private VerticalScrollData mainScrollData;
+        private ScrollWidget<?> modalScrollWidget;
+        private VerticalScrollData modalScrollData;
+        private int modalScrollPosition;
         private int mainContentWidth, mainContentHeight;
+        private final List<TextFieldWidget> modalTextFields = new ArrayList<>();
 
         OrbitalAssetManagementWidget(OrbitalAssetUiState state, Callbacks callbacks) {
             this.state = state;
@@ -664,16 +712,29 @@ public final class AssetManagementSystem {
                     AutomatedOutpostState outpost = OutpostDataStore.get()
                         .getByAssetId(state.pendingAssetManagement.asset().assetId());
                     if (outpost != null && outpost.getSyncRevision() != lastOutpostSyncRevision) {
-                        lastOutpostSyncRevision = outpost.getSyncRevision();
+                        int newRevision = outpost.getSyncRevision();
+                        if (hasFocusedModalTextField()) {
+                            deferredOutpostSyncRevision = newRevision;
+                        } else {
+                            lastOutpostSyncRevision = newRevision;
+                            deferredOutpostSyncRevision = -1;
+                            markStructureDirty();
+                        }
+                    }
+                    if (deferredOutpostSyncRevision != -1 && !hasFocusedModalTextField()) {
+                        lastOutpostSyncRevision = deferredOutpostSyncRevision;
+                        deferredOutpostSyncRevision = -1;
                         markStructureDirty();
                     }
                 } else {
                     lastOutpostSyncRevision = -1;
+                    deferredOutpostSyncRevision = -1;
                 }
                 lastOutpostStatePresent = present;
             } else {
                 lastOutpostStatePresent = false;
                 lastOutpostSyncRevision = -1;
+                deferredOutpostSyncRevision = -1;
             }
 
             // Consume item picker result — works even if the starmap was closed and reopened
@@ -699,31 +760,6 @@ public final class AssetManagementSystem {
                     }
                 }
             }
-            if (ItemPickerScreen.hasPendingPickForMinerBlacklist()) {
-                String targetId = ItemPickerScreen.getPendingForOutpostId();
-                int moduleIndex = ItemPickerScreen.getPendingModuleIndex();
-                ItemStack pickedStack = ItemPickerScreen.pollPendingPickForMinerBlacklist();
-                AutomatedOutpostState outpost = targetId != null
-                    ? OutpostDataStore.get().getByAssetId(targetId)
-                    : null;
-                if (pickedStack != null && outpost != null && moduleIndex >= 0 && moduleIndex < outpost.modules().size()) {
-                    ItemStackWrapper wrapper = ItemStackWrapper.of(pickedStack);
-                    if (wrapper != null) {
-                        AutomatedOutpostModule module = outpost.modules().get(moduleIndex);
-                        if (module.getData() instanceof MinerModuleData minerData) {
-                            module.setData(minerData.withAddedBlacklist(wrapper.toKey()));
-                            Galaxia.GALAXIA_NETWORK.sendToServer(
-                                new OutpostModuleConfigPacket(outpost.assetId, moduleIndex, "ADD_MINER_BLACKLIST",
-                                    wrapper.toKey()));
-                        }
-                    }
-                    if (state.pendingAssetManagement != null
-                        && state.pendingAssetManagement.asset().assetId().equals(targetId)) {
-                        markStructureDirty();
-                    }
-                }
-            }
-
             if (structureVersion != lastStructureVersion) {
                 rebuildChildren();
                 lastStructureVersion = structureVersion;
@@ -752,6 +788,9 @@ public final class AssetManagementSystem {
         }
 
         private void rebuildChildren() {
+            if (modalScrollData != null) {
+                saveCurrentModalScrollPosition(modalScrollData.getScroll());
+            }
             clearMainPanelState();
             activeScrollWidget = null;
             removeAll();
@@ -765,6 +804,41 @@ public final class AssetManagementSystem {
             }
             buildMainPanel(body);
             refreshMainPanelContent();
+        }
+
+        private void saveCurrentModalScrollPosition(int scroll) {
+            if (state.selectingModuleBuild) {
+                state.buildModuleScrollPosition = scroll;
+            } else if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
+                AutomatedOutpostState outpost = OutpostDataStore.get().getByAssetId(state.pendingAssetManagement.asset().assetId());
+                if (outpost != null && state.configuringModuleIndex < outpost.modules().size()) {
+                    AutomatedOutpostModule module = outpost.modules().get(state.configuringModuleIndex);
+                    if (module.kind == OutpostModuleKind.MINER) {
+                        state.minerConfigScrollPosition = scroll;
+                    } else {
+                        state.logisticsScrollPosition = scroll;
+                    }
+                    return;
+                }
+            }
+            if (state.assetManagementTab == 1) {
+                state.inventoryScrollPosition = scroll;
+            } else {
+                state.modulesScrollPosition = scroll;
+            }
+        }
+
+        private int getCurrentModalScrollPosition() {
+            if (state.selectingModuleBuild) return state.buildModuleScrollPosition;
+            if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
+                AutomatedOutpostState outpost = OutpostDataStore.get().getByAssetId(state.pendingAssetManagement.asset().assetId());
+                if (outpost != null && state.configuringModuleIndex < outpost.modules().size()) {
+                    AutomatedOutpostModule module = outpost.modules().get(state.configuringModuleIndex);
+                    return module.kind == OutpostModuleKind.MINER ? state.minerConfigScrollPosition
+                        : state.logisticsScrollPosition;
+                }
+            }
+            return state.assetManagementTab == 1 ? state.inventoryScrollPosition : state.modulesScrollPosition;
         }
 
         private void buildMainPanel(OrbitalCelestialBody body) {
@@ -833,6 +907,8 @@ public final class AssetManagementSystem {
                 .height(contentHeight);
             mainScrollContent = content;
             scroll.child(content);
+            content.scheduleResize();
+            scroll.scheduleResize();
             modal.child(scroll);
             child(modal);
         }
@@ -1100,7 +1176,7 @@ public final class AssetManagementSystem {
             }
 
             AutomatedOutpostState outpost = OutpostDataStore.get().getByAssetId(asset.assetId());
-            ModalBounds bounds = createCenteredModalBounds(520, 420);
+            ModalBounds bounds = createCenteredModalBounds(MODAL_MAX_WIDTH, MODAL_MAX_HEIGHT);
             updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
             ParentWidget<?> modal = createModalRoot(bounds);
 
@@ -1131,34 +1207,51 @@ public final class AssetManagementSystem {
         }
 
         private void buildModulesTab(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+            int modalWidth = Math.max(520, modalRight - modalLeft);
+            int visibleHeight = Math.max(220, (modalBottom - modalTop) - 102);
+            int destroyWidth = 58;
+            int disableWidth = 58;
+            int configureWidth = 48;
+            int rightPadding = 46;
+            int gap = 8;
+            int destroyX = modalWidth - rightPadding - destroyWidth;
+            int disableX = destroyX - gap - disableWidth;
+            int configureX = disableX - gap - configureWidth;
             modal.child(createTitleText("Manage Outpost").pos(12, 10));
             modal.child(createBodyText(callbacks.formatAssetDisplayName(state.pendingAssetManagement.asset()), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
+            modal.child(createBodyText(buildPowerSummary(outpost), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                .pos(Math.max(210, modalWidth - 250), 28));
 
             // Tab switcher
-            modal.child(createTextButton("Modules", true, () -> { state.assetManagementTab = 0; markStructureDirty(); }, state.assetManagementTab == 1).pos(12, 45).size(80, 18));
-            modal.child(createTextButton("Inventory", true, () -> { state.assetManagementTab = 1; markStructureDirty(); }, state.assetManagementTab == 0).pos(94, 45).size(80, 18));
+            modal.child(createTabButton("Modules", state.assetManagementTab == 0, () -> {
+                state.assetManagementTab = 0;
+                state.selectingModuleBuild = false;
+                clearArmedDestructiveActions();
+                markStructureDirty();
+            }).pos(12, 45).size(96, 18));
+            modal.child(createTabButton("Inventory", state.assetManagementTab == 1, () -> {
+                state.assetManagementTab = 1;
+                state.selectingModuleBuild = false;
+                clearArmedDestructiveActions();
+                markStructureDirty();
+            }).pos(112, 45).size(96, 18));
 
             // ── Build toolbar: one small button per module type ──────────────
-            OutpostModuleKind[] kinds = OutpostModuleKind.values();
-            int toolbarBtnW = (490 - (kinds.length - 1) * 6) / kinds.length;
-            boolean isAutomatedOutpost = state.pendingAssetManagement.asset().kind() == CelestialAssetKind.AUTOMATED_OUTPOST;
-            for (int k = 0; k < kinds.length; k++) {
-                final OutpostModuleKind buildKind = kinds[k];
-                boolean buildEnabled = buildKind != OutpostModuleKind.MINER || isAutomatedOutpost;
-                int bx = 10 + k * (toolbarBtnW + 6);
-                modal.child(createFooterButton("+ " + buildKind.displayName, buildEnabled, () -> {
-                    Galaxia.GALAXIA_NETWORK.sendToServer(
-                        new OutpostBuildModulePacket(
-                            outpost.assetId,
-                            buildKind,
-                            callbacks.isCreativeBuildModeEnabled()));
-                }).pos(bx, 68).size(toolbarBtnW, 18));
-            }
+            modal.child(createFooterButton("Build Module", true, () -> {
+                state.selectingModuleBuild = true;
+                clearArmedDestructiveActions();
+                markStructureDirty();
+            }).pos(12, 68).size(140, 18));
 
             // ── Installed modules (scrollable) ───────────────────────────────
             VerticalScrollData scrollData = new VerticalScrollData();
-            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 92).size(500, 308)
+            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(12, 96)
+                .widthRelOffset(1f, -24)
+                .heightRelOffset(1f, -106)
                 .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+            modalScrollData = scrollData;
+            modalScrollWidget = scroll;
+            activeScrollWidget = scroll;
             ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
             int y = 0;
 
@@ -1166,7 +1259,9 @@ public final class AssetManagementSystem {
             for (int i = 0; i < modules.size(); i++) {
                 AutomatedOutpostModule m = modules.get(i);
                 final int index = i;
-                ParentWidget<?> row = new ParentWidget<>().pos(5, y).size(480, 44)
+                ParentWidget<?> row = new ParentWidget<>().pos(0, y)
+                    .widthRel(1f)
+                    .height(44)
                     .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
                 row.child(createBodyText(m.kind.displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 6));
@@ -1197,15 +1292,28 @@ public final class AssetManagementSystem {
                     row.child(createConfigureButton("Cfg", operational, () -> {
                         state.configuringModuleIndex = index;
                         markStructureDirty();
-                    }).pos(248, 12).size(60, 20));
+                    }).pos(configureX, 12).size(configureWidth, 20));
                 }
                 row.child(createDisableButton(isDisabled ? "Enable" : "Disable", operational, () -> {
                     String action = isDisabled ? "ENABLE" : "DISABLE";
+                    state.armedModuleDestroyIndex = -1;
                     Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, action));
-                }).pos(313, 12).size(62, 20));
-                row.child(createDestroyModuleButton(true, () -> {
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, "DESTROY"));
-                }).pos(380, 12).size(65, 20));
+                }).pos(disableX, 12).size(disableWidth, 20));
+                boolean armedDestroy = state.armedModuleDestroyIndex == index;
+                row.child(createTwoStageDestructiveButton(
+                    "Destroy",
+                    armedDestroy,
+                    true,
+                    () -> {
+                        if (state.armedModuleDestroyIndex == index) {
+                            state.armedModuleDestroyIndex = -1;
+                            Galaxia.GALAXIA_NETWORK
+                                .sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, "DESTROY"));
+                        } else {
+                            state.armedModuleDestroyIndex = index;
+                            markStructureDirty();
+                        }
+                    }).pos(destroyX, 12).size(destroyWidth, 20));
                 content.child(row);
                 y += 50;
             }
@@ -1215,42 +1323,170 @@ public final class AssetManagementSystem {
                     EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
             }
 
-            int contentHeight = Math.max(308, y + 8);
+            int contentHeight = Math.max(visibleHeight, y + 8);
             scrollData.setScrollSize(contentHeight);
             content.height(contentHeight);
             scroll.child(content);
+            scrollData.scrollTo(scroll.getScrollArea(), getCurrentModalScrollPosition());
+            content.scheduleResize();
+            scroll.scheduleResize();
             modal.child(scroll);
+            if (state.selectingModuleBuild) {
+                buildModuleSelectionOverlay(modal, outpost);
+            }
+        }
+
+        private void buildModuleSelectionOverlay(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+            final int modalWidth = Math.max(520, modalRight - modalLeft);
+            final int modalHeight = Math.max(360, modalBottom - modalTop);
+            final int pickerLeft = 24;
+            final int pickerTop = 40;
+            final int pickerRight = modalWidth - 24;
+            final int pickerBottom = modalHeight - 24;
+            final int pickerWidth = pickerRight - pickerLeft;
+            final int pickerHeight = pickerBottom - pickerTop;
+            final int scrollX = 10;
+            final int scrollY = 58;
+            final int scrollHeight = pickerHeight - scrollY - 10;
+
+            ParentWidget<?> backdrop = new ParentWidget<>().pos(0, 0)
+                .widthRel(1f)
+                .heightRel(1f)
+                .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, 0xAA081018)));
+            backdrop.child(createBackdropButton());
+            modal.child(backdrop);
+
+            ParentWidget<?> picker = createModalRoot(pickerLeft, pickerTop, pickerRight, pickerBottom);
+            picker.child(createTitleText("Build Module").pos(12, 10));
+            picker.child(createBodyText("Choose a module to build on this outpost.", EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
+            picker.child(createFooterButton("Close", true, () -> {
+                state.selectingModuleBuild = false;
+                markStructureDirty();
+            }).pos(pickerWidth - 12 - 78, 8).size(78, FOOTER_BUTTON_HEIGHT));
+
+            boolean isAutomatedOutpost = state.pendingAssetManagement.asset().kind() == CelestialAssetKind.AUTOMATED_OUTPOST;
+            VerticalScrollData scrollData = new VerticalScrollData();
+            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(scrollX, scrollY)
+                .widthRelOffset(1f, -(scrollX * 2))
+                .heightRelOffset(1f, -(scrollY + 10))
+                .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+            modalScrollData = scrollData;
+            modalScrollWidget = scroll;
+            activeScrollWidget = scroll;
+            scrollLeft = modalLeft + pickerLeft + scrollX;
+            scrollTop = modalTop + pickerTop + scrollY;
+            scrollRight = modalLeft + pickerRight - scrollX;
+            scrollBottom = scrollTop + scrollHeight;
+            ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
+            int y = 0;
+            for (OutpostModuleKind kind : OutpostModuleKind.values()) {
+                boolean buildEnabled = kind != OutpostModuleKind.MINER || isAutomatedOutpost;
+                ParentWidget<?> row = new ParentWidget<>().pos(0, y)
+                    .widthRel(1f)
+                    .height(92)
+                    .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
+                row.child(createBodyText(kind.displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 8));
+                row.child(createBodyText(buildModuleDescription(kind), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(8, 24)
+                    .size(Math.max(240, pickerWidth - 170), 24));
+                row.child(createBodyText(buildModuleStats(kind), EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 50)
+                    .size(Math.max(240, pickerWidth - 170), 12));
+                row.child(createBodyText(buildModuleCost(kind), EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 64)
+                    .size(Math.max(250, pickerWidth - 160), 20));
+                row.child(createFooterButton(buildEnabled ? "Build" : "Unavailable", buildEnabled, () -> {
+                    Galaxia.GALAXIA_NETWORK.sendToServer(
+                        new OutpostBuildModulePacket(
+                            outpost.assetId,
+                            kind,
+                            callbacks.isCreativeBuildModeEnabled()));
+                    state.selectingModuleBuild = false;
+                    markStructureDirty();
+                }).pos(pickerWidth - 100, 34).size(78, 20));
+                content.child(row);
+                y += 98;
+            }
+            int contentHeight = Math.max(scrollHeight, y + 4);
+            scrollData.setScrollSize(contentHeight);
+            content.height(contentHeight);
+            scroll.child(content);
+            scrollData.scrollTo(scroll.getScrollArea(), getCurrentModalScrollPosition());
+            content.scheduleResize();
+            scroll.scheduleResize();
+            picker.child(scroll);
+            modal.child(picker);
         }
 
         private void buildInventoryTab(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+            int modalWidth = Math.max(520, modalRight - modalLeft);
+            int visibleHeight = Math.max(220, (modalBottom - modalTop) - 80);
             modal.child(createTitleText("Manage Outpost").pos(12, 10));
             modal.child(createBodyText(callbacks.formatAssetDisplayName(state.pendingAssetManagement.asset()), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
+            modal.child(createBodyText(buildPowerSummary(outpost), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                .pos(Math.max(210, modalWidth - 250), 28));
 
             // Tab switcher
-            modal.child(createTextButton("Modules", true, () -> { state.assetManagementTab = 0; markStructureDirty(); }, state.assetManagementTab == 1).pos(12, 45).size(80, 18));
-            modal.child(createTextButton("Inventory", true, () -> { state.assetManagementTab = 1; markStructureDirty(); }, state.assetManagementTab == 0).pos(94, 45).size(80, 18));
+            modal.child(createTabButton("Modules", state.assetManagementTab == 0, () -> {
+                state.assetManagementTab = 0;
+                state.selectingModuleBuild = false;
+                clearArmedDestructiveActions();
+                markStructureDirty();
+            }).pos(12, 45).size(96, 18));
+            modal.child(createTabButton("Inventory", state.assetManagementTab == 1, () -> {
+                state.assetManagementTab = 1;
+                state.selectingModuleBuild = false;
+                clearArmedDestructiveActions();
+                markStructureDirty();
+            }).pos(112, 45).size(96, 18));
 
             VerticalScrollData scrollData = new VerticalScrollData();
-            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 70).size(500, 330)
+            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(12, 74)
+                .widthRelOffset(1f, -24)
+                .heightRelOffset(1f, -86)
                 .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+            modalScrollData = scrollData;
+            modalScrollWidget = scroll;
+            activeScrollWidget = scroll;
             ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
+            int sortAmountX = modalWidth - 120 - 28;
+            int sortNameX = sortAmountX - 98;
+            modal.child(createInventorySortButton("Name", sortNameX, 46, InventorySortMode.NAME).size(90, 16));
+            modal.child(createInventorySortButton("Amount", sortAmountX, 46, InventorySortMode.AMOUNT).size(90, 16));
             int y = 0;
-            for (Map.Entry<ItemStackWrapper, Long> entry : outpost.inventory.snapshot().entrySet()) {
-                ParentWidget<?> row = new ParentWidget<>().pos(5, y).size(480, 30)
+            for (Map.Entry<ItemStackWrapper, Long> entry : getSortedInventoryEntries(outpost)) {
+                ParentWidget<?> row = new ParentWidget<>().pos(5, y)
+                    .widthRelOffset(1f, -10)
+                    .height(30)
                     .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
-                
+
                 ItemStack stack = entry.getKey().toStack(1);
-                row.child(createItemWidget(stack, 16).pos(5, 7).size(16, 16));
-                
+                row.child(createInventoryItemWidget(stack, 16).pos(5, 7).size(16, 16));
                 row.child(createBodyText(stack.getDisplayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(30, 10));
-                row.child(createBodyText(formatAmount(entry.getValue()), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(400, 10));
+                row.child(createBodyText(formatAmount(entry.getValue()), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(360, 10));
+                boolean armedDump = entry.getKey().toKey().equals(state.armedDumpResourceKey);
+                row.child(createTwoStageDestructiveButton(
+                    "Dump",
+                    armedDump,
+                    true,
+                    () -> {
+                        String resourceKey = entry.getKey().toKey();
+                        if (resourceKey.equals(state.armedDumpResourceKey)) {
+                            state.armedDumpResourceKey = null;
+                            Galaxia.GALAXIA_NETWORK.sendToServer(
+                                new OutpostInventoryRemovePacket(outpost.assetId, entry.getKey()));
+                        } else {
+                            state.armedDumpResourceKey = resourceKey;
+                            markStructureDirty();
+                        }
+                    }).pos(420, 5).size(50, 20));
                 content.child(row);
                 y += 35;
             }
-            int contentHeight = Math.max(330, y + 4);
+            int contentHeight = Math.max(visibleHeight, y + 4);
             scrollData.setScrollSize(contentHeight);
             content.height(contentHeight);
             scroll.child(content);
+            scrollData.scrollTo(scroll.getScrollArea(), getCurrentModalScrollPosition());
+            content.scheduleResize();
+            scroll.scheduleResize();
             modal.child(scroll);
         }
 
@@ -1260,21 +1496,94 @@ public final class AssetManagementSystem {
                 .tooltip(t -> t.addLine(displayStack.getDisplayName()));
         }
 
-        private Widget<?> createReserveValueWidget(String text) {
-            return drawable((context, x, y, width, height) -> {
-                Gui.drawRect(x, y, x + width, y + height, EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor());
-                Gui.drawRect(x, y, x + width, y + 1, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                Gui.drawRect(x, y + height - 1, x + width, y + height, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                Gui.drawRect(x, y, x + 1, y + height, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                Gui.drawRect(x + width - 1, y, x + width, y + height, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                Minecraft mc = Minecraft.getMinecraft();
-                int textWidth = mc.fontRenderer.getStringWidth(text);
-                mc.fontRenderer.drawStringWithShadow(
-                    text,
-                    x + (width - textWidth) / 2,
-                    y + (height - mc.fontRenderer.FONT_HEIGHT) / 2 + 1,
-                    EnumColors.MAP_COLOR_TEXT_TITLE.getColor());
-            }).asWidget();
+        private ButtonWidget<?> createInventoryItemWidget(ItemStack stack, int size) {
+            ItemStack displayStack = stack.copy();
+            return new ScrollAwareButtonWidget().background(IDrawable.EMPTY)
+                .hoverBackground(createRectFrameDrawable(0x22000000, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor()))
+                .overlay(drawable((context, x, y, width, height) -> drawGuiItemStack(displayStack, x, y, size)))
+                .tooltip(t -> {
+                    t.addLine(displayStack.getDisplayName());
+                    t.addLine("LMB/R: Recipe");
+                    t.addLine("RMB/U: Usage");
+                })
+                .onMousePressed(mouseButton -> {
+                    if (mouseButton == 0) {
+                        GuiCraftingRecipe.openRecipeGui("item", displayStack.copy());
+                        return true;
+                    }
+                    if (mouseButton == 1) {
+                        GuiUsageRecipe.openRecipeGui("item", displayStack.copy());
+                        return true;
+                    }
+                    return true;
+                })
+                .onKeyPressed((typedChar, keyCode) -> {
+                    if (keyCode == Keyboard.KEY_R) {
+                        return GuiCraftingRecipe.openRecipeGui("item", displayStack.copy());
+                    }
+                    if (keyCode == Keyboard.KEY_U) {
+                        return GuiUsageRecipe.openRecipeGui("item", displayStack.copy());
+                    }
+                    return false;
+                });
+        }
+
+        private ButtonWidget<?> createInventorySortButton(String label, int x, int y, InventorySortMode mode) {
+            boolean active = state.inventorySortMode == mode;
+            String suffix = active ? (state.inventorySortAscending ? " ▲" : " ▼") : "";
+            return createTextButton(label + suffix, true, () -> {
+                if (state.inventorySortMode == mode) {
+                    state.inventorySortAscending = !state.inventorySortAscending;
+                } else {
+                    state.inventorySortMode = mode;
+                    state.inventorySortAscending = true;
+                }
+                markStructureDirty();
+            }, false).pos(x, y);
+        }
+
+        private List<Map.Entry<ItemStackWrapper, Long>> getSortedInventoryEntries(AutomatedOutpostState outpost) {
+            List<Map.Entry<ItemStackWrapper, Long>> entries = new ArrayList<>(outpost.inventory.snapshot().entrySet());
+            Comparator<Map.Entry<ItemStackWrapper, Long>> comparator;
+            if (state.inventorySortMode == InventorySortMode.AMOUNT) {
+                comparator = Comparator.<Map.Entry<ItemStackWrapper, Long>>comparingLong(Map.Entry::getValue)
+                    .thenComparing(entry -> entry.getKey().toStack(1).getDisplayName(), String.CASE_INSENSITIVE_ORDER);
+            } else {
+                comparator = Comparator.<Map.Entry<ItemStackWrapper, Long>, String>comparing(
+                    entry -> entry.getKey().toStack(1).getDisplayName(),
+                    String.CASE_INSENSITIVE_ORDER).thenComparingLong(Map.Entry::getValue);
+            }
+            entries.sort(state.inventorySortAscending ? comparator : comparator.reversed());
+            return entries;
+        }
+
+        private TextFieldWidget createIntegerValueWidget(IntSupplier getter, IntConsumer setter, int min, int max) {
+            TextFieldWidget field = new TextFieldWidget().setMaxLength(9)
+                .setPattern(Pattern.compile("[0-9]*"))
+                .setDefaultNumber(min)
+                .setNumbers(min, max)
+                .setFormatAsInteger(true)
+                .acceptsExpressions(false)
+                .autoUpdateOnChange(false)
+                .setTextColor(EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                .hintColor(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                .background(createRectFrameDrawable(
+                    EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                    EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
+                .value(new StringValue.Dynamic(() -> String.valueOf(getter.getAsInt()), text -> {
+                    int parsed = min;
+                    if (text != null && !text.isEmpty()) {
+                        try {
+                            parsed = Integer.parseInt(text);
+                        } catch (NumberFormatException ignored) {
+                            parsed = getter.getAsInt();
+                        }
+                    }
+                    setter.accept(Math.max(min, Math.min(max, parsed)));
+                }))
+                .setFocusOnGuiOpen(false);
+            modalTextFields.add(field);
+            return field;
         }
 
         private void drawGuiItemStack(ItemStack stack, int x, int y, int size) {
@@ -1313,6 +1622,7 @@ public final class AssetManagementSystem {
          * buttons, while the buttons themselves send a {@link LogisticsConfigUpdatePacket}.
          */
         private void buildLogisticsSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+            int visibleHeight = Math.max(220, (modalBottom - modalTop) - 82);
             List<AutomatedOutpostModule> modules = outpost.modules();
             String moduleLabel = (state.configuringModuleIndex >= 0
                 && state.configuringModuleIndex < modules.size())
@@ -1334,15 +1644,21 @@ public final class AssetManagementSystem {
             // ── Column header labels ──────────────────────────────────────────
             int hdrY = 58;
             modal.child(createBodyText("Item", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(26, hdrY));
-            modal.child(createBodyText("In Inventory", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(220, hdrY));
-            modal.child(createBodyText("Reserve", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(310, hdrY));
-            modal.child(createBodyText("Import", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(390, hdrY));
-            modal.child(createBodyText("Export", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(450, hdrY));
+            modal.child(createBodyText("Inventory", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(186, hdrY));
+            modal.child(createBodyText("Reserve", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(280, hdrY));
+            modal.child(createBodyText("Min Pkg", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(365, hdrY));
+            modal.child(createBodyText("Import", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(430, hdrY));
+            modal.child(createBodyText("Export", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(468, hdrY));
 
             // ── Scrollable item rows ─────────────────────────────────────────
             VerticalScrollData scrollData = new VerticalScrollData();
-            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 72).size(500, 328)
+            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 72)
+                .widthRelOffset(1f, -20)
+                .heightRelOffset(1f, -82)
                 .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+            modalScrollData = scrollData;
+            modalScrollWidget = scroll;
+            activeScrollWidget = scroll;
             ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
 
             Map<ItemStackWrapper, LogisticsResourceConfig> configSnapshot =
@@ -1355,7 +1671,9 @@ public final class AssetManagementSystem {
                 final ItemStack displayStack = wrapper.toStack(1);
                 long currentAmount = outpost.inventory.getAmount(wrapper);
 
-                ParentWidget<?> row = new ParentWidget<>().pos(4, rowY).size(488, 28)
+                ParentWidget<?> row = new ParentWidget<>().pos(4, rowY)
+                    .widthRelOffset(1f, -8)
+                    .height(28)
                     .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
                 // Icon
@@ -1364,7 +1682,7 @@ public final class AssetManagementSystem {
                 String name = displayStack.getDisplayName();
                 row.child(createBodyText(name, EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(24, 8));
                 // Current amount in inventory
-                row.child(createBodyText(formatAmount(currentAmount), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(220, 8));
+                row.child(createBodyText(formatAmount(currentAmount), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(182, 8));
                 // Reserve: [−] value [+]
                 row.child(createFooterButton("-", true, () -> {
                     int newRes = Math.max(0, cfg.minReserve() - 1);
@@ -1372,29 +1690,65 @@ public final class AssetManagementSystem {
                     outpost.logisticsConfig.set(wrapper, updated);
                     Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(310, 4).size(18, 20));
-                row.child(createReserveValueWidget(String.valueOf(cfg.minReserve())).pos(332, 4).size(28, 20));
+                }).pos(246, 4).size(18, 20));
+                row.child(createIntegerValueWidget(
+                    () -> outpost.logisticsConfig.get(wrapper).minReserve(),
+                    value -> {
+                        LogisticsResourceConfig current = outpost.logisticsConfig.get(wrapper);
+                        LogisticsResourceConfig updated = current.withMinReserve(value);
+                        outpost.logisticsConfig.set(wrapper, updated);
+                        Galaxia.GALAXIA_NETWORK.sendToServer(
+                            new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    },
+                    0,
+                    999999).pos(268, 4).size(36, 20));
                 row.child(createFooterButton("+", true, () -> {
                     int newRes = cfg.minReserve() + 1;
                     LogisticsResourceConfig updated = cfg.withMinReserve(newRes);
                     outpost.logisticsConfig.set(wrapper, updated);
                     Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(363, 4).size(18, 20));
+                }).pos(306, 4).size(18, 20));
+                // Minimum package size
+                row.child(createFooterButton("-", true, () -> {
+                    int newPkg = Math.max(1, cfg.orderSize() - 1);
+                    LogisticsResourceConfig updated = cfg.withOrderSize(newPkg);
+                    outpost.logisticsConfig.set(wrapper, updated);
+                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    markStructureDirty();
+                }).pos(330, 4).size(18, 20));
+                row.child(createIntegerValueWidget(
+                    () -> outpost.logisticsConfig.get(wrapper).orderSize(),
+                    value -> {
+                        LogisticsResourceConfig current = outpost.logisticsConfig.get(wrapper);
+                        LogisticsResourceConfig updated = current.withOrderSize(value);
+                        outpost.logisticsConfig.set(wrapper, updated);
+                        Galaxia.GALAXIA_NETWORK.sendToServer(
+                            new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    },
+                    1,
+                    999999).pos(352, 4).size(36, 20));
+                row.child(createFooterButton("+", true, () -> {
+                    int newPkg = cfg.orderSize() + 1;
+                    LogisticsResourceConfig updated = cfg.withOrderSize(newPkg);
+                    outpost.logisticsConfig.set(wrapper, updated);
+                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    markStructureDirty();
+                }).pos(390, 4).size(18, 20));
                 // Import toggle
                 row.child(createFooterButton(cfg.isImportEnabled() ? "ON" : "OFF", true, () -> {
                     LogisticsResourceConfig updated = cfg.withImportEnabled(!cfg.isImportEnabled());
                     outpost.logisticsConfig.set(wrapper, updated);
                     Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(382, 4).size(42, 20));
+                }).pos(416, 4).size(34, 20));
                 // Export toggle
                 row.child(createFooterButton(cfg.isSupplyEnabled() ? "ON" : "OFF", true, () -> {
                     LogisticsResourceConfig updated = cfg.withSupplyEnabled(!cfg.isSupplyEnabled());
                     outpost.logisticsConfig.set(wrapper, updated);
                     Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(432, 4).size(42, 20));
+                }).pos(454, 4).size(34, 20));
 
                 content.child(row);
                 rowY += 32;
@@ -1406,63 +1760,119 @@ public final class AssetManagementSystem {
                     EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
             }
 
-            int contentHeight = Math.max(328, rowY + 8);
+            int contentHeight = Math.max(visibleHeight, rowY + 8);
             scrollData.setScrollSize(contentHeight);
             content.height(contentHeight);
             scroll.child(content);
+            scrollData.scrollTo(scroll.getScrollArea(), getCurrentModalScrollPosition());
+            content.scheduleResize();
+            scroll.scheduleResize();
             modal.child(scroll);
         }
 
         private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost,
             AutomatedOutpostModule module) {
+            int visibleHeight = Math.max(220, (modalBottom - modalTop) - 88);
             MinerModuleData minerData = module.getData() instanceof MinerModuleData typed ? typed : new MinerModuleData();
+            List<MinerOreOption> options = buildMinerOreOptions(outpost, minerData);
 
             modal.child(createTitleText("Miner Configuration").pos(12, 10));
             modal.child(createFooterButton("Back", true, () -> {
                 state.configuringModuleIndex = -1;
                 markStructureDirty();
             }).pos(12, 32).size(60, 20));
-            modal.child(createFooterButton("Add Ore", true, () -> {
-                ItemPickerScreen.setPendingForMinerBlacklist(outpost.assetId, state.configuringModuleIndex);
-                ItemPickerScreen.FACTORY.openClient();
-            }).pos(90, 32).size(80, 18));
-            modal.child(createBodyText("Blacklisted ores", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 58));
+            modal.child(createBodyText("Planetary ores", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 58));
+            modal.child(createBodyText("Blacklist", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(428, 58));
 
             VerticalScrollData scrollData = new VerticalScrollData();
-            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 78).size(500, 322)
+            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 78)
+                .widthRelOffset(1f, -20)
+                .heightRelOffset(1f, -88)
                 .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+            modalScrollData = scrollData;
+            modalScrollWidget = scroll;
+            activeScrollWidget = scroll;
             ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
             int rowY = 0;
-            for (String key : minerData.blacklistedItemKeys()) {
-                ItemStackWrapper wrapper = ItemStackWrapper.fromKey(key);
-                ItemStack stack = wrapper == null ? null : wrapper.toStack(1);
-                ParentWidget<?> row = new ParentWidget<>().pos(4, rowY).size(488, 28)
+            for (MinerOreOption option : options) {
+                ParentWidget<?> row = new ParentWidget<>().pos(4, rowY)
+                    .widthRelOffset(1f, -8)
+                    .height(28)
                     .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
-                if (stack != null) {
-                    row.child(createItemWidget(stack, 16).pos(4, 6).size(16, 16));
-                    row.child(createBodyText(stack.getDisplayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(24, 8));
+                if (option.displayStack() != null) {
+                    row.child(createItemWidget(option.displayStack(), 16).pos(4, 6).size(16, 16));
                 } else {
-                    row.child(createBodyText(key, EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(8, 8));
+                    row.child(drawable((c, x, y1, w, h) -> {
+                        Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_MODAL_HEADER.getColor());
+                        Gui.drawRect(x, y1, x + w, y1 + 1, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
+                        Gui.drawRect(x, y1 + h - 1, x + w, y1 + h, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
+                        Gui.drawRect(x, y1, x + 1, y1 + h, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
+                        Gui.drawRect(x + w - 1, y1, x + w, y1 + h, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
+                    }).asWidget().pos(4, 6).size(16, 16));
                 }
-                row.child(createDestroyModuleButton(true, () -> {
+                row.child(createBodyText(option.displayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(24, 8).width(360));
+                row.child(createCheckboxButton(option.blacklisted(), () -> {
                     if (!(module.getData() instanceof MinerModuleData currentData)) return;
-                    module.setData(currentData.withRemovedBlacklist(key));
-                    Galaxia.GALAXIA_NETWORK.sendToServer(
-                        new OutpostModuleConfigPacket(outpost.assetId, state.configuringModuleIndex,
-                            "REMOVE_MINER_BLACKLIST", key));
+                    boolean blacklisted = currentData.isBlacklisted(option.key());
+                    module.setData(blacklisted ? currentData.withRemovedBlacklist(option.key())
+                        : currentData.withAddedBlacklist(option.key()));
+                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
+                        outpost.assetId,
+                        state.configuringModuleIndex,
+                        blacklisted ? "REMOVE_MINER_BLACKLIST" : "ADD_MINER_BLACKLIST",
+                        option.key()));
                     markStructureDirty();
-                }).pos(410, 4).size(65, 20));
+                }).pos(434, 4).size(20, 20));
                 content.child(row);
                 rowY += 32;
             }
-            if (minerData.blacklistedItemKeys().isEmpty()) {
-                content.child(createBodyText("No blacklisted ores.", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
+            if (options.isEmpty()) {
+                content.child(createBodyText("No ores available on this body.", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
             }
-            int contentHeight = Math.max(322, rowY + 8);
+            int contentHeight = Math.max(visibleHeight, rowY + 8);
             scrollData.setScrollSize(contentHeight);
             content.height(contentHeight);
             scroll.child(content);
+            scrollData.scrollTo(scroll.getScrollArea(), getCurrentModalScrollPosition());
+            content.scheduleResize();
+            scroll.scheduleResize();
             modal.child(scroll);
+        }
+
+        private List<MinerOreOption> buildMinerOreOptions(AutomatedOutpostState outpost, MinerModuleData minerData) {
+            return GalaxiaCelestialAPI.get(outpost.celestialBodyId)
+                .map(body -> body.properties().usesGtOreVeins()
+                    ? buildGtMinerOreOptions(body, minerData)
+                    : buildVanillaMinerOreOptions(body, minerData))
+                .orElse(Collections.emptyList());
+        }
+
+        private List<MinerOreOption> buildGtMinerOreOptions(CelestialObjectRegistration body, MinerModuleData minerData) {
+            Map<String, MinerOreOption> options = new LinkedHashMap<>();
+            body.properties().gtOreVeins().forEach(vein -> vein.ores().forEach(oreName -> {
+                if (oreName == null || oreName.isEmpty() || options.containsKey(oreName)) return;
+                ItemStack displayStack = GTUtility.getRawOreStack(oreName);
+                String displayName = displayStack != null ? displayStack.getDisplayName() : oreName;
+                options.put(oreName, new MinerOreOption(oreName, displayName, displayStack, minerData.isBlacklisted(oreName)));
+            }));
+            return new ArrayList<>(options.values());
+        }
+
+        private List<MinerOreOption> buildVanillaMinerOreOptions(CelestialObjectRegistration body, MinerModuleData minerData) {
+            List<MinerOreOption> options = new ArrayList<>();
+            for (ItemStack ore : body.properties().ores()) {
+                if (ore == null) continue;
+                ItemStackWrapper wrapper = ItemStackWrapper.of(ore);
+                if (wrapper == null) continue;
+                ItemStack displayStack = ore.copy();
+                displayStack.stackSize = 1;
+                options.add(new MinerOreOption(
+                    wrapper.toKey(),
+                    displayStack.getDisplayName(),
+                    displayStack,
+                    minerData.isBlacklisted(wrapper.toKey())));
+            }
+            return options;
         }
 
         private void buildPowerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost,
@@ -1482,6 +1892,51 @@ public final class AssetManagementSystem {
             if (amount < 1000) return String.valueOf(amount);
             if (amount < 1000000) return (amount / 1000) + "k";
             return (amount / 1000000) + "M";
+        }
+
+        private String buildPowerSummary(AutomatedOutpostState outpost) {
+            long generationPerTick = AutomatedOutpostState.PASSIVE_GENERATION;
+            long drawPerTick = 0L;
+            for (AutomatedOutpostModule module : outpost.modules()) {
+                if (!module.isOperational()) continue;
+                if (module.kind == OutpostModuleKind.POWER) generationPerTick += PowerModuleData.GENERATION_EU_PER_TICK;
+                else drawPerTick += module.kind.powerDrawEuPerTick;
+            }
+            long netPerSecond = (generationPerTick - drawPerTick) * 20L;
+            String sign = netPerSecond >= 0 ? "+" : "";
+            return "Power: " + outpost.getEnergyStored() + "/" + AutomatedOutpostState.MAX_ENERGY + " " + sign
+                + netPerSecond + "/s";
+        }
+
+        private String buildModuleDescription(OutpostModuleKind kind) {
+            return switch (kind) {
+                case HAMMER -> "Balances item reserves and exports excess inventory to other stations.";
+                case BIG_HAMMER -> "Heavy logistics launcher for larger interstation packages.";
+                case MINER -> "Generates one ore per second from this body's available deposits.";
+                case POWER -> "Adds extra power generation to support modules and logistics.";
+            };
+        }
+
+        private String buildModuleStats(OutpostModuleKind kind) {
+            String powerLine = kind == OutpostModuleKind.POWER
+                ? "Generates " + PowerModuleData.GENERATION_EU_PER_TICK + " EU/t"
+                : "Consumes " + kind.powerDrawEuPerTick + " EU/t";
+            String restrictionLine = kind == OutpostModuleKind.MINER ? "Only on Automated Outposts" : "Buildable here";
+            return powerLine + " | Cap " + kind.baseEnergyCapacity + " EU | " + restrictionLine;
+        }
+
+        private String buildModuleCost(OutpostModuleKind kind) {
+            StringBuilder sb = new StringBuilder("Cost: ");
+            boolean first = true;
+            for (Map.Entry<ItemStackWrapper, Integer> entry : kind.getRequiredResources().entrySet()) {
+                ItemStack stack = entry.getKey().toStack(1);
+                if (!first) sb.append(", ");
+                sb.append(entry.getValue())
+                    .append(' ')
+                    .append(stack == null ? entry.getKey().toKey() : stack.getDisplayName());
+                first = false;
+            }
+            return sb.toString();
         }
 
         private void addFooterButtons(ParentWidget<?> modal, ModalBounds bounds, String cancelLabel,
@@ -1663,17 +2118,12 @@ public final class AssetManagementSystem {
         }
 
         private ButtonWidget<?> createBackdropButton() {
-            return new ButtonWidget<>().pos(0, 0)
+            return new BackdropButtonWidget().pos(0, 0)
                 .widthRel(1f)
                 .heightRel(1f)
                 .background(IDrawable.EMPTY)
                 .hoverBackground(IDrawable.EMPTY)
-                .onMousePressed(mouseButton -> {
-                    if (mouseButton != 0) return true;
-                    if (state.hasBlockingModal()) callbacks.dismissPendingModalByOutsideClick();
-                    else callbacks.closeAssetManagement();
-                    return true;
-                });
+                .onMousePressed(mouseButton -> true);
         }
 
         private ParentWidget<?> createModalRoot(ModalBounds bounds) {
@@ -1770,6 +2220,16 @@ public final class AssetManagementSystem {
             return createTextButton(label, enabled, action, false);
         }
 
+        private ButtonWidget<?> createTabButton(String label, boolean active, Runnable action) {
+            return createColoredButton(label, true, action,
+                active ? EnumColors.MAP_COLOR_BTN_DISABLED.getColor()
+                    : EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                active ? EnumColors.MAP_COLOR_BTN_DISABLED.getColor()
+                    : EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor(),
+                active ? EnumColors.MAP_COLOR_BTN_BORDER_DISABLED.getColor()
+                    : EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
+        }
+
         private ButtonWidget<?> createDangerFooterButton(String label, Runnable action) {
             return createTextButton(label, true, action, true);
         }
@@ -1795,6 +2255,48 @@ public final class AssetManagementSystem {
                 EnumColors.MAP_COLOR_BTN_DESTROY_BORDER.getColor());
         }
 
+        private ButtonWidget<?> createTwoStageDestructiveButton(String label, boolean armed, boolean enabled,
+            Runnable action) {
+            if (armed) {
+                return createColoredButton(label, enabled, action,
+                    EnumColors.MAP_COLOR_BTN_DANGER_DEFAULT.getColor(),
+                    EnumColors.MAP_COLOR_BTN_DANGER_HOVERED.getColor(),
+                    EnumColors.MAP_COLOR_BTN_DANGER_BORDER.getColor());
+            }
+            return createColoredButton(label, enabled, action,
+                EnumColors.MAP_COLOR_BTN_DESTROY_DEFAULT.getColor(),
+                EnumColors.MAP_COLOR_BTN_DESTROY_HOVERED.getColor(),
+                EnumColors.MAP_COLOR_BTN_DESTROY_BORDER.getColor());
+        }
+
+        private ButtonWidget<?> createCheckboxButton(boolean checked, Runnable action) {
+            String label = checked ? "X" : "";
+            return new ScrollAwareButtonWidget()
+                .background(createRectFrameDrawable(
+                    EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                    EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
+                .hoverBackground(createRectFrameDrawable(
+                    EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor(),
+                    EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
+                .overlay(drawable((context, x, y, w, h) -> {
+                    org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
+                    com.cleanroommc.modularui.utils.GlStateManager.color(1f, 1f, 1f, 1f);
+                    net.minecraft.client.gui.FontRenderer fr = net.minecraft.client.Minecraft
+                        .getMinecraft().fontRenderer;
+                    int textW = fr.getStringWidth(label);
+                    fr.drawStringWithShadow(
+                        label,
+                        x + (w - textW) / 2,
+                        y + (h - fr.FONT_HEIGHT) / 2 + 1,
+                        EnumColors.MAP_COLOR_TEXT_TITLE.getColor());
+                }))
+                .onMousePressed(mouseButton -> {
+                    if (mouseButton != 0) return true;
+                    action.run();
+                    return true;
+                });
+        }
+
         private ButtonWidget<?> createColoredButton(String label, boolean enabled, Runnable action,
             int defaultBg, int hoverBg, int border) {
             return new ScrollAwareButtonWidget()
@@ -1805,6 +2307,8 @@ public final class AssetManagementSystem {
                     enabled ? hoverBg : EnumColors.MAP_COLOR_BTN_DISABLED.getColor(),
                     enabled ? border : EnumColors.MAP_COLOR_BTN_BORDER_DISABLED.getColor()))
                 .overlay(drawable((context, x, y, w, h) -> {
+                    org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
+                    com.cleanroommc.modularui.utils.GlStateManager.color(1f, 1f, 1f, 1f);
                     net.minecraft.client.gui.FontRenderer fr = net.minecraft.client.Minecraft
                         .getMinecraft().fontRenderer;
                     int textW = fr.getStringWidth(label);
@@ -1826,6 +2330,8 @@ public final class AssetManagementSystem {
             return new ScrollAwareButtonWidget().background(createTextButtonBackground(enabled, false, danger))
                 .hoverBackground(createTextButtonBackground(enabled, true, danger))
                 .overlay(drawable((context, x, y, w, h) -> {
+                    org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
+                    com.cleanroommc.modularui.utils.GlStateManager.color(1f, 1f, 1f, 1f);
                     net.minecraft.client.gui.FontRenderer fr = net.minecraft.client.Minecraft
                         .getMinecraft().fontRenderer;
                     int textW = fr.getStringWidth(label);
@@ -1996,8 +2502,26 @@ public final class AssetManagementSystem {
             mainScrollWidget = null;
             mainScrollContent = null;
             mainScrollData = null;
+            modalScrollWidget = null;
+            modalScrollData = null;
+            modalTextFields.clear();
             mainContentWidth = 0;
             mainContentHeight = 0;
+        }
+
+        private void clearArmedDestructiveActions() {
+            state.armedModuleDestroyIndex = -1;
+            state.armedDumpResourceKey = null;
+        }
+
+        private boolean hasFocusedModalTextField() {
+            if (getContext() == null) return false;
+            for (TextFieldWidget field : modalTextFields) {
+                if (field != null && field.isValid() && getContext().isFocused(field)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private String trimToWidth(String text, int width) {
@@ -2054,6 +2578,14 @@ public final class AssetManagementSystem {
             @Override
             public boolean onMouseScroll(UpOrDown scrollDirection, int amount) {
                 return super.onMouseScroll(scrollDirection, amount) || forwardActiveScroll(scrollDirection, amount);
+            }
+        }
+
+        private final class BackdropButtonWidget extends ButtonWidget<BackdropButtonWidget> {
+
+            @Override
+            public boolean onMouseScroll(UpOrDown scrollDirection, int amount) {
+                return true;
             }
         }
     }
