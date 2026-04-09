@@ -49,6 +49,11 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryRemovePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleActionPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
+import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
+import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingMode;
+import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
+import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -747,11 +752,21 @@ public final class AssetManagementSystem {
                     : null;
                 if (pickedStack != null && outpost != null) {
                     ItemStackWrapper wrapper = ItemStackWrapper.of(pickedStack);
-                    if (wrapper != null && outpost.logisticsConfig.get(wrapper) == LogisticsResourceConfig.DEFAULT) {
+                    boolean alreadyTracked = wrapper != null && outpost.logisticsConfig.snapshot().containsKey(wrapper);
+                    if (wrapper != null && !alreadyTracked) {
                         LogisticsResourceConfig newCfg = new LogisticsResourceConfig(0, 64, false, false);
                         outpost.logisticsConfig.set(wrapper, newCfg);
+                        Galaxia.LOG.info(
+                            "[Outpost UI] Added logistics tracked item {} to outpost {} from item picker",
+                            wrapper.toKey(),
+                            outpost.assetId);
                         Galaxia.GALAXIA_NETWORK.sendToServer(
                             new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, newCfg));
+                    } else if (wrapper != null) {
+                        Galaxia.LOG.info(
+                            "[Outpost UI] Ignored item picker add for {} on outpost {} because it is already tracked",
+                            wrapper.toKey(),
+                            outpost.assetId);
                     }
                     // Refresh the modal if the correct outpost is currently open
                     if (state.pendingAssetManagement != null
@@ -1249,9 +1264,10 @@ public final class AssetManagementSystem {
                 .widthRelOffset(1f, -24)
                 .heightRelOffset(1f, -106)
                 .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+            scroll.setEnabled(!state.selectingModuleBuild);
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
-            activeScrollWidget = scroll;
+            activeScrollWidget = state.selectingModuleBuild ? null : scroll;
             ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
             int y = 0;
 
@@ -1370,6 +1386,7 @@ public final class AssetManagementSystem {
                 .widthRelOffset(1f, -(scrollX * 2))
                 .heightRelOffset(1f, -(scrollY + 10))
                 .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+            scroll.setEnabled(true);
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
             activeScrollWidget = scroll;
@@ -1622,12 +1639,33 @@ public final class AssetManagementSystem {
          * buttons, while the buttons themselves send a {@link LogisticsConfigUpdatePacket}.
          */
         private void buildLogisticsSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost) {
-            int visibleHeight = Math.max(220, (modalBottom - modalTop) - 82);
+            int visibleHeight = Math.max(220, (modalBottom - modalTop) - 106);
             List<AutomatedOutpostModule> modules = outpost.modules();
-            String moduleLabel = (state.configuringModuleIndex >= 0
+            AutomatedOutpostModule module = (state.configuringModuleIndex >= 0
                 && state.configuringModuleIndex < modules.size())
-                    ? modules.get(state.configuringModuleIndex).kind.displayName
-                    : "HAMMER";
+                    ? modules.get(state.configuringModuleIndex) : null;
+            String moduleLabel = module != null ? module.kind.displayName : "HAMMER";
+            boolean isBigHammer = module != null && module.kind == OutpostModuleKind.BIG_HAMMER;
+
+            // Extract current shooting config and planetary flag from live module data
+            AllowShootingConfig shootingCfg;
+            boolean planetaryHandling;
+            TransferRoutePriority routePriority;
+            if (isBigHammer) {
+                BigHammerModuleData bd = module.getData() instanceof BigHammerModuleData d ? d
+                    : BigHammerModuleData.getDefault();
+                shootingCfg = bd.effectiveShooting();
+                planetaryHandling = bd.planetaryTransferHandling();
+                routePriority = bd.effectiveRoutePriority();
+            } else {
+                HammerModuleData hd = (module != null && module.getData() instanceof HammerModuleData d) ? d
+                    : HammerModuleData.getDefault();
+                shootingCfg = hd.effectiveShooting();
+                planetaryHandling = false;
+                routePriority = hd.effectiveRoutePriority();
+            }
+            AllowShootingMode currentMode = shootingCfg.mode();
+            double currentThreshold = shootingCfg.threshold();
 
             modal.child(createTitleText("Logistics: " + moduleLabel).pos(12, 10));
             modal.child(createFooterButton("Back", true, () -> {
@@ -1641,20 +1679,83 @@ public final class AssetManagementSystem {
                 ItemPickerScreen.FACTORY.openClient();
             }).pos(90, 32).size(80, 18));
 
+            // ── Module settings row ───────────────────────────────────────────
+            modal.child(createBodyText("Shooting:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 56));
+            String modeLabel = switch (currentMode) {
+                case ALWAYS -> "Always";
+                case WHEN_DV_UNDER -> "dV\u003c";
+                case WHEN_TOF_UNDER -> "TOF\u003c";
+            };
+            final int modIdx = state.configuringModuleIndex;
+            modal.child(createFooterButton(modeLabel, module != null, () -> {
+                AllowShootingMode next = switch (currentMode) {
+                    case ALWAYS -> AllowShootingMode.WHEN_DV_UNDER;
+                    case WHEN_DV_UNDER -> AllowShootingMode.WHEN_TOF_UNDER;
+                    case WHEN_TOF_UNDER -> AllowShootingMode.ALWAYS;
+                };
+                applyShootingModeUpdate(module, outpost, modIdx, isBigHammer, next, currentThreshold);
+                markStructureDirty();
+            }).pos(74, 52).size(56, 18));
+
+            if (currentMode != AllowShootingMode.ALWAYS) {
+                double step = currentMode == AllowShootingMode.WHEN_DV_UNDER ? 1.0 : 3600.0;
+                String threshLabel = currentMode == AllowShootingMode.WHEN_DV_UNDER
+                    ? String.format("%.1f", currentThreshold)
+                    : String.format("%.0fs", currentThreshold);
+                modal.child(createFooterButton("-", module != null, () -> {
+                    double newT = Math.max(0.0, currentThreshold - step);
+                    applyShootingThresholdUpdate(module, outpost, modIdx, isBigHammer, currentMode, newT);
+                    markStructureDirty();
+                }).pos(136, 52).size(18, 18));
+                modal.child(createBodyText(threshLabel, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(158, 56));
+                modal.child(createFooterButton("+", module != null, () -> {
+                    double newT = currentThreshold + step;
+                    applyShootingThresholdUpdate(module, outpost, modIdx, isBigHammer, currentMode, newT);
+                    markStructureDirty();
+                }).pos(206, 52).size(18, 18));
+            }
+
+            if (isBigHammer) {
+                modal.child(
+                    createBodyText("Planetary:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(234, 56));
+                modal.child(createFooterButton(planetaryHandling ? "ON" : "OFF", true, () -> {
+                    if (module.getData() instanceof BigHammerModuleData bd) {
+                        module.setData(new BigHammerModuleData(
+                            !bd.planetaryTransferHandling(),
+                            bd.effectiveShooting(),
+                            bd.effectiveRoutePriority()));
+                    }
+                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
+                        outpost.assetId, modIdx, "SET_PLANETARY_HANDLING",
+                        String.valueOf(!planetaryHandling)));
+                    markStructureDirty();
+                }).pos(296, 52).size(34, 18));
+            }
+
             // ── Column header labels ──────────────────────────────────────────
-            int hdrY = 58;
+            modal.child(createBodyText("Priority:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 78));
+            modal.child(createFooterButton(
+                routePriority == TransferRoutePriority.PRIORITIZE_DV ? "dV" : "TOF",
+                module != null,
+                () -> {
+                    applyRoutePriorityUpdate(module, outpost, modIdx, routePriority.toggled());
+                    markStructureDirty();
+                }).pos(74, 74).size(56, 18));
+
+            int hdrY = 102;
             modal.child(createBodyText("Item", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(26, hdrY));
             modal.child(createBodyText("Inventory", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(186, hdrY));
             modal.child(createBodyText("Reserve", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(280, hdrY));
             modal.child(createBodyText("Min Pkg", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(365, hdrY));
             modal.child(createBodyText("Import", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(430, hdrY));
             modal.child(createBodyText("Export", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(468, hdrY));
+            modal.child(createBodyText("Rm", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(510, hdrY));
 
             // ── Scrollable item rows ─────────────────────────────────────────
             VerticalScrollData scrollData = new VerticalScrollData();
-            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 72)
+            ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 116)
                 .widthRelOffset(1f, -20)
-                .heightRelOffset(1f, -82)
+                .heightRelOffset(1f, -126)
                 .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
@@ -1749,6 +1850,11 @@ public final class AssetManagementSystem {
                     Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
                 }).pos(454, 4).size(34, 20));
+                row.child(createFooterButton("X", true, () -> {
+                    outpost.logisticsConfig.reset(wrapper);
+                    Galaxia.GALAXIA_NETWORK.sendToServer(LogisticsConfigUpdatePacket.remove(outpost.assetId, wrapper));
+                    markStructureDirty();
+                }).pos(502, 4).size(18, 20));
 
                 content.child(row);
                 rowY += 32;
@@ -1770,6 +1876,63 @@ public final class AssetManagementSystem {
             modal.child(scroll);
         }
 
+        private void applyShootingModeUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
+            int modIdx, boolean isBigHammer, AllowShootingMode newMode, double threshold) {
+            if (module == null) return;
+            AllowShootingConfig newCfg = new AllowShootingConfig(newMode, threshold);
+            if (isBigHammer) {
+                if (module.getData() instanceof BigHammerModuleData bd) {
+                    module.setData(new BigHammerModuleData(
+                        bd.planetaryTransferHandling(),
+                        newCfg,
+                        bd.effectiveRoutePriority()));
+                }
+            } else {
+                if (module.getData() instanceof HammerModuleData hd) {
+                    module.setData(new HammerModuleData(newCfg, hd.effectiveRoutePriority()));
+                }
+            }
+            Galaxia.GALAXIA_NETWORK.sendToServer(
+                new OutpostModuleConfigPacket(outpost.assetId, modIdx, "SET_ALLOW_SHOOTING_MODE", newMode.name()));
+        }
+
+        private void applyShootingThresholdUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
+            int modIdx, boolean isBigHammer, AllowShootingMode mode, double newThreshold) {
+            if (module == null) return;
+            AllowShootingConfig newCfg = new AllowShootingConfig(mode, newThreshold);
+            if (isBigHammer) {
+                if (module.getData() instanceof BigHammerModuleData bd) {
+                    module.setData(new BigHammerModuleData(
+                        bd.planetaryTransferHandling(),
+                        newCfg,
+                        bd.effectiveRoutePriority()));
+                }
+            } else {
+                if (module.getData() instanceof HammerModuleData hd) {
+                    module.setData(new HammerModuleData(newCfg, hd.effectiveRoutePriority()));
+                }
+            }
+            Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
+                outpost.assetId, modIdx, "SET_ALLOW_SHOOTING_THRESHOLD", Double.toString(newThreshold)));
+        }
+
+        private void applyRoutePriorityUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
+            int modIdx, TransferRoutePriority priority) {
+            if (module == null || priority == null) return;
+            if (module.getData() instanceof BigHammerModuleData bd) {
+                module.setData(new BigHammerModuleData(
+                    bd.planetaryTransferHandling(),
+                    bd.effectiveShooting(),
+                    priority));
+            } else if (module.getData() instanceof HammerModuleData hd) {
+                module.setData(new HammerModuleData(hd.effectiveShooting(), priority));
+            } else {
+                return;
+            }
+            Galaxia.GALAXIA_NETWORK.sendToServer(
+                new OutpostModuleConfigPacket(outpost.assetId, modIdx, "SET_ROUTE_PRIORITY", priority.name()));
+        }
+
         private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost,
             AutomatedOutpostModule module) {
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 88);
@@ -1781,6 +1944,22 @@ public final class AssetManagementSystem {
                 state.configuringModuleIndex = -1;
                 markStructureDirty();
             }).pos(12, 32).size(60, 20));
+            modal.child(createFooterButton(
+                minerData.copySettingsToOtherMiners() ? "Copy: ON" : "Copy Settings",
+                true,
+                () -> {
+                    MinerModuleData current = module.getData() instanceof MinerModuleData typed ? typed
+                        : new MinerModuleData();
+                    MinerModuleData updated = current.withCopySettingsToOtherMiners(!current.copySettingsToOtherMiners());
+                    module.setData(updated);
+                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
+                        outpost.assetId,
+                        state.configuringModuleIndex,
+                        "SET_MINER_COPY_SETTINGS",
+                        Boolean.toString(updated.copySettingsToOtherMiners())));
+                    markStructureDirty();
+                }).pos(82, 32).size(100, 20)
+                    .tooltip(t -> t.addLine("Apply settings to all other miners")));
             modal.child(createBodyText("Planetary ores", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 58));
             modal.child(createBodyText("Blacklist", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(428, 58));
 

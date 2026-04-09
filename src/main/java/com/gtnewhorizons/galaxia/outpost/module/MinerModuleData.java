@@ -10,10 +10,11 @@ import com.github.bsideup.jabel.Desugar;
  * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#MINER} module.
  */
 @Desugar
-public record MinerModuleData(List<String> blacklistedItemKeys) implements OutpostModuleData {
+public record MinerModuleData(List<String> blacklistedItemKeys,
+    boolean copySettingsToOtherMiners) implements OutpostModuleData {
 
     public MinerModuleData() {
-        this(Collections.emptyList());
+        this(Collections.emptyList(), false);
     }
 
     public MinerModuleData {
@@ -29,13 +30,17 @@ public record MinerModuleData(List<String> blacklistedItemKeys) implements Outpo
         if (itemKey == null || itemKey.isEmpty() || blacklistedItemKeys.contains(itemKey)) return this;
         ArrayList<String> updated = new ArrayList<>(blacklistedItemKeys);
         updated.add(itemKey);
-        return new MinerModuleData(updated);
+        return new MinerModuleData(updated, copySettingsToOtherMiners);
     }
 
     public MinerModuleData withRemovedBlacklist(String itemKey) {
         if (itemKey == null || itemKey.isEmpty() || !blacklistedItemKeys.contains(itemKey)) return this;
         ArrayList<String> updated = new ArrayList<>(blacklistedItemKeys);
         updated.remove(itemKey);
-        return new MinerModuleData(updated);
+        return new MinerModuleData(updated, copySettingsToOtherMiners);
+    }
+
+    public MinerModuleData withCopySettingsToOtherMiners(boolean enabled) {
+        return enabled == copySettingsToOtherMiners ? this : new MinerModuleData(blacklistedItemKeys, enabled);
     }
 }

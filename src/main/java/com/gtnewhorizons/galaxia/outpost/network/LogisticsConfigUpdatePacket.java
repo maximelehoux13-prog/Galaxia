@@ -28,6 +28,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
     private int orderSize;
     private boolean isImportEnabled;
     private boolean isSupplyEnabled;
+    private boolean removeEntry;
 
     public LogisticsConfigUpdatePacket() {}
 
@@ -38,6 +39,19 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
         this.orderSize = config.orderSize();
         this.isImportEnabled = config.isImportEnabled();
         this.isSupplyEnabled = config.isSupplyEnabled();
+        this.removeEntry = false;
+    }
+
+    public static LogisticsConfigUpdatePacket remove(String assetId, ItemStackWrapper resource) {
+        LogisticsConfigUpdatePacket packet = new LogisticsConfigUpdatePacket();
+        packet.assetId = assetId;
+        packet.resourceKey = resource.toKey();
+        packet.minReserve = 0;
+        packet.orderSize = 1;
+        packet.isImportEnabled = false;
+        packet.isSupplyEnabled = false;
+        packet.removeEntry = true;
+        return packet;
     }
 
     @Override
@@ -48,6 +62,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
         buf.writeInt(orderSize);
         buf.writeBoolean(isImportEnabled);
         buf.writeBoolean(isSupplyEnabled);
+        buf.writeBoolean(removeEntry);
     }
 
     @Override
@@ -58,6 +73,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
         orderSize = buf.readInt();
         isImportEnabled = buf.readBoolean();
         isSupplyEnabled = buf.readBoolean();
+        removeEntry = buf.readBoolean();
     }
 
     public static final class Handler implements IMessageHandler<LogisticsConfigUpdatePacket, IMessage> {
@@ -85,13 +101,13 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             // TODO: resolve the player's team UUID via NHLib and compare with state.teamId.
             // For now, any authenticated player may update any outpost (remove when NHLib wired).
 
-            if (packet.orderSize <= 0) {
+            if (!packet.removeEntry && packet.orderSize <= 0) {
                 Galaxia.LOG.warn(
                     "[Logistics] LogisticsConfigUpdate rejected: orderSize must be > 0 (player {})",
                     playerName);
                 return null;
             }
-            if (packet.minReserve < 0) {
+            if (!packet.removeEntry && packet.minReserve < 0) {
                 Galaxia.LOG.warn(
                     "[Logistics] LogisticsConfigUpdate rejected: minReserve must be >= 0 (player {})",
                     playerName);
@@ -99,10 +115,14 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             }
 
             ItemStackWrapper resource = ItemStackWrapper.fromKey(packet.resourceKey);
-            state.logisticsConfig.set(
-                resource,
-                new LogisticsResourceConfig(packet.minReserve, packet.orderSize, packet.isImportEnabled,
-                    packet.isSupplyEnabled));
+            if (packet.removeEntry) {
+                state.logisticsConfig.reset(resource);
+            } else {
+                state.logisticsConfig.set(
+                    resource,
+                    new LogisticsResourceConfig(packet.minReserve, packet.orderSize, packet.isImportEnabled,
+                        packet.isSupplyEnabled));
+            }
             return new OutpostFullSyncPacket(state);
         }
     }

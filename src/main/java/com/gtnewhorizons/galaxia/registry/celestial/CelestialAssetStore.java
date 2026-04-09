@@ -10,6 +10,8 @@ import java.util.UUID;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 
+import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+
 public final class CelestialAssetStore {
 
     private static final Map<String, MutableBodyState> STATE_BY_BODY = new LinkedHashMap<>();
@@ -76,6 +78,7 @@ public final class CelestialAssetStore {
                 if (asset.assetId()
                     .equals(assetId) && asset.status() == CelestialAssetStatus.CONSTRUCTION_SITE) {
                     state.assets.remove(i);
+                    cleanupLogisticsForAsset(assetId);
                     return true;
                 }
             }
@@ -172,6 +175,7 @@ public final class CelestialAssetStore {
                     .assetId()
                     .equals(assetId)) {
                     state.assets.remove(i);
+                    cleanupLogisticsForAsset(assetId);
                     return true;
                 }
             }
@@ -207,6 +211,28 @@ public final class CelestialAssetStore {
             }
         }
         return false;
+    }
+
+    public static synchronized void clear() {
+        STATE_BY_BODY.clear();
+    }
+
+    public static synchronized List<CelestialManagedAsset> allAssets() {
+        List<CelestialManagedAsset> all = new ArrayList<>();
+        for (MutableBodyState state : STATE_BY_BODY.values()) {
+            all.addAll(state.assets);
+        }
+        return Collections.unmodifiableList(all);
+    }
+
+    public static synchronized void loadAssets(List<CelestialManagedAsset> assets) {
+        STATE_BY_BODY.clear();
+        if (assets == null || assets.isEmpty()) return;
+        for (CelestialManagedAsset asset : assets) {
+            if (asset == null || asset.celestialObjectId() == null || asset.assetId() == null) continue;
+            MutableBodyState state = STATE_BY_BODY.computeIfAbsent(asset.celestialObjectId(), MutableBodyState::new);
+            state.assets.add(asset);
+        }
     }
 
     public static synchronized List<CelestialAssetRequirement> previewRequirements(CelestialAssetKind kind) {
@@ -268,6 +294,10 @@ public final class CelestialAssetStore {
             }
         }
         return required;
+    }
+
+    private static void cleanupLogisticsForAsset(String assetId) {
+        OutpostDataStore.get().remove(assetId);
     }
 
     private static final class MutableBodyState {

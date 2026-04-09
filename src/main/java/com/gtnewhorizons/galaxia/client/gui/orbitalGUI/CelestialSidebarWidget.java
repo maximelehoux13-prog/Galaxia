@@ -55,6 +55,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private TextFieldWidget searchField;
     // Supply Debug panel state
     private boolean supplyDebugPanelOpen = false;
+    private String supplyDebugTargetAssetId = null;
     private TextFieldWidget supplyDebugAmountField;
     private ItemSlot supplyDebugGhostSlot;
     private ItemStackHandler supplyDebugGhostHandler;
@@ -120,7 +121,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             .height(DEBUG_FIELD_HEIGHT)
             .setMaxLength(12)
             .setTextColor(EnumColors.MapSidebarSearchInput.getColor())
-            .hintText("amount (e.g. 64)")
+            .hintText("amount (max int)")
             .hintColor(EnumColors.MapSidebaSearchLabel.getColor())
             .setFocusOnGuiOpen(false);
         supplyDebugAmountField.setEnabled(false);
@@ -375,10 +376,13 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             && localX <= 18 + width) {
             supplyDebugPanelOpen = !supplyDebugPanelOpen;
             if (supplyDebugPanelOpen) {
+                supplyDebugTargetAssetId = resolveSupplyDebugAssetId();
                 supplyDebugAmountField.setText("64");
                 if (supplyDebugGhostHandler != null) {
                     supplyDebugGhostHandler.setStackInSlot(0, null);
                 }
+            } else {
+                supplyDebugTargetAssetId = null;
             }
             return true;
         }
@@ -413,6 +417,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             && localX >= DEBUG_PANEL_PADDING
             && localX <= DEBUG_PANEL_PADDING + panelWidth) {
             supplyDebugPanelOpen = false;
+            supplyDebugTargetAssetId = null;
             return true;
         }
         return false;
@@ -523,6 +528,24 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
      * on the currently focused body.
      */
     private CelestialManagedAsset resolveSupplyDebugAsset() {
+        if (supplyDebugTargetAssetId != null) {
+            CelestialManagedAsset pinned = CelestialAssetStore.findAsset(supplyDebugTargetAssetId);
+            if (pinned != null && pinned.status() == CelestialAssetStatus.OPERATIONAL
+                && (pinned.kind() == CelestialAssetKind.AUTOMATED_OUTPOST
+                    || pinned.kind() == CelestialAssetKind.AUTOMATED_STATION)) {
+                return pinned;
+            }
+            supplyDebugTargetAssetId = null;
+        }
+        String currentAssetId = resolveSupplyDebugAssetId();
+        if (currentAssetId != null) {
+            supplyDebugTargetAssetId = currentAssetId;
+            return CelestialAssetStore.findAsset(currentAssetId);
+        }
+        return null;
+    }
+
+    private String resolveSupplyDebugAssetId() {
         OrbitalCelestialBody focused = map.getFocusedBody();
         if (focused == null) return null;
         CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());
@@ -530,7 +553,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             if (asset.status() != CelestialAssetStatus.OPERATIONAL) continue;
             if (asset.kind() == CelestialAssetKind.AUTOMATED_OUTPOST
                 || asset.kind() == CelestialAssetKind.AUTOMATED_STATION) {
-                return asset;
+                return asset.assetId();
             }
         }
         return null;
@@ -552,9 +575,15 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         } catch (NumberFormatException e) {
             return;
         }
-        if (amount <= 0 || amount > 1_000_000L) return;
+        if (amount <= 0) return;
+        amount = Math.min(amount, Integer.MAX_VALUE);
         ItemStackWrapper resource = ItemStackWrapper.of(selectedStack);
         if (resource == null) return;
+        Galaxia.LOG.info(
+            "[Supply Debug] Adding {} x {} to {}",
+            amount,
+            resource,
+            asset.assetId());
         Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostDebugAddItemPacket(asset.assetId(), resource, amount));
     }
 

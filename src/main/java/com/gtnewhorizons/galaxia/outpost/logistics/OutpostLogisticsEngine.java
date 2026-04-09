@@ -10,6 +10,7 @@ import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
@@ -18,6 +19,8 @@ import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
+import com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket;
+import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostFullSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
@@ -87,6 +90,12 @@ public final class OutpostLogisticsEngine {
 
     private void tickTasks() {
         for (int i = activeTasks.size() - 1; i >= 0; i--) {
+            LogisticsTask current = activeTasks.get(i);
+            if (CelestialAssetStore.findAsset(current.fromAssetId()) == null
+                || CelestialAssetStore.findAsset(current.toAssetId()) == null) {
+                activeTasks.remove(i);
+                continue;
+            }
             LogisticsTask ticked = activeTasks.get(i).tick();
             if (ticked.isArrived()) {
                 activeTasks.remove(i);
@@ -149,20 +158,17 @@ public final class OutpostLogisticsEngine {
             long stock = outpost.inventory.getAmount(resource);
             LogisticsResourceConfig cfg = config.get(resource);
 
+            // Each resource is emitted once, at SYSTEM scope (the broadest range).
+            // The engine routes each matched pair to HAMMER or BIG_HAMMER at dispatch
+            // time based on whether the two endpoints share a planetary anchor.
             if (cfg.isImportEnabled() && stock < cfg.minReserve()) {
                 long requestAmount = -(cfg.minReserve() - stock);
-                // Emit PLANETARY signal
-                store.addSignal(new LogisticsSignal(outpost.assetId, systemId, resource, requestAmount,
-                    LogisticsSignalScope.PLANETARY, bodyId, planetaryAnchorBodyId));
-                // Emit SYSTEM signal
                 store.addSignal(new LogisticsSignal(outpost.assetId, systemId, resource, requestAmount,
                     LogisticsSignalScope.SYSTEM, bodyId, planetaryAnchorBodyId));
             }
 
             if (cfg.isSupplyEnabled() && stock > cfg.minReserve()) {
                 long surplus = stock - cfg.minReserve();
-                store.addSignal(new LogisticsSignal(outpost.assetId, systemId, resource, surplus,
-                    LogisticsSignalScope.PLANETARY, bodyId, planetaryAnchorBodyId));
                 store.addSignal(new LogisticsSignal(outpost.assetId, systemId, resource, surplus,
                     LogisticsSignalScope.SYSTEM, bodyId, planetaryAnchorBodyId));
             }
@@ -192,21 +198,17 @@ public final class OutpostLogisticsEngine {
         OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
         LogisticsSignalStore store = LogisticsSignalStore.get();
 
-        // HAMMER: PLANETARY scope
-        for (Map.Entry<String, List<LogisticsSignal>> entry : store
-            .allSignalsForScope(LogisticsSignalScope.PLANETARY).entrySet()) {
-            matchBucket(entry.getValue(), false, orbitalTime, root);
-        }
-
-        // BIG_HAMMER: SYSTEM scope
+        // All signals live in SYSTEM scope (one signal per resource per outpost).
+        // Dispatch routing is decided at match time:
+        //   same planetary anchor → HAMMER (then BIG_HAMMER if planetaryTransferHandling is on)
+        //   different planetary anchors → BIG_HAMMER only
         for (Map.Entry<String, List<LogisticsSignal>> entry : store
             .allSignalsForScope(LogisticsSignalScope.SYSTEM).entrySet()) {
-            matchBucket(entry.getValue(), true, orbitalTime, root);
+            matchSystemBucket(entry.getValue(), orbitalTime, root);
         }
     }
 
-    private void matchBucket(List<LogisticsSignal> signals, boolean bigHammer, double orbitalTime,
-        OrbitalCelestialBody root) {
+    private void matchSystemBucket(List<LogisticsSignal> signals, double orbitalTime, OrbitalCelestialBody root) {
         List<LogisticsSignal> requests = new ArrayList<>();
         List<LogisticsSignal> supplies = new ArrayList<>();
         for (LogisticsSignal s : signals) {
@@ -223,14 +225,40 @@ public final class OutpostLogisticsEngine {
                 AutomatedOutpostState requester = OutpostDataStore.get().getByAssetId(request.outpostAssetId());
                 if (supplier == null || requester == null) continue;
 
-                if (bigHammer) {
-                    if (tryDispatchBigHammer(supplier, requester, request, orbitalTime, root)) break;
-                } else {
-                    if (tryDispatchBigHammer(supplier, requester, request, orbitalTime, root)) break;
+                if (sharesPlanetaryAnchor(root, supplier.celestialBodyId, requester.celestialBodyId)) {
+                    // Planetary-range pair: HAMMER first; BIG_HAMMER only when toggle is on
                     if (tryDispatchHammer(supplier, requester, request, orbitalTime, root)) break;
+                    if (hasPlanetaryTransferHandling(supplier)
+                        && tryDispatchBigHammer(supplier, requester, request, orbitalTime, root)) break;
+                } else {
+                    // Cross-planetary pair: BIG_HAMMER only
+                    if (tryDispatchBigHammer(supplier, requester, request, orbitalTime, root)) break;
                 }
             }
         }
+    }
+
+    private static boolean hasPlanetaryTransferHandling(AutomatedOutpostState supplier) {
+        AutomatedOutpostModule bh = supplier.firstOperationalModule(OutpostModuleKind.BIG_HAMMER);
+        if (bh == null) return false;
+        BigHammerModuleData data = bh.getData() instanceof BigHammerModuleData bd ? bd
+            : BigHammerModuleData.getDefault();
+        return data.planetaryTransferHandling();
+    }
+
+    /**
+     * Returns {@code true} if both bodies share the same planetary anchor
+     * (i.e. same planet/gas-giant or both on the same planet's moon system).
+     * Used to gate BIG_HAMMER on the {@code planetaryTransferHandling} toggle.
+     */
+    private static boolean sharesPlanetaryAnchor(OrbitalCelestialBody root, String bodyIdA, String bodyIdB) {
+        if (root == null || bodyIdA == null || bodyIdB == null) return false;
+        OrbitalCelestialBody a = OrbitalTransferPlanner.findBodyById(root, bodyIdA);
+        OrbitalCelestialBody b = OrbitalTransferPlanner.findBodyById(root, bodyIdB);
+        if (a == null || b == null) return false;
+        OrbitalCelestialBody anchorA = OrbitalTransferPlanner.findPlanetaryAnchor(root, a);
+        OrbitalCelestialBody anchorB = OrbitalTransferPlanner.findPlanetaryAnchor(root, b);
+        return anchorA != null && anchorA == anchorB;
     }
 
     // -------------------------------------------------------------------------
@@ -252,7 +280,9 @@ public final class OutpostLogisticsEngine {
         if (availableSurplus <= 0) return false;
 
         LogisticsResourceConfig requesterCfg = requester.logisticsConfig.get(resource);
-        long requestedAmount = Math.abs(request.amount());
+        long requesterStock = requester.inventory.getAmount(resource);
+        long inboundInTransit = getInboundInTransitAmount(requester.assetId, resource);
+        long requestedAmount = Math.max(0L, requesterCfg.minReserve() - requesterStock - inboundInTransit);
         long sendAmount = Math.min(requestedAmount, availableSurplus);
         sendAmount = Math.min(sendAmount, HammerModuleData.MAX_BATCH_SIZE);
         if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
@@ -275,14 +305,25 @@ public final class OutpostLogisticsEngine {
             : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && attractor != null)
-            ? OrbitalTransferPlanner.computeMinTofRoute(root, attractor, srcBody, dstBody, orbitalTime)
+            ? OrbitalTransferPlanner.computeRoute(
+                root,
+                attractor,
+                srcBody,
+                dstBody,
+                orbitalTime,
+                hammerData.effectiveRoutePriority())
             : null;
 
         if (route == null) return false; // no valid trajectory in PLANETARY scope
 
         if (!hammerData.effectiveShooting().allows(route.departureDv(), route.tofSeconds())) return false;
 
-        long euRequired = sendAmount * (long) Math.max(1L, Math.ceil(route.departureDv() * EU_PER_ITEM_PER_DV));
+        long euPerItem = Math.max(1L, (long) Math.ceil(route.departureDv() * EU_PER_ITEM_PER_DV));
+        long affordableAmount = supplier.getEnergyStored() / euPerItem;
+        sendAmount = Math.min(sendAmount, affordableAmount);
+        if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
+
+        long euRequired = sendAmount * euPerItem;
         if (!supplier.tryConsumeEnergy(euRequired)) return false;
         if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
 
@@ -303,13 +344,13 @@ public final class OutpostLogisticsEngine {
     }
 
     // -------------------------------------------------------------------------
-    // BIG_HAMMER dispatch (SYSTEM scope, no EU cost, no cooldown)
+    // BIG_HAMMER dispatch (SYSTEM scope, EU cost = 100 × amount × departureDv)
     // -------------------------------------------------------------------------
 
     private boolean tryDispatchBigHammer(AutomatedOutpostState supplier, AutomatedOutpostState requester,
         LogisticsSignal request, double orbitalTime, OrbitalCelestialBody root) {
         AutomatedOutpostModule bigHammer = supplier.firstOperationalModule(OutpostModuleKind.BIG_HAMMER);
-        if (bigHammer == null) return false;
+        if (bigHammer == null || bigHammer.cooldownTicks > 0) return false;
 
         BigHammerModuleData bigHammerData = bigHammer.getData() instanceof BigHammerModuleData bd ? bd
             : BigHammerModuleData.getDefault();
@@ -321,13 +362,16 @@ public final class OutpostLogisticsEngine {
         if (availableSurplus <= 0) return false;
 
         LogisticsResourceConfig requesterCfg = requester.logisticsConfig.get(resource);
-        long requestedAmount = Math.abs(request.amount());
+        long requesterStock = requester.inventory.getAmount(resource);
+        long inboundInTransit = getInboundInTransitAmount(requester.assetId, resource);
+        long requestedAmount = Math.max(0L, requesterCfg.minReserve() - requesterStock - inboundInTransit);
         long sendAmount = Math.min(requestedAmount, availableSurplus);
         if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
 
         // Same-body: instant transfer
         if (supplier.celestialBodyId.equals(requester.celestialBodyId)) {
             if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
+            bigHammer.cooldownTicks = BigHammerModuleData.COOLDOWN_TICKS;
             LogisticsTask task = LogisticsTask.create(supplier.assetId, requester.assetId, resource, sendAmount, 1,
                 "BIG_HAMMER");
             activeTasks.add(task);
@@ -340,14 +384,28 @@ public final class OutpostLogisticsEngine {
         OrbitalCelestialBody star = srcBody != null ? OrbitalTransferPlanner.findHostStar(root, srcBody) : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && star != null)
-            ? OrbitalTransferPlanner.computeMinTofRoute(root, star, srcBody, dstBody, orbitalTime)
+            ? OrbitalTransferPlanner.computeRoute(
+                root,
+                star,
+                srcBody,
+                dstBody,
+                orbitalTime,
+                bigHammerData.effectiveRoutePriority())
             : null;
 
         if (route == null) return false;
 
         if (!bigHammerData.effectiveShooting().allows(route.departureDv(), route.tofSeconds())) return false;
 
+        long euPerItem = Math.max(1L, (long) Math.ceil(route.departureDv() * EU_PER_ITEM_PER_DV));
+        long affordableAmount = supplier.getEnergyStored() / euPerItem;
+        sendAmount = Math.min(sendAmount, affordableAmount);
+        if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
+
+        long euRequired = sendAmount * euPerItem;
+        if (!supplier.tryConsumeEnergy(euRequired)) return false;
         if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
+        bigHammer.cooldownTicks = BigHammerModuleData.COOLDOWN_TICKS;
 
         LogisticsTask task = LogisticsTask.createWithTrajectory(
             supplier.assetId, requester.assetId, resource, sendAmount,
@@ -375,6 +433,16 @@ public final class OutpostLogisticsEngine {
         }
     }
 
+    private long getInboundInTransitAmount(String toAssetId, ItemStackWrapper resource) {
+        long total = 0L;
+        for (LogisticsTask task : activeTasks) {
+            if (!toAssetId.equals(task.toAssetId())) continue;
+            if (!resource.equals(task.resourceId())) continue;
+            total += task.amount();
+        }
+        return total;
+    }
+
     // -------------------------------------------------------------------------
     // Client sync
     // -------------------------------------------------------------------------
@@ -386,6 +454,8 @@ public final class OutpostLogisticsEngine {
         for (AutomatedOutpostState outpost : OutpostDataStore.get().allOutposts()) {
             Galaxia.GALAXIA_NETWORK.sendToAll(new OutpostFullSyncPacket(outpost));
         }
+        Galaxia.GALAXIA_NETWORK.sendToAll(new LogisticsTasksSyncPacket(activeTasks));
+        Galaxia.GALAXIA_NETWORK.sendToAll(new LogisticsSignalsSyncPacket(LogisticsSignalStore.get()));
     }
 
     // -------------------------------------------------------------------------

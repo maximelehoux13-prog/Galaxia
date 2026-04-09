@@ -350,3 +350,7 @@ galaxia.config.category.hazard_scale=Pulse Scaling Coefficient
 galaxia.config.category.hazard_scale.tooltip=How much to scale the warnings when pulsing
 galaxia.config.category.hazard_pulse=Enable Pulse
 galaxia.config.category.hazard_pulse.tooltip=Enable pulse animation
+
+galaxia.gui.orbital.status=Zoom: x%.2f   Speed: %s
+galaxia.gui.orbital.paused=PAUSED
+galaxia.gui.orbital.speed_multiplier=x%.1f

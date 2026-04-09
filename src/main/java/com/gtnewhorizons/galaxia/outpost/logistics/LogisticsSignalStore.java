@@ -9,8 +9,7 @@ import java.util.Map;
 /**
  * Unified logistics signal registry, scoped by {@link LogisticsSignalScope}.
  *
- * <p>Replaces the separate {@code LocalSystemRegistry} / {@code GalacticLogisticsRegistry}
- * split with a single store that buckets signals by (scope, scopeKey) pairs:
+ * <p>Buckets signals by (scope, scopeKey) pairs:
  * <ul>
  *   <li>PLANETARY scope → keyed by {@code planetaryAnchorBodyId}</li>
  *   <li>SYSTEM scope    → keyed by {@code systemId}</li>

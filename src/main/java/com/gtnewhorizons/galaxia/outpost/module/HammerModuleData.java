@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.outpost.module;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
+import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 
 /**
  * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#HAMMER} module.
@@ -10,7 +11,7 @@ import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
  * <ul>
  *   <li>EU cost: 100 EU × departure-dV × items transferred.</li>
  *   <li>Max batch size: 64 items per {@code LogisticsTask}.</li>
- *   <li>Cooldown: 100 ticks (5 seconds) between operations.</li>
+ *   <li>Cooldown: 20 ticks (1 second) between operations.</li>
  * </ul>
  *
  * <p>Runtime mutable state (cooldownTicks, energyBuffer) is tracked in
@@ -22,11 +23,12 @@ import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
  * {@link AllowShootingConfig#ALWAYS}.
  */
 @Desugar
-public record HammerModuleData(AllowShootingConfig allowShooting) implements OutpostModuleData {
+public record HammerModuleData(AllowShootingConfig allowShooting,
+    TransferRoutePriority routePriority) implements OutpostModuleData {
 
     /** Creates a default instance (ALWAYS allow shooting). */
     public static HammerModuleData getDefault() {
-        return new HammerModuleData(AllowShootingConfig.ALWAYS);
+        return new HammerModuleData(AllowShootingConfig.ALWAYS, TransferRoutePriority.PRIORITIZE_TOF);
     }
 
     /** Returns the effective config, defaulting to ALWAYS for pre-migration saves. */
@@ -34,9 +36,13 @@ public record HammerModuleData(AllowShootingConfig allowShooting) implements Out
         return allowShooting != null ? allowShooting : AllowShootingConfig.ALWAYS;
     }
 
+    public TransferRoutePriority effectiveRoutePriority() {
+        return routePriority != null ? routePriority : TransferRoutePriority.PRIORITIZE_TOF;
+    }
+
     /** Maximum number of items in a single logistics task. Larger orders are split. */
     public static final int MAX_BATCH_SIZE = 64;
 
-    /** Ticks between successive HAMMER dispatches (5 s at 20 TPS). */
-    public static final int COOLDOWN_TICKS = 100;
+    /** Ticks between successive HAMMER dispatches (1 s at 20 TPS). */
+    public static final int COOLDOWN_TICKS = 20;
 }

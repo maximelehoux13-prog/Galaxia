@@ -14,6 +14,11 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
+import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
+import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingMode;
+import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
+import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -51,10 +56,29 @@ public final class OutpostFullSyncPacket implements IMessage {
         this.modules = new ArrayList<>();
         for (AutomatedOutpostModule m : state.modules()) {
             List<String> minerBlacklist = Collections.emptyList();
+            String allowShootingMode = AllowShootingMode.ALWAYS.name();
+            double allowShootingThreshold = 0.0;
+            boolean planetaryHandling = false;
+            String routePriority = TransferRoutePriority.PRIORITIZE_TOF.name();
+            boolean minerCopySettings = false;
             if (m.getData() instanceof MinerModuleData minerData) {
                 minerBlacklist = minerData.blacklistedItemKeys();
+                minerCopySettings = minerData.copySettingsToOtherMiners();
+            } else if (m.getData() instanceof HammerModuleData hd) {
+                AllowShootingConfig cfg = hd.effectiveShooting();
+                allowShootingMode = cfg.mode().name();
+                allowShootingThreshold = cfg.threshold();
+                routePriority = hd.effectiveRoutePriority().name();
+            } else if (m.getData() instanceof BigHammerModuleData bd) {
+                AllowShootingConfig cfg = bd.effectiveShooting();
+                allowShootingMode = cfg.mode().name();
+                allowShootingThreshold = cfg.threshold();
+                planetaryHandling = bd.planetaryTransferHandling();
+                routePriority = bd.effectiveRoutePriority().name();
             }
-            modules.add(new ModuleSyncData(m.kind.name(), m.getStatus().name(), m.getConstructionProgress(), minerBlacklist));
+            modules.add(new ModuleSyncData(m.kind.name(), m.getStatus().name(), m.getConstructionProgress(),
+                minerBlacklist, allowShootingMode, allowShootingThreshold, planetaryHandling, routePriority,
+                minerCopySettings));
         }
 
         this.inventory = new LinkedHashMap<>();
@@ -89,6 +113,11 @@ public final class OutpostFullSyncPacket implements IMessage {
             for (String key : m.minerBlacklist) {
                 writeString(buf, key);
             }
+            writeString(buf, m.allowShootingMode);
+            buf.writeDouble(m.allowShootingThreshold);
+            buf.writeBoolean(m.planetaryHandling);
+            writeString(buf, m.routePriority);
+            buf.writeBoolean(m.minerCopySettings);
         }
 
         buf.writeInt(inventory.size());
@@ -126,7 +155,13 @@ public final class OutpostFullSyncPacket implements IMessage {
             for (int j = 0; j < blacklistCount; j++) {
                 minerBlacklist.add(readString(buf));
             }
-            modules.add(new ModuleSyncData(kind, status, progress, minerBlacklist));
+            String allowShootingMode = readString(buf);
+            double allowShootingThreshold = buf.readDouble();
+            boolean planetaryHandling = buf.readBoolean();
+            String routePriority = readString(buf);
+            boolean minerCopySettings = buf.readBoolean();
+            modules.add(new ModuleSyncData(kind, status, progress, minerBlacklist, allowShootingMode,
+                allowShootingThreshold, planetaryHandling, routePriority, minerCopySettings));
         }
 
         int invCount = buf.readInt();
@@ -191,7 +226,9 @@ public final class OutpostFullSyncPacket implements IMessage {
     }
 
     @Desugar
-    private static record ModuleSyncData(String kind, String status, float progress, List<String> minerBlacklist) {}
+    private static record ModuleSyncData(String kind, String status, float progress, List<String> minerBlacklist,
+        String allowShootingMode, double allowShootingThreshold, boolean planetaryHandling, String routePriority,
+        boolean minerCopySettings) {}
 
     @Desugar
     private static record LogisticsConfigSyncData(int minReserve, int orderSize, boolean isImportEnabled,
@@ -200,11 +237,31 @@ public final class OutpostFullSyncPacket implements IMessage {
     private static com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData createModuleData(OutpostModuleKind kind,
         ModuleSyncData syncData) {
         return switch (kind) {
-            case HAMMER -> com.gtnewhorizons.galaxia.outpost.module.HammerModuleData.getDefault();
-            case BIG_HAMMER -> com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData.getDefault();
-            case MINER -> new MinerModuleData(syncData.minerBlacklist());
+            case HAMMER -> new HammerModuleData(parseAllowShooting(syncData), parseRoutePriority(syncData));
+            case BIG_HAMMER -> new BigHammerModuleData(
+                syncData.planetaryHandling(),
+                parseAllowShooting(syncData),
+                parseRoutePriority(syncData));
+            case MINER -> new MinerModuleData(syncData.minerBlacklist(), syncData.minerCopySettings());
             case POWER -> new PowerModuleData();
         };
+    }
+
+    private static AllowShootingConfig parseAllowShooting(ModuleSyncData d) {
+        try {
+            AllowShootingMode mode = AllowShootingMode.valueOf(d.allowShootingMode());
+            return new AllowShootingConfig(mode, d.allowShootingThreshold());
+        } catch (IllegalArgumentException e) {
+            return AllowShootingConfig.ALWAYS;
+        }
+    }
+
+    private static TransferRoutePriority parseRoutePriority(ModuleSyncData d) {
+        try {
+            return TransferRoutePriority.valueOf(d.routePriority());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return TransferRoutePriority.PRIORITIZE_TOF;
+        }
     }
 
     private static void writeString(ByteBuf buf, String s) {

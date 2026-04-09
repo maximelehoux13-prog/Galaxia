@@ -42,6 +42,8 @@ public class GalacticChartGui {
             .createTransferSimulatorWidget();
         OrbitalContextMenuWidget contextMenuOverlay = map.createContextMenuWidget();
         AssetManagementSystem.OrbitalAssetManagementWidget assetManagementOverlay = map.createAssetManagementWidget();
+        LogisticsSignalsWidget signalsOverlay = map.createSignalsWidget();
+        TransferVisibilityWidget transferVisibilityOverlay = map.createTransferVisibilityWidget();
         CelestialSidebarWidget sidebar = new CelestialSidebarWidget(galaxyRoot, currentStar, map);
         return panel.child(
             (IWidget) sidebar.left(0)
@@ -75,6 +77,16 @@ public class GalacticChartGui {
                     .heightRel(1f))
             .child(
                 (IWidget) assetManagementOverlay.left(LEFT_PANEL_WIDTH)
+                    .top(0)
+                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
+                    .heightRel(1f))
+            .child(
+                (IWidget) signalsOverlay.left(LEFT_PANEL_WIDTH)
+                    .top(0)
+                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
+                    .heightRel(1f))
+            .child(
+                (IWidget) transferVisibilityOverlay.left(LEFT_PANEL_WIDTH)
                     .top(0)
                     .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
                     .heightRel(1f))

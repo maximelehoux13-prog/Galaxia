@@ -63,13 +63,14 @@ public final class OutpostDebugAddItemPacket implements IMessage {
                     playerName);
                 return null;
             }
-            if (packet.amount <= 0 || packet.amount > 1_000_000L) {
+            if (packet.amount <= 0) {
                 Galaxia.LOG.warn(
                     "[Logistics] DebugAddItem rejected: invalid amount {} from player {}",
                     packet.amount,
                     playerName);
                 return null;
             }
+            long clampedAmount = Math.min(packet.amount, Integer.MAX_VALUE);
 
             AutomatedOutpostState state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
@@ -82,10 +83,10 @@ public final class OutpostDebugAddItemPacket implements IMessage {
             }
 
             ItemStackWrapper resource = ItemStackWrapper.fromKey(packet.resourceKey);
-            state.inventory.add(resource, packet.amount);
+            state.inventory.add(resource, clampedAmount);
             Galaxia.LOG.info(
                 "[Logistics] DEBUG: added {} x {} to outpost {} (by {})",
-                packet.amount,
+                clampedAmount,
                 resource,
                 packet.assetId,
                 playerName);

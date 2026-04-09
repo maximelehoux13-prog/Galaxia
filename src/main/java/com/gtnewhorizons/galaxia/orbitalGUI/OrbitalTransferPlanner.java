@@ -1,6 +1,7 @@
 package com.gtnewhorizons.galaxia.orbitalGUI;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
@@ -135,6 +136,12 @@ public final class OrbitalTransferPlanner {
      */
     public static TransferRoute computeMinTofRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
         OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime) {
+        return computeRoute(root, attractor, source, dest, departureTime, TransferRoutePriority.PRIORITIZE_TOF);
+    }
+
+    public static TransferRoute computeRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
+        OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime,
+        TransferRoutePriority priority) {
         if (root == null || attractor == null || source == null || dest == null || source == dest) return null;
 
         double mu = getBodyMu(attractor);
@@ -160,6 +167,8 @@ public final class OrbitalTransferPlanner {
         MutableEvaluation progEval = new MutableEvaluation();
         MutableEvaluation retEval = new MutableEvaluation();
 
+        TransferRoutePriority effectivePriority = priority != null ? priority : TransferRoutePriority.PRIORITIZE_TOF;
+        TransferRoute bestRoute = null;
         int nScan = 64;
         for (int i = 0; i < nScan; i++) {
             double frac = 0.1 + (3.0 - 0.1) * i / (nScan - 1);
@@ -190,22 +199,31 @@ public final class OrbitalTransferPlanner {
                 vsrcX0, vsrcY0, vdstX, vdstY, minPeriapsis, retSol, retEval);
 
             MutableEvaluation best;
-            MutableSolution bestSol;
             if (hasPrograde && (!hasRetrograde || progEval.totalDv <= retEval.totalDv)) {
                 best = progEval;
-                bestSol = progSol;
             } else if (hasRetrograde) {
                 best = retEval;
-                bestSol = retSol;
             } else {
                 continue;
             }
 
-            // Minimum-TOF scan: first valid candidate in ascending TOF order is the answer.
-            return new TransferRoute(tof, best.totalDv, best.depDv);
+            boolean acceptCandidate;
+            if (bestRoute == null) {
+                acceptCandidate = true;
+            } else if (effectivePriority == TransferRoutePriority.PRIORITIZE_DV) {
+                acceptCandidate = best.totalDv < bestRoute.totalDv()
+                    || (Math.abs(best.totalDv - bestRoute.totalDv()) < 1e-9 && tof < bestRoute.tofOsu());
+            } else {
+                acceptCandidate = tof < bestRoute.tofOsu()
+                    || (Math.abs(tof - bestRoute.tofOsu()) < 1e-9 && best.totalDv < bestRoute.totalDv());
+            }
+
+            if (acceptCandidate) {
+                bestRoute = new TransferRoute(tof, best.totalDv, best.depDv);
+            }
         }
 
-        return null;
+        return bestRoute;
     }
 
     // -------------------------------------------------------------------------

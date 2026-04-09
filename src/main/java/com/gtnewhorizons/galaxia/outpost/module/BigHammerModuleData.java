@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.outpost.module;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
+import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 
 /**
  * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#BIG_HAMMER} module.
@@ -15,19 +16,28 @@ import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
  *       PLANETARY-scope signals (same planet + moons), duplicating HAMMER coverage.</li>
  *   <li>{@code allowShooting} – shooting permission; {@code null} in old saves
  *       is treated as {@link AllowShootingConfig#ALWAYS} via {@link #effectiveShooting()}.</li>
+ *   <li>Cooldown: 20 ticks (1 second) between operations.</li>
  * </ul>
  */
 @Desugar
 public record BigHammerModuleData(boolean planetaryTransferHandling,
-    AllowShootingConfig allowShooting) implements OutpostModuleData {
+    AllowShootingConfig allowShooting,
+    TransferRoutePriority routePriority) implements OutpostModuleData {
 
     /** Creates a default instance: no planetary-transfer duplication, always allow. */
     public static BigHammerModuleData getDefault() {
-        return new BigHammerModuleData(false, AllowShootingConfig.ALWAYS);
+        return new BigHammerModuleData(false, AllowShootingConfig.ALWAYS, TransferRoutePriority.PRIORITIZE_TOF);
     }
 
     /** Returns the effective shooting config, defaulting to ALWAYS for pre-migration saves. */
     public AllowShootingConfig effectiveShooting() {
         return allowShooting != null ? allowShooting : AllowShootingConfig.ALWAYS;
     }
+
+    public TransferRoutePriority effectiveRoutePriority() {
+        return routePriority != null ? routePriority : TransferRoutePriority.PRIORITIZE_TOF;
+    }
+
+    /** Ticks between successive BIG_HAMMER dispatches (1 s at 20 TPS). */
+    public static final int COOLDOWN_TICKS = 20;
 }

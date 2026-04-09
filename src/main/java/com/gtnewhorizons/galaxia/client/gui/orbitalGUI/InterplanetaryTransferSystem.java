@@ -24,6 +24,7 @@ import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalMechanics;
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.utility.EnumColors;
 
@@ -66,6 +67,10 @@ record InterplanetaryTransferJob(String transferId, String displayName, String i
 
     boolean isFinished(double currentTime) {
         return currentTime >= arrivalTime;
+    }
+
+    boolean isLogisticsTransfer() {
+        return transferId != null && transferId.startsWith("logistics:");
     }
 }
 
@@ -298,6 +303,15 @@ public final class InterplanetaryTransferSystem {
         double by = transfer.trajectoryYs()[hi];
         out.set(ax + (bx - ax) * frac, ay + (by - ay) * frac);
         return true;
+    }
+
+    private static double effectiveTransferTime(InterplanetaryTransferJob transfer, double currentTime,
+        double logisticsCurrentTime) {
+        return currentTime;
+    }
+
+    private static double effectiveTransferTimeScale(InterplanetaryTransferJob transfer, double currentTimeScale) {
+        return currentTimeScale;
     }
 
     // -----------------------------------------------------------------------
@@ -973,17 +987,30 @@ public final class InterplanetaryTransferSystem {
             version++;
         }
 
+        void replaceTransfersMatching(java.util.function.Predicate<InterplanetaryTransferJob> predicate,
+            List<InterplanetaryTransferJob> replacements) {
+            boolean changed = transfers.removeIf(predicate);
+            if (replacements != null && !replacements.isEmpty()) {
+                transfers.addAll(replacements);
+                changed = true;
+            }
+            if (changed) version++;
+        }
+
         void updateHoveredTransfer(InterplanetaryTransferJob transfer, int mouseX, int mouseY) {
             hoveredTransfer = transfer;
             hoverX = mouseX;
             hoverY = mouseY;
         }
 
-        void pruneFinishedTransfers(double currentTime) {
+        void pruneFinishedTransfers(double currentTime, double logisticsCurrentTime) {
             if (transfers.isEmpty()) return;
-            if (transfers.removeIf(t -> t.isFinished(currentTime))) {
+            if (transfers.removeIf(t -> t.isFinished(effectiveTransferTime(t, currentTime, logisticsCurrentTime)))) {
                 version++;
-                if (hoveredTransfer != null && hoveredTransfer.isFinished(currentTime)) hoveredTransfer = null;
+                if (hoveredTransfer != null && hoveredTransfer
+                    .isFinished(effectiveTransferTime(hoveredTransfer, currentTime, logisticsCurrentTime))) {
+                    hoveredTransfer = null;
+                }
             }
         }
     }
@@ -1125,6 +1152,8 @@ public final class InterplanetaryTransferSystem {
             float worldToScreenY(double worldY);
 
             double[] getWorldPosition(OrbitalCelestialBody body);
+
+            double getServerOrbitalTime();
         }
 
         private static final int PATH_COLOR = EnumColors.MAP_COLOR_TRANSFER_PATH.getColor();
@@ -1142,7 +1171,7 @@ public final class InterplanetaryTransferSystem {
         void drawTransferPaths(OrbitalTransferState state, double currentTime, float alpha) {
             if (state.transfers()
                 .isEmpty() || alpha <= 0.01f) return;
-            state.pruneFinishedTransfers(currentTime);
+            state.pruneFinishedTransfers(currentTime, callbacks.getServerOrbitalTime());
             GlStateManager.disableTexture2D();
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -1161,7 +1190,10 @@ public final class InterplanetaryTransferSystem {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             for (InterplanetaryTransferJob transfer : state.transfers()) {
-                drawTransferDot(transfer, currentTime, alpha);
+                drawTransferDot(
+                    transfer,
+                    effectiveTransferTime(transfer, currentTime, callbacks.getServerOrbitalTime()),
+                    alpha);
             }
             GlStateManager.color(1f, 1f, 1f, 1f);
             GlStateManager.enableTexture2D();
@@ -1197,7 +1229,8 @@ public final class InterplanetaryTransferSystem {
                 .size() - 1; i >= 0; i--) {
                 InterplanetaryTransferJob transfer = state.transfers()
                     .get(i);
-                if (!writeCurrentTransferPoint(transfer, currentTime, transferPoint) || !transferPoint.valid()) {
+                double effectiveTime = effectiveTransferTime(transfer, currentTime, callbacks.getServerOrbitalTime());
+                if (!writeCurrentTransferPoint(transfer, effectiveTime, transferPoint) || !transferPoint.valid()) {
                     continue;
                 }
                 float sx = callbacks.worldToScreenX(transferPoint.worldX());
@@ -1530,9 +1563,9 @@ public final class InterplanetaryTransferSystem {
 
         // Dynamic text widgets replaced with cached strings for IKey.dynamic
         private String cachedDvLabel = "dV: --";
-        private String cachedTof = "TOF: --";
-        private String cachedDepDv = "Dep dV: --";
-        private String cachedCapDv = "Cap dV: --";
+        private String cachedTof = "Time of Flight: --";
+        private String cachedDepDv = "Departure dV: --";
+        private String cachedCapDv = "Capture dV: --";
         private String cachedTotalDv = "Total dV: --";
 
         private double lastSliderDv = -1;
@@ -1606,16 +1639,18 @@ public final class InterplanetaryTransferSystem {
             if (hasPreview) {
                 if (Math.abs(state.previewTof() - lastPreviewTof) > 1e-6
                     || Math.abs(currentTimeScale - lastTimeScale) > 1e-6) {
-                    cachedTof = "TOF: " + formatFixed1(state.previewTof() / Math.max(1e-6, currentTimeScale)) + "s";
+                    cachedTof = "Time of Flight: "
+                        + formatFixed1(state.previewTof() / Math.max(1e-6, currentTimeScale))
+                        + "s";
                     lastPreviewTof = state.previewTof();
                     lastTimeScale = currentTimeScale;
                 }
                 if (Math.abs(state.previewDvDep() - lastPreviewDvDep) > 1e-6) {
-                    cachedDepDv = "Dep dV: " + formatFixed1(state.previewDvDep());
+                    cachedDepDv = "Departure dV: " + formatFixed1(state.previewDvDep());
                     lastPreviewDvDep = state.previewDvDep();
                 }
                 if (Math.abs(state.previewDvCap() - lastPreviewDvCap) > 1e-6) {
-                    cachedCapDv = "Cap dV: " + formatFixed1(state.previewDvCap());
+                    cachedCapDv = "Capture dV: " + formatFixed1(state.previewDvCap());
                     lastPreviewDvCap = state.previewDvCap();
                 }
                 if (Math.abs(state.previewTotalDv() - lastPreviewTotalDv) > 1e-6) {
@@ -1624,9 +1659,9 @@ public final class InterplanetaryTransferSystem {
                 }
             } else {
                 if (lastPreviewTof != -2) {
-                    cachedTof = "TOF: --";
-                    cachedDepDv = "Dep dV: --";
-                    cachedCapDv = "Cap dV: --";
+                    cachedTof = "Time of Flight: --";
+                    cachedDepDv = "Departure dV: --";
+                    cachedCapDv = "Capture dV: --";
                     cachedTotalDv = "Total dV: --";
                     lastPreviewTof = -2;
                 }
@@ -1930,10 +1965,12 @@ public final class InterplanetaryTransferSystem {
             double getCurrentTime();
 
             double getTimeScale();
+
+            double getServerOrbitalTime();
         }
 
-        private static final int PANEL_WIDTH = 148;
-        private static final int PANEL_HEIGHT = 60;
+        private static final int PANEL_WIDTH = 190;
+        private static final int PANEL_HEIGHT = 76;
         private static final int PADDING = 10;
 
         private final Callbacks callbacks;
@@ -1941,6 +1978,7 @@ public final class InterplanetaryTransferSystem {
         private ParentWidget<?> rootPanel;
 
         private String cachedTitle = "";
+        private String cachedInventory = "";
         private String cachedProgress = "";
         private String cachedRemaining = "";
 
@@ -1969,6 +2007,7 @@ public final class InterplanetaryTransferSystem {
             setEnabled(true);
             if (transfer != activeTransfer) {
                 cachedTitle = transfer.displayName();
+                cachedInventory = "Inventory " + transfer.inventorySummary();
                 rebuildChildren(transfer);
                 activeTransfer = transfer;
                 lastProgress = -1;
@@ -1978,19 +2017,24 @@ public final class InterplanetaryTransferSystem {
             }
 
             if (activeTransfer != null) {
-                double pct = activeTransfer.progress(callbacks.getCurrentTime()) * 100.0;
+                double currentTime = effectiveTransferTime(
+                    activeTransfer,
+                    callbacks.getCurrentTime(),
+                    callbacks.getServerOrbitalTime());
+                double pct = activeTransfer.progress(currentTime) * 100.0;
                 long currentProgress = Math.round(pct);
                 if (currentProgress != lastProgress) {
-                    cachedProgress = "Progress: " + currentProgress + "%";
+                    cachedProgress = "Progress " + currentProgress + "%";
                     lastProgress = currentProgress;
                 }
 
-                double timeScale = Math.max(1e-6, callbacks.getTimeScale());
-                double remainingSec = Math.max(0.0, activeTransfer.arrivalTime() - callbacks.getCurrentTime())
-                    / timeScale;
+                double timeScale = Math.max(
+                    1e-6,
+                    effectiveTransferTimeScale(activeTransfer, callbacks.getTimeScale()));
+                double remainingSec = Math.max(0.0, activeTransfer.arrivalTime() - currentTime) / timeScale;
                 long currentRemaining = Math.round(remainingSec * 10.0);
                 if (currentRemaining != lastRemaining) {
-                    cachedRemaining = "Remaining: " + formatFixed1(remainingSec) + "s";
+                    cachedRemaining = "Remaining " + formatFixed1(remainingSec) + "s";
                     lastRemaining = currentRemaining;
                 }
             }
@@ -2015,14 +2059,19 @@ public final class InterplanetaryTransferSystem {
                     .pos(PADDING, 8));
 
             rootPanel.child(
-                new TextWidget<>(IKey.dynamic(() -> cachedProgress)).color(EnumColors.MAP_COLOR_TEXT_BODY.getColor())
+                new TextWidget<>(IKey.dynamic(() -> cachedInventory)).color(EnumColors.MAP_COLOR_TEXT_BODY.getColor())
                     .shadow(true)
                     .pos(PADDING, 24));
 
             rootPanel.child(
+                new TextWidget<>(IKey.dynamic(() -> cachedProgress)).color(EnumColors.MAP_COLOR_TEXT_BODY.getColor())
+                    .shadow(true)
+                    .pos(PADDING, 40));
+
+            rootPanel.child(
                 new TextWidget<>(IKey.dynamic(() -> cachedRemaining)).color(EnumColors.MAP_COLOR_TEXT_BODY.getColor())
                     .shadow(true)
-                    .pos(PADDING, 38));
+                    .pos(PADDING, 54));
 
             updateTooltipPosition();
             child(rootPanel);
@@ -2035,13 +2084,19 @@ public final class InterplanetaryTransferSystem {
         }
 
         private String formatProgress(InterplanetaryTransferJob transfer) {
-            double pct = transfer.progress(callbacks.getCurrentTime()) * 100.0;
+            double pct = transfer.progress(
+                effectiveTransferTime(transfer, callbacks.getCurrentTime(), callbacks.getServerOrbitalTime()))
+                * 100.0;
             return Math.round(pct) + "%";
         }
 
         private String formatRemaining(InterplanetaryTransferJob transfer) {
-            double timeScale = Math.max(1e-6, callbacks.getTimeScale());
-            double remaining = Math.max(0.0, transfer.arrivalTime() - callbacks.getCurrentTime()) / timeScale;
+            double timeScale = Math.max(1e-6, effectiveTransferTimeScale(transfer, callbacks.getTimeScale()));
+            double remaining = Math.max(
+                0.0,
+                transfer.arrivalTime()
+                    - effectiveTransferTime(transfer, callbacks.getCurrentTime(), callbacks.getServerOrbitalTime()))
+                / timeScale;
             return formatFixed1(remaining) + "s";
         }
 
