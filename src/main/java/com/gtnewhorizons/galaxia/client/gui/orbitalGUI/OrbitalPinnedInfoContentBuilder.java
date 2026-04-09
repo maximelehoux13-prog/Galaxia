@@ -208,6 +208,10 @@ public final class OrbitalPinnedInfoContentBuilder {
 
             OrbitalCelestialBody getPinnedInfoBody();
 
+            int getViewportWidth();
+
+            int getViewportHeight();
+
             void buildSignatureInto(StringBuilder buf, OrbitalCelestialBody body, int width, int height);
 
             List<PinnedInfoRow> buildRows(OrbitalCelestialBody body);
@@ -230,6 +234,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         OrbitalPinnedInfoWidget(Callbacks callbacks) {
             this.callbacks = callbacks;
             setEnabled(false);
+            size(0, 0);
         }
 
         @Override
@@ -244,10 +249,11 @@ public final class OrbitalPinnedInfoContentBuilder {
                 lastSignature = "";
                 cachedRows = Collections.emptyList();
                 setEnabled(false);
+                size(0, 0);
                 return;
             }
             setEnabled(true);
-            callbacks.buildSignatureInto(sigBuf, body, getArea().width, getArea().height);
+            callbacks.buildSignatureInto(sigBuf, body, callbacks.getViewportWidth(), callbacks.getViewportHeight());
             if (!lastSignature.contentEquals(sigBuf)) {
                 cachedRows = callbacks.buildRows(body);
                 rebuildChildren(body, cachedRows);
@@ -261,10 +267,17 @@ public final class OrbitalPinnedInfoContentBuilder {
             super.drawBackground(context, widgetTheme);
         }
 
+        @Override
+        public boolean canHoverThrough() {
+            return true;
+        }
+
         private void rebuildChildren(OrbitalCelestialBody body, List<PinnedInfoRow> rows) {
             removeAll();
             Minecraft mc = Minecraft.getMinecraft();
-            int contentWidth = getContentWidth(mc, rows, getArea().width);
+            int viewportWidth = callbacks.getViewportWidth();
+            int viewportHeight = callbacks.getViewportHeight();
+            int contentWidth = getContentWidth(mc, rows, viewportWidth);
             int boxWidth = contentWidth + PANEL_PADDING * 2;
             // Pre-compute row heights once to avoid double wrapValue calls
             int n = rows.size();
@@ -276,9 +289,11 @@ public final class OrbitalPinnedInfoContentBuilder {
             }
             if (n > 0) boxHeight -= ROW_GAP;
             boxHeight += 8;
-            int x = Math.max(8, getArea().width - boxWidth - 18);
-            int y = Math.max(24, (getArea().height - boxHeight) / 2);
-            ParentWidget<?> root = new ParentWidget<>().pos(x, y)
+            int x = Math.max(8, viewportWidth - boxWidth - 18);
+            int y = Math.max(24, (viewportHeight - boxHeight) / 2);
+            pos(x, y);
+            size(boxWidth, boxHeight);
+            ParentWidget<?> root = new ParentWidget<>().pos(0, 0)
                 .size(boxWidth, boxHeight);
             PassiveLayer backgroundLayer = new PassiveLayer().pos(0, 0)
                 .widthRel(1f)
@@ -292,6 +307,7 @@ public final class OrbitalPinnedInfoContentBuilder {
                 currentY += rowHeights[i] + ROW_GAP;
             }
             child(root);
+            scheduleResize();
         }
 
         private void buildRow(ParentWidget<?> root, Minecraft mc, PinnedInfoRow row, int contentWidth, int y) {

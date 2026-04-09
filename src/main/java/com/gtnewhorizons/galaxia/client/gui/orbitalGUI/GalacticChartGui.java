@@ -33,60 +33,23 @@ public class GalacticChartGui {
             .hintText("Asset name")
             .hintColor(EnumColors.MapSidebaSearchLabel.getColor())
             .setFocusOnGuiOpen(false);
-        OrbitalView.OrbitalMapWidget map = new OrbitalView.OrbitalMapWidget(galaxyRoot).withInitialLayer(currentStar)
-            .attachRenameField(renameField);
-        OrbitalPinnedInfoContentBuilder.OrbitalPinnedInfoWidget pinnedInfoOverlay = map.createPinnedInfoWidget();
-        InterplanetaryTransferSystem.OrbitalTransferTooltipWidget transferTooltipOverlay = map
-            .createTransferTooltipWidget();
-        InterplanetaryTransferSystem.OrbitalTransferSimulatorWidget transferSimulatorOverlay = map
-            .createTransferSimulatorWidget();
-        OrbitalContextMenuWidget contextMenuOverlay = map.createContextMenuWidget();
-        AssetManagementSystem.OrbitalAssetManagementWidget assetManagementOverlay = map.createAssetManagementWidget();
-        LogisticsSignalsWidget signalsOverlay = map.createSignalsWidget();
-        TransferVisibilityWidget transferVisibilityOverlay = map.createTransferVisibilityWidget();
-        CelestialSidebarWidget sidebar = new CelestialSidebarWidget(galaxyRoot, currentStar, map);
+        GalacticMapWidget galacticMap = new GalacticMapWidget(galaxyRoot, currentStar, renameField);
+        MouseDebugOverlayWidget mouseDebugOverlay = new MouseDebugOverlayWidget(
+            () -> galacticMap.mapWidget()
+                .isDebugOverlayEnabled());
+        CelestialSidebarWidget sidebar = new CelestialSidebarWidget(galaxyRoot, currentStar, galacticMap.mapWidget());
         return panel.child(
+            (IWidget) mouseDebugOverlay.left(0)
+                .top(0)
+                .widthRel(1f)
+                .heightRel(1f))
+            .child(
             (IWidget) sidebar.left(0)
                 .top(0)
                 .width(LEFT_PANEL_WIDTH)
                 .heightRel(1f))
             .child(
-                (IWidget) map.left(LEFT_PANEL_WIDTH)
-                    .top(0)
-                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
-                    .heightRel(1f))
-            .child(
-                (IWidget) pinnedInfoOverlay.left(LEFT_PANEL_WIDTH)
-                    .top(0)
-                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
-                    .heightRel(1f))
-            .child(
-                (IWidget) transferTooltipOverlay.left(LEFT_PANEL_WIDTH)
-                    .top(0)
-                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
-                    .heightRel(1f))
-            .child(
-                (IWidget) transferSimulatorOverlay.left(LEFT_PANEL_WIDTH)
-                    .top(0)
-                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
-                    .heightRel(1f))
-            .child(
-                (IWidget) contextMenuOverlay.left(LEFT_PANEL_WIDTH)
-                    .top(0)
-                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
-                    .heightRel(1f))
-            .child(
-                (IWidget) assetManagementOverlay.left(LEFT_PANEL_WIDTH)
-                    .top(0)
-                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
-                    .heightRel(1f))
-            .child(
-                (IWidget) signalsOverlay.left(LEFT_PANEL_WIDTH)
-                    .top(0)
-                    .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
-                    .heightRel(1f))
-            .child(
-                (IWidget) transferVisibilityOverlay.left(LEFT_PANEL_WIDTH)
+                (IWidget) galacticMap.left(LEFT_PANEL_WIDTH)
                     .top(0)
                     .widthRelOffset(1f, -LEFT_PANEL_WIDTH)
                     .heightRel(1f))

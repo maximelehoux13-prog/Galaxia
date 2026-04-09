@@ -19,6 +19,7 @@ import com.cleanroommc.modularui.api.widget.IGuiAction;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
 import com.cleanroommc.modularui.utils.GlStateManager;
+import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
@@ -362,7 +363,7 @@ public class OrbitalView {
         private final OrbitalPinnedInfoContentBuilder.OrbitalPinnedInfoWidget pinnedInfoWidget;
         private final OrbitalContextMenuWidget contextMenuWidget;
         private final LogisticsSignalsWidget signalsWidget;
-        private final TransferVisibilityWidget transferVisibilityWidget;
+        private boolean signalsOpen = false;
         private boolean transfersHidden = false;
         private final OrbitalScene.OrbitalSceneFrameBuilder sceneFrameBuilder;
         private int lastRenderedLogisticsTaskRevision = Integer.MIN_VALUE;
@@ -438,6 +439,16 @@ public class OrbitalView {
             this.assetManagementWidget = new AssetManagementSystem.OrbitalAssetManagementWidget(
                 assetUiState,
                 new AssetManagementSystem.OrbitalAssetManagementWidget.Callbacks() {
+
+                    @Override
+                    public int getViewportWidth() {
+                        return OrbitalMapWidget.this.getArea().width;
+                    }
+
+                    @Override
+                    public int getViewportHeight() {
+                        return OrbitalMapWidget.this.getArea().height;
+                    }
 
                     @Override
                     public void closeAssetManagement() {
@@ -664,12 +675,22 @@ public class OrbitalView {
 
                     @Override
                     public int getTooltipMouseX() {
-                        return getContext().getMouseX();
+                        return transferState.hoverX();
                     }
 
                     @Override
                     public int getTooltipMouseY() {
-                        return getContext().getMouseY();
+                        return transferState.hoverY();
+                    }
+
+                    @Override
+                    public int getViewportWidth() {
+                        return OrbitalMapWidget.this.getArea().width;
+                    }
+
+                    @Override
+                    public int getViewportHeight() {
+                        return OrbitalMapWidget.this.getArea().height;
                     }
 
                     @Override
@@ -690,6 +711,16 @@ public class OrbitalView {
             this.transferSimulatorWidget = new InterplanetaryTransferSystem.OrbitalTransferSimulatorWidget(
                 transferSimulatorState,
                 new InterplanetaryTransferSystem.OrbitalTransferSimulatorWidget.Callbacks() {
+
+                    @Override
+                    public int getViewportWidth() {
+                        return OrbitalMapWidget.this.getArea().width;
+                    }
+
+                    @Override
+                    public int getViewportHeight() {
+                        return OrbitalMapWidget.this.getArea().height;
+                    }
 
                     @Override
                     public void closeTransferSimulator() {
@@ -786,6 +817,16 @@ public class OrbitalView {
                     }
 
                     @Override
+                    public int getViewportWidth() {
+                        return OrbitalMapWidget.this.getArea().width;
+                    }
+
+                    @Override
+                    public int getViewportHeight() {
+                        return OrbitalMapWidget.this.getArea().height;
+                    }
+
+                    @Override
                     public void buildSignatureInto(StringBuilder buf, OrbitalCelestialBody body, int width,
                         int height) {
                         pinnedInfoContentBuilder.buildSignatureInto(buf, body, width, height);
@@ -799,6 +840,16 @@ public class OrbitalView {
             this.contextMenuWidget = new OrbitalContextMenuWidget(
                 contextMenuState,
                 new OrbitalContextMenuWidget.Callbacks() {
+
+                    @Override
+                    public int getViewportWidth() {
+                        return OrbitalMapWidget.this.getArea().width;
+                    }
+
+                    @Override
+                    public int getViewportHeight() {
+                        return OrbitalMapWidget.this.getArea().height;
+                    }
 
                     @Override
                     public boolean canCreateBaseStation(OrbitalCelestialBody body) {
@@ -870,10 +921,7 @@ public class OrbitalView {
                         return OrbitalMapWidget.this.isOnScreen(sx, sy, radius);
                     }
                 });
-            this.signalsWidget = new LogisticsSignalsWidget(root, () -> this.viewRoot);
-            this.transferVisibilityWidget = new TransferVisibilityWidget(
-                () -> this.transfersHidden,
-                () -> this.transfersHidden = !this.transfersHidden);
+            this.signalsWidget = new LogisticsSignalsWidget(root, () -> this.viewRoot, () -> this.signalsOpen);
         }
 
         public OrbitalMapWidget withInitialLayer(OrbitalCelestialBody layerRoot) {
@@ -915,8 +963,20 @@ public class OrbitalView {
             return signalsWidget;
         }
 
-        public TransferVisibilityWidget createTransferVisibilityWidget() {
-            return transferVisibilityWidget;
+        public boolean isSignalsOpen() {
+            return signalsOpen;
+        }
+
+        public void toggleSignals() {
+            signalsOpen = !signalsOpen;
+        }
+
+        public boolean areTransfersHidden() {
+            return transfersHidden;
+        }
+
+        public void toggleTransfersHidden() {
+            transfersHidden = !transfersHidden;
         }
 
         public void showLayer(OrbitalCelestialBody layerRoot) {
@@ -978,6 +1038,10 @@ public class OrbitalView {
             return transferSimulatorState.isOpen();
         }
 
+        public boolean isDebugOverlayEnabled() {
+            return debugOverlayEnabled;
+        }
+
         public void toggleTransferSimulator() {
             if (!isCreativeBuildModeEnabled()) {
                 transferSimulatorState.close();
@@ -1005,10 +1069,14 @@ public class OrbitalView {
             guiActionsRegistered = true;
             listenGuiAction(
                 (IGuiAction.MouseScroll) (direction,
-                    amount) -> handleMouseWheel(direction, getContext().getMouseX(), getContext().getMouseY()));
+                    amount) -> handleMouseWheel(
+                        direction,
+                        toLocalMouseX(getContext().getMouseX()),
+                        toLocalMouseY(getContext().getMouseY())));
             listenGuiAction((IGuiAction.MousePressed) button -> {
-                if (transferSimulatorState.isOpen() && transferSimulatorWidget
-                    .isPointInPanel(toLocalMouseX(getContext().getMouseX()), toLocalMouseY(getContext().getMouseY()))) {
+                int localMouseX = toLocalMouseX(getContext().getMouseX());
+                int localMouseY = toLocalMouseY(getContext().getMouseY());
+                if (transferSimulatorState.isOpen() && transferSimulatorWidget.isPointInPanel(localMouseX, localMouseY)) {
                     clickCandidate = false;
                     dragging = false;
                     dragEnabledForCurrentPress = false;
@@ -1023,8 +1091,6 @@ public class OrbitalView {
                     return button == 1;
                 }
                 if (button == 0 && contextMenuState.isOpen()) {
-                    int localMouseX = toLocalMouseX(getContext().getMouseX());
-                    int localMouseY = toLocalMouseY(getContext().getMouseY());
                     clickCandidate = false;
                     dragging = false;
                     dragEnabledForCurrentPress = false;
@@ -1034,11 +1100,11 @@ public class OrbitalView {
                     return true;
                 }
                 if (button != 0) return false;
-                pressMouseX = getContext().getMouseX();
-                pressMouseY = getContext().getMouseY();
-                lastMouseX = toLocalMouseX(pressMouseX);
-                lastMouseY = toLocalMouseY(pressMouseY);
-                InterplanetaryTransferJob clickedTransfer = findTransferAtScreen(pressMouseX, pressMouseY);
+                pressMouseX = localMouseX;
+                pressMouseY = localMouseY;
+                lastMouseX = pressMouseX;
+                lastMouseY = pressMouseY;
+                InterplanetaryTransferJob clickedTransfer = findTransferAtLocal(pressMouseX, pressMouseY);
                 if (clickedTransfer != null) {
                     focusedTransfer = clickedTransfer;
                     focusedBody = null;
@@ -1050,7 +1116,7 @@ public class OrbitalView {
                     closeContextMenu();
                     return true;
                 }
-                pressedBodyCandidate = findBodyAtScreen(pressMouseX, pressMouseY);
+                pressedBodyCandidate = findBodyAtLocal(pressMouseX, pressMouseY);
                 clickCandidate = pressedBodyCandidate != null;
                 dragEnabledForCurrentPress = pressedBodyCandidate == null && !transferSimulatorState.isWaitingForPick();
                 dragging = false;
@@ -1058,7 +1124,11 @@ public class OrbitalView {
             });
             listenGuiAction(
                 (IGuiAction.MouseDrag) (mouseButton,
-                    time) -> handleMouseDragged(getContext().getMouseX(), getContext().getMouseY(), mouseButton, time));
+                    time) -> handleMouseDragged(
+                        toLocalMouseX(getContext().getMouseX()),
+                        toLocalMouseY(getContext().getMouseY()),
+                        mouseButton,
+                        time));
             listenGuiAction((IGuiAction.MouseReleased) mouseButton -> {
                 int localMouseX = toLocalMouseX(getContext().getMouseX());
                 int localMouseY = toLocalMouseY(getContext().getMouseY());
@@ -1096,9 +1166,7 @@ public class OrbitalView {
                         if (mouseButton == 1 && contextMenuWidget.isPointInMenu(localMouseX, localMouseY)) return true;
                 }
                 if (mouseButton == 1) {
-                    OrbitalCelestialBody clickedBody = findBodyAtScreen(
-                        getContext().getMouseX(),
-                        getContext().getMouseY());
+                    OrbitalCelestialBody clickedBody = findBodyAtLocal(localMouseX, localMouseY);
                     if (clickedBody != null) {
                         openContextMenu(clickedBody, localMouseX, localMouseY);
                         clickCandidate = false;
@@ -1112,8 +1180,7 @@ public class OrbitalView {
                 }
                 if (mouseButton == 0 && !dragging) {
                     OrbitalCelestialBody clickedBody = pressedBodyCandidate;
-                    if (clickedBody == null)
-                        clickedBody = findBodyAtScreen(getContext().getMouseX(), getContext().getMouseY());
+                    if (clickedBody == null) clickedBody = findBodyAtLocal(localMouseX, localMouseY);
                     if (handleTransferSimulatorPick(clickedBody)) {
                         clickCandidate = false;
                         dragging = false;
@@ -1178,14 +1245,15 @@ public class OrbitalView {
         private boolean handleMouseWheel(UpOrDown dir, int mx, int my) {
             int sign = dir.isUp() ? 1 : dir.isDown() ? -1 : 0;
             if (sign == 0) return false;
+            if (signalsWidget.isPointInPanel(mx, my)) return false;
             if (assetUiState.isAssetManagementOpen()) {
                 if (assetUiState.hasBlockingModal()) return true;
-                return !assetManagementWidget.isPointInScrollViewport(toLocalMouseX(mx), toLocalMouseY(my));
+                return !assetManagementWidget.isPointInScrollViewport(mx, my);
             }
             double oldScale = getScale();
             viewState.zoomLevel = Math.max(-7000.0, Math.min(14000.0, viewState.zoomLevel + sign * 0.78));
-            int lx = toLocalMouseX(mx);
-            int ly = toLocalMouseY(my);
+            int lx = mx;
+            int ly = my;
             double wmx = viewState.cameraX + (lx - getArea().width / 2.0) / oldScale;
             double wmy = viewState.cameraY + (ly - getArea().height / 2.0) / oldScale;
             double newScale = getScale();
@@ -1210,10 +1278,10 @@ public class OrbitalView {
                 || transferSimulatorState.isWaitingForPick()) return;
             if (!Mouse.isButtonDown(0)) return;
             if (!dragEnabledForCurrentPress) return;
-            int mx = getContext().getMouseX();
-            int my = getContext().getMouseY();
-            int lx = toLocalMouseX(mx);
-            int ly = toLocalMouseY(my);
+            int mx = toLocalMouseX(getContext().getMouseX());
+            int my = toLocalMouseY(getContext().getMouseY());
+            int lx = mx;
+            int ly = my;
             if (!dragging) {
                 if (Math.abs(mx - pressMouseX) <= CLICK_DRAG_THRESHOLD
                     && Math.abs(my - pressMouseY) <= CLICK_DRAG_THRESHOLD) return;
@@ -1290,11 +1358,11 @@ public class OrbitalView {
         }
 
         private int toLocalMouseX(int mouseX) {
-            return mouseX - getArea().rx;
+            return mouseX - getArea().x;
         }
 
         private int toLocalMouseY(int mouseY) {
-            return mouseY - getArea().ry;
+            return mouseY - getArea().y;
         }
 
         private float snapToPixel(float value) {
@@ -1542,7 +1610,7 @@ public class OrbitalView {
             double nearestDistance = getNearestOtherStarDistance(anchorStar);
             if (nearestDistance == Double.MAX_VALUE || nearestDistance <= 1e-9)
                 return getGalaxyOverviewZoom(anchorStar);
-            return zoomForWorldDistance(nearestDistance, getViewportHalfDiagonal() * 1.2);
+            return zoomForWorldDistance(nearestDistance, getViewportHalfDiagonal() * 1.5);
         }
 
         private boolean isLayerSwitchActive() {
@@ -1745,7 +1813,6 @@ public class OrbitalView {
                     viewState.targetCameraY = pos[1];
                 }
             }
-            super.drawBackground(context, widgetTheme);
             Gui.drawRect(0, 0, getArea().width, getArea().height, EnumColors.MapBackground.getColor());
             GlStateManager.pushMatrix();
             GlStateManager.enableBlend();
@@ -1795,22 +1862,24 @@ public class OrbitalView {
             drawActionStatusMessage();
             sceneRenderer.drawViewTitleBanner(viewRoot, getArea().width);
             drawViewStatusLabel(viewRoot, getArea().width);
+            int localMouseX = getContext().getMouseX();
+            int localMouseY = getContext().getMouseY();
             if (transfersHidden || dragging || viewRoot.objectClass() != CelestialObjectClass.STAR
                 || viewState.isometricProgress > 0.95
                 || assetUiState.isAssetManagementOpen()
                 || contextMenuState.isOpen()) {
-                transferState.updateHoveredTransfer(null, getContext().getMouseX(), getContext().getMouseY());
+                transferState.updateHoveredTransfer(null, localMouseX, localMouseY);
             } else {
                 transferState.updateHoveredTransfer(
                     transferRenderer.findHoveredTransfer(
                         transferState,
                         globalTime,
-                        getContext().getMouseX(),
-                        getContext().getMouseY()),
-                    getContext().getMouseX(),
-                    getContext().getMouseY());
+                        localMouseX,
+                        localMouseY),
+                    localMouseX,
+                    localMouseY);
             }
-            hoveredBody = dragging ? null : findBodyAtLocal(getContext().getMouseX(), getContext().getMouseY());
+            hoveredBody = dragging ? null : findBodyAtLocal(localMouseX, localMouseY);
             if (hoveredBody != null && hoveredBody.objectClass() == CelestialObjectClass.GALAXY) hoveredBody = null;
             if (hoveredBody != null && isVisibleInCurrentLayer(hoveredBody)) {
                 if (hoveredBody != focusedBody) sceneRenderer.drawHoverHighlight(hoveredBody, sceneFrame);
@@ -1818,6 +1887,7 @@ public class OrbitalView {
             if (focusedBody != null && focusedBody.objectClass() != CelestialObjectClass.GALAXY
                 && isVisibleInCurrentLayer(focusedBody)) sceneRenderer.drawSelectionHighlight(focusedBody, sceneFrame);
             if (debugOverlayEnabled) sceneRenderer.drawDebugOverlay(sceneFrame, getArea().height);
+            super.drawBackground(context, widgetTheme);
         }
 
         private void fillResolvedBodyDrawState(OrbitalScene.ResolvedBodyDrawState out, OrbitalCelestialBody body,
@@ -1867,17 +1937,12 @@ public class OrbitalView {
             return labelAlpha * (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 3.0);
         }
 
-        private OrbitalCelestialBody findBodyAtScreen(int mouseX, int mouseY) {
-            return findBodyAtLocal(toLocalMouseX(mouseX), toLocalMouseY(mouseY));
-        }
-
-        private InterplanetaryTransferJob findTransferAtScreen(int mouseX, int mouseY) {
+        private InterplanetaryTransferJob findTransferAtLocal(int mouseX, int mouseY) {
             if (viewRoot.objectClass() != CelestialObjectClass.STAR || viewState.isometricProgress > 0.95
                 || assetUiState.isAssetManagementOpen()
                 || contextMenuState.isOpen()
                 || transferSimulatorState.isWaitingForPick()) return null;
-            return transferRenderer
-                .findHoveredTransfer(transferState, globalTime, toLocalMouseX(mouseX), toLocalMouseY(mouseY));
+            return transferRenderer.findHoveredTransfer(transferState, globalTime, mouseX, mouseY);
         }
 
         private OrbitalCelestialBody findBodyAtLocal(float localX, float localY) {
@@ -2159,8 +2224,8 @@ public class OrbitalView {
                 return;
             }
             if (!renameField.isEnabled()) renameField.setEnabled(true);
-            renameField.left(getArea().rx + layout.left())
-                .top(getArea().ry + layout.top())
+            renameField.left(getArea().x + layout.left())
+                .top(getArea().y + layout.top())
                 .width(layout.right() - layout.left())
                 .height(layout.bottom() - layout.top());
         }

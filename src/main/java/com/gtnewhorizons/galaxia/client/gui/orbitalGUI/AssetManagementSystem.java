@@ -544,6 +544,10 @@ public final class AssetManagementSystem {
 
         interface Callbacks {
 
+            int getViewportWidth();
+
+            int getViewportHeight();
+
             boolean isCreativeBuildModeEnabled();
 
             boolean isGT5AutomationAvailable();
@@ -654,9 +658,15 @@ public final class AssetManagementSystem {
             this.state = state;
             this.callbacks = callbacks;
             setEnabled(false);
+            size(0, 0);
             background(
                 drawable(
                     (c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_OVERLAY_BG.getColor())));
+        }
+
+        @Override
+        public boolean canHoverThrough() {
+            return true;
         }
 
         public void markStructureDirty() {
@@ -702,10 +712,12 @@ public final class AssetManagementSystem {
                 lastOutpostStatePresent = false;
                 lastOutpostSyncRevision = -1;
                 setEnabled(false);
+                size(0, 0);
                 return;
             }
 
             setEnabled(true);
+            size(callbacks.getViewportWidth(), callbacks.getViewportHeight());
 
             // Handle asynchronous data arrival for automated outposts
             if (state.pendingAssetManagement != null) {
@@ -1150,7 +1162,7 @@ public final class AssetManagementSystem {
                 modal.child(
                     drawable(
                         (context, x, y, width, h) -> Gui
-                            .drawRect(x, y, x + width, y + h, EnumColors.MAP_COLOR_TRANSFER_ROW_BG.getColor()))
+                            .drawRect(x, y, x + width, y + h, EnumColors.MAP_COLOR_ROW_BG.getColor()))
                                 .asWidget()
                                 .pos(14, currentTop)
                                 .size(bounds.right() - bounds.left() - 28, 36));

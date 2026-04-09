@@ -454,7 +454,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         int panelWidth = panelRight - panelLeft;
 
         // Panel background
-        Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 126, 0xAA101820);
+        Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 126, EnumColors.MAP_COLOR_SIDEBAR_DEBUG_PANEL_BG.getColor());
         Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 1, EnumColors.MapSidebarListHovered.getColor());
 
         // Resolve target asset
@@ -465,7 +465,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             "Supply Debug",
             panelLeft + 4,
             DEBUG_PANEL_TOP + 5,
-            0xFFFFAA33);
+            EnumColors.MAP_COLOR_SIDEBAR_DEBUG_TITLE.getColor());
         // Target
         Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(
             targetLabel,
@@ -486,8 +486,8 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             EnumColors.MapSidebaSearchLabel.getColor());
 
         // Ghost slot background
-        Gui.drawRect(DEBUG_GHOST_SLOT_LEFT, DEBUG_PANEL_TOP + 28, DEBUG_GHOST_SLOT_LEFT + 18, DEBUG_PANEL_TOP + 46, 0xFF333333);
-        Gui.drawRect(DEBUG_GHOST_SLOT_LEFT + 1, DEBUG_PANEL_TOP + 29, DEBUG_GHOST_SLOT_LEFT + 17, DEBUG_PANEL_TOP + 45, 0xFF101010);
+        Gui.drawRect(DEBUG_GHOST_SLOT_LEFT, DEBUG_PANEL_TOP + 28, DEBUG_GHOST_SLOT_LEFT + 18, DEBUG_PANEL_TOP + 46, EnumColors.MAP_COLOR_SIDEBAR_GHOST_SLOT_BG.getColor());
+        Gui.drawRect(DEBUG_GHOST_SLOT_LEFT + 1, DEBUG_PANEL_TOP + 29, DEBUG_GHOST_SLOT_LEFT + 17, DEBUG_PANEL_TOP + 45, EnumColors.MAP_COLOR_SIDEBAR_GHOST_SLOT_INNER.getColor());
         drawInlineButton(DEBUG_PICK_BUTTON_LEFT, DEBUG_PANEL_TOP + 28, DEBUG_PICK_BUTTON_WIDTH, 18, "Select", true);
 
         // Confirm button
@@ -495,22 +495,24 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         boolean canConfirm = resolveSupplyDebugAsset() != null
             && supplyDebugGhostHandler != null
             && supplyDebugGhostHandler.getStackInSlot(0) != null;
-        int confirmBg = canConfirm ? 0xAA1C3F28 : 0x661C1C1C;
+        int confirmBg = canConfirm ? EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_BG_ENABLED.getColor()
+            : EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_BG_DISABLED.getColor();
         Gui.drawRect(panelLeft, confirmTop, panelRight, confirmTop + DEBUG_BUTTON_HEIGHT, confirmBg);
         Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(
             "Add to Inventory",
             panelLeft + 4,
             confirmTop + 3,
-            canConfirm ? 0xFF5FD87A : 0xFF666666);
+            canConfirm ? EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_TEXT_ENABLED.getColor()
+                : EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_TEXT_DISABLED.getColor());
 
         // Cancel button
         int cancelTop = confirmTop + DEBUG_BUTTON_HEIGHT + 4;
-        Gui.drawRect(panelLeft, cancelTop, panelRight, cancelTop + DEBUG_BUTTON_HEIGHT, 0x661C1C1C);
+        Gui.drawRect(panelLeft, cancelTop, panelRight, cancelTop + DEBUG_BUTTON_HEIGHT, EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_BG_DISABLED.getColor());
         Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(
             "Close",
             panelLeft + 4,
             cancelTop + 3,
-            0xFFAA5555);
+            EnumColors.MAP_COLOR_SIDEBAR_CANCEL_TEXT.getColor());
     }
 
     private String resolveSupplyDebugTargetLabel() {
@@ -588,8 +590,10 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     }
 
     private void drawInlineButton(int x, int y, int width, int height, String label, boolean enabled) {
-        int bg = enabled ? 0xAA2E435C : 0x66202A36;
-        int border = enabled ? EnumColors.MapSidebarListHovered.getColor() : 0x6699AABB;
+        int bg = enabled ? EnumColors.MAP_COLOR_SIDEBAR_INLINE_BTN_BG_ENABLED.getColor()
+            : EnumColors.MAP_COLOR_SIDEBAR_INLINE_BTN_BG_DISABLED.getColor();
+        int border = enabled ? EnumColors.MapSidebarListHovered.getColor()
+            : EnumColors.MAP_COLOR_SIDEBAR_INLINE_BTN_BORDER_DISABLED.getColor();
         Gui.drawRect(x, y, x + width, y + height, bg);
         Gui.drawRect(x, y, x + width, y + 1, border);
         Gui.drawRect(x, y + height - 1, x + width, y + height, border);
@@ -600,12 +604,15 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             label,
             x + (width - textWidth) / 2,
             y + (height - Minecraft.getMinecraft().fontRenderer.FONT_HEIGHT) / 2 + 1,
-            enabled ? EnumColors.MapSidebarListNormal.getColor() : 0xFF777777);
+            enabled ? EnumColors.MapSidebarListNormal.getColor()
+                : EnumColors.MAP_COLOR_SIDEBAR_INLINE_BTN_TEXT_DISABLED.getColor());
     }
 
     private void drawLayerButton(int x, int y, int width, String label, boolean selected) {
-        int bg = selected ? 0xCC2E435C : 0x66202A36;
-        int border = selected ? EnumColors.MapSidebarListHovered.getColor() : 0x6699AABB;
+        int bg = selected ? EnumColors.MAP_COLOR_SIDEBAR_LAYER_BTN_BG_SELECTED.getColor()
+            : EnumColors.MAP_COLOR_SIDEBAR_LAYER_BTN_BG_NORMAL.getColor();
+        int border = selected ? EnumColors.MapSidebarListHovered.getColor()
+            : EnumColors.MAP_COLOR_SIDEBAR_INLINE_BTN_BORDER_DISABLED.getColor();
         Gui.drawRect(x, y, x + width, y + LAYER_BUTTON_HEIGHT, bg);
         Gui.drawRect(x, y, x + width, y + 1, border);
         Gui.drawRect(x, y + LAYER_BUTTON_HEIGHT - 1, x + width, y + LAYER_BUTTON_HEIGHT, border);
@@ -691,7 +698,8 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             int textX = 22 + e.depth() * 24;
             String text = e.body()
                 .displayName();
-            int color = hovered ? 0xFF59BFD9 : EnumColors.MapSidebarListNormal.getColor();
+            int color = hovered ? EnumColors.MAP_COLOR_SIDEBAR_ENTRY_HOVER.getColor()
+                : EnumColors.MapSidebarListNormal.getColor();
             if (e.hasChildren()) {
                 IDrawable play = IDrawable.of(GuiTextures.PLAY);
                 if (expanded.contains(e.body())) {

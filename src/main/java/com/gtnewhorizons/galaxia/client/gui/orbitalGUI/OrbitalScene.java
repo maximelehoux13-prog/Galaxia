@@ -18,6 +18,7 @@ import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
+import com.gtnewhorizons.galaxia.utility.EnumColors;
 
 public class OrbitalScene {
 
@@ -441,7 +442,7 @@ public class OrbitalScene {
         private static final float MAP_LABEL_SCALE = 0.82f;
         private static final int GALAXY_TITLE_TOP = 10;
         private static final int GALAXY_TITLE_HEIGHT = 21;
-        private static final int SOI_FILL_COLOR = 0x3300FF66;
+        private static final int SOI_FILL_COLOR = EnumColors.MAP_COLOR_SPHERE_OF_INFLUENCE_FILL.getColor();
         private final Callbacks callbacks;
 
         OrbitalSceneRenderer(Callbacks callbacks) {
@@ -467,6 +468,10 @@ public class OrbitalScene {
         }
 
         void drawSpheresOfInfluence(OrbitalSceneFrame frame) {
+            // SOI is currently not used by gameplay, routing, hit-testing, or layer logic.
+            // Leave the calculation code in place for future mechanics, but keep the overlay
+            // disabled for now to avoid implying that it has active meaning in-game.
+            if (true) return;
             for (ResolvedBodyDrawState state : frame.resolvedBodies) {
                 if (state.parent() == null || state.bodyAlpha() <= 0.01f || !state.renderBody()) continue;
                 if (state.body()
@@ -515,7 +520,7 @@ public class OrbitalScene {
             float box = callbacks.getSelectionBoxRadius(bounds);
             int labelY = (int) (bounds.centerY() - box - 22);
             drawSelectionOverlay(bounds.centerX(), bounds.centerY(), box, 1.0f);
-            drawCenteredString(body.displayName(), bounds.centerX(), labelY, 0xFFFFFFFF);
+            drawCenteredString(body.displayName(), bounds.centerX(), labelY, EnumColors.MAP_COLOR_TITLE_BANNER_TEXT.getColor());
         }
 
         void drawHoverHighlight(OrbitalCelestialBody body, OrbitalSceneFrame frame) {
@@ -526,15 +531,15 @@ public class OrbitalScene {
 
         void drawDebugOverlay(OrbitalSceneFrame frame, int widgetHeight) {
             Minecraft mc = Minecraft.getMinecraft();
-            Gui.drawRect(8, widgetHeight - 36, 182, widgetHeight - 8, 0x990B111C);
-            mc.fontRenderer.drawStringWithShadow("Debug: body hitzones", 14, widgetHeight - 30, 0xFF7FFFD4);
-            mc.fontRenderer.drawStringWithShadow("Toggle: B", 14, widgetHeight - 18, 0xFFB8C7D9);
+            Gui.drawRect(8, widgetHeight - 36, 182, widgetHeight - 8, EnumColors.MAP_COLOR_DEBUG_PANEL_BG.getColor());
+            mc.fontRenderer.drawStringWithShadow("Debug: body hitzones", 14, widgetHeight - 30, EnumColors.MAP_COLOR_DEBUG_TITLE.getColor());
+            mc.fontRenderer.drawStringWithShadow("Toggle: B", 14, widgetHeight - 18, EnumColors.MAP_COLOR_DEBUG_INFO.getColor());
             for (ScreenBodyBounds bounds : frame.screenBodies) {
                 drawSquareOutline(
                     bounds.centerX(),
                     bounds.centerY(),
                     bounds.interactionRadius(),
-                    0xFF00E5FF,
+                    EnumColors.MAP_COLOR_DEBUG_HITBOX.getColor(),
                     0.95f,
                     1.5f);
                 Gui.drawRect(
@@ -542,7 +547,7 @@ public class OrbitalScene {
                     Math.round(bounds.centerY()) - 1,
                     Math.round(bounds.centerX()) + 1,
                     Math.round(bounds.centerY()) + 1,
-                    0xFF9BFF7A);
+                    EnumColors.MAP_COLOR_DEBUG_CENTER.getColor());
             }
         }
 
@@ -558,9 +563,9 @@ public class OrbitalScene {
             int bottom = top + GALAXY_TITLE_HEIGHT;
             float bottomHalfWidth = Math.max(74f, textWidth / 2f + 28f);
             float topHalfWidth = bottomHalfWidth + 8f;
-            drawFilledTrapezoid(centerX, top, bottom, topHalfWidth, bottomHalfWidth, 0xEE162133);
-            drawTrapezoidOutline(centerX, top, bottom, topHalfWidth, bottomHalfWidth, 0xFF7FB6FF, 1.4f);
-            drawCenteredBannerString(title, centerX, top + 7, 0xFFFFFFFF);
+            drawFilledTrapezoid(centerX, top, bottom, topHalfWidth, bottomHalfWidth, EnumColors.MAP_COLOR_TITLE_BANNER_BG.getColor());
+            drawTrapezoidOutline(centerX, top, bottom, topHalfWidth, bottomHalfWidth, EnumColors.MAP_COLOR_TITLE_BANNER_BORDER.getColor(), 1.4f);
+            drawCenteredBannerString(title, centerX, top + 7, EnumColors.MAP_COLOR_TITLE_BANNER_TEXT.getColor());
         }
 
         void drawAssetIcon(CelestialAssetKind kind, int x, int y, int size, float alpha) {
@@ -747,7 +752,7 @@ public class OrbitalScene {
         private void drawSelectionOverlay(float centerX, float centerY, float boxSize, float alpha) {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            int color = withAlpha(0xFF18C8FF, alpha);
+            int color = withAlpha(EnumColors.MAP_COLOR_SELECTION_HIGHLIGHT.getColor(), alpha);
             int thickness = 2;
             int left = Math.round(centerX - boxSize);
             int right = Math.round(centerX + boxSize);
@@ -781,15 +786,15 @@ public class OrbitalScene {
 
         private int getFallbackBodyColor(CelestialObjectClass objectClass) {
             return switch (objectClass) {
-                case GALAXY -> 0xFFFFFFFF;
-                case BLACK_HOLE -> 0xFF5A4B7A;
-                case STAR -> 0xFFFFD36B;
-                case GAS_GIANT -> 0xFFD9A066;
-                case PLANET -> 0xFF7FC7A6;
-                case MOON -> 0xFFD8DCE6;
-                case ASTEROID, ASTEROID_BELT -> 0xFF9CA3AF;
-                case STATION -> 0xFF89C2FF;
-                case COMET -> 0xFFAEE7FF;
+                case GALAXY -> EnumColors.MAP_COLOR_BODY_GALAXY.getColor();
+                case BLACK_HOLE -> EnumColors.MAP_COLOR_BODY_BLACK_HOLE.getColor();
+                case STAR -> EnumColors.MAP_COLOR_BODY_STAR.getColor();
+                case GAS_GIANT -> EnumColors.MAP_COLOR_BODY_GAS_GIANT.getColor();
+                case PLANET -> EnumColors.MAP_COLOR_BODY_PLANET.getColor();
+                case MOON -> EnumColors.MAP_COLOR_BODY_MOON.getColor();
+                case ASTEROID, ASTEROID_BELT -> EnumColors.MAP_COLOR_BODY_ASTEROID.getColor();
+                case STATION -> EnumColors.MAP_COLOR_BODY_STATION.getColor();
+                case COMET -> EnumColors.MAP_COLOR_BODY_COMET.getColor();
             };
         }
     }

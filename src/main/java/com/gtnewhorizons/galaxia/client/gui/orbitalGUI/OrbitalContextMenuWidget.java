@@ -42,6 +42,10 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
 
     interface Callbacks {
 
+        int getViewportWidth();
+
+        int getViewportHeight();
+
         boolean canCreateBaseStation(OrbitalCelestialBody body);
 
         boolean canCreateAutomatedStation(OrbitalCelestialBody body);
@@ -66,6 +70,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
         this.state = state;
         this.callbacks = callbacks;
         setEnabled(false);
+        size(0, 0);
     }
 
     boolean isPointInMenu(int localX, int localY) {
@@ -87,9 +92,11 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
             menuRoot = null;
             lastSignature = "";
             setEnabled(false);
+            size(0, 0);
             return;
         }
         setEnabled(true);
+        size(callbacks.getViewportWidth(), callbacks.getViewportHeight());
         String signature = buildSignature();
         if (!signature.equals(lastSignature)) {
             rebuildChildren();
@@ -101,6 +108,11 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
     public void drawBackground(ModularGuiContext context, WidgetThemeEntry widgetTheme) {
         if (!state.isOpen()) return;
         super.drawBackground(context, widgetTheme);
+    }
+
+    @Override
+    public boolean canHoverThrough() {
+        return true;
     }
 
     private String buildSignature() {

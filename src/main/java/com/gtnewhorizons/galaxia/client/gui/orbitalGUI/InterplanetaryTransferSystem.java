@@ -1526,6 +1526,10 @@ public final class InterplanetaryTransferSystem {
 
         public interface Callbacks {
 
+            int getViewportWidth();
+
+            int getViewportHeight();
+
             void closeTransferSimulator();
 
             void beginTransferPick(TransferPickMode pickMode);
@@ -1583,6 +1587,12 @@ public final class InterplanetaryTransferSystem {
             maxDvField.setText(String.valueOf(state.maxDv()));
             this.sliderValue = new DoubleValue(state.sliderDv());
             setEnabled(false);
+            size(0, 0);
+        }
+
+        @Override
+        public boolean canHoverThrough() {
+            return true;
         }
 
         boolean isPointInPanel(int localX, int localY) {
@@ -1602,9 +1612,11 @@ public final class InterplanetaryTransferSystem {
                 }
                 lastVersion = -1;
                 setEnabled(false);
+                size(0, 0);
                 return;
             }
             setEnabled(true);
+            size(callbacks.getViewportWidth(), callbacks.getViewportHeight());
             if (state.version() != lastVersion) {
                 rebuildChildren();
                 lastVersion = state.version();
@@ -1962,6 +1974,10 @@ public final class InterplanetaryTransferSystem {
 
             int getTooltipMouseY();
 
+            int getViewportWidth();
+
+            int getViewportHeight();
+
             double getCurrentTime();
 
             double getTimeScale();
@@ -1988,6 +2004,11 @@ public final class InterplanetaryTransferSystem {
         public OrbitalTransferTooltipWidget(Callbacks callbacks) {
             this.callbacks = callbacks;
             setEnabled(false);
+        }
+
+        @Override
+        public boolean canHoverThrough() {
+            return true;
         }
 
         @Override
@@ -2102,12 +2123,14 @@ public final class InterplanetaryTransferSystem {
 
         private void updateTooltipPosition() {
             if (rootPanel == null) return;
-            int localMouseX = callbacks.getTooltipMouseX() - getArea().rx;
-            int localMouseY = callbacks.getTooltipMouseY() - getArea().ry;
+            int localMouseX = callbacks.getTooltipMouseX();
+            int localMouseY = callbacks.getTooltipMouseY();
+            int viewportWidth = callbacks.getViewportWidth();
+            int viewportHeight = callbacks.getViewportHeight();
             int left = Math.max(8, localMouseX + 12);
             int top = Math.max(8, localMouseY - PANEL_HEIGHT / 2);
-            if (left + PANEL_WIDTH > getArea().width - 8) left = Math.max(8, localMouseX - 12 - PANEL_WIDTH);
-            if (top + PANEL_HEIGHT > getArea().height - 8) top = Math.max(8, getArea().height - 8 - PANEL_HEIGHT);
+            if (left + PANEL_WIDTH > viewportWidth - 8) left = Math.max(8, localMouseX - 12 - PANEL_WIDTH);
+            if (top + PANEL_HEIGHT > viewportHeight - 8) top = Math.max(8, viewportHeight - 8 - PANEL_HEIGHT);
             rootPanel.pos(left, top);
         }
 
