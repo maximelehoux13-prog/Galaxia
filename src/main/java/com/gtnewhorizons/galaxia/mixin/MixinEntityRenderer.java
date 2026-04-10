@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.gtnewhorizons.galaxia.client.gui.orbitalGUI.OrbitalView.RenderTickState;
 import com.gtnewhorizons.galaxia.core.config.ConfigRocket;
-import com.gtnewhorizons.galaxia.rocketmodules.rocket.entities.EntityRocket;
+import com.gtnewhorizons.galaxia.registry.rocketmodules.rocket.entities.EntityRocket;
 
 @Mixin(EntityRenderer.class)
 public abstract class MixinEntityRenderer {

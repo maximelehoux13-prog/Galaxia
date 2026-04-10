@@ -11,6 +11,7 @@ import com.gtnewhorizons.galaxia.core.network.DestinationSetPacket;
 import com.gtnewhorizons.galaxia.core.network.HazardWarningPacket;
 import com.gtnewhorizons.galaxia.core.network.OxygenSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.TeleportRequestPacket;
+import com.gtnewhorizons.galaxia.core.network.ToggleRCSPacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsConfigUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
@@ -65,6 +66,7 @@ public final class Galaxia {
     public static int[] sporeFilterSlots;
     public static int[] thermalSlot;
     public static int[] witherSlots;
+    public static int[] reactionControlSystemSlot;
 
     @SidedProxy(clientSide = "com.gtnewhorizons.galaxia.core.ClientProxy", serverSide = "com.gtnewhorizons.galaxia.core.CommonProxy")
     public static CommonProxy proxy;
@@ -105,6 +107,7 @@ public final class Galaxia {
         GALAXIA_NETWORK.registerMessage(HazardWarningPacket.Handler.class, HazardWarningPacket.class, id++, Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(DestinationSetPacket.Handler.class, DestinationSetPacket.class, id++,
                 Side.SERVER);
+        GALAXIA_NETWORK.registerMessage(ToggleRCSPacket.Handler.class, ToggleRCSPacket.class, id++, Side.SERVER);
         GALAXIA_NETWORK.registerMessage(OutpostBufferSyncPacket.Handler.class, OutpostBufferSyncPacket.class, id++,
                 Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(LogisticsConfigUpdatePacket.Handler.class, LogisticsConfigUpdatePacket.class,
