@@ -1,8 +1,8 @@
 package com.gtnewhorizons.galaxia.client.gui.orbitalGUI;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,19 +23,17 @@ import com.cleanroommc.modularui.screen.viewport.GuiContext;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
 import com.cleanroommc.modularui.utils.GlStateManager;
+import com.cleanroommc.modularui.value.StringValue;
 import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widget.ScrollWidget;
 import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
-import com.cleanroommc.modularui.value.StringValue;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
-import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
-import codechicken.nei.recipe.GuiCraftingRecipe;
-import codechicken.nei.recipe.GuiUsageRecipe;
+import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
@@ -44,17 +42,17 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
+import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
+import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsConfigUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryRemovePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleActionPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
-import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
@@ -65,8 +63,11 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
-import com.gtnewhorizons.galaxia.utility.GTUtility;
 import com.gtnewhorizons.galaxia.utility.EnumColors;
+import com.gtnewhorizons.galaxia.utility.GTUtility;
+
+import codechicken.nei.recipe.GuiCraftingRecipe;
+import codechicken.nei.recipe.GuiUsageRecipe;
 
 @Desugar
 record ButtonRect(int left, int top, int right, int bottom) {
@@ -720,13 +721,19 @@ public final class AssetManagementSystem {
 
             // Handle asynchronous data arrival for automated outposts
             if (state.pendingAssetManagement != null) {
-                boolean present = OutpostDataStore.get().getByAssetId(state.pendingAssetManagement.asset().assetId()) != null;
+                boolean present = OutpostDataStore.get()
+                    .getByAssetId(
+                        state.pendingAssetManagement.asset()
+                            .assetId())
+                    != null;
                 if (present && !lastOutpostStatePresent) {
                     markStructureDirty();
                 }
                 if (present) {
                     AutomatedOutpostState outpost = OutpostDataStore.get()
-                        .getByAssetId(state.pendingAssetManagement.asset().assetId());
+                        .getByAssetId(
+                            state.pendingAssetManagement.asset()
+                                .assetId());
                     if (outpost != null && outpost.getSyncRevision() != lastOutpostSyncRevision) {
                         int newRevision = outpost.getSyncRevision();
                         if (hasFocusedModalTextField()) {
@@ -758,12 +765,12 @@ public final class AssetManagementSystem {
             if (ItemPickerScreen.hasPendingPickForOutpost()) {
                 String targetId = ItemPickerScreen.getPendingForOutpostId();
                 ItemStack pickedStack = ItemPickerScreen.pollPendingPickForOutpost();
-                AutomatedOutpostState outpost = targetId != null
-                    ? OutpostDataStore.get().getByAssetId(targetId)
-                    : null;
+                AutomatedOutpostState outpost = targetId != null ? OutpostDataStore.get()
+                    .getByAssetId(targetId) : null;
                 if (pickedStack != null && outpost != null) {
                     ItemStackWrapper wrapper = ItemStackWrapper.of(pickedStack);
-                    boolean alreadyTracked = wrapper != null && outpost.logisticsConfig.snapshot().containsKey(wrapper);
+                    boolean alreadyTracked = wrapper != null && outpost.logisticsConfig.snapshot()
+                        .containsKey(wrapper);
                     if (wrapper != null && !alreadyTracked) {
                         LogisticsResourceConfig newCfg = new LogisticsResourceConfig(0, 64, false, false);
                         outpost.logisticsConfig.set(wrapper, newCfg);
@@ -771,8 +778,8 @@ public final class AssetManagementSystem {
                             "[Outpost UI] Added logistics tracked item {} to outpost {} from item picker",
                             wrapper.toKey(),
                             outpost.assetId);
-                        Galaxia.GALAXIA_NETWORK.sendToServer(
-                            new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, newCfg));
+                        Galaxia.GALAXIA_NETWORK
+                            .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, newCfg));
                     } else if (wrapper != null) {
                         Galaxia.LOG.info(
                             "[Outpost UI] Ignored item picker add for {} on outpost {} because it is already tracked",
@@ -780,8 +787,9 @@ public final class AssetManagementSystem {
                             outpost.assetId);
                     }
                     // Refresh the modal if the correct outpost is currently open
-                    if (state.pendingAssetManagement != null
-                        && state.pendingAssetManagement.asset().assetId().equals(targetId)) {
+                    if (state.pendingAssetManagement != null && state.pendingAssetManagement.asset()
+                        .assetId()
+                        .equals(targetId)) {
                         markStructureDirty();
                     }
                 }
@@ -836,9 +844,14 @@ public final class AssetManagementSystem {
             if (state.selectingModuleBuild) {
                 state.buildModuleScrollPosition = scroll;
             } else if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
-                AutomatedOutpostState outpost = OutpostDataStore.get().getByAssetId(state.pendingAssetManagement.asset().assetId());
-                if (outpost != null && state.configuringModuleIndex < outpost.modules().size()) {
-                    AutomatedOutpostModule module = outpost.modules().get(state.configuringModuleIndex);
+                AutomatedOutpostState outpost = OutpostDataStore.get()
+                    .getByAssetId(
+                        state.pendingAssetManagement.asset()
+                            .assetId());
+                if (outpost != null && state.configuringModuleIndex < outpost.modules()
+                    .size()) {
+                    AutomatedOutpostModule module = outpost.modules()
+                        .get(state.configuringModuleIndex);
                     if (module.kind == OutpostModuleKind.MINER) {
                         state.minerConfigScrollPosition = scroll;
                     } else {
@@ -857,9 +870,14 @@ public final class AssetManagementSystem {
         private int getCurrentModalScrollPosition() {
             if (state.selectingModuleBuild) return state.buildModuleScrollPosition;
             if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
-                AutomatedOutpostState outpost = OutpostDataStore.get().getByAssetId(state.pendingAssetManagement.asset().assetId());
-                if (outpost != null && state.configuringModuleIndex < outpost.modules().size()) {
-                    AutomatedOutpostModule module = outpost.modules().get(state.configuringModuleIndex);
+                AutomatedOutpostState outpost = OutpostDataStore.get()
+                    .getByAssetId(
+                        state.pendingAssetManagement.asset()
+                            .assetId());
+                if (outpost != null && state.configuringModuleIndex < outpost.modules()
+                    .size()) {
+                    AutomatedOutpostModule module = outpost.modules()
+                        .get(state.configuringModuleIndex);
                     return module.kind == OutpostModuleKind.MINER ? state.minerConfigScrollPosition
                         : state.logisticsScrollPosition;
                 }
@@ -1161,8 +1179,7 @@ public final class AssetManagementSystem {
                 modal.child(
                     drawable(
                         (context, x, y, width, h) -> Gui
-                            .drawRect(x, y, x + width, y + h, EnumColors.MAP_COLOR_ROW_BG.getColor()))
-                                .asWidget()
+                            .drawRect(x, y, x + width, y + h, EnumColors.MAP_COLOR_ROW_BG.getColor())).asWidget()
                                 .pos(14, currentTop)
                                 .size(bounds.right() - bounds.left() - 28, 36));
                 modal.child(
@@ -1192,16 +1209,26 @@ public final class AssetManagementSystem {
                 ModalBounds bounds = createCenteredModalBounds(360, 150);
                 updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
                 ParentWidget<?> modal = createModalRoot(bounds);
-                modal.child(createAssetIconWidget(asset.kind(), 1.0f).pos(12, 10).size(18, 18));
+                modal.child(
+                    createAssetIconWidget(asset.kind(), 1.0f).pos(12, 10)
+                        .size(18, 18));
                 modal.child(createTitleText("Manage Station").pos(36, 10));
-                modal.child(createBodyText(callbacks.formatAssetDisplayName(asset), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(36, 28));
-                modal.child(createBodyText("This panel is not implemented yet.", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(14, 62));
-                modal.child(createFooterButton("Close", true, callbacks::closePendingAssetManagement).pos(bounds.right() - bounds.left() - 18 - 110, 8).size(110, FOOTER_BUTTON_HEIGHT));
+                modal.child(
+                    createBodyText(callbacks.formatAssetDisplayName(asset), EnumColors.MAP_COLOR_TEXT_BODY.getColor())
+                        .pos(36, 28));
+                modal.child(
+                    createBodyText("This panel is not implemented yet.", EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                        .pos(14, 62));
+                modal.child(
+                    createFooterButton("Close", true, callbacks::closePendingAssetManagement)
+                        .pos(bounds.right() - bounds.left() - 18 - 110, 8)
+                        .size(110, FOOTER_BUTTON_HEIGHT));
                 child(modal);
                 return;
             }
 
-            AutomatedOutpostState outpost = OutpostDataStore.get().getByAssetId(asset.assetId());
+            AutomatedOutpostState outpost = OutpostDataStore.get()
+                .getByAssetId(asset.assetId());
             ModalBounds bounds = createCenteredModalBounds(MODAL_MAX_WIDTH, MODAL_MAX_HEIGHT);
             updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
             ParentWidget<?> modal = createModalRoot(bounds);
@@ -1211,8 +1238,10 @@ public final class AssetManagementSystem {
                 modal.child(createTitleText("Manage Outpost").pos(12, 10));
                 modal.child(createBodyText("Loading data...", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 50));
             } else {
-                if (state.configuringModuleIndex >= 0 && state.configuringModuleIndex < outpost.modules().size()) {
-                    AutomatedOutpostModule module = outpost.modules().get(state.configuringModuleIndex);
+                if (state.configuringModuleIndex >= 0 && state.configuringModuleIndex < outpost.modules()
+                    .size()) {
+                    AutomatedOutpostModule module = outpost.modules()
+                        .get(state.configuringModuleIndex);
                     if (module.kind == OutpostModuleKind.HAMMER || module.kind == OutpostModuleKind.BIG_HAMMER) {
                         buildLogisticsSubMenu(modal, outpost);
                     } else if (module.kind == OutpostModuleKind.MINER) {
@@ -1227,8 +1256,9 @@ public final class AssetManagementSystem {
                 }
             }
 
-            modal.child(createGlyphButton(AssetManagerButtonGlyph.CLOSE, "Close", true, callbacks::closePendingAssetManagement)
-                .pos(bounds.right() - bounds.left() - 28, 6));
+            modal.child(
+                createGlyphButton(AssetManagerButtonGlyph.CLOSE, "Close", true, callbacks::closePendingAssetManagement)
+                    .pos(bounds.right() - bounds.left() - 28, 6));
             child(modal);
         }
 
@@ -1244,9 +1274,13 @@ public final class AssetManagementSystem {
             int disableX = destroyX - gap - disableWidth;
             int configureX = disableX - gap - configureWidth;
             modal.child(createTitleText("Manage Outpost").pos(12, 10));
-            modal.child(createBodyText(callbacks.formatAssetDisplayName(state.pendingAssetManagement.asset()), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
-            modal.child(createBodyText(buildPowerSummary(outpost), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
-                .pos(Math.max(210, modalWidth - 250), 28));
+            modal.child(
+                createBodyText(
+                    callbacks.formatAssetDisplayName(state.pendingAssetManagement.asset()),
+                    EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
+            modal.child(
+                createBodyText(buildPowerSummary(outpost), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                    .pos(Math.max(210, modalWidth - 250), 28));
 
             // Tab switcher
             modal.child(createTabButton("Modules", state.assetManagementTab == 0, () -> {
@@ -1254,27 +1288,33 @@ public final class AssetManagementSystem {
                 state.selectingModuleBuild = false;
                 clearArmedDestructiveActions();
                 markStructureDirty();
-            }).pos(12, 45).size(96, 18));
+            }).pos(12, 45)
+                .size(96, 18));
             modal.child(createTabButton("Inventory", state.assetManagementTab == 1, () -> {
                 state.assetManagementTab = 1;
                 state.selectingModuleBuild = false;
                 clearArmedDestructiveActions();
                 markStructureDirty();
-            }).pos(112, 45).size(96, 18));
+            }).pos(112, 45)
+                .size(96, 18));
 
             // ── Build toolbar: one small button per module type ──────────────
             modal.child(createFooterButton("Build Module", true, () -> {
                 state.selectingModuleBuild = true;
                 clearArmedDestructiveActions();
                 markStructureDirty();
-            }).pos(12, 68).size(140, 18));
+            }).pos(12, 68)
+                .size(140, 18));
 
             // ── Installed modules (scrollable) ───────────────────────────────
             VerticalScrollData scrollData = new VerticalScrollData();
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(12, 96)
                 .widthRelOffset(1f, -24)
                 .heightRelOffset(1f, -106)
-                .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+                .background(
+                    drawable(
+                        (c, x, y, w, h) -> Gui
+                            .drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
             scroll.setEnabled(!state.selectingModuleBuild);
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
@@ -1289,65 +1329,73 @@ public final class AssetManagementSystem {
                 ParentWidget<?> row = new ParentWidget<>().pos(0, y)
                     .widthRel(1f)
                     .height(44)
-                    .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
+                    .background(
+                        drawable(
+                            (c, x, y1, w, h) -> Gui
+                                .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
                 row.child(createBodyText(m.kind.displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 6));
 
                 boolean isHammer = m.kind == OutpostModuleKind.HAMMER || m.kind == OutpostModuleKind.BIG_HAMMER;
-                boolean isConfigurable = isHammer || m.kind == OutpostModuleKind.MINER || m.kind == OutpostModuleKind.POWER;
+                boolean isConfigurable = isHammer || m.kind == OutpostModuleKind.MINER
+                    || m.kind == OutpostModuleKind.POWER;
                 boolean operational = m.getStatus() != AutomatedOutpostModule.Status.IN_CONSTRUCTION;
                 boolean isDisabled = m.getStatus() == AutomatedOutpostModule.Status.DISABLED;
 
                 if (!operational) {
-                    row.child(createBodyText(
-                        "Building... " + (int)(m.getConstructionProgress() * 100) + "%",
-                        EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 22));
+                    row.child(
+                        createBodyText(
+                            "Building... " + (int) (m.getConstructionProgress() * 100) + "%",
+                            EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 22));
                     row.child(drawable((c, x, y1, w, h) -> {
                         Gui.drawRect(x, y1, x + 100, y1 + 4, 0xFF333333);
-                        Gui.drawRect(x, y1, x + (int)(m.getConstructionProgress() * 100), y1 + 4, 0xFF00FF00);
-                    }).asWidget().pos(130, 24).size(100, 4));
+                        Gui.drawRect(x, y1, x + (int) (m.getConstructionProgress() * 100), y1 + 4, 0xFF00FF00);
+                    }).asWidget()
+                        .pos(130, 24)
+                        .size(100, 4));
                 } else {
                     String statusLabel = isDisabled ? "Disabled" : "Active";
                     String powerLabel = m.kind == OutpostModuleKind.POWER
                         ? "Generating power: " + (isDisabled ? 0 : PowerModuleData.GENERATION_EU_PER_TICK) + " EU/t"
                         : "Power: " + Math.max(0L, m.getDisplayedPowerEuPerTick()) + " EU/t";
-                    row.child(createBodyText(
-                        statusLabel + " | " + powerLabel,
-                        EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(8, 22));
+                    row.child(
+                        createBodyText(statusLabel + " | " + powerLabel, EnumColors.MAP_COLOR_TEXT_BODY.getColor())
+                            .pos(8, 22));
                 }
                 if (isConfigurable) {
                     row.child(createConfigureButton("Cfg", operational, () -> {
                         state.configuringModuleIndex = index;
                         markStructureDirty();
-                    }).pos(configureX, 12).size(configureWidth, 20));
+                    }).pos(configureX, 12)
+                        .size(configureWidth, 20));
                 }
                 row.child(createDisableButton(isDisabled ? "Enable" : "Disable", operational, () -> {
                     String action = isDisabled ? "ENABLE" : "DISABLE";
                     state.armedModuleDestroyIndex = -1;
                     Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, action));
-                }).pos(disableX, 12).size(disableWidth, 20));
+                }).pos(disableX, 12)
+                    .size(disableWidth, 20));
                 boolean armedDestroy = state.armedModuleDestroyIndex == index;
-                row.child(createTwoStageDestructiveButton(
-                    "Destroy",
-                    armedDestroy,
-                    true,
-                    () -> {
-                        if (state.armedModuleDestroyIndex == index) {
-                            state.armedModuleDestroyIndex = -1;
-                            Galaxia.GALAXIA_NETWORK
-                                .sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, "DESTROY"));
-                        } else {
-                            state.armedModuleDestroyIndex = index;
-                            markStructureDirty();
-                        }
-                    }).pos(destroyX, 12).size(destroyWidth, 20));
+                row.child(createTwoStageDestructiveButton("Destroy", armedDestroy, true, () -> {
+                    if (state.armedModuleDestroyIndex == index) {
+                        state.armedModuleDestroyIndex = -1;
+                        Galaxia.GALAXIA_NETWORK
+                            .sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, "DESTROY"));
+                    } else {
+                        state.armedModuleDestroyIndex = index;
+                        markStructureDirty();
+                    }
+                }).pos(destroyX, 12)
+                    .size(destroyWidth, 20));
                 content.child(row);
                 y += 50;
             }
 
             if (modules.isEmpty()) {
-                content.child(createBodyText("No modules installed. Use the buttons above to build one.",
-                    EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
+                content.child(
+                    createBodyText(
+                        "No modules installed. Use the buttons above to build one.",
+                        EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
             }
 
             int contentHeight = Math.max(visibleHeight, y + 8);
@@ -1385,18 +1433,25 @@ public final class AssetManagementSystem {
 
             ParentWidget<?> picker = createModalRoot(pickerLeft, pickerTop, pickerRight, pickerBottom);
             picker.child(createTitleText("Build Module").pos(12, 10));
-            picker.child(createBodyText("Choose a module to build on this outpost.", EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
+            picker.child(
+                createBodyText("Choose a module to build on this outpost.", EnumColors.MAP_COLOR_TEXT_BODY.getColor())
+                    .pos(12, 28));
             picker.child(createFooterButton("Close", true, () -> {
                 state.selectingModuleBuild = false;
                 markStructureDirty();
-            }).pos(pickerWidth - 12 - 78, 8).size(78, FOOTER_BUTTON_HEIGHT));
+            }).pos(pickerWidth - 12 - 78, 8)
+                .size(78, FOOTER_BUTTON_HEIGHT));
 
-            boolean isAutomatedOutpost = state.pendingAssetManagement.asset().kind() == CelestialAssetKind.AUTOMATED_OUTPOST;
+            boolean isAutomatedOutpost = state.pendingAssetManagement.asset()
+                .kind() == CelestialAssetKind.AUTOMATED_OUTPOST;
             VerticalScrollData scrollData = new VerticalScrollData();
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(scrollX, scrollY)
                 .widthRelOffset(1f, -(scrollX * 2))
                 .heightRelOffset(1f, -(scrollY + 10))
-                .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+                .background(
+                    drawable(
+                        (c, x, y, w, h) -> Gui
+                            .drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
             scroll.setEnabled(true);
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
@@ -1412,23 +1467,27 @@ public final class AssetManagementSystem {
                 ParentWidget<?> row = new ParentWidget<>().pos(0, y)
                     .widthRel(1f)
                     .height(92)
-                    .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
+                    .background(
+                        drawable(
+                            (c, x, y1, w, h) -> Gui
+                                .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
                 row.child(createBodyText(kind.displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 8));
-                row.child(createBodyText(buildModuleDescription(kind), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(8, 24)
-                    .size(Math.max(240, pickerWidth - 170), 24));
-                row.child(createBodyText(buildModuleStats(kind), EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 50)
-                    .size(Math.max(240, pickerWidth - 170), 12));
-                row.child(createBodyText(buildModuleCost(kind), EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 64)
-                    .size(Math.max(250, pickerWidth - 160), 20));
+                row.child(
+                    createBodyText(buildModuleDescription(kind), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(8, 24)
+                        .size(Math.max(240, pickerWidth - 170), 24));
+                row.child(
+                    createBodyText(buildModuleStats(kind), EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 50)
+                        .size(Math.max(240, pickerWidth - 170), 12));
+                row.child(
+                    createBodyText(buildModuleCost(kind), EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 64)
+                        .size(Math.max(250, pickerWidth - 160), 20));
                 row.child(createFooterButton(buildEnabled ? "Build" : "Unavailable", buildEnabled, () -> {
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        new OutpostBuildModulePacket(
-                            outpost.assetId,
-                            kind,
-                            callbacks.isCreativeBuildModeEnabled()));
+                        new OutpostBuildModulePacket(outpost.assetId, kind, callbacks.isCreativeBuildModeEnabled()));
                     state.selectingModuleBuild = false;
                     markStructureDirty();
-                }).pos(pickerWidth - 100, 34).size(78, 20));
+                }).pos(pickerWidth - 100, 34)
+                    .size(78, 20));
                 content.child(row);
                 y += 98;
             }
@@ -1447,9 +1506,13 @@ public final class AssetManagementSystem {
             int modalWidth = Math.max(520, modalRight - modalLeft);
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 80);
             modal.child(createTitleText("Manage Outpost").pos(12, 10));
-            modal.child(createBodyText(callbacks.formatAssetDisplayName(state.pendingAssetManagement.asset()), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
-            modal.child(createBodyText(buildPowerSummary(outpost), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
-                .pos(Math.max(210, modalWidth - 250), 28));
+            modal.child(
+                createBodyText(
+                    callbacks.formatAssetDisplayName(state.pendingAssetManagement.asset()),
+                    EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 28));
+            modal.child(
+                createBodyText(buildPowerSummary(outpost), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                    .pos(Math.max(210, modalWidth - 250), 28));
 
             // Tab switcher
             modal.child(createTabButton("Modules", state.assetManagementTab == 0, () -> {
@@ -1457,19 +1520,24 @@ public final class AssetManagementSystem {
                 state.selectingModuleBuild = false;
                 clearArmedDestructiveActions();
                 markStructureDirty();
-            }).pos(12, 45).size(96, 18));
+            }).pos(12, 45)
+                .size(96, 18));
             modal.child(createTabButton("Inventory", state.assetManagementTab == 1, () -> {
                 state.assetManagementTab = 1;
                 state.selectingModuleBuild = false;
                 clearArmedDestructiveActions();
                 markStructureDirty();
-            }).pos(112, 45).size(96, 18));
+            }).pos(112, 45)
+                .size(96, 18));
 
             VerticalScrollData scrollData = new VerticalScrollData();
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(12, 74)
                 .widthRelOffset(1f, -24)
                 .heightRelOffset(1f, -86)
-                .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+                .background(
+                    drawable(
+                        (c, x, y, w, h) -> Gui
+                            .drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
             activeScrollWidget = scroll;
@@ -1483,28 +1551,37 @@ public final class AssetManagementSystem {
                 ParentWidget<?> row = new ParentWidget<>().pos(5, y)
                     .widthRelOffset(1f, -10)
                     .height(30)
-                    .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
+                    .background(
+                        drawable(
+                            (c, x, y1, w, h) -> Gui
+                                .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
-                ItemStack stack = entry.getKey().toStack(1);
-                row.child(createInventoryItemWidget(stack, 16).pos(5, 7).size(16, 16));
-                row.child(createBodyText(stack.getDisplayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(30, 10));
-                row.child(createBodyText(formatAmount(entry.getValue()), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(360, 10));
-                boolean armedDump = entry.getKey().toKey().equals(state.armedDumpResourceKey);
-                row.child(createTwoStageDestructiveButton(
-                    "Dump",
-                    armedDump,
-                    true,
-                    () -> {
-                        String resourceKey = entry.getKey().toKey();
-                        if (resourceKey.equals(state.armedDumpResourceKey)) {
-                            state.armedDumpResourceKey = null;
-                            Galaxia.GALAXIA_NETWORK.sendToServer(
-                                new OutpostInventoryRemovePacket(outpost.assetId, entry.getKey()));
-                        } else {
-                            state.armedDumpResourceKey = resourceKey;
-                            markStructureDirty();
-                        }
-                    }).pos(420, 5).size(50, 20));
+                ItemStack stack = entry.getKey()
+                    .toStack(1);
+                row.child(
+                    createInventoryItemWidget(stack, 16).pos(5, 7)
+                        .size(16, 16));
+                row.child(
+                    createBodyText(stack.getDisplayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(30, 10));
+                row.child(
+                    createBodyText(formatAmount(entry.getValue()), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                        .pos(360, 10));
+                boolean armedDump = entry.getKey()
+                    .toKey()
+                    .equals(state.armedDumpResourceKey);
+                row.child(createTwoStageDestructiveButton("Dump", armedDump, true, () -> {
+                    String resourceKey = entry.getKey()
+                        .toKey();
+                    if (resourceKey.equals(state.armedDumpResourceKey)) {
+                        state.armedDumpResourceKey = null;
+                        Galaxia.GALAXIA_NETWORK
+                            .sendToServer(new OutpostInventoryRemovePacket(outpost.assetId, entry.getKey()));
+                    } else {
+                        state.armedDumpResourceKey = resourceKey;
+                        markStructureDirty();
+                    }
+                }).pos(420, 5)
+                    .size(50, 20));
                 content.child(row);
                 y += 35;
             }
@@ -1571,15 +1648,24 @@ public final class AssetManagementSystem {
         }
 
         private List<Map.Entry<ItemStackWrapper, Long>> getSortedInventoryEntries(AutomatedOutpostState outpost) {
-            List<Map.Entry<ItemStackWrapper, Long>> entries = new ArrayList<>(outpost.inventory.snapshot().entrySet());
+            List<Map.Entry<ItemStackWrapper, Long>> entries = new ArrayList<>(
+                outpost.inventory.snapshot()
+                    .entrySet());
             Comparator<Map.Entry<ItemStackWrapper, Long>> comparator;
             if (state.inventorySortMode == InventorySortMode.AMOUNT) {
                 comparator = Comparator.<Map.Entry<ItemStackWrapper, Long>>comparingLong(Map.Entry::getValue)
-                    .thenComparing(entry -> entry.getKey().toStack(1).getDisplayName(), String.CASE_INSENSITIVE_ORDER);
+                    .thenComparing(
+                        entry -> entry.getKey()
+                            .toStack(1)
+                            .getDisplayName(),
+                        String.CASE_INSENSITIVE_ORDER);
             } else {
                 comparator = Comparator.<Map.Entry<ItemStackWrapper, Long>, String>comparing(
-                    entry -> entry.getKey().toStack(1).getDisplayName(),
-                    String.CASE_INSENSITIVE_ORDER).thenComparingLong(Map.Entry::getValue);
+                    entry -> entry.getKey()
+                        .toStack(1)
+                        .getDisplayName(),
+                    String.CASE_INSENSITIVE_ORDER)
+                    .thenComparingLong(Map.Entry::getValue);
             }
             entries.sort(state.inventorySortAscending ? comparator : comparator.reversed());
             return entries;
@@ -1595,9 +1681,10 @@ public final class AssetManagementSystem {
                 .autoUpdateOnChange(false)
                 .setTextColor(EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
                 .hintColor(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
-                .background(createRectFrameDrawable(
-                    EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
-                    EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
+                .background(
+                    createRectFrameDrawable(
+                        EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                        EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
                 .value(new StringValue.Dynamic(() -> String.valueOf(getter.getAsInt()), text -> {
                     int parsed = min;
                     if (text != null && !text.isEmpty()) {
@@ -1625,10 +1712,12 @@ public final class AssetManagementSystem {
             org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_ALPHA_TEST);
             net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
             org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_DEPTH_TEST);
-            net.minecraft.client.renderer.entity.RenderItem ri = net.minecraft.client.renderer.entity.RenderItem.getInstance();
+            net.minecraft.client.renderer.entity.RenderItem ri = net.minecraft.client.renderer.entity.RenderItem
+                .getInstance();
             float previousZ = ri.zLevel;
             ri.zLevel = 200f;
-            net.minecraft.client.renderer.OpenGlHelper.setLightmapTextureCoords(net.minecraft.client.renderer.OpenGlHelper.lightmapTexUnit, 240f, 240f);
+            net.minecraft.client.renderer.OpenGlHelper
+                .setLightmapTextureCoords(net.minecraft.client.renderer.OpenGlHelper.lightmapTexUnit, 240f, 240f);
             ri.renderItemAndEffectIntoGUI(mc.fontRenderer, mc.getTextureManager(), stack, 0, 0);
             ri.zLevel = previousZ;
             net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
@@ -1643,18 +1732,19 @@ public final class AssetManagementSystem {
         /**
          * Renders the logistics routing configuration for a HAMMER or BIG_HAMMER module.
          *
-         * <p>Shows all explicitly configured items in a scrollable list. Each row follows
+         * <p>
+         * Shows all explicitly configured items in a scrollable list. Each row follows
          * the layout: [Icon] [Name] [Amount] [−][Reserve][+] [Import] [Export].
          *
-         * <p>The reserve value is displayed as a text widget between the decrement/increment
+         * <p>
+         * The reserve value is displayed as a text widget between the decrement/increment
          * buttons, while the buttons themselves send a {@link LogisticsConfigUpdatePacket}.
          */
         private void buildLogisticsSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost) {
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 106);
             List<AutomatedOutpostModule> modules = outpost.modules();
             AutomatedOutpostModule module = (state.configuringModuleIndex >= 0
-                && state.configuringModuleIndex < modules.size())
-                    ? modules.get(state.configuringModuleIndex) : null;
+                && state.configuringModuleIndex < modules.size()) ? modules.get(state.configuringModuleIndex) : null;
             String moduleLabel = module != null ? module.kind.displayName : "HAMMER";
             boolean isBigHammer = module != null && module.kind == OutpostModuleKind.BIG_HAMMER;
 
@@ -1682,13 +1772,15 @@ public final class AssetManagementSystem {
             modal.child(createFooterButton("Back", true, () -> {
                 state.configuringModuleIndex = -1;
                 markStructureDirty();
-            }).pos(12, 32).size(60, 20));
+            }).pos(12, 32)
+                .size(60, 20));
 
             // ── Add Item button: opens a separate NEI-enabled screen to pick an item ──
             modal.child(createFooterButton("Add Item", true, () -> {
                 ItemPickerScreen.setPendingForOutpost(outpost.assetId);
                 ItemPickerScreen.FACTORY.openClient();
-            }).pos(90, 32).size(80, 18));
+            }).pos(90, 32)
+                .size(80, 18));
 
             // ── Module settings row ───────────────────────────────────────────
             modal.child(createBodyText("Shooting:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 56));
@@ -1706,7 +1798,8 @@ public final class AssetManagementSystem {
                 };
                 applyShootingModeUpdate(module, outpost, modIdx, isBigHammer, next, currentThreshold);
                 markStructureDirty();
-            }).pos(74, 52).size(56, 18));
+            }).pos(74, 52)
+                .size(56, 18));
 
             if (currentMode != AllowShootingConfig.Mode.ALWAYS) {
                 double step = currentMode == AllowShootingConfig.Mode.WHEN_DV_UNDER ? 1.0 : 3600.0;
@@ -1717,41 +1810,49 @@ public final class AssetManagementSystem {
                     double newT = Math.max(0.0, currentThreshold - step);
                     applyShootingThresholdUpdate(module, outpost, modIdx, isBigHammer, currentMode, newT);
                     markStructureDirty();
-                }).pos(136, 52).size(18, 18));
+                }).pos(136, 52)
+                    .size(18, 18));
                 modal.child(createBodyText(threshLabel, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(158, 56));
                 modal.child(createFooterButton("+", module != null, () -> {
                     double newT = currentThreshold + step;
                     applyShootingThresholdUpdate(module, outpost, modIdx, isBigHammer, currentMode, newT);
                     markStructureDirty();
-                }).pos(206, 52).size(18, 18));
+                }).pos(206, 52)
+                    .size(18, 18));
             }
 
             if (isBigHammer) {
-                modal.child(
-                    createBodyText("Planetary:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(234, 56));
+                modal.child(createBodyText("Planetary:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(234, 56));
                 modal.child(createFooterButton(planetaryHandling ? "ON" : "OFF", true, () -> {
                     if (module.getData() instanceof BigHammerModuleData bd) {
-                        module.setData(new BigHammerModuleData(
-                            !bd.planetaryTransferHandling(),
-                            bd.effectiveShooting(),
-                            bd.effectiveRoutePriority()));
+                        module.setData(
+                            new BigHammerModuleData(
+                                !bd.planetaryTransferHandling(),
+                                bd.effectiveShooting(),
+                                bd.effectiveRoutePriority()));
                     }
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
-                        outpost.assetId, modIdx, "SET_PLANETARY_HANDLING",
-                        String.valueOf(!planetaryHandling)));
+                    Galaxia.GALAXIA_NETWORK.sendToServer(
+                        new OutpostModuleConfigPacket(
+                            outpost.assetId,
+                            modIdx,
+                            "SET_PLANETARY_HANDLING",
+                            String.valueOf(!planetaryHandling)));
                     markStructureDirty();
-                }).pos(296, 52).size(34, 18));
+                }).pos(296, 52)
+                    .size(34, 18));
             }
 
             // ── Column header labels ──────────────────────────────────────────
             modal.child(createBodyText("Priority:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 78));
-            modal.child(createFooterButton(
-                routePriority == OrbitalTransferPlanner.RoutePriority.PRIORITIZE_DV ? "dV" : "TOF",
-                module != null,
-                () -> {
-                    applyRoutePriorityUpdate(module, outpost, modIdx, routePriority.toggled());
-                    markStructureDirty();
-                }).pos(74, 74).size(56, 18));
+            modal.child(
+                createFooterButton(
+                    routePriority == OrbitalTransferPlanner.RoutePriority.PRIORITIZE_DV ? "dV" : "TOF",
+                    module != null,
+                    () -> {
+                        applyRoutePriorityUpdate(module, outpost, modIdx, routePriority.toggled());
+                        markStructureDirty();
+                    }).pos(74, 74)
+                        .size(56, 18));
 
             int hdrY = 102;
             modal.child(createBodyText("Item", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(26, hdrY));
@@ -1767,14 +1868,16 @@ public final class AssetManagementSystem {
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 116)
                 .widthRelOffset(1f, -20)
                 .heightRelOffset(1f, -126)
-                .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+                .background(
+                    drawable(
+                        (c, x, y, w, h) -> Gui
+                            .drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
             activeScrollWidget = scroll;
             ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
 
-            Map<ItemStackWrapper, LogisticsResourceConfig> configSnapshot =
-                outpost.logisticsConfig.snapshot();
+            Map<ItemStackWrapper, LogisticsResourceConfig> configSnapshot = outpost.logisticsConfig.snapshot();
 
             int rowY = 0;
             for (Map.Entry<ItemStackWrapper, LogisticsResourceConfig> entry : configSnapshot.entrySet()) {
@@ -1786,95 +1889,122 @@ public final class AssetManagementSystem {
                 ParentWidget<?> row = new ParentWidget<>().pos(4, rowY)
                     .widthRelOffset(1f, -8)
                     .height(28)
-                    .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
+                    .background(
+                        drawable(
+                            (c, x, y1, w, h) -> Gui
+                                .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
                 // Icon
-                row.child(createItemWidget(displayStack, 16).pos(4, 6).size(16, 16));
+                row.child(
+                    createItemWidget(displayStack, 16).pos(4, 6)
+                        .size(16, 16));
                 // Name (truncated)
                 String name = displayStack.getDisplayName();
                 row.child(createBodyText(name, EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(24, 8));
                 // Current amount in inventory
-                row.child(createBodyText(formatAmount(currentAmount), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(182, 8));
+                row.child(
+                    createBodyText(formatAmount(currentAmount), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                        .pos(182, 8));
                 // Reserve: [−] value [+]
                 row.child(createFooterButton("-", true, () -> {
                     int newRes = Math.max(0, cfg.minReserve() - 1);
                     LogisticsResourceConfig updated = cfg.withMinReserve(newRes);
                     outpost.logisticsConfig.set(wrapper, updated);
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    Galaxia.GALAXIA_NETWORK
+                        .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(246, 4).size(18, 20));
-                row.child(createIntegerValueWidget(
-                    () -> outpost.logisticsConfig.get(wrapper).minReserve(),
-                    value -> {
-                        LogisticsResourceConfig current = outpost.logisticsConfig.get(wrapper);
-                        LogisticsResourceConfig updated = current.withMinReserve(value);
-                        outpost.logisticsConfig.set(wrapper, updated);
-                        Galaxia.GALAXIA_NETWORK.sendToServer(
-                            new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
-                    },
-                    0,
-                    999999).pos(268, 4).size(36, 20));
+                }).pos(246, 4)
+                    .size(18, 20));
+                row.child(
+                    createIntegerValueWidget(
+                        () -> outpost.logisticsConfig.get(wrapper)
+                            .minReserve(),
+                        value -> {
+                            LogisticsResourceConfig current = outpost.logisticsConfig.get(wrapper);
+                            LogisticsResourceConfig updated = current.withMinReserve(value);
+                            outpost.logisticsConfig.set(wrapper, updated);
+                            Galaxia.GALAXIA_NETWORK
+                                .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                        },
+                        0,
+                        999999).pos(268, 4)
+                            .size(36, 20));
                 row.child(createFooterButton("+", true, () -> {
                     int newRes = cfg.minReserve() + 1;
                     LogisticsResourceConfig updated = cfg.withMinReserve(newRes);
                     outpost.logisticsConfig.set(wrapper, updated);
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    Galaxia.GALAXIA_NETWORK
+                        .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(306, 4).size(18, 20));
+                }).pos(306, 4)
+                    .size(18, 20));
                 // Minimum package size
                 row.child(createFooterButton("-", true, () -> {
                     int newPkg = Math.max(1, cfg.orderSize() - 1);
                     LogisticsResourceConfig updated = cfg.withOrderSize(newPkg);
                     outpost.logisticsConfig.set(wrapper, updated);
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    Galaxia.GALAXIA_NETWORK
+                        .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(330, 4).size(18, 20));
-                row.child(createIntegerValueWidget(
-                    () -> outpost.logisticsConfig.get(wrapper).orderSize(),
-                    value -> {
-                        LogisticsResourceConfig current = outpost.logisticsConfig.get(wrapper);
-                        LogisticsResourceConfig updated = current.withOrderSize(value);
-                        outpost.logisticsConfig.set(wrapper, updated);
-                        Galaxia.GALAXIA_NETWORK.sendToServer(
-                            new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
-                    },
-                    1,
-                    999999).pos(352, 4).size(36, 20));
+                }).pos(330, 4)
+                    .size(18, 20));
+                row.child(
+                    createIntegerValueWidget(
+                        () -> outpost.logisticsConfig.get(wrapper)
+                            .orderSize(),
+                        value -> {
+                            LogisticsResourceConfig current = outpost.logisticsConfig.get(wrapper);
+                            LogisticsResourceConfig updated = current.withOrderSize(value);
+                            outpost.logisticsConfig.set(wrapper, updated);
+                            Galaxia.GALAXIA_NETWORK
+                                .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                        },
+                        1,
+                        999999).pos(352, 4)
+                            .size(36, 20));
                 row.child(createFooterButton("+", true, () -> {
                     int newPkg = cfg.orderSize() + 1;
                     LogisticsResourceConfig updated = cfg.withOrderSize(newPkg);
                     outpost.logisticsConfig.set(wrapper, updated);
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    Galaxia.GALAXIA_NETWORK
+                        .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(390, 4).size(18, 20));
+                }).pos(390, 4)
+                    .size(18, 20));
                 // Import toggle
                 row.child(createFooterButton(cfg.isImportEnabled() ? "ON" : "OFF", true, () -> {
                     LogisticsResourceConfig updated = cfg.withImportEnabled(!cfg.isImportEnabled());
                     outpost.logisticsConfig.set(wrapper, updated);
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    Galaxia.GALAXIA_NETWORK
+                        .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(416, 4).size(34, 20));
+                }).pos(416, 4)
+                    .size(34, 20));
                 // Export toggle
                 row.child(createFooterButton(cfg.isSupplyEnabled() ? "ON" : "OFF", true, () -> {
                     LogisticsResourceConfig updated = cfg.withSupplyEnabled(!cfg.isSupplyEnabled());
                     outpost.logisticsConfig.set(wrapper, updated);
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
+                    Galaxia.GALAXIA_NETWORK
+                        .sendToServer(new LogisticsConfigUpdatePacket(outpost.assetId, wrapper, updated));
                     markStructureDirty();
-                }).pos(454, 4).size(34, 20));
+                }).pos(454, 4)
+                    .size(34, 20));
                 row.child(createFooterButton("X", true, () -> {
                     outpost.logisticsConfig.reset(wrapper);
                     Galaxia.GALAXIA_NETWORK.sendToServer(LogisticsConfigUpdatePacket.remove(outpost.assetId, wrapper));
                     markStructureDirty();
-                }).pos(502, 4).size(18, 20));
+                }).pos(502, 4)
+                    .size(18, 20));
 
                 content.child(row);
                 rowY += 32;
             }
 
             if (configSnapshot.isEmpty()) {
-                content.child(createBodyText(
-                    "No items tracked. Use the 'Add Item' button to start.",
-                    EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
+                content.child(
+                    createBodyText(
+                        "No items tracked. Use the 'Add Item' button to start.",
+                        EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
             }
 
             int contentHeight = Math.max(visibleHeight, rowY + 8);
@@ -1887,16 +2017,14 @@ public final class AssetManagementSystem {
             modal.child(scroll);
         }
 
-        private void applyShootingModeUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
-            int modIdx, boolean isBigHammer, AllowShootingConfig.Mode newMode, double threshold) {
+        private void applyShootingModeUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost, int modIdx,
+            boolean isBigHammer, AllowShootingConfig.Mode newMode, double threshold) {
             if (module == null) return;
             AllowShootingConfig newCfg = new AllowShootingConfig(newMode, threshold);
             if (isBigHammer) {
                 if (module.getData() instanceof BigHammerModuleData bd) {
-                    module.setData(new BigHammerModuleData(
-                        bd.planetaryTransferHandling(),
-                        newCfg,
-                        bd.effectiveRoutePriority()));
+                    module.setData(
+                        new BigHammerModuleData(bd.planetaryTransferHandling(), newCfg, bd.effectiveRoutePriority()));
                 }
             } else {
                 if (module.getData() instanceof HammerModuleData hd) {
@@ -1913,28 +2041,28 @@ public final class AssetManagementSystem {
             AllowShootingConfig newCfg = new AllowShootingConfig(mode, newThreshold);
             if (isBigHammer) {
                 if (module.getData() instanceof BigHammerModuleData bd) {
-                    module.setData(new BigHammerModuleData(
-                        bd.planetaryTransferHandling(),
-                        newCfg,
-                        bd.effectiveRoutePriority()));
+                    module.setData(
+                        new BigHammerModuleData(bd.planetaryTransferHandling(), newCfg, bd.effectiveRoutePriority()));
                 }
             } else {
                 if (module.getData() instanceof HammerModuleData hd) {
                     module.setData(new HammerModuleData(newCfg, hd.effectiveRoutePriority()));
                 }
             }
-            Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
-                outpost.assetId, modIdx, "SET_ALLOW_SHOOTING_THRESHOLD", Double.toString(newThreshold)));
+            Galaxia.GALAXIA_NETWORK.sendToServer(
+                new OutpostModuleConfigPacket(
+                    outpost.assetId,
+                    modIdx,
+                    "SET_ALLOW_SHOOTING_THRESHOLD",
+                    Double.toString(newThreshold)));
         }
 
-        private void applyRoutePriorityUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
-            int modIdx, OrbitalTransferPlanner.RoutePriority priority) {
+        private void applyRoutePriorityUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost, int modIdx,
+            OrbitalTransferPlanner.RoutePriority priority) {
             if (module == null || priority == null) return;
             if (module.getData() instanceof BigHammerModuleData bd) {
-                module.setData(new BigHammerModuleData(
-                    bd.planetaryTransferHandling(),
-                    bd.effectiveShooting(),
-                    priority));
+                module
+                    .setData(new BigHammerModuleData(bd.planetaryTransferHandling(), bd.effectiveShooting(), priority));
             } else if (module.getData() instanceof HammerModuleData hd) {
                 module.setData(new HammerModuleData(hd.effectiveShooting(), priority));
             } else {
@@ -1947,29 +2075,32 @@ public final class AssetManagementSystem {
         private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost,
             AutomatedOutpostModule module) {
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 88);
-            MinerModuleData minerData = module.getData() instanceof MinerModuleData typed ? typed : new MinerModuleData();
+            MinerModuleData minerData = module.getData() instanceof MinerModuleData typed ? typed
+                : new MinerModuleData();
             List<MinerOreOption> options = buildMinerOreOptions(outpost, minerData);
 
             modal.child(createTitleText("Miner Configuration").pos(12, 10));
             modal.child(createFooterButton("Back", true, () -> {
                 state.configuringModuleIndex = -1;
                 markStructureDirty();
-            }).pos(12, 32).size(60, 20));
-            modal.child(createFooterButton(
-                minerData.copySettingsToOtherMiners() ? "Copy: ON" : "Copy Settings",
-                true,
-                () -> {
+            }).pos(12, 32)
+                .size(60, 20));
+            modal.child(
+                createFooterButton(minerData.copySettingsToOtherMiners() ? "Copy: ON" : "Copy Settings", true, () -> {
                     MinerModuleData current = module.getData() instanceof MinerModuleData typed ? typed
                         : new MinerModuleData();
-                    MinerModuleData updated = current.withCopySettingsToOtherMiners(!current.copySettingsToOtherMiners());
+                    MinerModuleData updated = current
+                        .withCopySettingsToOtherMiners(!current.copySettingsToOtherMiners());
                     module.setData(updated);
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
-                        outpost.assetId,
-                        state.configuringModuleIndex,
-                        "SET_MINER_COPY_SETTINGS",
-                        Boolean.toString(updated.copySettingsToOtherMiners())));
+                    Galaxia.GALAXIA_NETWORK.sendToServer(
+                        new OutpostModuleConfigPacket(
+                            outpost.assetId,
+                            state.configuringModuleIndex,
+                            "SET_MINER_COPY_SETTINGS",
+                            Boolean.toString(updated.copySettingsToOtherMiners())));
                     markStructureDirty();
-                }).pos(82, 32).size(100, 20)
+                }).pos(82, 32)
+                    .size(100, 20)
                     .tooltip(t -> t.addLine("Apply settings to all other miners")));
             modal.child(createBodyText("Planetary ores", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 58));
             modal.child(createBodyText("Blacklist", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(428, 58));
@@ -1978,7 +2109,10 @@ public final class AssetManagementSystem {
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(10, 78)
                 .widthRelOffset(1f, -20)
                 .heightRelOffset(1f, -88)
-                .background(drawable((c, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+                .background(
+                    drawable(
+                        (c, x, y, w, h) -> Gui
+                            .drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
             modalScrollData = scrollData;
             modalScrollWidget = scroll;
             activeScrollWidget = scroll;
@@ -1988,9 +2122,14 @@ public final class AssetManagementSystem {
                 ParentWidget<?> row = new ParentWidget<>().pos(4, rowY)
                     .widthRelOffset(1f, -8)
                     .height(28)
-                    .background(drawable((c, x, y1, w, h) -> Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
+                    .background(
+                        drawable(
+                            (c, x, y1, w, h) -> Gui
+                                .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
                 if (option.displayStack() != null) {
-                    row.child(createItemWidget(option.displayStack(), 16).pos(4, 6).size(16, 16));
+                    row.child(
+                        createItemWidget(option.displayStack(), 16).pos(4, 6)
+                            .size(16, 16));
                 } else {
                     row.child(drawable((c, x, y1, w, h) -> {
                         Gui.drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_MODAL_HEADER.getColor());
@@ -1998,26 +2137,35 @@ public final class AssetManagementSystem {
                         Gui.drawRect(x, y1 + h - 1, x + w, y1 + h, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
                         Gui.drawRect(x, y1, x + 1, y1 + h, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
                         Gui.drawRect(x + w - 1, y1, x + w, y1 + h, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
-                    }).asWidget().pos(4, 6).size(16, 16));
+                    }).asWidget()
+                        .pos(4, 6)
+                        .size(16, 16));
                 }
-                row.child(createBodyText(option.displayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(24, 8).width(360));
+                row.child(
+                    createBodyText(option.displayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(24, 8)
+                        .width(360));
                 row.child(createCheckboxButton(option.blacklisted(), () -> {
                     if (!(module.getData() instanceof MinerModuleData currentData)) return;
                     boolean blacklisted = currentData.isBlacklisted(option.key());
-                    module.setData(blacklisted ? currentData.withRemovedBlacklist(option.key())
-                        : currentData.withAddedBlacklist(option.key()));
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleConfigPacket(
-                        outpost.assetId,
-                        state.configuringModuleIndex,
-                        blacklisted ? "REMOVE_MINER_BLACKLIST" : "ADD_MINER_BLACKLIST",
-                        option.key()));
+                    module.setData(
+                        blacklisted ? currentData.withRemovedBlacklist(option.key())
+                            : currentData.withAddedBlacklist(option.key()));
+                    Galaxia.GALAXIA_NETWORK.sendToServer(
+                        new OutpostModuleConfigPacket(
+                            outpost.assetId,
+                            state.configuringModuleIndex,
+                            blacklisted ? "REMOVE_MINER_BLACKLIST" : "ADD_MINER_BLACKLIST",
+                            option.key()));
                     markStructureDirty();
-                }).pos(434, 4).size(20, 20));
+                }).pos(434, 4)
+                    .size(20, 20));
                 content.child(row);
                 rowY += 32;
             }
             if (options.isEmpty()) {
-                content.child(createBodyText("No ores available on this body.", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, 8));
+                content.child(
+                    createBodyText("No ores available on this body.", EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                        .pos(8, 8));
             }
             int contentHeight = Math.max(visibleHeight, rowY + 8);
             scrollData.setScrollSize(contentHeight);
@@ -2031,36 +2179,51 @@ public final class AssetManagementSystem {
 
         private List<MinerOreOption> buildMinerOreOptions(AutomatedOutpostState outpost, MinerModuleData minerData) {
             return GalaxiaCelestialAPI.get(outpost.celestialBodyId)
-                .map(body -> body.properties().usesGtOreVeins()
-                    ? buildGtMinerOreOptions(body, minerData)
-                    : buildVanillaMinerOreOptions(body, minerData))
+                .map(
+                    body -> body.properties()
+                        .usesGtOreVeins() ? buildGtMinerOreOptions(body, minerData)
+                            : buildVanillaMinerOreOptions(body, minerData))
                 .orElse(Collections.emptyList());
         }
 
-        private List<MinerOreOption> buildGtMinerOreOptions(CelestialObjectRegistration body, MinerModuleData minerData) {
+        private List<MinerOreOption> buildGtMinerOreOptions(CelestialObjectRegistration body,
+            MinerModuleData minerData) {
             Map<String, MinerOreOption> options = new LinkedHashMap<>();
-            body.properties().gtOreVeins().forEach(vein -> vein.ores().forEach(oreName -> {
-                if (oreName == null || oreName.isEmpty() || options.containsKey(oreName)) return;
-                ItemStack displayStack = GTUtility.getRawOreStack(oreName);
-                String displayName = displayStack != null ? displayStack.getDisplayName() : oreName;
-                options.put(oreName, new MinerOreOption(oreName, displayName, displayStack, minerData.isBlacklisted(oreName)));
-            }));
+            body.properties()
+                .gtOreVeins()
+                .forEach(
+                    vein -> vein.ores()
+                        .forEach(oreName -> {
+                            if (oreName == null || oreName.isEmpty() || options.containsKey(oreName)) return;
+                            ItemStack displayStack = GTUtility.getRawOreStack(oreName);
+                            String displayName = displayStack != null ? displayStack.getDisplayName() : oreName;
+                            options.put(
+                                oreName,
+                                new MinerOreOption(
+                                    oreName,
+                                    displayName,
+                                    displayStack,
+                                    minerData.isBlacklisted(oreName)));
+                        }));
             return new ArrayList<>(options.values());
         }
 
-        private List<MinerOreOption> buildVanillaMinerOreOptions(CelestialObjectRegistration body, MinerModuleData minerData) {
+        private List<MinerOreOption> buildVanillaMinerOreOptions(CelestialObjectRegistration body,
+            MinerModuleData minerData) {
             List<MinerOreOption> options = new ArrayList<>();
-            for (ItemStack ore : body.properties().ores()) {
+            for (ItemStack ore : body.properties()
+                .ores()) {
                 if (ore == null) continue;
                 ItemStackWrapper wrapper = ItemStackWrapper.of(ore);
                 if (wrapper == null) continue;
                 ItemStack displayStack = ore.copy();
                 displayStack.stackSize = 1;
-                options.add(new MinerOreOption(
-                    wrapper.toKey(),
-                    displayStack.getDisplayName(),
-                    displayStack,
-                    minerData.isBlacklisted(wrapper.toKey())));
+                options.add(
+                    new MinerOreOption(
+                        wrapper.toKey(),
+                        displayStack.getDisplayName(),
+                        displayStack,
+                        minerData.isBlacklisted(wrapper.toKey())));
             }
             return options;
         }
@@ -2071,11 +2234,13 @@ public final class AssetManagementSystem {
             modal.child(createFooterButton("Back", true, () -> {
                 state.configuringModuleIndex = -1;
                 markStructureDirty();
-            }).pos(12, 32).size(60, 20));
+            }).pos(12, 32)
+                .size(60, 20));
             modal.child(createBodyText("No settings yet.", EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(12, 70));
-            modal.child(createBodyText(
-                "Generating power: " + PowerModuleData.GENERATION_EU_PER_TICK + " EU/t",
-                EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(12, 92));
+            modal.child(
+                createBodyText(
+                    "Generating power: " + PowerModuleData.GENERATION_EU_PER_TICK + " EU/t",
+                    EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(12, 92));
         }
 
         private String formatAmount(long amount) {
@@ -2094,8 +2259,8 @@ public final class AssetManagementSystem {
             }
             long netPerSecond = (generationPerTick - drawPerTick) * 20L;
             String sign = netPerSecond >= 0 ? "+" : "";
-            return "Power: " + outpost.getEnergyStored() + "/" + AutomatedOutpostState.MAX_ENERGY + " " + sign
-                + netPerSecond + "/s";
+            return "Power: " + outpost
+                .getEnergyStored() + "/" + AutomatedOutpostState.MAX_ENERGY + " " + sign + netPerSecond + "/s";
         }
 
         private String buildModuleDescription(OutpostModuleKind kind) {
@@ -2118,12 +2283,16 @@ public final class AssetManagementSystem {
         private String buildModuleCost(OutpostModuleKind kind) {
             StringBuilder sb = new StringBuilder("Cost: ");
             boolean first = true;
-            for (Map.Entry<ItemStackWrapper, Integer> entry : kind.getRequiredResources().entrySet()) {
-                ItemStack stack = entry.getKey().toStack(1);
+            for (Map.Entry<ItemStackWrapper, Integer> entry : kind.getRequiredResources()
+                .entrySet()) {
+                ItemStack stack = entry.getKey()
+                    .toStack(1);
                 if (!first) sb.append(", ");
                 sb.append(entry.getValue())
                     .append(' ')
-                    .append(stack == null ? entry.getKey().toKey() : stack.getDisplayName());
+                    .append(
+                        stack == null ? entry.getKey()
+                            .toKey() : stack.getDisplayName());
                 first = false;
             }
             return sb.toString();
@@ -2411,7 +2580,10 @@ public final class AssetManagementSystem {
         }
 
         private ButtonWidget<?> createTabButton(String label, boolean active, Runnable action) {
-            return createColoredButton(label, true, action,
+            return createColoredButton(
+                label,
+                true,
+                action,
                 active ? EnumColors.MAP_COLOR_BTN_DISABLED.getColor()
                     : EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
                 active ? EnumColors.MAP_COLOR_BTN_DISABLED.getColor()
@@ -2425,21 +2597,30 @@ public final class AssetManagementSystem {
         }
 
         private ButtonWidget<?> createConfigureButton(String label, boolean enabled, Runnable action) {
-            return createColoredButton(label, enabled, action,
+            return createColoredButton(
+                label,
+                enabled,
+                action,
                 EnumColors.MAP_COLOR_BTN_CONFIGURE_DEFAULT.getColor(),
                 EnumColors.MAP_COLOR_BTN_CONFIGURE_HOVERED.getColor(),
                 EnumColors.MAP_COLOR_BTN_CONFIGURE_BORDER.getColor());
         }
 
         private ButtonWidget<?> createDisableButton(String label, boolean enabled, Runnable action) {
-            return createColoredButton(label, enabled, action,
+            return createColoredButton(
+                label,
+                enabled,
+                action,
                 EnumColors.MAP_COLOR_BTN_DISABLE_DEFAULT.getColor(),
                 EnumColors.MAP_COLOR_BTN_DISABLE_HOVERED.getColor(),
                 EnumColors.MAP_COLOR_BTN_DISABLE_BORDER.getColor());
         }
 
         private ButtonWidget<?> createDestroyModuleButton(boolean enabled, Runnable action) {
-            return createColoredButton("Destroy", enabled, action,
+            return createColoredButton(
+                "Destroy",
+                enabled,
+                action,
                 EnumColors.MAP_COLOR_BTN_DESTROY_DEFAULT.getColor(),
                 EnumColors.MAP_COLOR_BTN_DESTROY_HOVERED.getColor(),
                 EnumColors.MAP_COLOR_BTN_DESTROY_BORDER.getColor());
@@ -2448,12 +2629,18 @@ public final class AssetManagementSystem {
         private ButtonWidget<?> createTwoStageDestructiveButton(String label, boolean armed, boolean enabled,
             Runnable action) {
             if (armed) {
-                return createColoredButton(label, enabled, action,
+                return createColoredButton(
+                    label,
+                    enabled,
+                    action,
                     EnumColors.MAP_COLOR_BTN_DANGER_DEFAULT.getColor(),
                     EnumColors.MAP_COLOR_BTN_DANGER_HOVERED.getColor(),
                     EnumColors.MAP_COLOR_BTN_DANGER_BORDER.getColor());
             }
-            return createColoredButton(label, enabled, action,
+            return createColoredButton(
+                label,
+                enabled,
+                action,
                 EnumColors.MAP_COLOR_BTN_DESTROY_DEFAULT.getColor(),
                 EnumColors.MAP_COLOR_BTN_DESTROY_HOVERED.getColor(),
                 EnumColors.MAP_COLOR_BTN_DESTROY_BORDER.getColor());
@@ -2462,12 +2649,14 @@ public final class AssetManagementSystem {
         private ButtonWidget<?> createCheckboxButton(boolean checked, Runnable action) {
             String label = checked ? "X" : "";
             return new ScrollAwareButtonWidget()
-                .background(createRectFrameDrawable(
-                    EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
-                    EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
-                .hoverBackground(createRectFrameDrawable(
-                    EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor(),
-                    EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
+                .background(
+                    createRectFrameDrawable(
+                        EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                        EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
+                .hoverBackground(
+                    createRectFrameDrawable(
+                        EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor(),
+                        EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
                 .overlay(drawable((context, x, y, w, h) -> {
                     org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
                     com.cleanroommc.modularui.utils.GlStateManager.color(1f, 1f, 1f, 1f);
@@ -2487,15 +2676,17 @@ public final class AssetManagementSystem {
                 });
         }
 
-        private ButtonWidget<?> createColoredButton(String label, boolean enabled, Runnable action,
-            int defaultBg, int hoverBg, int border) {
+        private ButtonWidget<?> createColoredButton(String label, boolean enabled, Runnable action, int defaultBg,
+            int hoverBg, int border) {
             return new ScrollAwareButtonWidget()
-                .background(createRectFrameDrawable(
-                    enabled ? defaultBg : EnumColors.MAP_COLOR_BTN_DISABLED.getColor(),
-                    enabled ? border : EnumColors.MAP_COLOR_BTN_BORDER_DISABLED.getColor()))
-                .hoverBackground(createRectFrameDrawable(
-                    enabled ? hoverBg : EnumColors.MAP_COLOR_BTN_DISABLED.getColor(),
-                    enabled ? border : EnumColors.MAP_COLOR_BTN_BORDER_DISABLED.getColor()))
+                .background(
+                    createRectFrameDrawable(
+                        enabled ? defaultBg : EnumColors.MAP_COLOR_BTN_DISABLED.getColor(),
+                        enabled ? border : EnumColors.MAP_COLOR_BTN_BORDER_DISABLED.getColor()))
+                .hoverBackground(
+                    createRectFrameDrawable(
+                        enabled ? hoverBg : EnumColors.MAP_COLOR_BTN_DISABLED.getColor(),
+                        enabled ? border : EnumColors.MAP_COLOR_BTN_BORDER_DISABLED.getColor()))
                 .overlay(drawable((context, x, y, w, h) -> {
                     org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
                     com.cleanroommc.modularui.utils.GlStateManager.color(1f, 1f, 1f, 1f);

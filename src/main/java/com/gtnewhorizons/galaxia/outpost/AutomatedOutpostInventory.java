@@ -8,7 +8,8 @@ import java.util.Map;
  * Virtual item inventory for an automated outpost.
  * All amounts are stored in RAM; persisted to JSON on WorldEvent.Save.
  *
- * <p>This class is NOT thread-safe and must only be accessed from the server thread.
+ * <p>
+ * This class is NOT thread-safe and must only be accessed from the server thread.
  */
 public final class AutomatedOutpostInventory {
 

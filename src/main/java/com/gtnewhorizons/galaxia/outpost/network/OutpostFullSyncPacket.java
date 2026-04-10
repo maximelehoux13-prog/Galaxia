@@ -8,13 +8,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
-import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
@@ -51,7 +50,7 @@ public final class OutpostFullSyncPacket implements IMessage {
         this.celestialBodyId = state.celestialBodyId;
         this.systemId = state.systemId;
         this.energyStored = state.getEnergyStored();
-        
+
         this.modules = new ArrayList<>();
         for (AutomatedOutpostModule m : state.modules()) {
             List<String> minerBlacklist = Collections.emptyList();
@@ -65,31 +64,54 @@ public final class OutpostFullSyncPacket implements IMessage {
                 minerCopySettings = minerData.copySettingsToOtherMiners();
             } else if (m.getData() instanceof HammerModuleData hd) {
                 AllowShootingConfig cfg = hd.effectiveShooting();
-                allowShootingMode = cfg.mode().name();
+                allowShootingMode = cfg.mode()
+                    .name();
                 allowShootingThreshold = cfg.threshold();
-                routePriority = hd.effectiveRoutePriority().name();
+                routePriority = hd.effectiveRoutePriority()
+                    .name();
             } else if (m.getData() instanceof BigHammerModuleData bd) {
                 AllowShootingConfig cfg = bd.effectiveShooting();
-                allowShootingMode = cfg.mode().name();
+                allowShootingMode = cfg.mode()
+                    .name();
                 allowShootingThreshold = cfg.threshold();
                 planetaryHandling = bd.planetaryTransferHandling();
-                routePriority = bd.effectiveRoutePriority().name();
+                routePriority = bd.effectiveRoutePriority()
+                    .name();
             }
-            modules.add(new ModuleSyncData(m.kind.name(), m.getStatus().name(), m.getConstructionProgress(),
-                minerBlacklist, allowShootingMode, allowShootingThreshold, planetaryHandling, routePriority,
-                minerCopySettings));
+            modules.add(
+                new ModuleSyncData(
+                    m.kind.name(),
+                    m.getStatus()
+                        .name(),
+                    m.getConstructionProgress(),
+                    minerBlacklist,
+                    allowShootingMode,
+                    allowShootingThreshold,
+                    planetaryHandling,
+                    routePriority,
+                    minerCopySettings));
         }
 
         this.inventory = new LinkedHashMap<>();
-        for (Map.Entry<ItemStackWrapper, Long> e : state.inventory.snapshot().entrySet()) {
-            inventory.put(e.getKey().toKey(), e.getValue());
+        for (Map.Entry<ItemStackWrapper, Long> e : state.inventory.snapshot()
+            .entrySet()) {
+            inventory.put(
+                e.getKey()
+                    .toKey(),
+                e.getValue());
         }
 
         this.logisticsConfig = new LinkedHashMap<>();
-        for (Map.Entry<ItemStackWrapper, LogisticsResourceConfig> e : state.logisticsConfig.snapshot().entrySet()) {
+        for (Map.Entry<ItemStackWrapper, LogisticsResourceConfig> e : state.logisticsConfig.snapshot()
+            .entrySet()) {
             LogisticsResourceConfig cfg = e.getValue();
-            logisticsConfig.put(e.getKey().toKey(),
-                new LogisticsConfigSyncData(cfg.minReserve(), cfg.orderSize(), cfg.isImportEnabled(),
+            logisticsConfig.put(
+                e.getKey()
+                    .toKey(),
+                new LogisticsConfigSyncData(
+                    cfg.minReserve(),
+                    cfg.orderSize(),
+                    cfg.isImportEnabled(),
                     cfg.isSupplyEnabled()));
         }
     }
@@ -159,8 +181,17 @@ public final class OutpostFullSyncPacket implements IMessage {
             boolean planetaryHandling = buf.readBoolean();
             String routePriority = readString(buf);
             boolean minerCopySettings = buf.readBoolean();
-            modules.add(new ModuleSyncData(kind, status, progress, minerBlacklist, allowShootingMode,
-                allowShootingThreshold, planetaryHandling, routePriority, minerCopySettings));
+            modules.add(
+                new ModuleSyncData(
+                    kind,
+                    status,
+                    progress,
+                    minerBlacklist,
+                    allowShootingMode,
+                    allowShootingThreshold,
+                    planetaryHandling,
+                    routePriority,
+                    minerCopySettings));
         }
 
         int invCount = buf.readInt();
@@ -172,24 +203,33 @@ public final class OutpostFullSyncPacket implements IMessage {
         int logCount = buf.readInt();
         logisticsConfig = new LinkedHashMap<>(logCount);
         for (int i = 0; i < logCount; i++) {
-            logisticsConfig.put(readString(buf),
+            logisticsConfig.put(
+                readString(buf),
                 new LogisticsConfigSyncData(buf.readInt(), buf.readInt(), buf.readBoolean(), buf.readBoolean()));
         }
     }
 
     public static final class Handler implements IMessageHandler<OutpostFullSyncPacket, IMessage> {
+
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(OutpostFullSyncPacket packet, MessageContext ctx) {
-            AutomatedOutpostState state = OutpostDataStore.get().getByAssetId(packet.assetId);
+            AutomatedOutpostState state = OutpostDataStore.get()
+                .getByAssetId(packet.assetId);
             if (state == null) {
-                state = new AutomatedOutpostState(packet.assetId, packet.teamId, packet.celestialBodyId, packet.systemId);
-                OutpostDataStore.get().put(state);
+                state = new AutomatedOutpostState(
+                    packet.assetId,
+                    packet.teamId,
+                    packet.celestialBodyId,
+                    packet.systemId);
+                OutpostDataStore.get()
+                    .put(state);
             }
             state.setEnergyStored(packet.energyStored);
 
             // Rebuild modules (simple approach: clear and re-add)
-            state.modulesInternal().clear();
+            state.modulesInternal()
+                .clear();
             for (ModuleSyncData md : packet.modules) {
                 OutpostModuleKind kind = OutpostModuleKind.valueOf(md.kind);
                 AutomatedOutpostModule m = new AutomatedOutpostModule(kind, createModuleData(kind, md));
@@ -212,7 +252,8 @@ public final class OutpostFullSyncPacket implements IMessage {
                 ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
                 if (key != null) {
                     LogisticsConfigSyncData d = e.getValue();
-                    logSnapshot.put(key,
+                    logSnapshot.put(
+                        key,
                         new LogisticsResourceConfig(d.minReserve, d.orderSize, d.isImportEnabled, d.isSupplyEnabled));
                 }
             }

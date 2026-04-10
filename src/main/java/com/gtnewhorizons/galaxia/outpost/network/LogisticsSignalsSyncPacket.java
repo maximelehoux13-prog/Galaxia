@@ -19,17 +19,20 @@ import io.netty.buffer.ByteBuf;
 /**
  * Server → Client: sends aggregated logistics signal totals, keyed by scope.
  *
- * <p>Sent every 20 ticks alongside {@link OutpostFullSyncPacket}. The client stores
+ * <p>
+ * Sent every 20 ticks alongside {@link OutpostFullSyncPacket}. The client stores
  * the result in {@link OutpostDataStore} so the Signals overlay can display
  * exactly what the server's signal model contains, without re-deriving it locally.
  *
- * <p>Two aggregation levels are included:
+ * <p>
+ * Two aggregation levels are included:
  * <ul>
- *   <li><b>bySystem</b> – keyed by star (system) id; used by the SYSTEM-scope Signals view.</li>
- *   <li><b>byPlanet</b> – keyed by planetary anchor body id; used by the PLANETARY-scope view.</li>
+ * <li><b>bySystem</b> – keyed by star (system) id; used by the SYSTEM-scope Signals view.</li>
+ * <li><b>byPlanet</b> – keyed by planetary anchor body id; used by the PLANETARY-scope view.</li>
  * </ul>
  *
- * <p>Values are signed net amounts (positive = net surplus, negative = net deficit)
+ * <p>
+ * Values are signed net amounts (positive = net surplus, negative = net deficit)
  * summed across all outposts in that scope bucket for each resource.
  */
 public final class LogisticsSignalsSyncPacket implements IMessage {
@@ -50,12 +53,13 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
         bySystem = new LinkedHashMap<>();
         byPlanet = new LinkedHashMap<>();
 
-        for (Map.Entry<String, List<LogisticsSignal>> entry : store
-            .allSignalsForScope(LogisticsSignal.Scope.SYSTEM).entrySet()) {
+        for (Map.Entry<String, List<LogisticsSignal>> entry : store.allSignalsForScope(LogisticsSignal.Scope.SYSTEM)
+            .entrySet()) {
             String systemId = entry.getKey();
             Map<String, Long> systemAgg = new LinkedHashMap<>();
             for (LogisticsSignal sig : entry.getValue()) {
-                String key = sig.resourceId().toKey();
+                String key = sig.resourceId()
+                    .toKey();
                 systemAgg.merge(key, sig.amount(), Long::sum);
                 // Build planet-level aggregate in parallel
                 String anchorId = sig.planetaryAnchorBodyId();
@@ -85,7 +89,8 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(LogisticsSignalsSyncPacket packet, MessageContext ctx) {
-            OutpostDataStore.get().updateClientSignals(packet.bySystem, packet.byPlanet);
+            OutpostDataStore.get()
+                .updateClientSignals(packet.bySystem, packet.byPlanet);
             return null;
         }
     }

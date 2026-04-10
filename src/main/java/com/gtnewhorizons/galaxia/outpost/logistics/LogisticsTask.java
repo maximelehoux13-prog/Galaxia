@@ -6,11 +6,13 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 /**
  * An in-flight logistics shipment between two outposts.
  *
- * <p>Tasks are created by {@link OutpostLogisticsEngine} when a supply signal is matched
+ * <p>
+ * Tasks are created by {@link OutpostLogisticsEngine} when a supply signal is matched
  * to a request signal. They count down via {@link #remainingTicks} and deliver resources
  * to the destination buffer on arrival (when {@code remainingTicks} reaches zero).
  *
- * <p>Tasks are persisted to JSON so that in-flight shipments survive world restarts.
+ * <p>
+ * Tasks are persisted to JSON so that in-flight shipments survive world restarts.
  * Resources are consumed from the source buffer immediately on task creation and added
  * to the destination on arrival.
  *
@@ -58,19 +60,39 @@ public record LogisticsTask(
     double tofOrbitalSeconds) {
 
     /** Creates a new task with a freshly generated task id. */
-    public static LogisticsTask create(String fromAssetId, String toAssetId, ItemStackWrapper resourceId,
-        long amount, int deliveryTicks, String transportKind) {
+    public static LogisticsTask create(String fromAssetId, String toAssetId, ItemStackWrapper resourceId, long amount,
+        int deliveryTicks, String transportKind) {
         String taskId = makeId();
-        return new LogisticsTask(taskId, fromAssetId, toAssetId, resourceId, amount, deliveryTicks, transportKind,
-            "", "", 0.0, 0.0);
+        return new LogisticsTask(
+            taskId,
+            fromAssetId,
+            toAssetId,
+            resourceId,
+            amount,
+            deliveryTicks,
+            transportKind,
+            "",
+            "",
+            0.0,
+            0.0);
     }
 
     /** Creates a new task with trajectory metadata for arc rendering. */
     public static LogisticsTask createWithTrajectory(String fromAssetId, String toAssetId, ItemStackWrapper resourceId,
         long amount, int deliveryTicks, String transportKind, String fromBodyId, String toBodyId,
         double departureOrbitalTime, double tofOrbitalSeconds) {
-        return new LogisticsTask(makeId(), fromAssetId, toAssetId, resourceId, amount, deliveryTicks, transportKind,
-            fromBodyId, toBodyId, departureOrbitalTime, tofOrbitalSeconds);
+        return new LogisticsTask(
+            makeId(),
+            fromAssetId,
+            toAssetId,
+            resourceId,
+            amount,
+            deliveryTicks,
+            transportKind,
+            fromBodyId,
+            toBodyId,
+            departureOrbitalTime,
+            tofOrbitalSeconds);
     }
 
     private static String makeId() {
@@ -82,8 +104,18 @@ public record LogisticsTask(
 
     /** Returns a copy of this task with {@code remainingTicks} decremented by one. */
     public LogisticsTask tick() {
-        return new LogisticsTask(taskId, fromAssetId, toAssetId, resourceId, amount, remainingTicks - 1, transportKind,
-            fromBodyId, toBodyId, departureOrbitalTime, tofOrbitalSeconds);
+        return new LogisticsTask(
+            taskId,
+            fromAssetId,
+            toAssetId,
+            resourceId,
+            amount,
+            remainingTicks - 1,
+            transportKind,
+            fromBodyId,
+            toBodyId,
+            departureOrbitalTime,
+            tofOrbitalSeconds);
     }
 
     public boolean isArrived() {

@@ -19,11 +19,13 @@ import io.netty.buffer.ByteBuf;
 /**
  * Server → Client: sends the complete list of in-flight logistics tasks.
  *
- * <p>Sent alongside {@link OutpostFullSyncPacket} every 20 ticks. The client stores the
+ * <p>
+ * Sent alongside {@link OutpostFullSyncPacket} every 20 ticks. The client stores the
  * result in {@link OutpostDataStore#clientTasks()} so the Signals overlay can show
  * per-item in-transfer counts and the starmap can render active logistics arcs.
  *
- * <p>Body IDs are resolved server-side: if a task has empty {@code fromBodyId}/
+ * <p>
+ * Body IDs are resolved server-side: if a task has empty {@code fromBodyId}/
  * {@code toBodyId} (same-body instant transfer), the server looks up the outpost's
  * {@code celestialBodyId} before serializing. Tasks that cannot be resolved are skipped.
  */
@@ -43,24 +45,28 @@ public final class LogisticsTasksSyncPacket implements IMessage {
 
             // Resolve empty body IDs from the outpost store (same-body instant tasks)
             if (fromBodyId.isEmpty()) {
-                AutomatedOutpostState from = OutpostDataStore.get().getByAssetId(t.fromAssetId());
+                AutomatedOutpostState from = OutpostDataStore.get()
+                    .getByAssetId(t.fromAssetId());
                 fromBodyId = from != null ? from.celestialBodyId : "";
             }
             if (toBodyId.isEmpty()) {
-                AutomatedOutpostState to = OutpostDataStore.get().getByAssetId(t.toAssetId());
+                AutomatedOutpostState to = OutpostDataStore.get()
+                    .getByAssetId(t.toAssetId());
                 toBodyId = to != null ? to.celestialBodyId : "";
             }
             if (fromBodyId.isEmpty() || toBodyId.isEmpty()) continue;
 
-            tasks.add(new TaskEntry(
-                t.taskId(),
-                t.resourceId().toKey(),
-                t.amount(),
-                t.transportKind(),
-                fromBodyId,
-                toBodyId,
-                t.departureOrbitalTime(),
-                t.tofOrbitalSeconds()));
+            tasks.add(
+                new TaskEntry(
+                    t.taskId(),
+                    t.resourceId()
+                        .toKey(),
+                    t.amount(),
+                    t.transportKind(),
+                    fromBodyId,
+                    toBodyId,
+                    t.departureOrbitalTime(),
+                    t.tofOrbitalSeconds()));
         }
     }
 
@@ -92,15 +98,16 @@ public final class LogisticsTasksSyncPacket implements IMessage {
             String toBodyId = readString(buf);
             double departureOrbitalTime = buf.readDouble();
             double tofOrbitalSeconds = buf.readDouble();
-            tasks.add(new TaskEntry(
-                taskId,
-                resourceKey,
-                amount,
-                transportKind,
-                fromBodyId,
-                toBodyId,
-                departureOrbitalTime,
-                tofOrbitalSeconds));
+            tasks.add(
+                new TaskEntry(
+                    taskId,
+                    resourceKey,
+                    amount,
+                    transportKind,
+                    fromBodyId,
+                    toBodyId,
+                    departureOrbitalTime,
+                    tofOrbitalSeconds));
         }
     }
 
@@ -113,17 +120,19 @@ public final class LogisticsTasksSyncPacket implements IMessage {
             for (TaskEntry e : packet.tasks) {
                 ItemStackWrapper resource = ItemStackWrapper.fromKey(e.resourceKey);
                 if (resource == null) continue;
-                clientTasks.add(new OutpostDataStore.ClientLogisticsTask(
-                    e.taskId,
-                    resource,
-                    e.amount,
-                    e.transportKind,
-                    e.fromBodyId,
-                    e.toBodyId,
-                    e.departureOrbitalTime,
-                    e.tofOrbitalSeconds));
+                clientTasks.add(
+                    new OutpostDataStore.ClientLogisticsTask(
+                        e.taskId,
+                        resource,
+                        e.amount,
+                        e.transportKind,
+                        e.fromBodyId,
+                        e.toBodyId,
+                        e.departureOrbitalTime,
+                        e.tofOrbitalSeconds));
             }
-            OutpostDataStore.get().updateClientTasks(clientTasks);
+            OutpostDataStore.get()
+                .updateClientTasks(clientTasks);
             return null;
         }
     }

@@ -15,13 +15,15 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 /**
  * In-memory store for all {@link AutomatedOutpostState} instances.
  *
- * <p>Two access paths:
+ * <p>
+ * Two access paths:
  * <ul>
- *   <li>By asset id – O(1) lookup for logistics engine and packet handlers.</li>
- *   <li>By team UUID – used by {@link AutomatedTeamMigrationHandler} and GUI queries.</li>
+ * <li>By asset id – O(1) lookup for logistics engine and packet handlers.</li>
+ * <li>By team UUID – used by {@link AutomatedTeamMigrationHandler} and GUI queries.</li>
  * </ul>
  *
- * <p>Populated by {@link OutpostPersistenceManager} on world load;
+ * <p>
+ * Populated by {@link OutpostPersistenceManager} on world load;
  * flushed to disk on WorldEvent.Save.
  * All access is from the server thread only (no synchronization needed).
  */
@@ -39,7 +41,8 @@ public final class OutpostDataStore {
      * Client-side snapshot of aggregated logistics signals, indexed by system id.
      * Updated by {@link com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket}.
      * Always empty on the server; never null.
-     * <p>Inner map: resourceKey → net signed amount (positive = surplus, negative = deficit).
+     * <p>
+     * Inner map: resourceKey → net signed amount (positive = surplus, negative = deficit).
      */
     private final Map<String, Map<String, Long>> clientSystemSignals = new LinkedHashMap<>();
 
@@ -140,8 +143,7 @@ public final class OutpostDataStore {
      */
     public Collection<AutomatedOutpostState> getByTeam(UUID teamId) {
         Map<String, AutomatedOutpostState> teamMap = byTeam.get(teamId);
-        return teamMap == null ? Collections.emptyList()
-            : Collections.unmodifiableCollection(teamMap.values());
+        return teamMap == null ? Collections.emptyList() : Collections.unmodifiableCollection(teamMap.values());
     }
 
     /** Returns an unmodifiable view of ALL outposts across all teams. */
@@ -157,8 +159,7 @@ public final class OutpostDataStore {
      * Replaces the client signal maps and bumps the signal revision counter.
      * Client-side only.
      */
-    public void updateClientSignals(Map<String, Map<String, Long>> bySystem,
-        Map<String, Map<String, Long>> byPlanet) {
+    public void updateClientSignals(Map<String, Map<String, Long>> bySystem, Map<String, Map<String, Long>> byPlanet) {
         clientSystemSignals.clear();
         clientSystemSignals.putAll(bySystem);
         clientPlanetSignals.clear();
@@ -213,14 +214,14 @@ public final class OutpostDataStore {
     /**
      * Lightweight descriptor for an in-flight logistics shipment, held client-side.
      *
-     * @param taskId                stable server task id
-     * @param resource              the item being transported
-     * @param amount                number of units in this shipment
-     * @param transportKind         HAMMER/BIG_HAMMER
-     * @param fromBodyId            celestial body id of the departure outpost
-     * @param toBodyId              celestial body id of the destination outpost
-     * @param departureOrbitalTime  departure time in orbital simulation units
-     * @param tofOrbitalSeconds     time of flight in orbital simulation units
+     * @param taskId               stable server task id
+     * @param resource             the item being transported
+     * @param amount               number of units in this shipment
+     * @param transportKind        HAMMER/BIG_HAMMER
+     * @param fromBodyId           celestial body id of the departure outpost
+     * @param toBodyId             celestial body id of the destination outpost
+     * @param departureOrbitalTime departure time in orbital simulation units
+     * @param tofOrbitalSeconds    time of flight in orbital simulation units
      */
     @Desugar
     public record ClientLogisticsTask(String taskId, ItemStackWrapper resource, long amount, String transportKind,

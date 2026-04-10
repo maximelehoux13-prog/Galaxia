@@ -4,8 +4,8 @@ import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
-import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -16,7 +16,8 @@ import io.netty.buffer.ByteBuf;
 /**
  * Client → Server: updates a single resource's logistics configuration in an outpost.
  *
- * <p>Carries the full {@link LogisticsResourceConfig} for one resource.
+ * <p>
+ * Carries the full {@link LogisticsResourceConfig} for one resource.
  * The server validates that the sending player belongs to the outpost's team
  * before applying the change.
  */
@@ -102,9 +103,8 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             // For now, any authenticated player may update any outpost (remove when NHLib wired).
 
             if (!packet.removeEntry && packet.orderSize <= 0) {
-                Galaxia.LOG.warn(
-                    "[Logistics] LogisticsConfigUpdate rejected: orderSize must be > 0 (player {})",
-                    playerName);
+                Galaxia.LOG
+                    .warn("[Logistics] LogisticsConfigUpdate rejected: orderSize must be > 0 (player {})", playerName);
                 return null;
             }
             if (!packet.removeEntry && packet.minReserve < 0) {
@@ -120,7 +120,10 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             } else {
                 state.logisticsConfig.set(
                     resource,
-                    new LogisticsResourceConfig(packet.minReserve, packet.orderSize, packet.isImportEnabled,
+                    new LogisticsResourceConfig(
+                        packet.minReserve,
+                        packet.orderSize,
+                        packet.isImportEnabled,
                         packet.isSupplyEnabled));
             }
             return new OutpostFullSyncPacket(state);

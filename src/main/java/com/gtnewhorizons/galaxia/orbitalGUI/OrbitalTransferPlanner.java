@@ -7,16 +7,18 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 /**
  * Shared (non-client) utilities for interplanetary trajectory planning.
  *
- * <p>Contains a self-contained copy of Izzo's Lambert solver and associated helpers so
+ * <p>
+ * Contains a self-contained copy of Izzo's Lambert solver and associated helpers so
  * that the server-side logistics engine can compute transfer routes without touching any
  * client-only classes.
  *
- * <p>Time unit convention:
+ * <p>
+ * Time unit convention:
  * <ul>
- *   <li>All orbital times are in "orbital simulation units" (OSU). The client viewer
- *       advances OSU at 42× real time: {@code osu = world_ticks / 20.0 * 42.0}.</li>
- *   <li>To convert a TOF in OSU to real seconds: {@code tofSeconds = tof / 42.0}.</li>
- *   <li>To convert to server ticks: {@code ticks = (int)(tof * 20.0 / 42.0)}.</li>
+ * <li>All orbital times are in "orbital simulation units" (OSU). The client viewer
+ * advances OSU at 42× real time: {@code osu = world_ticks / 20.0 * 42.0}.</li>
+ * <li>To convert a TOF in OSU to real seconds: {@code tofSeconds = tof / 42.0}.</li>
+ * <li>To convert to server ticks: {@code ticks = (int)(tof * 20.0 / 42.0)}.</li>
  * </ul>
  */
 public final class OrbitalTransferPlanner {
@@ -27,6 +29,7 @@ public final class OrbitalTransferPlanner {
     private OrbitalTransferPlanner() {}
 
     public enum RoutePriority {
+
         PRIORITIZE_TOF,
         PRIORITIZE_DV;
 
@@ -105,9 +108,9 @@ public final class OrbitalTransferPlanner {
     /**
      * Returns the "planetary anchor" for {@code target}:
      * <ul>
-     *   <li>If the target is a PLANET or GAS_GIANT → returns itself.</li>
-     *   <li>If the target is a MOON (or ASTEROID, STATION, etc.) → returns the nearest
-     *       PLANET/GAS_GIANT ancestor, or the target itself if none is found.</li>
+     * <li>If the target is a PLANET or GAS_GIANT → returns itself.</li>
+     * <li>If the target is a MOON (or ASTEROID, STATION, etc.) → returns the nearest
+     * PLANET/GAS_GIANT ancestor, or the target itself if none is found.</li>
      * </ul>
      */
     public static OrbitalCelestialBody findPlanetaryAnchor(OrbitalCelestialBody root, OrbitalCelestialBody target) {
@@ -119,8 +122,9 @@ public final class OrbitalTransferPlanner {
     private static OrbitalCelestialBody findPlanetaryAnchorRec(OrbitalCelestialBody current,
         OrbitalCelestialBody target, OrbitalCelestialBody currentPlanet) {
         CelestialObjectClass cls = current.objectClass();
-        OrbitalCelestialBody nextPlanet = (cls == CelestialObjectClass.PLANET
-            || cls == CelestialObjectClass.GAS_GIANT) ? current : currentPlanet;
+        OrbitalCelestialBody nextPlanet = (cls == CelestialObjectClass.PLANET || cls == CelestialObjectClass.GAS_GIANT)
+            ? current
+            : currentPlanet;
         if (current == target) return nextPlanet != null ? nextPlanet : current;
         for (OrbitalCelestialBody child : current.children()) {
             OrbitalCelestialBody found = findPlanetaryAnchorRec(child, target, nextPlanet);
@@ -137,7 +141,8 @@ public final class OrbitalTransferPlanner {
      * Scans 64 TOF candidates from 0.1× to 3.0× Hohmann and returns the valid route
      * with the minimum time-of-flight.
      *
-     * <p>Uses {@code attractor} as the central body for Lambert (typically the host star
+     * <p>
+     * Uses {@code attractor} as the central body for Lambert (typically the host star
      * for SYSTEM-scope, or the planetary anchor for PLANETARY-scope transfers).
      *
      * @return the minimum-TOF {@link TransferRoute}, or {@code null} if no valid route exists
@@ -148,8 +153,7 @@ public final class OrbitalTransferPlanner {
     }
 
     public static TransferRoute computeRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
-        OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime,
-        RoutePriority priority) {
+        OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime, RoutePriority priority) {
         if (root == null || attractor == null || source == null || dest == null || source == dest) return null;
 
         double mu = getBodyMu(attractor);
@@ -201,10 +205,36 @@ public final class OrbitalTransferPlanner {
             double sinDth = Math.abs(crossZ) / Math.max(1e-20, r1mag * r2mag);
             if (sinDth < 1e-3) continue;
 
-            boolean hasPrograde = evalLambertInto(r1x0, r1y0, r2x, r2y, tof, mu, true,
-                vsrcX0, vsrcY0, vdstX, vdstY, minPeriapsis, progSol, progEval);
-            boolean hasRetrograde = evalLambertInto(r1x0, r1y0, r2x, r2y, tof, mu, false,
-                vsrcX0, vsrcY0, vdstX, vdstY, minPeriapsis, retSol, retEval);
+            boolean hasPrograde = evalLambertInto(
+                r1x0,
+                r1y0,
+                r2x,
+                r2y,
+                tof,
+                mu,
+                true,
+                vsrcX0,
+                vsrcY0,
+                vdstX,
+                vdstY,
+                minPeriapsis,
+                progSol,
+                progEval);
+            boolean hasRetrograde = evalLambertInto(
+                r1x0,
+                r1y0,
+                r2x,
+                r2y,
+                tof,
+                mu,
+                false,
+                vsrcX0,
+                vsrcY0,
+                vdstX,
+                vdstY,
+                minPeriapsis,
+                retSol,
+                retEval);
 
             MutableEvaluation best;
             if (hasPrograde && (!hasRetrograde || progEval.totalDv <= retEval.totalDv)) {
@@ -254,7 +284,10 @@ public final class OrbitalTransferPlanner {
 
     private static double getBodyMu(OrbitalCelestialBody body) {
         if (body == null || body.properties() == null) return 0.0;
-        return Math.max(0.0, body.properties().standardGravitationalParameter());
+        return Math.max(
+            0.0,
+            body.properties()
+                .standardGravitationalParameter());
     }
 
     private static boolean evalLambertInto(double r1x, double r1y, double r2x, double r2y, double tof, double mu,
@@ -371,13 +404,9 @@ public final class OrbitalTransferPlanner {
         double alpha = 2.0 * Math.acos(x);
 
         double a2 = alpha * alpha;
-        double ams = a2 < 0.01
-            ? alpha * a2 / 6.0 * (1.0 - a2 / 20.0 * (1.0 - a2 / 42.0))
-            : alpha - Math.sin(alpha);
+        double ams = a2 < 0.01 ? alpha * a2 / 6.0 * (1.0 - a2 / 20.0 * (1.0 - a2 / 42.0)) : alpha - Math.sin(alpha);
         double b2 = beta * beta;
-        double bms = b2 < 0.01
-            ? beta * b2 / 6.0 * (1.0 - b2 / 20.0 * (1.0 - b2 / 42.0))
-            : beta - Math.sin(beta);
+        double bms = b2 < 0.01 ? beta * b2 / 6.0 * (1.0 - b2 / 20.0 * (1.0 - b2 / 42.0)) : beta - Math.sin(beta);
 
         return (ams - bms) / (2.0 * Math.pow(Math.max(1e-30, e), 1.5));
     }

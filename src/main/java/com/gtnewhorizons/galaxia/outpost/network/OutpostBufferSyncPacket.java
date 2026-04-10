@@ -17,7 +17,8 @@ import io.netty.buffer.ByteBuf;
 /**
  * Server → Client: synchronizes the buffer contents of a single outpost.
  *
- * <p>Sent whenever the GUI for an outpost is opened, and on each server-side
+ * <p>
+ * Sent whenever the GUI for an outpost is opened, and on each server-side
  * buffer mutation while the GUI is open (future streaming update).
  */
 public final class OutpostBufferSyncPacket implements IMessage {
@@ -33,8 +34,10 @@ public final class OutpostBufferSyncPacket implements IMessage {
         this.buffer = new LinkedHashMap<>();
         for (Map.Entry<ItemStackWrapper, Long> e : state.inventory.snapshot()
             .entrySet()) {
-            buffer.put(e.getKey()
-                .toKey(), e.getValue());
+            buffer.put(
+                e.getKey()
+                    .toKey(),
+                e.getValue());
         }
     }
 

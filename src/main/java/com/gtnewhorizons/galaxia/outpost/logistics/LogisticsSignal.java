@@ -8,21 +8,22 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
  *
  * <h3>Sign convention (Two-Table System)</h3>
  * <ul>
- *   <li><b>Positive amount</b> → Supply offer: the outpost holds more than its
- *       {@code minReserve} and is willing to export the surplus.</li>
- *   <li><b>Negative amount</b> → Request: the outpost's stock is below {@code minReserve}
- *       and needs exactly {@code |amount|} units.</li>
+ * <li><b>Positive amount</b> → Supply offer: the outpost holds more than its
+ * {@code minReserve} and is willing to export the surplus.</li>
+ * <li><b>Negative amount</b> → Request: the outpost's stock is below {@code minReserve}
+ * and needs exactly {@code |amount|} units.</li>
  * </ul>
  *
  * <h3>Scope</h3>
  * <ul>
- *   <li>{@link LogisticsSignal.Scope#PLANETARY} – signal visible only to modules on the same
- *       planet and its moons (HAMMER-range). Keyed by {@code planetaryAnchorBodyId}.</li>
- *   <li>{@link LogisticsSignal.Scope#SYSTEM} – signal visible to all modules in the same
- *       stellar system (BIG_HAMMER-range). Keyed by {@code systemId}.</li>
+ * <li>{@link LogisticsSignal.Scope#PLANETARY} – signal visible only to modules on the same
+ * planet and its moons (HAMMER-range). Keyed by {@code planetaryAnchorBodyId}.</li>
+ * <li>{@link LogisticsSignal.Scope#SYSTEM} – signal visible to all modules in the same
+ * stellar system (BIG_HAMMER-range). Keyed by {@code systemId}.</li>
  * </ul>
  *
- * <p>Signals are regenerated from scratch every logistics tick.
+ * <p>
+ * Signals are regenerated from scratch every logistics tick.
  * They are never persisted – they are purely derived from buffer + config state.
  */
 @Desugar

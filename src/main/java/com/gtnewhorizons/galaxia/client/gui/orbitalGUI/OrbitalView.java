@@ -19,7 +19,6 @@ import com.cleanroommc.modularui.api.widget.IGuiAction;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
 import com.cleanroommc.modularui.utils.GlStateManager;
-import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
@@ -29,12 +28,12 @@ import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
+import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.utility.EnumColors;
-import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
 public class OrbitalView {
 
@@ -1083,15 +1082,15 @@ public class OrbitalView {
             if (guiActionsRegistered) return;
             guiActionsRegistered = true;
             listenGuiAction(
-                (IGuiAction.MouseScroll) (direction,
-                    amount) -> handleMouseWheel(
-                        direction,
-                        toLocalMouseX(getContext().getMouseX()),
-                        toLocalMouseY(getContext().getMouseY())));
+                (IGuiAction.MouseScroll) (direction, amount) -> handleMouseWheel(
+                    direction,
+                    toLocalMouseX(getContext().getMouseX()),
+                    toLocalMouseY(getContext().getMouseY())));
             listenGuiAction((IGuiAction.MousePressed) button -> {
                 int localMouseX = toLocalMouseX(getContext().getMouseX());
                 int localMouseY = toLocalMouseY(getContext().getMouseY());
-                if (transferSimulatorState.isOpen() && transferSimulatorWidget.isPointInPanel(localMouseX, localMouseY)) {
+                if (transferSimulatorState.isOpen()
+                    && transferSimulatorWidget.isPointInPanel(localMouseX, localMouseY)) {
                     clickCandidate = false;
                     dragging = false;
                     dragEnabledForCurrentPress = false;
@@ -1138,12 +1137,11 @@ public class OrbitalView {
                 return false;
             });
             listenGuiAction(
-                (IGuiAction.MouseDrag) (mouseButton,
-                    time) -> handleMouseDragged(
-                        toLocalMouseX(getContext().getMouseX()),
-                        toLocalMouseY(getContext().getMouseY()),
-                        mouseButton,
-                        time));
+                (IGuiAction.MouseDrag) (mouseButton, time) -> handleMouseDragged(
+                    toLocalMouseX(getContext().getMouseX()),
+                    toLocalMouseY(getContext().getMouseY()),
+                    mouseButton,
+                    time));
             listenGuiAction((IGuiAction.MouseReleased) mouseButton -> {
                 int localMouseX = toLocalMouseX(getContext().getMouseX());
                 int localMouseY = toLocalMouseY(getContext().getMouseY());
@@ -1879,18 +1877,15 @@ public class OrbitalView {
             drawViewStatusLabel(viewRoot, getArea().width);
             int localMouseX = getContext().getMouseX();
             int localMouseY = getContext().getMouseY();
-            if (transfersHidden || dragging || viewRoot.objectClass() != CelestialObjectClass.STAR
+            if (transfersHidden || dragging
+                || viewRoot.objectClass() != CelestialObjectClass.STAR
                 || viewState.isometricProgress > 0.95
                 || assetUiState.isAssetManagementOpen()
                 || contextMenuState.isOpen()) {
                 transferState.updateHoveredTransfer(null, localMouseX, localMouseY);
             } else {
                 transferState.updateHoveredTransfer(
-                    transferRenderer.findHoveredTransfer(
-                        transferState,
-                        globalTime,
-                        localMouseX,
-                        localMouseY),
+                    transferRenderer.findHoveredTransfer(transferState, globalTime, localMouseX, localMouseY),
                     localMouseX,
                     localMouseY);
             }
@@ -2022,12 +2017,14 @@ public class OrbitalView {
         }
 
         private void syncRenderedLogisticsTransfers() {
-            int revision = OutpostDataStore.get().clientTaskRevision();
+            int revision = OutpostDataStore.get()
+                .clientTaskRevision();
             if (revision == lastRenderedLogisticsTaskRevision
                 && orbitalClockRevision == lastRenderedLogisticsClockRevision) return;
 
             List<InterplanetaryTransferJob> logisticsTransfers = new ArrayList<>();
-            for (OutpostDataStore.ClientLogisticsTask task : OutpostDataStore.get().clientTasks()) {
+            for (OutpostDataStore.ClientLogisticsTask task : OutpostDataStore.get()
+                .clientTasks()) {
                 InterplanetaryTransferJob transfer = buildRenderedLogisticsTransfer(task);
                 if (transfer != null) logisticsTransfers.add(transfer);
             }
@@ -2052,7 +2049,8 @@ public class OrbitalView {
             String summary = task.amount() + " x " + itemName;
             String transportLabel = formatTransportKindLabel(task.transportKind());
             double departureDisplayTime = mapServerOrbitalTimeToDisplay(task.departureOrbitalTime());
-            double arrivalDisplayTime = mapServerOrbitalTimeToDisplay(task.departureOrbitalTime() + task.tofOrbitalSeconds());
+            double arrivalDisplayTime = mapServerOrbitalTimeToDisplay(
+                task.departureOrbitalTime() + task.tofOrbitalSeconds());
             double displayedTof = Math.max(1e-6, arrivalDisplayTime - departureDisplayTime);
             InterplanetaryTransferJob base = transferSupport.createTransferJob(
                 root,

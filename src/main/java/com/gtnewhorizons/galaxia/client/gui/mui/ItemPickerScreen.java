@@ -18,12 +18,14 @@ import com.cleanroommc.modularui.widgets.slot.PhantomItemSlot;
 /**
  * A minimal MUI screen with a single phantom item slot and NEI enabled.
  *
- * <p>Opens via {@link #FACTORY} when the user wants to pick an item for outpost logistics routing.
+ * <p>
+ * Opens via {@link #FACTORY} when the user wants to pick an item for outpost logistics routing.
  * Once the user places an item the stack is stored in {@link #pendingPick}. The caller polls
  * {@link #pollPendingPick()} on the next tick (in {@code OrbitalAssetManagementWidget.onUpdate})
  * and adds it to the logistics configuration.
  *
- * <p>Because this screen is opened through {@link SimpleGuiFactory}, the full MUI lifecycle runs
+ * <p>
+ * Because this screen is opened through {@link SimpleGuiFactory}, the full MUI lifecycle runs
  * (including {@code collectSyncValues}), so {@link PhantomItemSlot} sync handlers are always
  * properly initialised before any interaction occurs.
  */
@@ -35,9 +37,7 @@ public final class ItemPickerScreen implements IGuiHolder<GuiData> {
         SIDEBAR_DEBUG
     }
 
-    public static final SimpleGuiFactory FACTORY = new SimpleGuiFactory(
-        "galaxia_item_picker",
-        ItemPickerScreen::new);
+    public static final SimpleGuiFactory FACTORY = new SimpleGuiFactory("galaxia_item_picker", ItemPickerScreen::new);
 
     /** Set on the client when the user places an item in the slot; consumed by the map widget. */
     private static volatile ItemStack pendingPick = null;
@@ -133,22 +133,35 @@ public final class ItemPickerScreen implements IGuiHolder<GuiData> {
     @Override
     public ModularPanel buildUI(GuiData guiData, PanelSyncManager syncManager, UISettings settings) {
         // Show NEI so the user can drag items from it
-        settings.getRecipeViewerSettings().enable();
+        settings.getRecipeViewerSettings()
+            .enable();
         ModularPanel panel = ModularPanel.defaultPanel("galaxia_item_picker", 176, 96);
 
         ItemStackHandler handler = new ItemStackHandler(1);
-        ModularSlot slot = new ModularSlot(handler, 0).changeListener(
-            (stack, onlyAmountChanged, client, init) -> {
-                if (client && !init && stack != null) {
-                    pendingPick = stack.copy();
-                    GuiScreen returnScreen = pendingReturnScreen;
-                    Minecraft.getMinecraft().displayGuiScreen(returnScreen);
-                }
-            });
+        ModularSlot slot = new ModularSlot(handler, 0).changeListener((stack, onlyAmountChanged, client, init) -> {
+            if (client && !init && stack != null) {
+                pendingPick = stack.copy();
+                GuiScreen returnScreen = pendingReturnScreen;
+                Minecraft.getMinecraft()
+                    .displayGuiScreen(returnScreen);
+            }
+        });
 
-        panel.child(IKey.str("Pick item").asWidget().pos(8, 8).size(100, 12));
-        panel.child(IKey.str("Drag item from NEI").asWidget().pos(8, 24).size(160, 12));
-        panel.child(IKey.str("into the ghost slot").asWidget().pos(8, 38).size(160, 12));
+        panel.child(
+            IKey.str("Pick item")
+                .asWidget()
+                .pos(8, 8)
+                .size(100, 12));
+        panel.child(
+            IKey.str("Drag item from NEI")
+                .asWidget()
+                .pos(8, 24)
+                .size(160, 12));
+        panel.child(
+            IKey.str("into the ghost slot")
+                .asWidget()
+                .pos(8, 38)
+                .size(160, 12));
         panel.child(
             new PhantomItemSlot().slot(slot)
                 .pos(78, 56)

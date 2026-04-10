@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
@@ -12,6 +11,7 @@ import net.minecraft.item.ItemStack;
  * Enumeration of all automated outpost module types.
  */
 public enum OutpostModuleKind {
+
     HAMMER("HAMMER", 1000, 10),
     BIG_HAMMER("BIG HAMMER", 5000, 25),
     MINER("MINER", 2000, 128),

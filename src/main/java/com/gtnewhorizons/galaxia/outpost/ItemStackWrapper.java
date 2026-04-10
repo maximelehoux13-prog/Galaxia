@@ -19,9 +19,10 @@ public record ItemStackWrapper(Item item, int meta, NBTTagCompound nbt) {
             return null;
         }
         return new ItemStackWrapper(
-                stack.getItem(),
-                stack.getItemDamage(),
-                stack.hasTagCompound() ? (NBTTagCompound) stack.getTagCompound().copy() : null);
+            stack.getItem(),
+            stack.getItemDamage(),
+            stack.hasTagCompound() ? (NBTTagCompound) stack.getTagCompound()
+                .copy() : null);
     }
 
     public String toKey() {

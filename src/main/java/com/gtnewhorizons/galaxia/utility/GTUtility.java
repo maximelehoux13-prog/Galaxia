@@ -21,6 +21,7 @@ public final class GTUtility {
 
     /**
      * Gets a stack of the given ore material.
+     * 
      * @param materialName The internal name of the GT material (e.g. "Iron")
      * @return The ore stack, or null if not found or GT not present.
      */
@@ -30,10 +31,12 @@ public final class GTUtility {
 
         try {
             Class<?> materialsClass = Class.forName("gregtech.api.enums.Materials");
-            Object material = materialsClass.getField(materialName).get(null);
+            Object material = materialsClass.getField(materialName)
+                .get(null);
 
             Class<?> orePrefixesClass = Class.forName("gregtech.api.enums.OrePrefixes");
-            Object orePrefix = orePrefixesClass.getField("ore").get(null);
+            Object orePrefix = orePrefixesClass.getField("ore")
+                .get(null);
 
             Method getMethod = orePrefixesClass.getMethod("get", materialsClass);
             return (ItemStack) getMethod.invoke(orePrefix, material);
@@ -87,10 +90,12 @@ public final class GTUtility {
     private static ItemStack getUnifiedGtStack(String materialName) {
         try {
             Class<?> materialsClass = Class.forName("gregtech.api.enums.Materials");
-            Object material = materialsClass.getField(materialName).get(null);
+            Object material = materialsClass.getField(materialName)
+                .get(null);
 
             Class<?> orePrefixesClass = Class.forName("gregtech.api.enums.OrePrefixes");
-            Object orePrefix = orePrefixesClass.getField("rawOre").get(null);
+            Object orePrefix = orePrefixesClass.getField("rawOre")
+                .get(null);
 
             Class<?> oreDictUnificatorClass = Class.forName("gregtech.api.util.GT_OreDictUnificator");
             Method getMethod = oreDictUnificatorClass.getMethod("get", orePrefixesClass, materialsClass, long.class);

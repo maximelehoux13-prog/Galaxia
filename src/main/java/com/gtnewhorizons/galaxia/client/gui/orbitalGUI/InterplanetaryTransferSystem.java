@@ -24,7 +24,6 @@ import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalMechanics;
-import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.utility.EnumColors;
 
@@ -1651,8 +1650,7 @@ public final class InterplanetaryTransferSystem {
             if (hasPreview) {
                 if (Math.abs(state.previewTof() - lastPreviewTof) > 1e-6
                     || Math.abs(currentTimeScale - lastTimeScale) > 1e-6) {
-                    cachedTof = "Time of Flight: "
-                        + formatFixed1(state.previewTof() / Math.max(1e-6, currentTimeScale))
+                    cachedTof = "Time of Flight: " + formatFixed1(state.previewTof() / Math.max(1e-6, currentTimeScale))
                         + "s";
                     lastPreviewTof = state.previewTof();
                     lastTimeScale = currentTimeScale;
@@ -2049,9 +2047,7 @@ public final class InterplanetaryTransferSystem {
                     lastProgress = currentProgress;
                 }
 
-                double timeScale = Math.max(
-                    1e-6,
-                    effectiveTransferTimeScale(activeTransfer, callbacks.getTimeScale()));
+                double timeScale = Math.max(1e-6, effectiveTransferTimeScale(activeTransfer, callbacks.getTimeScale()));
                 double remainingSec = Math.max(0.0, activeTransfer.arrivalTime() - currentTime) / timeScale;
                 long currentRemaining = Math.round(remainingSec * 10.0);
                 if (currentRemaining != lastRemaining) {
@@ -2106,8 +2102,7 @@ public final class InterplanetaryTransferSystem {
 
         private String formatProgress(InterplanetaryTransferJob transfer) {
             double pct = transfer.progress(
-                effectiveTransferTime(transfer, callbacks.getCurrentTime(), callbacks.getServerOrbitalTime()))
-                * 100.0;
+                effectiveTransferTime(transfer, callbacks.getCurrentTime(), callbacks.getServerOrbitalTime())) * 100.0;
             return Math.round(pct) + "%";
         }
 

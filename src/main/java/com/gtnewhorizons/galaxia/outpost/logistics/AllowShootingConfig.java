@@ -5,11 +5,12 @@ import com.github.bsideup.jabel.Desugar;
 /**
  * Per-module shooting permission configuration.
  *
- * <p>Controls whether a HAMMER or BIG_HAMMER module is allowed to spend EU and dispatch
+ * <p>
+ * Controls whether a HAMMER or BIG_HAMMER module is allowed to spend EU and dispatch
  * a trajectory-based logistics task. The threshold unit depends on mode:
  * <ul>
- *   <li>{@link Mode#WHEN_DV_UNDER} – departure delta-V in orbital velocity units.</li>
- *   <li>{@link Mode#WHEN_TOF_UNDER} – time-of-flight in real seconds.</li>
+ * <li>{@link Mode#WHEN_DV_UNDER} – departure delta-V in orbital velocity units.</li>
+ * <li>{@link Mode#WHEN_TOF_UNDER} – time-of-flight in real seconds.</li>
  * </ul>
  */
 @Desugar

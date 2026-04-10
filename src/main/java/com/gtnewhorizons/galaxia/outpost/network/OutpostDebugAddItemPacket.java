@@ -16,7 +16,8 @@ import io.netty.buffer.ByteBuf;
  * Client → Server: creative-mode debug packet that adds a specified amount of a
  * resource to the target outpost's buffer.
  *
- * <p>Only accepted from players in creative mode. All other callers are silently rejected.
+ * <p>
+ * Only accepted from players in creative mode. All other callers are silently rejected.
  */
 public final class OutpostDebugAddItemPacket implements IMessage {
 
@@ -58,9 +59,7 @@ public final class OutpostDebugAddItemPacket implements IMessage {
             String playerName = player.getGameProfile()
                 .getName();
             if (!player.capabilities.isCreativeMode) {
-                Galaxia.LOG.warn(
-                    "[Logistics] DebugAddItem rejected: player {} is not in creative mode.",
-                    playerName);
+                Galaxia.LOG.warn("[Logistics] DebugAddItem rejected: player {} is not in creative mode.", playerName);
                 return null;
             }
             if (packet.amount <= 0) {
@@ -75,10 +74,8 @@ public final class OutpostDebugAddItemPacket implements IMessage {
             AutomatedOutpostState state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) {
-                Galaxia.LOG.warn(
-                    "[Logistics] DebugAddItem: unknown assetId {} from player {}",
-                    packet.assetId,
-                    playerName);
+                Galaxia.LOG
+                    .warn("[Logistics] DebugAddItem: unknown assetId {} from player {}", packet.assetId, playerName);
                 return null;
             }
 

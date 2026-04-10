@@ -29,17 +29,20 @@ public final class GalacticMapWidget extends ParentWidget<GalacticMapWidget> {
     private String signalsLabel = "Signals";
     private String transfersLabel = "Hide Transfers";
 
-    public GalacticMapWidget(OrbitalCelestialBody galaxyRoot, OrbitalCelestialBody initialLayer, TextFieldWidget renameField) {
+    public GalacticMapWidget(OrbitalCelestialBody galaxyRoot, OrbitalCelestialBody initialLayer,
+        TextFieldWidget renameField) {
         this.mapWidget = new OrbitalView.OrbitalMapWidget(galaxyRoot).withInitialLayer(initialLayer)
             .attachRenameField(renameField);
         this.signalsButton = createTopBarButton(() -> signalsLabel, () -> {
             mapWidget.toggleSignals();
             updateTopBarLabels();
-        }).pos(SIGNALS_X, TOP_BUTTON_Y).size(SIGNALS_W, TOP_BUTTON_H);
+        }).pos(SIGNALS_X, TOP_BUTTON_Y)
+            .size(SIGNALS_W, TOP_BUTTON_H);
         this.transferVisibilityButton = createTopBarButton(() -> transfersLabel, () -> {
             mapWidget.toggleTransfersHidden();
             updateTopBarLabels();
-        }).pos(TRANSFERS_X, TOP_BUTTON_Y).size(TRANSFERS_W, TOP_BUTTON_H);
+        }).pos(TRANSFERS_X, TOP_BUTTON_Y)
+            .size(TRANSFERS_W, TOP_BUTTON_H);
 
         child(
             (IWidget) mapWidget.left(0)
@@ -47,33 +50,39 @@ public final class GalacticMapWidget extends ParentWidget<GalacticMapWidget> {
                 .widthRel(1f)
                 .heightRel(1f));
         child(
-            (IWidget) mapWidget.createPinnedInfoWidget().left(0)
+            (IWidget) mapWidget.createPinnedInfoWidget()
+                .left(0)
                 .top(0)
                 .width(1)
                 .height(1));
         child(
-            (IWidget) mapWidget.createTransferTooltipWidget().left(0)
+            (IWidget) mapWidget.createTransferTooltipWidget()
+                .left(0)
                 .top(0)
                 .width(1)
                 .height(1));
         child(
-            (IWidget) mapWidget.createTransferSimulatorWidget().left(0)
+            (IWidget) mapWidget.createTransferSimulatorWidget()
+                .left(0)
                 .top(0)
                 .width(1)
                 .height(1));
         child(
-            (IWidget) mapWidget.createContextMenuWidget().left(0)
+            (IWidget) mapWidget.createContextMenuWidget()
+                .left(0)
                 .top(0)
                 .width(1)
                 .height(1));
         child(
-            (IWidget) mapWidget.createAssetManagementWidget().left(0)
+            (IWidget) mapWidget.createAssetManagementWidget()
+                .left(0)
                 .top(0)
                 .width(1)
                 .height(1));
         child(signalsButton);
         child(
-            (IWidget) mapWidget.createSignalsWidget().left(0)
+            (IWidget) mapWidget.createSignalsWidget()
+                .left(0)
                 .top(0)
                 .width(1)
                 .height(1));
@@ -96,14 +105,13 @@ public final class GalacticMapWidget extends ParentWidget<GalacticMapWidget> {
     }
 
     private ButtonWidget<?> createTopBarButton(Supplier<String> labelSupplier, Runnable onClick) {
-        return new ButtonWidget<>()
-            .background(drawable((ctx, x, y, w, h) -> {
-                Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor());
-                Gui.drawRect(x, y, x + w, y + 1, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                Gui.drawRect(x, y + h - 1, x + w, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                Gui.drawRect(x, y, x + 1, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                Gui.drawRect(x + w - 1, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-            }))
+        return new ButtonWidget<>().background(drawable((ctx, x, y, w, h) -> {
+            Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor());
+            Gui.drawRect(x, y, x + w, y + 1, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
+            Gui.drawRect(x, y + h - 1, x + w, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
+            Gui.drawRect(x, y, x + 1, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
+            Gui.drawRect(x + w - 1, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
+        }))
             .hoverBackground(drawable((ctx, x, y, w, h) -> {
                 Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor());
                 Gui.drawRect(x, y, x + w, y + 1, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
@@ -124,6 +132,7 @@ public final class GalacticMapWidget extends ParentWidget<GalacticMapWidget> {
 
     @FunctionalInterface
     private interface DrawCommand {
+
         void draw(GuiContext ctx, int x, int y, int w, int h);
     }
 }

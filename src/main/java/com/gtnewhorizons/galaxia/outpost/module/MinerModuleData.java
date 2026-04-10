@@ -10,8 +10,8 @@ import com.github.bsideup.jabel.Desugar;
  * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#MINER} module.
  */
 @Desugar
-public record MinerModuleData(List<String> blacklistedItemKeys,
-    boolean copySettingsToOtherMiners) implements OutpostModuleData {
+public record MinerModuleData(List<String> blacklistedItemKeys, boolean copySettingsToOtherMiners)
+    implements OutpostModuleData {
 
     public MinerModuleData() {
         this(Collections.emptyList(), false);

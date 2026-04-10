@@ -6,15 +6,14 @@ import com.github.bsideup.jabel.Desugar;
  * Immutable logistics configuration for a single resource in a single outpost.
  *
  * <ul>
- *   <li>{@code minReserve} – "Keep at least X": the outpost will not supply below this threshold.</li>
- *   <li>{@code orderSize} – "Order packets of X": the size of each incoming shipment requested.</li>
- *   <li>{@code isImportEnabled} – whether this outpost will request items when stock falls below reserve.</li>
- *   <li>{@code isSupplyEnabled} – whether this outpost may export surplus items above the reserve.</li>
+ * <li>{@code minReserve} – "Keep at least X": the outpost will not supply below this threshold.</li>
+ * <li>{@code orderSize} – "Order packets of X": the size of each incoming shipment requested.</li>
+ * <li>{@code isImportEnabled} – whether this outpost will request items when stock falls below reserve.</li>
+ * <li>{@code isSupplyEnabled} – whether this outpost may export surplus items above the reserve.</li>
  * </ul>
  */
 @Desugar
-public record LogisticsResourceConfig(int minReserve, int orderSize, boolean isImportEnabled,
-    boolean isSupplyEnabled) {
+public record LogisticsResourceConfig(int minReserve, int orderSize, boolean isImportEnabled, boolean isSupplyEnabled) {
 
     public static final LogisticsResourceConfig DEFAULT = new LogisticsResourceConfig(0, 1, false, false);
 

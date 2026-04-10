@@ -8,8 +8,8 @@ import java.util.Random;
 import net.minecraft.item.ItemStack;
 
 import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
 import com.gtnewhorizons.galaxia.registry.celestial.GtOreVeinDefinition;
@@ -100,7 +100,8 @@ public final class AutomatedOutpostModule {
 
     public void completeConstructionInstantly() {
         consumedResources.clear();
-        for (Map.Entry<ItemStackWrapper, Integer> entry : kind.getRequiredResources().entrySet()) {
+        for (Map.Entry<ItemStackWrapper, Integer> entry : kind.getRequiredResources()
+            .entrySet()) {
             consumedResources.put(entry.getKey(), entry.getValue());
         }
         status = Status.OPERATIONAL;
@@ -129,7 +130,7 @@ public final class AutomatedOutpostModule {
             ItemStackWrapper item = entry.getKey();
             int required = entry.getValue();
             int consumed = consumedResources.getOrDefault(item, 0);
-            
+
             totalNeeded += required;
             totalConsumed += consumed;
 
@@ -172,12 +173,13 @@ public final class AutomatedOutpostModule {
             cooldownTicks = 20;
 
             // Find celestial body
-            GalaxiaCelestialAPI.get(outpost.celestialBodyId).ifPresent(registration -> {
-                ItemStack ore = generateOre(registration);
-                if (ore != null) {
-                    outpost.inventory.add(ItemStackWrapper.of(ore), 1);
-                }
-            });
+            GalaxiaCelestialAPI.get(outpost.celestialBodyId)
+                .ifPresent(registration -> {
+                    ItemStack ore = generateOre(registration);
+                    if (ore != null) {
+                        outpost.inventory.add(ItemStackWrapper.of(ore), 1);
+                    }
+                });
         }
     }
 
@@ -187,8 +189,10 @@ public final class AutomatedOutpostModule {
 
     private ItemStack generateOre(CelestialObjectRegistration body) {
         MinerModuleData minerData = data instanceof MinerModuleData typed ? typed : new MinerModuleData();
-        if (body.properties().usesGtOreVeins()) {
-            List<GtOreVeinDefinition> veins = body.properties().gtOreVeins();
+        if (body.properties()
+            .usesGtOreVeins()) {
+            List<GtOreVeinDefinition> veins = body.properties()
+                .gtOreVeins();
             if (!veins.isEmpty()) {
                 GtOreVeinDefinition vein = veins.get(RANDOM.nextInt(veins.size()));
                 List<String> oreNames = vein.ores();
@@ -206,7 +210,8 @@ public final class AutomatedOutpostModule {
             return null;
         }
 
-        List<ItemStack> ores = body.properties().ores();
+        List<ItemStack> ores = body.properties()
+            .ores();
         if (ores.isEmpty()) return null;
         ItemStack chosen = ores.get(RANDOM.nextInt(ores.size()));
         if (chosen == null) return null;

@@ -8,7 +8,8 @@ import java.util.UUID;
 /**
  * Complete runtime state for a single automated outpost.
  *
- * <p>The outpost is the operational layer on top of a {@code CelestialManagedAsset}.
+ * <p>
+ * The outpost is the operational layer on top of a {@code CelestialManagedAsset}.
  * It adds logistics, inventory, and module state that only exist while the outpost is OPERATIONAL.
  */
 public final class AutomatedOutpostState {

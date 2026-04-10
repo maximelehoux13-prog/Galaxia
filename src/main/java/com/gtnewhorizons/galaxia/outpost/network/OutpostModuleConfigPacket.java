@@ -52,10 +52,13 @@ public final class OutpostModuleConfigPacket implements IMessage {
 
         @Override
         public IMessage onMessage(OutpostModuleConfigPacket packet, MessageContext ctx) {
-            AutomatedOutpostState state = OutpostDataStore.get().getByAssetId(packet.assetId);
+            AutomatedOutpostState state = OutpostDataStore.get()
+                .getByAssetId(packet.assetId);
             if (state == null) return null;
-            if (packet.moduleIndex < 0 || packet.moduleIndex >= state.modules().size()) return null;
-            AutomatedOutpostModule module = state.modules().get(packet.moduleIndex);
+            if (packet.moduleIndex < 0 || packet.moduleIndex >= state.modules()
+                .size()) return null;
+            AutomatedOutpostModule module = state.modules()
+                .get(packet.moduleIndex);
 
             switch (packet.action) {
                 case "ADD_MINER_BLACKLIST" -> {
@@ -76,7 +79,8 @@ public final class OutpostModuleConfigPacket implements IMessage {
                 }
                 case "SET_MINER_COPY_SETTINGS" -> {
                     if (!(module.getData() instanceof MinerModuleData minerData)) return null;
-                    MinerModuleData updated = minerData.withCopySettingsToOtherMiners(Boolean.parseBoolean(packet.payload));
+                    MinerModuleData updated = minerData
+                        .withCopySettingsToOtherMiners(Boolean.parseBoolean(packet.payload));
                     module.setData(updated);
                     if (updated.copySettingsToOtherMiners()) {
                         copyMinerSettingsToOtherMiners(state, packet.moduleIndex, updated);
@@ -90,15 +94,20 @@ public final class OutpostModuleConfigPacket implements IMessage {
                         return null;
                     }
                     if (module.getData() instanceof HammerModuleData hd) {
-                        double threshold = hd.effectiveShooting().threshold();
-                        module.setData(new HammerModuleData(
-                            new AllowShootingConfig(mode, threshold),
-                            hd.effectiveRoutePriority()));
+                        double threshold = hd.effectiveShooting()
+                            .threshold();
+                        module.setData(
+                            new HammerModuleData(
+                                new AllowShootingConfig(mode, threshold),
+                                hd.effectiveRoutePriority()));
                     } else if (module.getData() instanceof BigHammerModuleData bd) {
-                        double threshold = bd.effectiveShooting().threshold();
-                        module.setData(new BigHammerModuleData(bd.planetaryTransferHandling(),
-                            new AllowShootingConfig(mode, threshold),
-                            bd.effectiveRoutePriority()));
+                        double threshold = bd.effectiveShooting()
+                            .threshold();
+                        module.setData(
+                            new BigHammerModuleData(
+                                bd.planetaryTransferHandling(),
+                                new AllowShootingConfig(mode, threshold),
+                                bd.effectiveRoutePriority()));
                     } else {
                         return null;
                     }
@@ -111,21 +120,33 @@ public final class OutpostModuleConfigPacket implements IMessage {
                         return null;
                     }
                     if (module.getData() instanceof HammerModuleData hd) {
-                        module.setData(new HammerModuleData(
-                            new AllowShootingConfig(hd.effectiveShooting().mode(), threshold),
-                            hd.effectiveRoutePriority()));
+                        module.setData(
+                            new HammerModuleData(
+                                new AllowShootingConfig(
+                                    hd.effectiveShooting()
+                                        .mode(),
+                                    threshold),
+                                hd.effectiveRoutePriority()));
                     } else if (module.getData() instanceof BigHammerModuleData bd) {
-                        module.setData(new BigHammerModuleData(bd.planetaryTransferHandling(),
-                            new AllowShootingConfig(bd.effectiveShooting().mode(), threshold),
-                            bd.effectiveRoutePriority()));
+                        module.setData(
+                            new BigHammerModuleData(
+                                bd.planetaryTransferHandling(),
+                                new AllowShootingConfig(
+                                    bd.effectiveShooting()
+                                        .mode(),
+                                    threshold),
+                                bd.effectiveRoutePriority()));
                     } else {
                         return null;
                     }
                 }
                 case "SET_PLANETARY_HANDLING" -> {
                     if (!(module.getData() instanceof BigHammerModuleData bd)) return null;
-                    module.setData(new BigHammerModuleData(
-                        Boolean.parseBoolean(packet.payload), bd.allowShooting(), bd.effectiveRoutePriority()));
+                    module.setData(
+                        new BigHammerModuleData(
+                            Boolean.parseBoolean(packet.payload),
+                            bd.allowShooting(),
+                            bd.effectiveRoutePriority()));
                 }
                 case "SET_ROUTE_PRIORITY" -> {
                     OrbitalTransferPlanner.RoutePriority priority;
@@ -138,10 +159,7 @@ public final class OutpostModuleConfigPacket implements IMessage {
                         module.setData(new HammerModuleData(hd.effectiveShooting(), priority));
                     } else if (module.getData() instanceof BigHammerModuleData bd) {
                         module.setData(
-                            new BigHammerModuleData(
-                                bd.planetaryTransferHandling(),
-                                bd.effectiveShooting(),
-                                priority));
+                            new BigHammerModuleData(bd.planetaryTransferHandling(), bd.effectiveShooting(), priority));
                     } else {
                         return null;
                     }
@@ -169,11 +187,14 @@ public final class OutpostModuleConfigPacket implements IMessage {
 
     private static void copyMinerSettingsToOtherMiners(AutomatedOutpostState state, int sourceModuleIndex,
         MinerModuleData sourceData) {
-        for (int i = 0; i < state.modules().size(); i++) {
+        for (int i = 0; i < state.modules()
+            .size(); i++) {
             if (i == sourceModuleIndex) continue;
-            AutomatedOutpostModule other = state.modules().get(i);
+            AutomatedOutpostModule other = state.modules()
+                .get(i);
             if (!(other.getData() instanceof MinerModuleData)) continue;
-            other.setData(new MinerModuleData(sourceData.blacklistedItemKeys(), sourceData.copySettingsToOtherMiners()));
+            other
+                .setData(new MinerModuleData(sourceData.blacklistedItemKeys(), sourceData.copySettingsToOtherMiners()));
         }
     }
 }

@@ -51,7 +51,8 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 /**
  * Handles JSON persistence for station and outpost state.
  *
- * <p>There is one canonical persisted station registry:
+ * <p>
+ * There is one canonical persisted station registry:
  *
  * <pre>
  * world/galaxiadata/
@@ -59,7 +60,8 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
  *   _tasks.json    <- global in-flight LogisticsTask list
  * </pre>
  *
- * <p>{@link CelestialAssetStore} is restored from `_assets.json`.
+ * <p>
+ * {@link CelestialAssetStore} is restored from `_assets.json`.
  * {@link OutpostDataStore} is then reconstructed from the embedded outpost payloads
  * inside those same asset records. There is no second persisted outpost registry.
  */
@@ -73,8 +75,7 @@ public final class OutpostPersistenceManager {
     private File worldSaveDir;
 
     public OutpostPersistenceManager() {
-        gson = new GsonBuilder()
-            .registerTypeHierarchyAdapter(OutpostModuleData.class, new OutpostModuleDataAdapter())
+        gson = new GsonBuilder().registerTypeHierarchyAdapter(OutpostModuleData.class, new OutpostModuleDataAdapter())
             .setPrettyPrinting()
             .create();
     }
@@ -86,8 +87,11 @@ public final class OutpostPersistenceManager {
         ISaveHandler saveHandler = event.world.getSaveHandler();
         worldSaveDir = saveHandler.getWorldDirectory();
         CelestialAssetStore.clear();
-        OutpostDataStore.get().clear();
-        OutpostLogisticsEngine.get().activeTasksInternal().clear();
+        OutpostDataStore.get()
+            .clear();
+        OutpostLogisticsEngine.get()
+            .activeTasksInternal()
+            .clear();
         loadAll();
     }
 
@@ -105,8 +109,11 @@ public final class OutpostPersistenceManager {
         if (event.world.provider.dimensionId != 0) return;
         if (worldSaveDir != null) saveAll();
         CelestialAssetStore.clear();
-        OutpostDataStore.get().clear();
-        OutpostLogisticsEngine.get().activeTasksInternal().clear();
+        OutpostDataStore.get()
+            .clear();
+        OutpostLogisticsEngine.get()
+            .activeTasksInternal()
+            .clear();
         worldSaveDir = null;
     }
 
@@ -139,7 +146,8 @@ public final class OutpostPersistenceManager {
 
                 AutomatedOutpostState outpost = decodeOutpostState(asset, json.outpost);
                 if (outpost != null) {
-                    OutpostDataStore.get().put(outpost);
+                    OutpostDataStore.get()
+                        .put(outpost);
                 }
             }
             CelestialAssetStore.loadAssets(assets);
@@ -152,7 +160,8 @@ public final class OutpostPersistenceManager {
         List<AssetJson> list = new ArrayList<>();
         for (CelestialManagedAsset asset : CelestialAssetStore.allAssets()) {
             AssetJson json = encodeAsset(asset);
-            AutomatedOutpostState outpost = OutpostDataStore.get().getByAssetId(asset.assetId());
+            AutomatedOutpostState outpost = OutpostDataStore.get()
+                .getByAssetId(asset.assetId());
             if (outpost != null) {
                 json.outpost = encodeOutpostState(outpost);
             }
@@ -167,7 +176,8 @@ public final class OutpostPersistenceManager {
             Type listType = new TypeToken<List<TaskJson>>() {}.getType();
             List<TaskJson> list = gson.fromJson(reader, listType);
             if (list == null) return;
-            List<LogisticsTask> tasks = OutpostLogisticsEngine.get().activeTasksInternal();
+            List<LogisticsTask> tasks = OutpostLogisticsEngine.get()
+                .activeTasksInternal();
             for (TaskJson tj : list) {
                 ItemStackWrapper resource = ItemStackWrapper.fromKey(tj.resourceId);
                 if (resource != null) {
@@ -193,12 +203,14 @@ public final class OutpostPersistenceManager {
 
     private void saveTasks(File file) {
         List<TaskJson> list = new ArrayList<>();
-        for (LogisticsTask task : OutpostLogisticsEngine.get().activeTasksInternal()) {
+        for (LogisticsTask task : OutpostLogisticsEngine.get()
+            .activeTasksInternal()) {
             TaskJson tj = new TaskJson();
             tj.taskId = task.taskId();
             tj.fromAssetId = task.fromAssetId();
             tj.toAssetId = task.toAssetId();
-            tj.resourceId = task.resourceId().toKey();
+            tj.resourceId = task.resourceId()
+                .toKey();
             tj.amount = task.amount();
             tj.remainingTicks = task.remainingTicks();
             tj.transportKind = task.transportKind();
@@ -224,17 +236,23 @@ public final class OutpostPersistenceManager {
         json.assetId = asset.assetId();
         json.celestialObjectId = asset.celestialObjectId();
         json.displayName = asset.displayName();
-        json.kind = asset.kind().name();
-        json.location = asset.location().name();
-        json.status = asset.status().name();
+        json.kind = asset.kind()
+            .name();
+        json.location = asset.location()
+            .name();
+        json.status = asset.status()
+            .name();
         json.requiredResources = encodeRequirements(asset.requiredResources());
         json.constructionInventory = encodeRequirements(asset.constructionInventory());
         return json;
     }
 
     private CelestialManagedAsset decodeAsset(AssetJson json) {
-        if (json == null || json.assetId == null || json.celestialObjectId == null || json.kind == null
-            || json.location == null || json.status == null) {
+        if (json == null || json.assetId == null
+            || json.celestialObjectId == null
+            || json.kind == null
+            || json.location == null
+            || json.status == null) {
             return null;
         }
         return new CelestialManagedAsset(
@@ -258,29 +276,46 @@ public final class OutpostPersistenceManager {
         for (AutomatedOutpostModule m : state.modules()) {
             ModuleJson mj = new ModuleJson();
             mj.kind = m.kind.name();
-            mj.status = m.getStatus().name();
+            mj.status = m.getStatus()
+                .name();
             mj.constructionProgress = m.getConstructionProgress();
             mj.cooldownTicks = m.cooldownTicks;
             mj.energyBuffer = m.energyBuffer;
             mj.data = gson.toJsonTree(m.getData());
             mj.consumedResources = new LinkedHashMap<>();
-            for (Map.Entry<ItemStackWrapper, Integer> e : m.getConsumedResources().entrySet()) {
-                mj.consumedResources.put(e.getKey().toKey(), e.getValue());
+            for (Map.Entry<ItemStackWrapper, Integer> e : m.getConsumedResources()
+                .entrySet()) {
+                mj.consumedResources.put(
+                    e.getKey()
+                        .toKey(),
+                    e.getValue());
             }
             out.modules.add(mj);
         }
         out.buffer = new LinkedHashMap<>();
-        for (Map.Entry<ItemStackWrapper, Long> e : state.inventory.snapshot().entrySet()) {
-            out.buffer.put(e.getKey().toKey(), e.getValue());
+        for (Map.Entry<ItemStackWrapper, Long> e : state.inventory.snapshot()
+            .entrySet()) {
+            out.buffer.put(
+                e.getKey()
+                    .toKey(),
+                e.getValue());
         }
         out.logisticsConfig = new LinkedHashMap<>();
-        for (Map.Entry<ItemStackWrapper, LogisticsResourceConfig> e : state.logisticsConfig.snapshot().entrySet()) {
+        for (Map.Entry<ItemStackWrapper, LogisticsResourceConfig> e : state.logisticsConfig.snapshot()
+            .entrySet()) {
             LogisticsConfigJson cj = new LogisticsConfigJson();
-            cj.minReserve = e.getValue().minReserve();
-            cj.orderSize = e.getValue().orderSize();
-            cj.isImportEnabled = e.getValue().isImportEnabled();
-            cj.isSupplyEnabled = e.getValue().isSupplyEnabled();
-            out.logisticsConfig.put(e.getKey().toKey(), cj);
+            cj.minReserve = e.getValue()
+                .minReserve();
+            cj.orderSize = e.getValue()
+                .orderSize();
+            cj.isImportEnabled = e.getValue()
+                .isImportEnabled();
+            cj.isSupplyEnabled = e.getValue()
+                .isSupplyEnabled();
+            out.logisticsConfig.put(
+                e.getKey()
+                    .toKey(),
+                cj);
         }
         return out;
     }
@@ -310,7 +345,8 @@ public final class OutpostPersistenceManager {
                     for (Map.Entry<String, Integer> e : mj.consumedResources.entrySet()) {
                         ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
                         if (key != null) {
-                            module.getConsumedResources().put(key, e.getValue());
+                            module.getConsumedResources()
+                                .put(key, e.getValue());
                         }
                     }
                 }
@@ -337,7 +373,10 @@ public final class OutpostPersistenceManager {
                     LogisticsConfigJson cj = e.getValue();
                     cfgSnapshot.put(
                         key,
-                        new LogisticsResourceConfig(cj.minReserve, cj.orderSize, cj.isImportEnabled,
+                        new LogisticsResourceConfig(
+                            cj.minReserve,
+                            cj.orderSize,
+                            cj.isImportEnabled,
                             cj.isSupplyEnabled));
                 }
             }
@@ -448,7 +487,8 @@ public final class OutpostPersistenceManager {
             obj.addProperty(TYPE_FIELD, resolveTypeName(src.getClass()));
             JsonElement fields = PURE_GSON.toJsonTree(src, src.getClass());
             if (fields.isJsonObject()) {
-                for (Map.Entry<String, JsonElement> entry : fields.getAsJsonObject().entrySet()) {
+                for (Map.Entry<String, JsonElement> entry : fields.getAsJsonObject()
+                    .entrySet()) {
                     obj.add(entry.getKey(), entry.getValue());
                 }
             }
@@ -459,7 +499,8 @@ public final class OutpostPersistenceManager {
         public OutpostModuleData deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
             throws JsonParseException {
             JsonObject obj = json.getAsJsonObject();
-            String type = obj.get(TYPE_FIELD).getAsString();
+            String type = obj.get(TYPE_FIELD)
+                .getAsString();
             Class<? extends OutpostModuleData> clazz = TYPE_MAP.get(type);
             if (clazz == null) throw new JsonParseException("Unknown OutpostModuleData type: " + type);
             return PURE_GSON.fromJson(obj, clazz);

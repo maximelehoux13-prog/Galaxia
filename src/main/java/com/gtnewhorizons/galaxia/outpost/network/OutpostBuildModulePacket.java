@@ -24,11 +24,13 @@ import io.netty.buffer.ByteBuf;
 /**
  * Client → Server: requests that a new module be queued for construction on an outpost.
  *
- * <p>The server creates an {@link AutomatedOutpostModule} in {@code IN_CONSTRUCTION} state and
+ * <p>
+ * The server creates an {@link AutomatedOutpostModule} in {@code IN_CONSTRUCTION} state and
  * adds it to the outpost. Construction then proceeds tick-by-tick as the module consumes
  * resources from the outpost's inventory.
  *
- * <p>Returns an {@link OutpostFullSyncPacket} so the requesting client immediately sees the
+ * <p>
+ * Returns an {@link OutpostFullSyncPacket} so the requesting client immediately sees the
  * new module in the UI.
  */
 public final class OutpostBuildModulePacket implements IMessage {
@@ -66,12 +68,14 @@ public final class OutpostBuildModulePacket implements IMessage {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player == null) return null;
 
-            AutomatedOutpostState state = OutpostDataStore.get().getByAssetId(packet.assetId);
+            AutomatedOutpostState state = OutpostDataStore.get()
+                .getByAssetId(packet.assetId);
             if (state == null) {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: unknown assetId {} from player {}",
                     packet.assetId,
-                    player.getGameProfile().getName());
+                    player.getGameProfile()
+                        .getName());
                 return null;
             }
 
@@ -82,7 +86,8 @@ public final class OutpostBuildModulePacket implements IMessage {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: unknown module kind '{}' from player {}",
                     packet.moduleKind,
-                    player.getGameProfile().getName());
+                    player.getGameProfile()
+                        .getName());
                 return null;
             }
 
@@ -91,7 +96,8 @@ public final class OutpostBuildModulePacket implements IMessage {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: missing asset {} for player {}",
                     packet.assetId,
-                    player.getGameProfile().getName());
+                    player.getGameProfile()
+                        .getName());
                 return null;
             }
             if (kind == OutpostModuleKind.MINER && asset.kind() != CelestialAssetKind.AUTOMATED_OUTPOST) {
@@ -99,7 +105,8 @@ public final class OutpostBuildModulePacket implements IMessage {
                     "[Outpost] BuildModule: rejected MINER on {} ({}) from player {}",
                     packet.assetId,
                     asset.kind(),
-                    player.getGameProfile().getName());
+                    player.getGameProfile()
+                        .getName());
                 return null;
             }
 
@@ -108,7 +115,8 @@ public final class OutpostBuildModulePacket implements IMessage {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: no module data for kind {} (player {})",
                     kind,
-                    player.getGameProfile().getName());
+                    player.getGameProfile()
+                        .getName());
                 return null;
             }
             AutomatedOutpostModule module = new AutomatedOutpostModule(kind, data);
@@ -121,7 +129,8 @@ public final class OutpostBuildModulePacket implements IMessage {
                 "[Outpost] BuildModule: queued {} construction on outpost {} (by {})",
                 kind.displayName,
                 packet.assetId,
-                player.getGameProfile().getName());
+                player.getGameProfile()
+                    .getName());
 
             // Send a full sync back so the requesting client sees the new module immediately.
             return new OutpostFullSyncPacket(state);

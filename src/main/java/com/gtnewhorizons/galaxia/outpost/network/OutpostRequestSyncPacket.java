@@ -44,10 +44,12 @@ public final class OutpostRequestSyncPacket implements IMessage {
     }
 
     public static final class Handler implements IMessageHandler<OutpostRequestSyncPacket, IMessage> {
+
         @Override
         public IMessage onMessage(OutpostRequestSyncPacket packet, MessageContext ctx) {
             if (ctx.side != Side.SERVER) return null;
-            AutomatedOutpostState state = OutpostDataStore.get().getByAssetId(packet.assetId);
+            AutomatedOutpostState state = OutpostDataStore.get()
+                .getByAssetId(packet.assetId);
             if (state == null) {
                 // Lazily create state the first time a client opens the management UI
                 CelestialManagedAsset asset = CelestialAssetStore.findAsset(packet.assetId);
@@ -56,16 +58,14 @@ public final class OutpostRequestSyncPacket implements IMessage {
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
                     String bodyId = asset.celestialObjectId();
                     String systemId = resolveSystemId(bodyId);
-                    state = new AutomatedOutpostState(
-                        asset.assetId(),
-                        teamId,
-                        bodyId,
-                        systemId);
-                    OutpostDataStore.get().put(state);
+                    state = new AutomatedOutpostState(asset.assetId(), teamId, bodyId, systemId);
+                    OutpostDataStore.get()
+                        .put(state);
                     Galaxia.LOG.info(
                         "[Outpost] Auto-created state for outpost {} (player {})",
                         packet.assetId,
-                        player != null ? player.getGameProfile().getName() : "unknown");
+                        player != null ? player.getGameProfile()
+                            .getName() : "unknown");
                 }
             }
             if (state != null) {

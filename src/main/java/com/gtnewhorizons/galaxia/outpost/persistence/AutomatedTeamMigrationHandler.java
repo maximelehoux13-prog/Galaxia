@@ -7,14 +7,15 @@ import com.gtnewhorizons.galaxia.core.Galaxia;
 /**
  * Handles team membership changes from NHLib.
  *
- * <p>When a player moves from one team to another, all outposts owned by the player's
+ * <p>
+ * When a player moves from one team to another, all outposts owned by the player's
  * old team UUID are re-associated with the new team UUID. This involves:
  * <ol>
- *   <li>Moving outpost JSON from {@code galaxiadata/[oldTeamUUID]/} to
- *       {@code galaxiadata/[newTeamUUID]/} (handled by merging in-memory state and
- *       relying on the next WorldEvent.Save to write the updated folder layout).</li>
- *   <li>Updating the in-memory {@link OutpostDataStore} via
- *       {@link OutpostDataStore#migrateTeam(UUID, UUID)}.</li>
+ * <li>Moving outpost JSON from {@code galaxiadata/[oldTeamUUID]/} to
+ * {@code galaxiadata/[newTeamUUID]/} (handled by merging in-memory state and
+ * relying on the next WorldEvent.Save to write the updated folder layout).</li>
+ * <li>Updating the in-memory {@link OutpostDataStore} via
+ * {@link OutpostDataStore#migrateTeam(UUID, UUID)}.</li>
  * </ol>
  *
  * <h3>NHLib integration</h3>
@@ -29,10 +30,12 @@ import com.gtnewhorizons.galaxia.core.Galaxia;
  * }
  * </pre>
  *
- * <p>If NHLib does not expose a suitable event, call {@link #onTeamChanged(UUID, UUID)}
+ * <p>
+ * If NHLib does not expose a suitable event, call {@link #onTeamChanged(UUID, UUID)}
  * from any NHLib callback that fires when a player's team membership is updated.
  *
- * <p>This class does NOT depend on NHLib at compile time; the wiring is done via
+ * <p>
+ * This class does NOT depend on NHLib at compile time; the wiring is done via
  * reflection or by the caller that has NHLib on its classpath.
  */
 public final class AutomatedTeamMigrationHandler {
@@ -48,7 +51,8 @@ public final class AutomatedTeamMigrationHandler {
     /**
      * Migrates all outpost data from {@code oldTeamId} to {@code newTeamId}.
      *
-     * <p>Safe to call even when {@code oldTeamId} has no outposts – it becomes a no-op.
+     * <p>
+     * Safe to call even when {@code oldTeamId} has no outposts – it becomes a no-op.
      * The old team folder in {@code galaxiadata/} will be absent from the next save,
      * and the new team folder will contain the merged outposts.
      *

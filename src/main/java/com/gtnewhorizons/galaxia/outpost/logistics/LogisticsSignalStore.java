@@ -9,14 +9,16 @@ import java.util.Map;
 /**
  * Unified logistics signal registry, scoped by {@link LogisticsSignal.Scope}.
  *
- * <p>Buckets signals by (scope, scopeKey) pairs:
+ * <p>
+ * Buckets signals by (scope, scopeKey) pairs:
  * <ul>
- *   <li>PLANETARY scope → keyed by {@code planetaryAnchorBodyId}</li>
- *   <li>SYSTEM scope    → keyed by {@code systemId}</li>
- *   <li>GALACTIC scope  → keyed by a galaxy/inter-system id (placeholder)</li>
+ * <li>PLANETARY scope → keyed by {@code planetaryAnchorBodyId}</li>
+ * <li>SYSTEM scope → keyed by {@code systemId}</li>
+ * <li>GALACTIC scope → keyed by a galaxy/inter-system id (placeholder)</li>
  * </ul>
  *
- * <p>The store is rebuilt entirely every logistics tick and holds no persistent state.
+ * <p>
+ * The store is rebuilt entirely every logistics tick and holds no persistent state.
  * Accessed only from the server thread.
  */
 public final class LogisticsSignalStore {

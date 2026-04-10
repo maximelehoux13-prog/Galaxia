@@ -520,7 +520,11 @@ public class OrbitalScene {
             float box = callbacks.getSelectionBoxRadius(bounds);
             int labelY = (int) (bounds.centerY() - box - 22);
             drawSelectionOverlay(bounds.centerX(), bounds.centerY(), box, 1.0f);
-            drawCenteredString(body.displayName(), bounds.centerX(), labelY, EnumColors.MAP_COLOR_TITLE_BANNER_TEXT.getColor());
+            drawCenteredString(
+                body.displayName(),
+                bounds.centerX(),
+                labelY,
+                EnumColors.MAP_COLOR_TITLE_BANNER_TEXT.getColor());
         }
 
         void drawHoverHighlight(OrbitalCelestialBody body, OrbitalSceneFrame frame) {
@@ -532,8 +536,13 @@ public class OrbitalScene {
         void drawDebugOverlay(OrbitalSceneFrame frame, int widgetHeight) {
             Minecraft mc = Minecraft.getMinecraft();
             Gui.drawRect(8, widgetHeight - 36, 182, widgetHeight - 8, EnumColors.MAP_COLOR_DEBUG_PANEL_BG.getColor());
-            mc.fontRenderer.drawStringWithShadow("Debug: body hitzones", 14, widgetHeight - 30, EnumColors.MAP_COLOR_DEBUG_TITLE.getColor());
-            mc.fontRenderer.drawStringWithShadow("Toggle: B", 14, widgetHeight - 18, EnumColors.MAP_COLOR_DEBUG_INFO.getColor());
+            mc.fontRenderer.drawStringWithShadow(
+                "Debug: body hitzones",
+                14,
+                widgetHeight - 30,
+                EnumColors.MAP_COLOR_DEBUG_TITLE.getColor());
+            mc.fontRenderer
+                .drawStringWithShadow("Toggle: B", 14, widgetHeight - 18, EnumColors.MAP_COLOR_DEBUG_INFO.getColor());
             for (ScreenBodyBounds bounds : frame.screenBodies) {
                 drawSquareOutline(
                     bounds.centerX(),
@@ -563,8 +572,21 @@ public class OrbitalScene {
             int bottom = top + GALAXY_TITLE_HEIGHT;
             float bottomHalfWidth = Math.max(74f, textWidth / 2f + 28f);
             float topHalfWidth = bottomHalfWidth + 8f;
-            drawFilledTrapezoid(centerX, top, bottom, topHalfWidth, bottomHalfWidth, EnumColors.MAP_COLOR_TITLE_BANNER_BG.getColor());
-            drawTrapezoidOutline(centerX, top, bottom, topHalfWidth, bottomHalfWidth, EnumColors.MAP_COLOR_TITLE_BANNER_BORDER.getColor(), 1.4f);
+            drawFilledTrapezoid(
+                centerX,
+                top,
+                bottom,
+                topHalfWidth,
+                bottomHalfWidth,
+                EnumColors.MAP_COLOR_TITLE_BANNER_BG.getColor());
+            drawTrapezoidOutline(
+                centerX,
+                top,
+                bottom,
+                topHalfWidth,
+                bottomHalfWidth,
+                EnumColors.MAP_COLOR_TITLE_BANNER_BORDER.getColor(),
+                1.4f);
             drawCenteredBannerString(title, centerX, top + 7, EnumColors.MAP_COLOR_TITLE_BANNER_TEXT.getColor());
         }
 

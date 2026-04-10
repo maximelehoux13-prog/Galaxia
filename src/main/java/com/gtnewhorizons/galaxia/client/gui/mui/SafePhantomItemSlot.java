@@ -7,8 +7,10 @@ import com.cleanroommc.modularui.widgets.slot.PhantomItemSlot;
 
 /**
  * Phantom slots whose widgets are created after {@link com.cleanroommc.modularui.widget.WidgetTree#collectSyncValues}
- * ran (e.g. in {@code onInit} or dynamic modals) never get their {@link com.cleanroommc.modularui.value.sync.SyncHandler}
- * registered; {@link com.cleanroommc.modularui.widgets.slot.ItemSlot#onUpdate} then calls {@code setEnabled} and crashes.
+ * ran (e.g. in {@code onInit} or dynamic modals) never get their
+ * {@link com.cleanroommc.modularui.value.sync.SyncHandler}
+ * registered; {@link com.cleanroommc.modularui.widgets.slot.ItemSlot#onUpdate} then calls {@code setEnabled} and
+ * crashes.
  * Skip the sync-dependent part until the handler is initialised (or indefinitely if registration never happens).
  */
 public final class SafePhantomItemSlot extends PhantomItemSlot {

@@ -162,7 +162,8 @@ public final class CelestialAssetStore {
     public static synchronized CelestialManagedAsset findAsset(String assetId) {
         for (MutableBodyState state : STATE_BY_BODY.values()) {
             for (CelestialManagedAsset asset : state.assets) {
-                if (asset.assetId().equals(assetId)) return asset;
+                if (asset.assetId()
+                    .equals(assetId)) return asset;
             }
         }
         return null;
@@ -297,7 +298,8 @@ public final class CelestialAssetStore {
     }
 
     private static void cleanupLogisticsForAsset(String assetId) {
-        OutpostDataStore.get().remove(assetId);
+        OutpostDataStore.get()
+            .remove(assetId);
     }
 
     private static final class MutableBodyState {

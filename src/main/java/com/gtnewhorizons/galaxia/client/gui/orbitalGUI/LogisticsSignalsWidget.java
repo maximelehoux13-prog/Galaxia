@@ -38,15 +38,17 @@ import com.gtnewhorizons.galaxia.utility.EnumColors;
 /**
  * Map overlay that shows aggregated logistics signals for the current map scope.
  *
- * <p>Toggled via a small "Signals" button in the top-left of the map area.
+ * <p>
+ * Toggled via a small "Signals" button in the top-left of the map area.
  * Scope follows the map's {@code viewRoot}:
  * <ul>
- *   <li>GALACTIC — galaxy root → all outposts</li>
- *   <li>SYSTEM — star body → outposts sharing that star's system</li>
- *   <li>PLANETARY — planet/moon body → outposts sharing the same planetary anchor</li>
+ * <li>GALACTIC — galaxy root → all outposts</li>
+ * <li>SYSTEM — star body → outposts sharing that star's system</li>
+ * <li>PLANETARY — planet/moon body → outposts sharing the same planetary anchor</li>
  * </ul>
  *
- * <p>Per-item rows show: item name, net balance (surplus positive / deficit negative),
+ * <p>
+ * Per-item rows show: item name, net balance (surplus positive / deficit negative),
  * and total units currently in transit within scope.
  * Hovering an item cell shows a per-station tooltip filtered to the current scope.
  */
@@ -67,7 +69,9 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
     private static final int TRANSIT_W = 52;
 
     private enum ViewScope {
-        GALACTIC, SYSTEM, PLANETARY
+        GALACTIC,
+        SYSTEM,
+        PLANETARY
     }
 
     private final OrbitalCelestialBody galaxyRoot;
@@ -88,7 +92,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         this.galaxyRoot = galaxyRoot;
         this.viewRootSupplier = viewRootSupplier;
         this.openSupplier = openSupplier;
-        this.panelRoot = new ParentWidget<>().pos(0, 0).size(PANEL_W, 0);
+        this.panelRoot = new ParentWidget<>().pos(0, 0)
+            .size(PANEL_W, 0);
         this.panelRoot.setEnabled(false);
         size(0, 0);
         child(panelRoot);
@@ -136,7 +141,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
     boolean isPointInPanel(int localX, int localY) {
         if (!panelRoot.isEnabled()) return false;
         return localX >= PANEL_X && localX <= PANEL_X + getArea().width
-            && localY >= PANEL_Y && localY <= PANEL_Y + getArea().height;
+            && localY >= PANEL_Y
+            && localY <= PANEL_Y + getArea().height;
     }
 
     private OrbitalCelestialBody currentViewRoot() {
@@ -146,19 +152,27 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
 
     private int currentDataRevision(OrbitalCelestialBody viewRoot) {
         int r = 0x1A2B3C4D;
-        r = r * 31 + OutpostDataStore.get().clientSignalRevision();
-        r = r * 31 + OutpostDataStore.get().clientTaskRevision();
+        r = r * 31 + OutpostDataStore.get()
+            .clientSignalRevision();
+        r = r * 31 + OutpostDataStore.get()
+            .clientTaskRevision();
         r = r * 31 + System.identityHashCode(viewRoot);
         return r == 0 ? Integer.MAX_VALUE : r;
     }
 
     private String buildStructureSignature(List<SignalRow> rows) {
         StringBuilder sig = new StringBuilder(rows.size() * 24);
-        sig.append(rows.size()).append('|');
+        sig.append(rows.size())
+            .append('|');
         int rowsToShow = Math.min(MAX_VISIBLE_ROWS, rows.size());
         for (int i = 0; i < rowsToShow; i++) {
             SignalRow row = rows.get(i);
-            sig.append(row.item().toKey()).append(':').append(row.net() >= 0 ? '+' : '-').append('|');
+            sig.append(
+                row.item()
+                    .toKey())
+                .append(':')
+                .append(row.net() >= 0 ? '+' : '-')
+                .append('|');
         }
         return sig.toString();
     }
@@ -187,9 +201,11 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
 
         panelRoot.child(
             new TextWidget<>(IKey.dynamic(() -> cachedTitle)).color(EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
-                .shadow(true).pos(10, 7));
+                .shadow(true)
+                .pos(10, 7));
         panelRoot.child(
-            new TextWidget<>(IKey.str("Item")).color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(COL_NAME, 28));
+            new TextWidget<>(IKey.str("Item")).color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                .pos(COL_NAME, 28));
         panelRoot.child(
             new TextWidget<>(IKey.str("Net balance")).color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
                 .pos(COL_NET, 28));
@@ -200,11 +216,13 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         if (rows.isEmpty()) {
             panelRoot.child(
                 new TextWidget<>(IKey.str("No items tracked in this scope."))
-                    .color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(10, 46));
+                    .color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                    .pos(10, 46));
         } else {
             int viewportHeight = rowsToShow * (ROW_H + 2);
             int contentHeight = rows.size() * (ROW_H + 2);
-            rowsContainer = new ParentWidget<>().widthRel(1f).height(contentHeight);
+            rowsContainer = new ParentWidget<>().widthRel(1f)
+                .height(contentHeight);
             scrollData = new VerticalScrollData();
             scrollWidget = new ScrollWidget<>(scrollData).pos(4, 44)
                 .size(PANEL_W - 8 - CONTENT_SCROLLBAR_GAP, viewportHeight);
@@ -221,7 +239,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             if (overflow > 0) {
                 panelRoot.child(
                     new TextWidget<>(IKey.str("\u2026 +" + overflow + " more items"))
-                        .color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(10, ry));
+                        .color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                        .pos(10, ry));
             }
         }
         panelRoot.scheduleResize();
@@ -239,7 +258,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         cachedTitle = buildScopeLabel(scope, viewRoot);
         Map<String, SignalRowState> nextStates = new HashMap<>();
         for (SignalRow row : rows) {
-            String key = row.item().toKey();
+            String key = row.item()
+                .toKey();
             SignalRowState state = rowStates.get(key);
             if (state == null) {
                 state = new SignalRowState(row.item());
@@ -249,15 +269,25 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         }
         rowStates.clear();
         for (SignalRow row : rows) {
-            SignalRowState state = nextStates.get(row.item().toKey());
-            if (state != null) rowStates.put(row.item().toKey(), state);
+            SignalRowState state = nextStates.get(
+                row.item()
+                    .toKey());
+            if (state != null) rowStates.put(
+                row.item()
+                    .toKey(),
+                state);
         }
     }
 
     private ParentWidget<?> buildSignalRow(SignalRow row) {
-        SignalRowState state = rowStates.get(row.item().toKey());
-        ParentWidget<?> rowWidget = new ParentWidget<>().widthRel(1f).height(ROW_H)
-            .background(drawable((ctx, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
+        SignalRowState state = rowStates.get(
+            row.item()
+                .toKey());
+        ParentWidget<?> rowWidget = new ParentWidget<>().widthRel(1f)
+            .height(ROW_H)
+            .background(
+                drawable(
+                    (ctx, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
         if (state == null) return rowWidget;
 
@@ -267,28 +297,30 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             }
         });
 
-        rowWidget.child(drawable((ctx, bx, by, bw, bh) -> {
-            if (state.displayStack != null) renderItemIcon(state.displayStack, bx + 1, by + 3);
-        }).asWidget()
-            .pos(COL_ICON, 0)
-            .size(16, ROW_H));
+        rowWidget.child(
+            drawable(
+                (ctx, bx, by, bw, bh) -> {
+                    if (state.displayStack != null) renderItemIcon(state.displayStack, bx + 1, by + 3);
+                }).asWidget()
+                    .pos(COL_ICON, 0)
+                    .size(16, ROW_H));
 
         rowWidget.child(
-            new TextWidget<>(IKey.dynamic(() -> state.trimmedName))
-                .color(EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(COL_NAME, 6));
+            new TextWidget<>(IKey.dynamic(() -> state.trimmedName)).color(EnumColors.MAP_COLOR_TEXT_BODY.getColor())
+                .pos(COL_NAME, 6));
         rowWidget.child(
-            new TextWidget<>(IKey.dynamic(() -> state.netText))
-                .color(state.netColor).pos(COL_NET, 6));
+            new TextWidget<>(IKey.dynamic(() -> state.netText)).color(state.netColor)
+                .pos(COL_NET, 6));
         rowWidget.child(
-            new TextWidget<>(IKey.dynamic(() -> state.transitText))
-                .color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(COL_TRANSIT, 6));
+            new TextWidget<>(IKey.dynamic(() -> state.transitText)).color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                .pos(COL_TRANSIT, 6));
 
         return rowWidget;
     }
 
     private ViewScope scopeFor(OrbitalCelestialBody viewRoot) {
-        if (viewRoot == null || viewRoot == galaxyRoot
-            || viewRoot.objectClass() == CelestialObjectClass.GALAXY) return ViewScope.GALACTIC;
+        if (viewRoot == null || viewRoot == galaxyRoot || viewRoot.objectClass() == CelestialObjectClass.GALAXY)
+            return ViewScope.GALACTIC;
         if (viewRoot.objectClass() == CelestialObjectClass.STAR) return ViewScope.SYSTEM;
         return ViewScope.PLANETARY;
     }
@@ -298,11 +330,14 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             case GALACTIC:
                 return true;
             case SYSTEM:
-                return viewRoot.id().equals(outpost.systemId);
+                return viewRoot.id()
+                    .equals(outpost.systemId);
             case PLANETARY: {
-                OrbitalCelestialBody outpostBody = OrbitalTransferPlanner.findBodyById(galaxyRoot, outpost.celestialBodyId);
+                OrbitalCelestialBody outpostBody = OrbitalTransferPlanner
+                    .findBodyById(galaxyRoot, outpost.celestialBodyId);
                 if (outpostBody == null) return false;
-                OrbitalCelestialBody outpostAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, outpostBody);
+                OrbitalCelestialBody outpostAnchor = OrbitalTransferPlanner
+                    .findPlanetaryAnchor(galaxyRoot, outpostBody);
                 OrbitalCelestialBody viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
                 return outpostAnchor != null && outpostAnchor == viewAnchor;
             }
@@ -338,12 +373,14 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         Map<String, Long> signalData;
         switch (scope) {
             case SYSTEM:
-                signalData = OutpostDataStore.get().clientSignalsForSystem(viewRoot.id());
+                signalData = OutpostDataStore.get()
+                    .clientSignalsForSystem(viewRoot.id());
                 break;
             case PLANETARY: {
                 OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
                 String anchorId = anchor != null ? anchor.id() : viewRoot.id();
-                signalData = OutpostDataStore.get().clientSignalsForPlanet(anchorId);
+                signalData = OutpostDataStore.get()
+                    .clientSignalsForPlanet(anchorId);
                 break;
             }
             default: // GALACTIC — placeholder, not yet implemented
@@ -358,7 +395,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             acc.put(item, new long[] { e.getValue(), 0L });
         }
 
-        for (OutpostDataStore.ClientLogisticsTask task : OutpostDataStore.get().clientTasks()) {
+        for (OutpostDataStore.ClientLogisticsTask task : OutpostDataStore.get()
+            .clientTasks()) {
             boolean fromInScope = isBodyIdInScope(task.fromBodyId(), scope, viewRoot);
             boolean toInScope = isBodyIdInScope(task.toBodyId(), scope, viewRoot);
             if (!fromInScope && !toInScope) continue;
@@ -369,7 +407,9 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         for (Map.Entry<ItemStackWrapper, long[]> e : acc.entrySet()) {
             rows.add(new SignalRow(e.getKey(), e.getValue()[0], e.getValue()[1]));
         }
-        rows.sort(Comparator.comparingLong((SignalRow r) -> r.net()).reversed());
+        rows.sort(
+            Comparator.comparingLong((SignalRow r) -> r.net())
+                .reversed());
         return rows;
     }
 
@@ -396,8 +436,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             .getInstance();
         float prevZ = ri.zLevel;
         ri.zLevel = 200f;
-        net.minecraft.client.renderer.OpenGlHelper.setLightmapTextureCoords(
-            net.minecraft.client.renderer.OpenGlHelper.lightmapTexUnit, 240f, 240f);
+        net.minecraft.client.renderer.OpenGlHelper
+            .setLightmapTextureCoords(net.minecraft.client.renderer.OpenGlHelper.lightmapTexUnit, 240f, 240f);
         ri.renderItemAndEffectIntoGUI(mc.fontRenderer, mc.getTextureManager(), stack, 0, 0);
         ri.zLevel = prevZ;
         net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
@@ -444,7 +484,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
 
             tooltipLines.clear();
             tooltipLines.add(fullName);
-            for (AutomatedOutpostState outpost : OutpostDataStore.get().allOutposts()) {
+            for (AutomatedOutpostState outpost : OutpostDataStore.get()
+                .allOutposts()) {
                 if (!isOutpostInScope(outpost, scope, viewRoot)) continue;
                 CelestialManagedAsset asset = CelestialAssetStore.findAsset(outpost.assetId);
                 if (asset == null) continue;
@@ -454,8 +495,15 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
                 long localNet = stock - cfg.minReserve();
                 String flags = (cfg.isImportEnabled() ? "I" : "-") + (cfg.isSupplyEnabled() ? "E" : "-");
                 tooltipLines.add(
-                    asset.displayName() + " [" + flags + "] " + stock + "/" + cfg.minReserve()
-                        + " net:" + (localNet >= 0 ? "+" : "") + localNet);
+                    asset.displayName() + " ["
+                        + flags
+                        + "] "
+                        + stock
+                        + "/"
+                        + cfg.minReserve()
+                        + " net:"
+                        + (localNet >= 0 ? "+" : "")
+                        + localNet);
             }
         }
     }

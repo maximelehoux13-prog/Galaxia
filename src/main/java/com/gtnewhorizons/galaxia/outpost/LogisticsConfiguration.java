@@ -8,7 +8,8 @@ import java.util.Map;
  * Per-outpost map of {@link LogisticsResourceConfig}, keyed by {@link ItemStackWrapper}.
  * Resources without an explicit entry inherit {@link LogisticsResourceConfig#DEFAULT}.
  *
- * <p>Mutable; accessed only from the server thread.
+ * <p>
+ * Mutable; accessed only from the server thread.
  */
 public final class LogisticsConfiguration {
 

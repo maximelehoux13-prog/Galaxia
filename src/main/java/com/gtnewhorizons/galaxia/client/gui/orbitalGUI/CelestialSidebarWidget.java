@@ -17,14 +17,14 @@ import com.cleanroommc.modularui.api.widget.IGuiAction;
 import com.cleanroommc.modularui.drawable.GuiTextures;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
-import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.utils.item.ItemStackHandler;
-import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
+import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widgets.slot.ItemSlot;
 import com.cleanroommc.modularui.widgets.slot.ModularSlot;
+import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
+import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.client.gui.mui.SafePhantomItemSlot;
-import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
@@ -114,8 +114,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             .setFocusOnGuiOpen(false);
         child(searchField);
 
-        supplyDebugAmountField = new TextFieldWidget()
-            .left(DEBUG_PANEL_PADDING)
+        supplyDebugAmountField = new TextFieldWidget().left(DEBUG_PANEL_PADDING)
             .top(-1000)
             .right(DEBUG_PANEL_PADDING)
             .height(DEBUG_FIELD_HEIGHT)
@@ -129,7 +128,8 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
 
         supplyDebugGhostHandler = new ItemStackHandler(1);
         ModularSlot supplyDebugModularSlot = new ModularSlot(supplyDebugGhostHandler, 0);
-        supplyDebugGhostSlot = SafePhantomItemSlot.create().slot(supplyDebugModularSlot)
+        supplyDebugGhostSlot = SafePhantomItemSlot.create()
+            .slot(supplyDebugModularSlot)
             .left(DEBUG_GHOST_SLOT_LEFT)
             .top(-1000)
             .size(18, 18);
@@ -454,8 +454,18 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         int panelWidth = panelRight - panelLeft;
 
         // Panel background
-        Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 126, EnumColors.MAP_COLOR_SIDEBAR_DEBUG_PANEL_BG.getColor());
-        Gui.drawRect(panelLeft, DEBUG_PANEL_TOP, panelRight, DEBUG_PANEL_TOP + 1, EnumColors.MapSidebarListHovered.getColor());
+        Gui.drawRect(
+            panelLeft,
+            DEBUG_PANEL_TOP,
+            panelRight,
+            DEBUG_PANEL_TOP + 126,
+            EnumColors.MAP_COLOR_SIDEBAR_DEBUG_PANEL_BG.getColor());
+        Gui.drawRect(
+            panelLeft,
+            DEBUG_PANEL_TOP,
+            panelRight,
+            DEBUG_PANEL_TOP + 1,
+            EnumColors.MapSidebarListHovered.getColor());
 
         // Resolve target asset
         String targetLabel = resolveSupplyDebugTargetLabel();
@@ -486,14 +496,23 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             EnumColors.MapSidebaSearchLabel.getColor());
 
         // Ghost slot background
-        Gui.drawRect(DEBUG_GHOST_SLOT_LEFT, DEBUG_PANEL_TOP + 28, DEBUG_GHOST_SLOT_LEFT + 18, DEBUG_PANEL_TOP + 46, EnumColors.MAP_COLOR_SIDEBAR_GHOST_SLOT_BG.getColor());
-        Gui.drawRect(DEBUG_GHOST_SLOT_LEFT + 1, DEBUG_PANEL_TOP + 29, DEBUG_GHOST_SLOT_LEFT + 17, DEBUG_PANEL_TOP + 45, EnumColors.MAP_COLOR_SIDEBAR_GHOST_SLOT_INNER.getColor());
+        Gui.drawRect(
+            DEBUG_GHOST_SLOT_LEFT,
+            DEBUG_PANEL_TOP + 28,
+            DEBUG_GHOST_SLOT_LEFT + 18,
+            DEBUG_PANEL_TOP + 46,
+            EnumColors.MAP_COLOR_SIDEBAR_GHOST_SLOT_BG.getColor());
+        Gui.drawRect(
+            DEBUG_GHOST_SLOT_LEFT + 1,
+            DEBUG_PANEL_TOP + 29,
+            DEBUG_GHOST_SLOT_LEFT + 17,
+            DEBUG_PANEL_TOP + 45,
+            EnumColors.MAP_COLOR_SIDEBAR_GHOST_SLOT_INNER.getColor());
         drawInlineButton(DEBUG_PICK_BUTTON_LEFT, DEBUG_PANEL_TOP + 28, DEBUG_PICK_BUTTON_WIDTH, 18, "Select", true);
 
         // Confirm button
         int confirmTop = DEBUG_PANEL_TOP + 86;
-        boolean canConfirm = resolveSupplyDebugAsset() != null
-            && supplyDebugGhostHandler != null
+        boolean canConfirm = resolveSupplyDebugAsset() != null && supplyDebugGhostHandler != null
             && supplyDebugGhostHandler.getStackInSlot(0) != null;
         int confirmBg = canConfirm ? EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_BG_ENABLED.getColor()
             : EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_BG_DISABLED.getColor();
@@ -507,7 +526,12 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
 
         // Cancel button
         int cancelTop = confirmTop + DEBUG_BUTTON_HEIGHT + 4;
-        Gui.drawRect(panelLeft, cancelTop, panelRight, cancelTop + DEBUG_BUTTON_HEIGHT, EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_BG_DISABLED.getColor());
+        Gui.drawRect(
+            panelLeft,
+            cancelTop,
+            panelRight,
+            cancelTop + DEBUG_BUTTON_HEIGHT,
+            EnumColors.MAP_COLOR_SIDEBAR_CONFIRM_BG_DISABLED.getColor());
         Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(
             "Close",
             panelLeft + 4,
@@ -567,8 +591,9 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         lastSupplyDebugClickMs = now;
         CelestialManagedAsset asset = resolveSupplyDebugAsset();
         if (asset == null) return;
-        String amountText = supplyDebugAmountField == null ? "64" : supplyDebugAmountField.getText()
-            .trim();
+        String amountText = supplyDebugAmountField == null ? "64"
+            : supplyDebugAmountField.getText()
+                .trim();
         ItemStack selectedStack = supplyDebugGhostHandler == null ? null : supplyDebugGhostHandler.getStackInSlot(0);
         if (selectedStack == null) return;
         long amount;
@@ -581,11 +606,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         amount = Math.min(amount, Integer.MAX_VALUE);
         ItemStackWrapper resource = ItemStackWrapper.of(selectedStack);
         if (resource == null) return;
-        Galaxia.LOG.info(
-            "[Supply Debug] Adding {} x {} to {}",
-            amount,
-            resource,
-            asset.assetId());
+        Galaxia.LOG.info("[Supply Debug] Adding {} x {} to {}", amount, resource, asset.assetId());
         Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostDebugAddItemPacket(asset.assetId(), resource, amount));
     }
 
