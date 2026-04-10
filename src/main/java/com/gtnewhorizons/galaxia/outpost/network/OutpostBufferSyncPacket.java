@@ -3,6 +3,8 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import net.minecraft.client.Minecraft;
+
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -68,17 +70,18 @@ public final class OutpostBufferSyncPacket implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(OutpostBufferSyncPacket packet, MessageContext ctx) {
-            // Client-side packet handlers run on the Netty I/O thread.
-            // Buffer sync is a read-only replacement of a client-side mirror, safe to execute inline.
-            AutomatedOutpostState state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
-            if (state == null) return null;
-            Map<ItemStackWrapper, Long> snapshot = new LinkedHashMap<>();
-            for (Map.Entry<String, Long> e : packet.buffer.entrySet()) {
-                ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
-                if (key != null) snapshot.put(key, e.getValue());
-            }
-            state.inventory.loadFromSnapshot(snapshot);
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> {
+                    AutomatedOutpostState state = OutpostDataStore.get()
+                        .getByAssetId(packet.assetId);
+                    if (state == null) return;
+                    Map<ItemStackWrapper, Long> snapshot = new LinkedHashMap<>();
+                    for (Map.Entry<String, Long> e : packet.buffer.entrySet()) {
+                        ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
+                        if (key != null) snapshot.put(key, e.getValue());
+                    }
+                    state.inventory.loadFromSnapshot(snapshot);
+                });
             return null;
         }
     }

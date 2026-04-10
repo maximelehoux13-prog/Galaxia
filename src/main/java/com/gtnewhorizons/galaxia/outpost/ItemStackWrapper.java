@@ -5,6 +5,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.core.Galaxia;
 
 import cpw.mods.fml.common.registry.GameRegistry;
 
@@ -27,6 +28,13 @@ public record ItemStackWrapper(Item item, int meta, NBTTagCompound nbt) {
 
     public String toKey() {
         GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(item);
+        if (id == null) {
+            Galaxia.LOG.warn(
+                "[ItemStackWrapper] Item {} has no registry entry; key will not resolve on reload.",
+                item.getClass()
+                    .getName());
+            return "unknown:unknown:" + meta;
+        }
         return id.modId + ":" + id.name + ":" + meta;
     }
 
@@ -35,6 +43,10 @@ public record ItemStackWrapper(Item item, int meta, NBTTagCompound nbt) {
         if (parts.length < 3) return null;
         try {
             Item item = GameRegistry.findItem(parts[0], parts[1]);
+            if (item == null) {
+                Galaxia.LOG.warn("[ItemStackWrapper] Unknown item key '{}'; entry dropped.", key);
+                return null;
+            }
             int meta = Integer.parseInt(parts[2]);
             return new ItemStackWrapper(item, meta, null);
         } catch (NumberFormatException e) {

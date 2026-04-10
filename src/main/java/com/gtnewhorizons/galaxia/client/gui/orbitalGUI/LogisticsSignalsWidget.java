@@ -180,7 +180,6 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
     private void rebuildPanel(ViewScope scope, OrbitalCelestialBody viewRoot, List<SignalRow> rows) {
         int rowsToShow = Math.min(MAX_VISIBLE_ROWS, rows.size());
         int panelH = 30 + 16 + rowsToShow * (ROW_H + 2) + (rows.isEmpty() ? 18 : 0) + 8;
-        cachedTitle = buildScopeLabel(scope, viewRoot);
 
         panelRoot.removeAll();
         scrollWidget = null;
@@ -322,13 +321,9 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
                 return viewRoot.id()
                     .equals(outpost.systemId);
             case PLANETARY: {
-                OrbitalCelestialBody outpostBody = OrbitalTransferPlanner
-                    .findBodyById(galaxyRoot, outpost.celestialBodyId);
-                if (outpostBody == null) return false;
-                OrbitalCelestialBody outpostAnchor = OrbitalTransferPlanner
-                    .findPlanetaryAnchor(galaxyRoot, outpostBody);
                 OrbitalCelestialBody viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
-                return outpostAnchor != null && outpostAnchor == viewAnchor;
+                String viewAnchorId = viewAnchor != null ? viewAnchor.id() : viewRoot.id();
+                return outpost.planetaryAnchorBodyId != null && outpost.planetaryAnchorBodyId.equals(viewAnchorId);
             }
             default:
                 return false;

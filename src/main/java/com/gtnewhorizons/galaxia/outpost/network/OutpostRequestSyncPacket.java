@@ -58,7 +58,8 @@ public final class OutpostRequestSyncPacket implements IMessage {
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
                     String bodyId = asset.celestialObjectId();
                     String systemId = resolveSystemId(bodyId);
-                    state = new AutomatedOutpostState(asset.assetId(), teamId, bodyId, systemId);
+                    String anchorBodyId = resolvePlanetaryAnchorId(bodyId);
+                    state = new AutomatedOutpostState(asset.assetId(), teamId, bodyId, systemId, anchorBodyId);
                     OutpostDataStore.get()
                         .put(state);
                     Galaxia.LOG.info(
@@ -86,6 +87,21 @@ public final class OutpostRequestSyncPacket implements IMessage {
         if (body == null) return bodyId;
         OrbitalCelestialBody star = OrbitalTransferPlanner.findHostStar(root, body);
         return star != null ? star.id() : bodyId;
+    }
+
+    /**
+     * Resolves the planetary anchor body id for a given celestial body id.
+     * For planets/gas giants: returns bodyId itself.
+     * For moons/stations: returns the nearest planet ancestor's id.
+     * Falls back to {@code bodyId} if resolution fails.
+     */
+    static String resolvePlanetaryAnchorId(String bodyId) {
+        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
+        if (root == null || bodyId == null) return bodyId;
+        OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        if (body == null) return bodyId;
+        OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(root, body);
+        return anchor != null ? anchor.id() : bodyId;
     }
 
     private static void writeString(ByteBuf buf, String s) {

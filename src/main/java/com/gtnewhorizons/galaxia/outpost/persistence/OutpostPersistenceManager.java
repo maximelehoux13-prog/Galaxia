@@ -26,6 +26,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
+import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
@@ -45,6 +46,8 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetRequirement;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
+import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
@@ -290,6 +293,7 @@ public final class OutpostPersistenceManager {
         out.teamId = state.teamId.toString();
         out.celestialBodyId = state.celestialBodyId;
         out.systemId = state.systemId;
+        out.planetaryAnchorBodyId = state.planetaryAnchorBodyId;
         out.energyStored = state.getEnergyStored();
         out.modules = new ArrayList<>();
         for (AutomatedOutpostModule m : state.modules()) {
@@ -341,11 +345,15 @@ public final class OutpostPersistenceManager {
 
     private AutomatedOutpostState decodeOutpostState(CelestialManagedAsset asset, OutpostStateJson json) {
         if (asset == null || json == null || json.teamId == null || json.systemId == null) return null;
+        String bodyId = json.celestialBodyId != null ? json.celestialBodyId : asset.celestialObjectId();
+        String anchorBodyId = json.planetaryAnchorBodyId != null ? json.planetaryAnchorBodyId
+            : resolvePlanetaryAnchorId(bodyId);
         AutomatedOutpostState state = new AutomatedOutpostState(
             asset.assetId(),
             UUID.fromString(json.teamId),
-            json.celestialBodyId != null ? json.celestialBodyId : asset.celestialObjectId(),
-            json.systemId);
+            bodyId,
+            json.systemId,
+            anchorBodyId);
         state.setEnergyStored(json.energyStored);
 
         if (json.modules != null) {
@@ -446,6 +454,7 @@ public final class OutpostPersistenceManager {
         String teamId;
         String celestialBodyId;
         String systemId;
+        String planetaryAnchorBodyId;
         long energyStored;
         List<ModuleJson> modules;
         Map<String, Long> buffer;
@@ -484,6 +493,15 @@ public final class OutpostPersistenceManager {
         String toBodyId;
         double departureOrbitalTime;
         double tofOrbitalSeconds;
+    }
+
+    private static String resolvePlanetaryAnchorId(String bodyId) {
+        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
+        if (root == null || bodyId == null) return bodyId;
+        OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        if (body == null) return bodyId;
+        OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(root, body);
+        return anchor != null ? anchor.id() : bodyId;
     }
 
     private static final class OutpostModuleDataAdapter

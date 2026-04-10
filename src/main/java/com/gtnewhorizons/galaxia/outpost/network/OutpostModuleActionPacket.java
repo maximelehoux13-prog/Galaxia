@@ -68,8 +68,7 @@ public final class OutpostModuleActionPacket implements IMessage {
                     module.setStatus(AutomatedOutpostModule.Status.DISABLED);
                     break;
                 case "DESTROY":
-                    state.modulesInternal()
-                        .remove(packet.moduleIndex);
+                    state.removeModule(packet.moduleIndex);
                     break;
                 case "CONFIGURE":
                     return null;

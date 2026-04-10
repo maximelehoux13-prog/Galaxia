@@ -3,6 +3,8 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.client.Minecraft;
+
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
@@ -115,23 +117,26 @@ public final class LogisticsTasksSyncPacket implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(LogisticsTasksSyncPacket packet, MessageContext ctx) {
-            List<OutpostDataStore.ClientLogisticsTask> clientTasks = new ArrayList<>(packet.tasks.size());
-            for (TaskEntry e : packet.tasks) {
-                ItemStackWrapper resource = ItemStackWrapper.fromKey(e.resourceKey);
-                if (resource == null) continue;
-                clientTasks.add(
-                    new OutpostDataStore.ClientLogisticsTask(
-                        e.taskId,
-                        resource,
-                        e.amount,
-                        e.transportKind,
-                        e.fromBodyId,
-                        e.toBodyId,
-                        e.departureOrbitalTime,
-                        e.tofOrbitalSeconds));
-            }
-            OutpostDataStore.get()
-                .updateClientTasks(clientTasks);
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> {
+                    List<OutpostDataStore.ClientLogisticsTask> clientTasks = new ArrayList<>(packet.tasks.size());
+                    for (TaskEntry e : packet.tasks) {
+                        ItemStackWrapper resource = ItemStackWrapper.fromKey(e.resourceKey);
+                        if (resource == null) continue;
+                        clientTasks.add(
+                            new OutpostDataStore.ClientLogisticsTask(
+                                e.taskId,
+                                resource,
+                                e.amount,
+                                e.transportKind,
+                                e.fromBodyId,
+                                e.toBodyId,
+                                e.departureOrbitalTime,
+                                e.tofOrbitalSeconds));
+                    }
+                    OutpostDataStore.get()
+                        .updateClientTasks(clientTasks);
+                });
             return null;
         }
     }

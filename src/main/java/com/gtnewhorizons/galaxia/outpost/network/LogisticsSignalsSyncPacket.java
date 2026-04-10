@@ -4,6 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraft.client.Minecraft;
+
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignal;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignalStore;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -88,8 +90,10 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(LogisticsSignalsSyncPacket packet, MessageContext ctx) {
-            OutpostDataStore.get()
-                .updateClientSignals(packet.bySystem, packet.byPlanet);
+            Minecraft.getMinecraft()
+                .func_152344_a(
+                    () -> OutpostDataStore.get()
+                        .updateClientSignals(packet.bySystem, packet.byPlanet));
             return null;
         }
     }

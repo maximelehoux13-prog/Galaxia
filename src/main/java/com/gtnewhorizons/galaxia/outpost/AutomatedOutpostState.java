@@ -28,6 +28,15 @@ public final class AutomatedOutpostState {
      */
     public final String systemId;
 
+    /**
+     * The id of the nearest PLANET/GAS_GIANT ancestor of this outpost's body.
+     * Stored at construction time to avoid repeated tree walks in the logistics engine.
+     * For planets/gas giants: equals {@code celestialBodyId}.
+     * For moons/stations/asteroids: the parent planet id.
+     * Falls back to {@code celestialBodyId} if resolution fails.
+     */
+    public final String planetaryAnchorBodyId;
+
     /** Installed modules; ordering is significant for multi-module interactions. */
     private final List<AutomatedOutpostModule> modules;
 
@@ -45,11 +54,13 @@ public final class AutomatedOutpostState {
     public static final long MAX_ENERGY = 1_000_000L;
     public static final long PASSIVE_GENERATION = 512L;
 
-    public AutomatedOutpostState(String assetId, UUID teamId, String celestialBodyId, String systemId) {
+    public AutomatedOutpostState(String assetId, UUID teamId, String celestialBodyId, String systemId,
+        String planetaryAnchorBodyId) {
         this.assetId = assetId;
         this.teamId = teamId;
         this.celestialBodyId = celestialBodyId;
         this.systemId = systemId;
+        this.planetaryAnchorBodyId = planetaryAnchorBodyId != null ? planetaryAnchorBodyId : celestialBodyId;
         this.modules = new ArrayList<>();
         this.inventory = new AutomatedOutpostInventory();
         this.logisticsConfig = new LogisticsConfiguration();
@@ -65,6 +76,16 @@ public final class AutomatedOutpostState {
     /** Adds a module to this outpost. */
     public void addModule(AutomatedOutpostModule module) {
         modules.add(module);
+    }
+
+    /** Removes the module at the given index. */
+    public void removeModule(int index) {
+        modules.remove(index);
+    }
+
+    /** Removes all modules from this outpost. */
+    public void clearModules() {
+        modules.clear();
     }
 
     /** Returns {@code true} if at least one module of the given kind is installed. */
@@ -96,7 +117,7 @@ public final class AutomatedOutpostState {
     }
 
     /** Package-internal mutable list accessor; used by persistence and migration only. */
-    public List<AutomatedOutpostModule> modulesInternal() {
+    List<AutomatedOutpostModule> modulesInternal() {
         return modules;
     }
 

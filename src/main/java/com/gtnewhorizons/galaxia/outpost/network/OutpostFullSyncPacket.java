@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import net.minecraft.client.Minecraft;
+
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
@@ -37,6 +39,7 @@ public final class OutpostFullSyncPacket implements IMessage {
     private UUID teamId;
     private String celestialBodyId;
     private String systemId;
+    private String planetaryAnchorBodyId;
     private long energyStored;
     private List<ModuleSyncData> modules;
     private Map<String, Long> inventory;
@@ -49,6 +52,7 @@ public final class OutpostFullSyncPacket implements IMessage {
         this.teamId = state.teamId;
         this.celestialBodyId = state.celestialBodyId;
         this.systemId = state.systemId;
+        this.planetaryAnchorBodyId = state.planetaryAnchorBodyId;
         this.energyStored = state.getEnergyStored();
 
         this.modules = new ArrayList<>();
@@ -123,6 +127,7 @@ public final class OutpostFullSyncPacket implements IMessage {
         buf.writeLong(teamId.getLeastSignificantBits());
         writeString(buf, celestialBodyId);
         writeString(buf, systemId);
+        writeString(buf, planetaryAnchorBodyId);
         buf.writeLong(energyStored);
 
         buf.writeInt(modules.size());
@@ -163,6 +168,7 @@ public final class OutpostFullSyncPacket implements IMessage {
         teamId = new UUID(buf.readLong(), buf.readLong());
         celestialBodyId = readString(buf);
         systemId = readString(buf);
+        planetaryAnchorBodyId = readString(buf);
         energyStored = buf.readLong();
 
         int moduleCount = buf.readInt();
@@ -214,51 +220,61 @@ public final class OutpostFullSyncPacket implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(OutpostFullSyncPacket packet, MessageContext ctx) {
-            AutomatedOutpostState state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
-            if (state == null) {
-                state = new AutomatedOutpostState(
-                    packet.assetId,
-                    packet.teamId,
-                    packet.celestialBodyId,
-                    packet.systemId);
-                OutpostDataStore.get()
-                    .put(state);
-            }
-            state.setEnergyStored(packet.energyStored);
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> {
+                    AutomatedOutpostState state = OutpostDataStore.get()
+                        .getByAssetId(packet.assetId);
+                    if (state == null) {
+                        state = new AutomatedOutpostState(
+                            packet.assetId,
+                            packet.teamId,
+                            packet.celestialBodyId,
+                            packet.systemId,
+                            packet.planetaryAnchorBodyId);
+                        OutpostDataStore.get()
+                            .put(state);
+                    }
+                    state.setEnergyStored(packet.energyStored);
 
-            // Rebuild modules (simple approach: clear and re-add)
-            state.modulesInternal()
-                .clear();
-            for (ModuleSyncData md : packet.modules) {
-                OutpostModuleKind kind = OutpostModuleKind.valueOf(md.kind);
-                AutomatedOutpostModule m = new AutomatedOutpostModule(kind, createModuleData(kind, md));
-                m.setStatus(AutomatedOutpostModule.Status.valueOf(md.status));
-                m.setConstructionProgress(md.progress);
-                state.addModule(m);
-            }
+                    // Rebuild modules: clear and re-add from server snapshot.
+                    // TODO: if AutomatedOutpostModule ever gains client-side transient state (animations,
+                    // selection, etc.), do NOT store it on the module object — keep it in the widget layer
+                    // keyed by (assetId, moduleIndex, moduleKind). That way this clear+rebuild remains safe.
+                    state.clearModules();
+                    for (ModuleSyncData md : packet.modules) {
+                        OutpostModuleKind kind = OutpostModuleKind.valueOf(md.kind);
+                        AutomatedOutpostModule m = new AutomatedOutpostModule(kind, createModuleData(kind, md));
+                        m.setStatus(AutomatedOutpostModule.Status.valueOf(md.status));
+                        m.setConstructionProgress(md.progress);
+                        state.addModule(m);
+                    }
 
-            // Sync inventory
-            Map<ItemStackWrapper, Long> invSnapshot = new LinkedHashMap<>();
-            for (Map.Entry<String, Long> e : packet.inventory.entrySet()) {
-                ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
-                if (key != null) invSnapshot.put(key, e.getValue());
-            }
-            state.inventory.loadFromSnapshot(invSnapshot);
+                    // Sync inventory
+                    Map<ItemStackWrapper, Long> invSnapshot = new LinkedHashMap<>();
+                    for (Map.Entry<String, Long> e : packet.inventory.entrySet()) {
+                        ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
+                        if (key != null) invSnapshot.put(key, e.getValue());
+                    }
+                    state.inventory.loadFromSnapshot(invSnapshot);
 
-            // Sync logistics
-            Map<ItemStackWrapper, LogisticsResourceConfig> logSnapshot = new LinkedHashMap<>();
-            for (Map.Entry<String, LogisticsConfigSyncData> e : packet.logisticsConfig.entrySet()) {
-                ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
-                if (key != null) {
-                    LogisticsConfigSyncData d = e.getValue();
-                    logSnapshot.put(
-                        key,
-                        new LogisticsResourceConfig(d.minReserve, d.orderSize, d.isImportEnabled, d.isSupplyEnabled));
-                }
-            }
-            state.logisticsConfig.loadFromSnapshot(logSnapshot);
-            state.bumpSyncRevision();
+                    // Sync logistics
+                    Map<ItemStackWrapper, LogisticsResourceConfig> logSnapshot = new LinkedHashMap<>();
+                    for (Map.Entry<String, LogisticsConfigSyncData> e : packet.logisticsConfig.entrySet()) {
+                        ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
+                        if (key != null) {
+                            LogisticsConfigSyncData d = e.getValue();
+                            logSnapshot.put(
+                                key,
+                                new LogisticsResourceConfig(
+                                    d.minReserve,
+                                    d.orderSize,
+                                    d.isImportEnabled,
+                                    d.isSupplyEnabled));
+                        }
+                    }
+                    state.logisticsConfig.loadFromSnapshot(logSnapshot);
+                    state.bumpSyncRevision();
+                });
             return null;
         }
     }

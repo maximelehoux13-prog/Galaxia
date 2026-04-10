@@ -74,8 +74,9 @@ public final class OutpostLogisticsEngine {
         tickOutposts();
         tickModuleCooldowns();
         tickTasks();
-        rebuildSignals();
-        matchAndDispatch();
+        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
+        rebuildSignals(root);
+        matchAndDispatch(root);
         syncClients();
     }
 
@@ -132,19 +133,17 @@ public final class OutpostLogisticsEngine {
     // Step 2 – Rebuild signal registries
     // -------------------------------------------------------------------------
 
-    private void rebuildSignals() {
+    private void rebuildSignals(OrbitalCelestialBody root) {
         LogisticsSignalStore store = LogisticsSignalStore.get();
         store.clear();
 
-        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
-
         for (AutomatedOutpostState outpost : OutpostDataStore.get()
             .allOutposts()) {
-            emitSignals(outpost, store, root);
+            emitSignals(outpost, store);
         }
     }
 
-    private void emitSignals(AutomatedOutpostState outpost, LogisticsSignalStore store, OrbitalCelestialBody root) {
+    private void emitSignals(AutomatedOutpostState outpost, LogisticsSignalStore store) {
         Map<ItemStackWrapper, Long> snapshot = outpost.inventory.snapshot();
         LogisticsConfiguration config = outpost.logisticsConfig;
 
@@ -155,10 +154,9 @@ public final class OutpostLogisticsEngine {
             if (!resources.contains(r)) resources.add(r);
         }
 
-        // Determine body hierarchy for scope keys
         String bodyId = outpost.celestialBodyId;
         String systemId = outpost.systemId;
-        String planetaryAnchorBodyId = resolvePlanetaryAnchor(root, bodyId);
+        String planetaryAnchorBodyId = outpost.planetaryAnchorBodyId;
 
         for (ItemStackWrapper resource : resources) {
             long stock = outpost.inventory.getAmount(resource);
@@ -195,27 +193,12 @@ public final class OutpostLogisticsEngine {
         }
     }
 
-    /**
-     * Resolves the planetary anchor body id for a given celestial body id.
-     * For planets/gas giants: returns bodyId itself.
-     * For moons/stations/asteroids: returns the id of the nearest planet ancestor.
-     * Falls back to bodyId if resolution fails.
-     */
-    private static String resolvePlanetaryAnchor(OrbitalCelestialBody root, String bodyId) {
-        if (root == null || bodyId == null) return bodyId;
-        OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(root, bodyId);
-        if (body == null) return bodyId;
-        OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(root, body);
-        return anchor != null ? anchor.id() : bodyId;
-    }
-
     // -------------------------------------------------------------------------
     // Step 3 – Match signals and dispatch tasks
     // -------------------------------------------------------------------------
 
-    private void matchAndDispatch() {
+    private void matchAndDispatch(OrbitalCelestialBody root) {
         double orbitalTime = currentOrbitalTime();
-        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
         LogisticsSignalStore store = LogisticsSignalStore.get();
 
         // All signals live in SYSTEM scope (one signal per resource per outpost).
@@ -465,7 +448,7 @@ public final class OutpostLogisticsEngine {
     private void tickModuleCooldowns() {
         for (AutomatedOutpostState outpost : OutpostDataStore.get()
             .allOutposts()) {
-            for (AutomatedOutpostModule module : outpost.modulesInternal()) {
+            for (AutomatedOutpostModule module : outpost.modules()) {
                 if (module.cooldownTicks > 0) module.cooldownTicks--;
             }
         }
