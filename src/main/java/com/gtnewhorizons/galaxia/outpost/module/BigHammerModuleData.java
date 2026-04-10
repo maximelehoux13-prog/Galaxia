@@ -1,7 +1,7 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 
 /**
