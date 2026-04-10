@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.regex.Pattern;
@@ -53,6 +55,7 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleActionPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.GTUtility;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetRequirement;
@@ -62,7 +65,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
-import com.gtnewhorizons.galaxia.registry.GTUtility;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -1701,6 +1703,43 @@ public final class AssetManagementSystem {
             return field;
         }
 
+        private TextFieldWidget createDecimalValueWidget(DoubleSupplier getter, DoubleConsumer setter, double min,
+            double max, boolean integerFormat) {
+            TextFieldWidget field = new TextFieldWidget().setMaxLength(12)
+                .setPattern(Pattern.compile("[0-9]*(\\.[0-9]*)?"))
+                .acceptsExpressions(false)
+                .autoUpdateOnChange(false)
+                .setTextColor(EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
+                .hintColor(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+                .background(
+                    createRectFrameDrawable(
+                        EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                        EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor()))
+                .value(
+                    new StringValue.Dynamic(
+                        () -> formatEditableThreshold(getter.getAsDouble(), integerFormat),
+                        text -> {
+                            double parsed = min;
+                            if (text != null && !text.isEmpty() && !".".equals(text)) {
+                                try {
+                                    parsed = Double.parseDouble(text);
+                                } catch (NumberFormatException ignored) {
+                                    parsed = getter.getAsDouble();
+                                }
+                            }
+                            setter.accept(Math.max(min, Math.min(max, parsed)));
+                        }))
+                .setFocusOnGuiOpen(false);
+            modalTextFields.add(field);
+            return field;
+        }
+
+        private String formatEditableThreshold(double value, boolean integerFormat) {
+            if (!Double.isFinite(value)) return "0";
+            if (integerFormat) return String.format("%.0f", value);
+            return String.format("%.1f", value);
+        }
+
         private void drawGuiItemStack(ItemStack stack, int x, int y, int size) {
             Minecraft mc = Minecraft.getMinecraft();
             float scale = size / 16.0f;
@@ -1803,16 +1842,20 @@ public final class AssetManagementSystem {
 
             if (currentMode != AllowShootingConfig.Mode.ALWAYS) {
                 double step = currentMode == AllowShootingConfig.Mode.WHEN_DV_UNDER ? 1.0 : 3600.0;
-                String threshLabel = currentMode == AllowShootingConfig.Mode.WHEN_DV_UNDER
-                    ? String.format("%.1f", currentThreshold)
-                    : String.format("%.0fs", currentThreshold);
                 modal.child(createFooterButton("-", module != null, () -> {
                     double newT = Math.max(0.0, currentThreshold - step);
                     applyShootingThresholdUpdate(module, outpost, modIdx, isBigHammer, currentMode, newT);
                     markStructureDirty();
                 }).pos(136, 52)
                     .size(18, 18));
-                modal.child(createBodyText(threshLabel, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(158, 56));
+                modal.child(
+                    createDecimalValueWidget(
+                        () -> getCurrentShootingThreshold(module, isBigHammer),
+                        value -> applyShootingThresholdUpdate(module, outpost, modIdx, isBigHammer, currentMode, value),
+                        0.0,
+                        999999999.0,
+                        currentMode == AllowShootingConfig.Mode.WHEN_TOF_UNDER).pos(158, 52)
+                            .size(44, 18));
                 modal.child(createFooterButton("+", module != null, () -> {
                     double newT = currentThreshold + step;
                     applyShootingThresholdUpdate(module, outpost, modIdx, isBigHammer, currentMode, newT);
@@ -2055,6 +2098,19 @@ public final class AssetManagementSystem {
                     modIdx,
                     "SET_ALLOW_SHOOTING_THRESHOLD",
                     Double.toString(newThreshold)));
+        }
+
+        private double getCurrentShootingThreshold(AutomatedOutpostModule module, boolean isBigHammer) {
+            if (module == null) return 0.0;
+            if (isBigHammer && module.getData() instanceof BigHammerModuleData bd) {
+                return bd.effectiveShooting()
+                    .threshold();
+            }
+            if (!isBigHammer && module.getData() instanceof HammerModuleData hd) {
+                return hd.effectiveShooting()
+                    .threshold();
+            }
+            return 0.0;
         }
 
         private void applyRoutePriorityUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost, int modIdx,
