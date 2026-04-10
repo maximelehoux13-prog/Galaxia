@@ -1,8 +1,8 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 
 /**
  * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#HAMMER} module.
@@ -24,11 +24,11 @@ import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
  */
 @Desugar
 public record HammerModuleData(AllowShootingConfig allowShooting,
-    TransferRoutePriority routePriority) implements OutpostModuleData {
+    OrbitalTransferPlanner.RoutePriority routePriority) implements OutpostModuleData {
 
     /** Creates a default instance (ALWAYS allow shooting). */
     public static HammerModuleData getDefault() {
-        return new HammerModuleData(AllowShootingConfig.ALWAYS, TransferRoutePriority.PRIORITIZE_TOF);
+        return new HammerModuleData(AllowShootingConfig.ALWAYS, OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF);
     }
 
     /** Returns the effective config, defaulting to ALWAYS for pre-migration saves. */
@@ -36,8 +36,8 @@ public record HammerModuleData(AllowShootingConfig allowShooting,
         return allowShooting != null ? allowShooting : AllowShootingConfig.ALWAYS;
     }
 
-    public TransferRoutePriority effectiveRoutePriority() {
-        return routePriority != null ? routePriority : TransferRoutePriority.PRIORITIZE_TOF;
+    public OrbitalTransferPlanner.RoutePriority effectiveRoutePriority() {
+        return routePriority != null ? routePriority : OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
     }
 
     /** Maximum number of items in a single logistics task. Larger orders are split. */

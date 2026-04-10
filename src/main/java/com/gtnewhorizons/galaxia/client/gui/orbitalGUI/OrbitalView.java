@@ -38,6 +38,21 @@ import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
 public class OrbitalView {
 
+    public static final class RenderTickState {
+
+        private static float lastPartialTicks = 0.0F;
+
+        private RenderTickState() {}
+
+        public static float getLastPartialTicks() {
+            return lastPartialTicks;
+        }
+
+        public static void setLastPartialTicks(float partialTicks) {
+            lastPartialTicks = partialTicks;
+        }
+    }
+
     @Desugar
     record OrbitalLayerTransitionState(OrbitalCelestialBody pendingTarget, OrbitalCelestialBody pendingAnchor,
         double pendingStartZoom, double pendingTargetZoom, Phase phase, OrbitalCelestialBody activeTarget,

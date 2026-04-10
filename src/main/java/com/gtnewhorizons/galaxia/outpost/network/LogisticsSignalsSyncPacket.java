@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignal;
-import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignalScope;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignalStore;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
@@ -52,7 +51,7 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
         byPlanet = new LinkedHashMap<>();
 
         for (Map.Entry<String, List<LogisticsSignal>> entry : store
-            .allSignalsForScope(LogisticsSignalScope.SYSTEM).entrySet()) {
+            .allSignalsForScope(LogisticsSignal.Scope.SYSTEM).entrySet()) {
             String systemId = entry.getKey();
             Map<String, Long> systemAgg = new LinkedHashMap<>();
             for (LogisticsSignal sig : entry.getValue()) {

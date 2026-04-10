@@ -1,8 +1,8 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 
 /**
  * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#BIG_HAMMER} module.
@@ -22,11 +22,11 @@ import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 @Desugar
 public record BigHammerModuleData(boolean planetaryTransferHandling,
     AllowShootingConfig allowShooting,
-    TransferRoutePriority routePriority) implements OutpostModuleData {
+    OrbitalTransferPlanner.RoutePriority routePriority) implements OutpostModuleData {
 
     /** Creates a default instance: no planetary-transfer duplication, always allow. */
     public static BigHammerModuleData getDefault() {
-        return new BigHammerModuleData(false, AllowShootingConfig.ALWAYS, TransferRoutePriority.PRIORITIZE_TOF);
+        return new BigHammerModuleData(false, AllowShootingConfig.ALWAYS, OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF);
     }
 
     /** Returns the effective shooting config, defaulting to ALWAYS for pre-migration saves. */
@@ -34,8 +34,8 @@ public record BigHammerModuleData(boolean planetaryTransferHandling,
         return allowShooting != null ? allowShooting : AllowShootingConfig.ALWAYS;
     }
 
-    public TransferRoutePriority effectiveRoutePriority() {
-        return routePriority != null ? routePriority : TransferRoutePriority.PRIORITIZE_TOF;
+    public OrbitalTransferPlanner.RoutePriority effectiveRoutePriority() {
+        return routePriority != null ? routePriority : OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
     }
 
     /** Ticks between successive BIG_HAMMER dispatches (1 s at 20 TPS). */

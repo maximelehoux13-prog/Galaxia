@@ -14,9 +14,8 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingMode;
-import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
@@ -56,10 +55,10 @@ public final class OutpostFullSyncPacket implements IMessage {
         this.modules = new ArrayList<>();
         for (AutomatedOutpostModule m : state.modules()) {
             List<String> minerBlacklist = Collections.emptyList();
-            String allowShootingMode = AllowShootingMode.ALWAYS.name();
+            String allowShootingMode = AllowShootingConfig.Mode.ALWAYS.name();
             double allowShootingThreshold = 0.0;
             boolean planetaryHandling = false;
-            String routePriority = TransferRoutePriority.PRIORITIZE_TOF.name();
+            String routePriority = OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF.name();
             boolean minerCopySettings = false;
             if (m.getData() instanceof MinerModuleData minerData) {
                 minerBlacklist = minerData.blacklistedItemKeys();
@@ -249,18 +248,18 @@ public final class OutpostFullSyncPacket implements IMessage {
 
     private static AllowShootingConfig parseAllowShooting(ModuleSyncData d) {
         try {
-            AllowShootingMode mode = AllowShootingMode.valueOf(d.allowShootingMode());
+            AllowShootingConfig.Mode mode = AllowShootingConfig.Mode.valueOf(d.allowShootingMode());
             return new AllowShootingConfig(mode, d.allowShootingThreshold());
         } catch (IllegalArgumentException e) {
             return AllowShootingConfig.ALWAYS;
         }
     }
 
-    private static TransferRoutePriority parseRoutePriority(ModuleSyncData d) {
+    private static OrbitalTransferPlanner.RoutePriority parseRoutePriority(ModuleSyncData d) {
         try {
-            return TransferRoutePriority.valueOf(d.routePriority());
+            return OrbitalTransferPlanner.RoutePriority.valueOf(d.routePriority());
         } catch (IllegalArgumentException | NullPointerException e) {
-            return TransferRoutePriority.PRIORITIZE_TOF;
+            return OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
         }
     }
 

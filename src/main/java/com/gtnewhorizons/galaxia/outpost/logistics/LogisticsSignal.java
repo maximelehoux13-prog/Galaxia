@@ -16,9 +16,9 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
  *
  * <h3>Scope</h3>
  * <ul>
- *   <li>{@link LogisticsSignalScope#PLANETARY} – signal visible only to modules on the same
+ *   <li>{@link LogisticsSignal.Scope#PLANETARY} – signal visible only to modules on the same
  *       planet and its moons (HAMMER-range). Keyed by {@code planetaryAnchorBodyId}.</li>
- *   <li>{@link LogisticsSignalScope#SYSTEM} – signal visible to all modules in the same
+ *   <li>{@link LogisticsSignal.Scope#SYSTEM} – signal visible to all modules in the same
  *       stellar system (BIG_HAMMER-range). Keyed by {@code systemId}.</li>
  * </ul>
  *
@@ -39,7 +39,7 @@ public record LogisticsSignal(
      */
     long amount,
     /** Scope that determines which modules can see this signal. */
-    LogisticsSignalScope scope,
+    Scope scope,
     /** Celestial body id of the outpost's host body. */
     String bodyId,
     /**
@@ -49,6 +49,15 @@ public record LogisticsSignal(
      * {@code null} for SYSTEM-scope signals.
      */
     String planetaryAnchorBodyId) {
+
+    /**
+     * Determines which logistics modules can see (and respond to) a given signal.
+     */
+    public enum Scope {
+        PLANETARY,
+        SYSTEM,
+        GALACTIC
+    }
 
     public boolean isSupply() {
         return amount > 0;

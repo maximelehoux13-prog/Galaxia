@@ -164,13 +164,13 @@ public final class OutpostLogisticsEngine {
             if (cfg.isImportEnabled() && stock < cfg.minReserve()) {
                 long requestAmount = -(cfg.minReserve() - stock);
                 store.addSignal(new LogisticsSignal(outpost.assetId, systemId, resource, requestAmount,
-                    LogisticsSignalScope.SYSTEM, bodyId, planetaryAnchorBodyId));
+                    LogisticsSignal.Scope.SYSTEM, bodyId, planetaryAnchorBodyId));
             }
 
             if (cfg.isSupplyEnabled() && stock > cfg.minReserve()) {
                 long surplus = stock - cfg.minReserve();
                 store.addSignal(new LogisticsSignal(outpost.assetId, systemId, resource, surplus,
-                    LogisticsSignalScope.SYSTEM, bodyId, planetaryAnchorBodyId));
+                    LogisticsSignal.Scope.SYSTEM, bodyId, planetaryAnchorBodyId));
             }
         }
     }
@@ -203,7 +203,7 @@ public final class OutpostLogisticsEngine {
         //   same planetary anchor → HAMMER (then BIG_HAMMER if planetaryTransferHandling is on)
         //   different planetary anchors → BIG_HAMMER only
         for (Map.Entry<String, List<LogisticsSignal>> entry : store
-            .allSignalsForScope(LogisticsSignalScope.SYSTEM).entrySet()) {
+            .allSignalsForScope(LogisticsSignal.Scope.SYSTEM).entrySet()) {
             matchSystemBucket(entry.getValue(), orbitalTime, root);
         }
     }

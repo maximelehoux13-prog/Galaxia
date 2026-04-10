@@ -1,7 +1,6 @@
 package com.gtnewhorizons.galaxia.orbitalGUI;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
@@ -26,6 +25,15 @@ public final class OrbitalTransferPlanner {
     public static final double OSU_PER_TICK = 42.0 / 20.0;
 
     private OrbitalTransferPlanner() {}
+
+    public enum RoutePriority {
+        PRIORITIZE_TOF,
+        PRIORITIZE_DV;
+
+        public RoutePriority toggled() {
+            return this == PRIORITIZE_TOF ? PRIORITIZE_DV : PRIORITIZE_TOF;
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Public result type
@@ -136,12 +144,12 @@ public final class OrbitalTransferPlanner {
      */
     public static TransferRoute computeMinTofRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
         OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime) {
-        return computeRoute(root, attractor, source, dest, departureTime, TransferRoutePriority.PRIORITIZE_TOF);
+        return computeRoute(root, attractor, source, dest, departureTime, RoutePriority.PRIORITIZE_TOF);
     }
 
     public static TransferRoute computeRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
         OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime,
-        TransferRoutePriority priority) {
+        RoutePriority priority) {
         if (root == null || attractor == null || source == null || dest == null || source == dest) return null;
 
         double mu = getBodyMu(attractor);
@@ -167,7 +175,7 @@ public final class OrbitalTransferPlanner {
         MutableEvaluation progEval = new MutableEvaluation();
         MutableEvaluation retEval = new MutableEvaluation();
 
-        TransferRoutePriority effectivePriority = priority != null ? priority : TransferRoutePriority.PRIORITIZE_TOF;
+        RoutePriority effectivePriority = priority != null ? priority : RoutePriority.PRIORITIZE_TOF;
         TransferRoute bestRoute = null;
         int nScan = 64;
         for (int i = 0; i < nScan; i++) {
@@ -210,7 +218,7 @@ public final class OrbitalTransferPlanner {
             boolean acceptCandidate;
             if (bestRoute == null) {
                 acceptCandidate = true;
-            } else if (effectivePriority == TransferRoutePriority.PRIORITIZE_DV) {
+            } else if (effectivePriority == RoutePriority.PRIORITIZE_DV) {
                 acceptCandidate = best.totalDv < bestRoute.totalDv()
                     || (Math.abs(best.totalDv - bestRoute.totalDv()) < 1e-9 && tof < bestRoute.tofOsu());
             } else {

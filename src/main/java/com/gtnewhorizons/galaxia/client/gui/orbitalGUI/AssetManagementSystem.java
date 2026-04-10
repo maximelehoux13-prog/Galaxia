@@ -38,6 +38,7 @@ import codechicken.nei.recipe.GuiCraftingRecipe;
 import codechicken.nei.recipe.GuiUsageRecipe;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.orbitalGUI.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
@@ -50,8 +51,6 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleActionPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingMode;
-import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
@@ -1662,7 +1661,7 @@ public final class AssetManagementSystem {
             // Extract current shooting config and planetary flag from live module data
             AllowShootingConfig shootingCfg;
             boolean planetaryHandling;
-            TransferRoutePriority routePriority;
+            OrbitalTransferPlanner.RoutePriority routePriority;
             if (isBigHammer) {
                 BigHammerModuleData bd = module.getData() instanceof BigHammerModuleData d ? d
                     : BigHammerModuleData.getDefault();
@@ -1676,7 +1675,7 @@ public final class AssetManagementSystem {
                 planetaryHandling = false;
                 routePriority = hd.effectiveRoutePriority();
             }
-            AllowShootingMode currentMode = shootingCfg.mode();
+            AllowShootingConfig.Mode currentMode = shootingCfg.mode();
             double currentThreshold = shootingCfg.threshold();
 
             modal.child(createTitleText("Logistics: " + moduleLabel).pos(12, 10));
@@ -1700,18 +1699,18 @@ public final class AssetManagementSystem {
             };
             final int modIdx = state.configuringModuleIndex;
             modal.child(createFooterButton(modeLabel, module != null, () -> {
-                AllowShootingMode next = switch (currentMode) {
-                    case ALWAYS -> AllowShootingMode.WHEN_DV_UNDER;
-                    case WHEN_DV_UNDER -> AllowShootingMode.WHEN_TOF_UNDER;
-                    case WHEN_TOF_UNDER -> AllowShootingMode.ALWAYS;
+                AllowShootingConfig.Mode next = switch (currentMode) {
+                    case ALWAYS -> AllowShootingConfig.Mode.WHEN_DV_UNDER;
+                    case WHEN_DV_UNDER -> AllowShootingConfig.Mode.WHEN_TOF_UNDER;
+                    case WHEN_TOF_UNDER -> AllowShootingConfig.Mode.ALWAYS;
                 };
                 applyShootingModeUpdate(module, outpost, modIdx, isBigHammer, next, currentThreshold);
                 markStructureDirty();
             }).pos(74, 52).size(56, 18));
 
-            if (currentMode != AllowShootingMode.ALWAYS) {
-                double step = currentMode == AllowShootingMode.WHEN_DV_UNDER ? 1.0 : 3600.0;
-                String threshLabel = currentMode == AllowShootingMode.WHEN_DV_UNDER
+            if (currentMode != AllowShootingConfig.Mode.ALWAYS) {
+                double step = currentMode == AllowShootingConfig.Mode.WHEN_DV_UNDER ? 1.0 : 3600.0;
+                String threshLabel = currentMode == AllowShootingConfig.Mode.WHEN_DV_UNDER
                     ? String.format("%.1f", currentThreshold)
                     : String.format("%.0fs", currentThreshold);
                 modal.child(createFooterButton("-", module != null, () -> {
@@ -1747,7 +1746,7 @@ public final class AssetManagementSystem {
             // ── Column header labels ──────────────────────────────────────────
             modal.child(createBodyText("Priority:", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 78));
             modal.child(createFooterButton(
-                routePriority == TransferRoutePriority.PRIORITIZE_DV ? "dV" : "TOF",
+                routePriority == OrbitalTransferPlanner.RoutePriority.PRIORITIZE_DV ? "dV" : "TOF",
                 module != null,
                 () -> {
                     applyRoutePriorityUpdate(module, outpost, modIdx, routePriority.toggled());
@@ -1889,7 +1888,7 @@ public final class AssetManagementSystem {
         }
 
         private void applyShootingModeUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
-            int modIdx, boolean isBigHammer, AllowShootingMode newMode, double threshold) {
+            int modIdx, boolean isBigHammer, AllowShootingConfig.Mode newMode, double threshold) {
             if (module == null) return;
             AllowShootingConfig newCfg = new AllowShootingConfig(newMode, threshold);
             if (isBigHammer) {
@@ -1909,7 +1908,7 @@ public final class AssetManagementSystem {
         }
 
         private void applyShootingThresholdUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
-            int modIdx, boolean isBigHammer, AllowShootingMode mode, double newThreshold) {
+            int modIdx, boolean isBigHammer, AllowShootingConfig.Mode mode, double newThreshold) {
             if (module == null) return;
             AllowShootingConfig newCfg = new AllowShootingConfig(mode, newThreshold);
             if (isBigHammer) {
@@ -1929,7 +1928,7 @@ public final class AssetManagementSystem {
         }
 
         private void applyRoutePriorityUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
-            int modIdx, TransferRoutePriority priority) {
+            int modIdx, OrbitalTransferPlanner.RoutePriority priority) {
             if (module == null || priority == null) return;
             if (module.getData() instanceof BigHammerModuleData bd) {
                 module.setData(new BigHammerModuleData(

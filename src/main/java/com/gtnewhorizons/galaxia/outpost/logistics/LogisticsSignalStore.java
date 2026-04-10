@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Unified logistics signal registry, scoped by {@link LogisticsSignalScope}.
+ * Unified logistics signal registry, scoped by {@link LogisticsSignal.Scope}.
  *
  * <p>Buckets signals by (scope, scopeKey) pairs:
  * <ul>
@@ -28,7 +28,7 @@ public final class LogisticsSignalStore {
     }
 
     /** scope → scopeKey → signals */
-    private final Map<LogisticsSignalScope, Map<String, List<LogisticsSignal>>> store = new LinkedHashMap<>();
+    private final Map<LogisticsSignal.Scope, Map<String, List<LogisticsSignal>>> store = new LinkedHashMap<>();
 
     private LogisticsSignalStore() {}
 
@@ -50,7 +50,7 @@ public final class LogisticsSignalStore {
      * Returns all signals in the given scope for the given key.
      * Returns an empty list if none are registered.
      */
-    public List<LogisticsSignal> getSignals(LogisticsSignalScope scope, String scopeKey) {
+    public List<LogisticsSignal> getSignals(LogisticsSignal.Scope scope, String scopeKey) {
         Map<String, List<LogisticsSignal>> byKey = store.get(scope);
         if (byKey == null) return Collections.emptyList();
         List<LogisticsSignal> list = byKey.get(scopeKey);
@@ -61,7 +61,7 @@ public final class LogisticsSignalStore {
      * Returns an unmodifiable map of (scopeKey → signals) for the given scope.
      * Returns an empty map if no signals exist for that scope.
      */
-    public Map<String, List<LogisticsSignal>> allSignalsForScope(LogisticsSignalScope scope) {
+    public Map<String, List<LogisticsSignal>> allSignalsForScope(LogisticsSignal.Scope scope) {
         Map<String, List<LogisticsSignal>> byKey = store.get(scope);
         return byKey == null ? Collections.emptyMap() : Collections.unmodifiableMap(byKey);
     }

@@ -2,11 +2,10 @@ package com.gtnewhorizons.galaxia.outpost.network;
 
 import java.nio.charset.StandardCharsets;
 
+import com.gtnewhorizons.galaxia.orbitalGUI.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingMode;
-import com.gtnewhorizons.galaxia.outpost.logistics.TransferRoutePriority;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
@@ -84,9 +83,9 @@ public final class OutpostModuleConfigPacket implements IMessage {
                     }
                 }
                 case "SET_ALLOW_SHOOTING_MODE" -> {
-                    AllowShootingMode mode;
+                    AllowShootingConfig.Mode mode;
                     try {
-                        mode = AllowShootingMode.valueOf(packet.payload);
+                        mode = AllowShootingConfig.Mode.valueOf(packet.payload);
                     } catch (IllegalArgumentException e) {
                         return null;
                     }
@@ -129,9 +128,9 @@ public final class OutpostModuleConfigPacket implements IMessage {
                         Boolean.parseBoolean(packet.payload), bd.allowShooting(), bd.effectiveRoutePriority()));
                 }
                 case "SET_ROUTE_PRIORITY" -> {
-                    TransferRoutePriority priority;
+                    OrbitalTransferPlanner.RoutePriority priority;
                     try {
-                        priority = TransferRoutePriority.valueOf(packet.payload);
+                        priority = OrbitalTransferPlanner.RoutePriority.valueOf(packet.payload);
                     } catch (IllegalArgumentException e) {
                         return null;
                     }

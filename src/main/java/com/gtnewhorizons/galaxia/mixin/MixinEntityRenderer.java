@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.gtnewhorizons.galaxia.client.gui.orbitalGUI.RenderTickState;
+import com.gtnewhorizons.galaxia.client.gui.orbitalGUI.OrbitalView.RenderTickState;
 import com.gtnewhorizons.galaxia.core.config.ConfigRocket;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.entities.EntityRocket;
 
