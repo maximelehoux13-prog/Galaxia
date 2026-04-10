@@ -274,7 +274,7 @@ public final class OrbitalTransferPlanner {
         OrbitalMechanics.OrbitalState aState = OrbitalMechanics.resolveWorldState(root, attractor, time);
         OrbitalMechanics.OrbitalState sState = OrbitalMechanics.resolveWorldState(root, source, time);
         OrbitalMechanics.OrbitalState dState = OrbitalMechanics.resolveWorldState(root, dest, time);
-        if (aState == null || sState == null || dState == null) return 100.0;
+        if (aState == null || sState == null || dState == null) return -1.0;
         double r1 = Math.hypot(sState.x() - aState.x(), sState.y() - aState.y());
         double r2 = Math.hypot(dState.x() - aState.x(), dState.y() - aState.y());
         double mu = Math.max(1e-6, getBodyMu(attractor));

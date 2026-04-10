@@ -65,7 +65,12 @@ public final class LogisticsSignalStore {
      */
     public Map<String, List<LogisticsSignal>> allSignalsForScope(LogisticsSignal.Scope scope) {
         Map<String, List<LogisticsSignal>> byKey = store.get(scope);
-        return byKey == null ? Collections.emptyMap() : Collections.unmodifiableMap(byKey);
+        if (byKey == null) return Collections.emptyMap();
+        Map<String, List<LogisticsSignal>> safe = new LinkedHashMap<>(byKey.size());
+        for (Map.Entry<String, List<LogisticsSignal>> e : byKey.entrySet()) {
+            safe.put(e.getKey(), Collections.unmodifiableList(e.getValue()));
+        }
+        return Collections.unmodifiableMap(safe);
     }
 
     private static String scopeKeyFor(LogisticsSignal signal) {

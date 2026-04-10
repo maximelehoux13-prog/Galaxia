@@ -179,8 +179,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
 
     private void rebuildPanel(ViewScope scope, OrbitalCelestialBody viewRoot, List<SignalRow> rows) {
         int rowsToShow = Math.min(MAX_VISIBLE_ROWS, rows.size());
-        int overflow = rows.size() - rowsToShow;
-        int panelH = 30 + 16 + rowsToShow * (ROW_H + 2) + (overflow > 0 ? 14 : 0) + (rows.isEmpty() ? 18 : 0) + 8;
+        int panelH = 30 + 16 + rowsToShow * (ROW_H + 2) + (rows.isEmpty() ? 18 : 0) + 8;
         cachedTitle = buildScopeLabel(scope, viewRoot);
 
         panelRoot.removeAll();
@@ -228,20 +227,10 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
                 .size(PANEL_W - 8 - CONTENT_SCROLLBAR_GAP, viewportHeight);
             scrollWidget.child(rowsContainer);
             panelRoot.child(scrollWidget);
-            int ry = 44;
-            for (int i = 0; i < rowsToShow; i++) {
-                ry += ROW_H + 2;
-            }
             for (int i = 0; i < rows.size(); i++) {
                 rowsContainer.child(buildSignalRow(rows.get(i)).pos(0, i * (ROW_H + 2)));
             }
             scrollData.setScrollSize(contentHeight);
-            if (overflow > 0) {
-                panelRoot.child(
-                    new TextWidget<>(IKey.str("\u2026 +" + overflow + " more items"))
-                        .color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
-                        .pos(10, ry));
-            }
         }
         panelRoot.scheduleResize();
         scheduleResize();

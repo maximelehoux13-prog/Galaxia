@@ -224,10 +224,31 @@ public final class OutpostPersistenceManager {
     }
 
     private void writeJson(File file, Object value) {
-        try (FileWriter writer = new FileWriter(file)) {
+        File tmp = new File(file.getParent(), file.getName() + ".tmp");
+        try (FileWriter writer = new FileWriter(tmp)) {
             gson.toJson(value, writer);
         } catch (IOException e) {
             Galaxia.LOG.error("[Logistics] Failed to write {}: {}", file, e.getMessage());
+            tmp.delete();
+            return;
+        }
+        try {
+            java.nio.file.Files.move(
+                tmp.toPath(),
+                file.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+            try {
+                java.nio.file.Files.move(
+                    tmp.toPath(),
+                    file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e2) {
+                Galaxia.LOG.error("[Logistics] Failed to replace {} with {}: {}", file, tmp, e2.getMessage());
+            }
+        } catch (IOException e) {
+            Galaxia.LOG.error("[Logistics] Failed to replace {} with {}: {}", file, tmp, e.getMessage());
         }
     }
 
@@ -472,6 +493,7 @@ public final class OutpostPersistenceManager {
 
         private static final String TYPE_FIELD = "type";
         private static final Map<String, Class<? extends OutpostModuleData>> TYPE_MAP = new HashMap<>();
+        private static final Map<Class<? extends OutpostModuleData>, String> TYPE_NAME_MAP = new HashMap<>();
         private static final Gson PURE_GSON = new GsonBuilder().create();
 
         static {
@@ -479,6 +501,9 @@ public final class OutpostPersistenceManager {
             TYPE_MAP.put("BIG_HAMMER", BigHammerModuleData.class);
             TYPE_MAP.put("MINER", MinerModuleData.class);
             TYPE_MAP.put("POWER", PowerModuleData.class);
+            for (Map.Entry<String, Class<? extends OutpostModuleData>> e : TYPE_MAP.entrySet()) {
+                TYPE_NAME_MAP.put(e.getValue(), e.getKey());
+            }
         }
 
         @Override
@@ -507,10 +532,9 @@ public final class OutpostPersistenceManager {
         }
 
         private static String resolveTypeName(Class<?> clazz) {
-            for (Map.Entry<String, Class<? extends OutpostModuleData>> e : TYPE_MAP.entrySet()) {
-                if (e.getValue() == clazz) return e.getKey();
-            }
-            throw new IllegalArgumentException("Unregistered OutpostModuleData class: " + clazz.getName());
+            String name = TYPE_NAME_MAP.get(clazz);
+            if (name == null) throw new IllegalArgumentException("Unregistered OutpostModuleData class: " + clazz.getName());
+            return name;
         }
     }
 }

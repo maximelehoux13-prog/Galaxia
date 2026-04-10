@@ -75,27 +75,19 @@ public final class OutpostBufferSyncPacket implements IMessage {
             if (state == null) return null;
             Map<ItemStackWrapper, Long> snapshot = new LinkedHashMap<>();
             for (Map.Entry<String, Long> e : packet.buffer.entrySet()) {
-                snapshot.put(ItemStackWrapper.fromKey(e.getKey()), e.getValue());
+                ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
+                if (key != null) snapshot.put(key, e.getValue());
             }
             state.inventory.loadFromSnapshot(snapshot);
             return null;
         }
     }
 
-    // -------------------------------------------------------------------------
-    // String encoding helpers (length-prefixed UTF-8)
-    // -------------------------------------------------------------------------
-
     private static void writeString(ByteBuf buf, String s) {
-        byte[] bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        buf.writeShort(bytes.length);
-        buf.writeBytes(bytes);
+        PacketUtil.writeString(buf, s);
     }
 
     private static String readString(ByteBuf buf) {
-        int len = buf.readUnsignedShort();
-        byte[] bytes = new byte[len];
-        buf.readBytes(bytes);
-        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+        return PacketUtil.readString(buf);
     }
 }

@@ -98,8 +98,7 @@ public record LogisticsTask(
     private static String makeId() {
         return "task_" + java.util.UUID.randomUUID()
             .toString()
-            .replace("-", "")
-            .substring(0, 12);
+            .replace("-", "");
     }
 
     /** Returns a copy of this task with {@code remainingTicks} decremented by one. */

@@ -45,9 +45,7 @@ public final class OutpostModuleSyncPacket implements IMessage {
         buf.writeInt(modules.size());
         for (ModuleState ms : modules) {
             buf.writeInt(ms.index());
-            buf.writeInt(
-                ms.status()
-                    .ordinal());
+            writeString(buf, ms.status().name());
             buf.writeFloat(ms.progress());
             buf.writeLong(ms.energy());
         }
@@ -61,7 +59,7 @@ public final class OutpostModuleSyncPacket implements IMessage {
         modules = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             int index = buf.readInt();
-            Status status = Status.values()[buf.readInt()];
+            Status status = Status.valueOf(readString(buf));
             float progress = buf.readFloat();
             long energy = buf.readLong();
             modules.add(new ModuleState(index, status, progress, energy));
@@ -94,15 +92,10 @@ public final class OutpostModuleSyncPacket implements IMessage {
     }
 
     private static void writeString(ByteBuf buf, String s) {
-        byte[] bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        buf.writeShort(bytes.length);
-        buf.writeBytes(bytes);
+        PacketUtil.writeString(buf, s);
     }
 
     private static String readString(ByteBuf buf) {
-        int len = buf.readUnsignedShort();
-        byte[] bytes = new byte[len];
-        buf.readBytes(bytes);
-        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+        return PacketUtil.readString(buf);
     }
 }

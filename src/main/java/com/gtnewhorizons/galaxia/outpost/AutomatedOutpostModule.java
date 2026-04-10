@@ -21,6 +21,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.GtOreVeinDefinition;
 public final class AutomatedOutpostModule {
 
     private static final Random RANDOM = new Random();
+    private static final int MINER_COOLDOWN_TICKS = 20;
 
     public enum Status {
         IN_CONSTRUCTION,
@@ -170,7 +171,7 @@ public final class AutomatedOutpostModule {
     private void tickMiner(AutomatedOutpostState outpost) {
         // Mining Module logic: produce 1 raw ore every 20 ticks
         if (cooldownTicks <= 0) {
-            cooldownTicks = 20;
+            cooldownTicks = MINER_COOLDOWN_TICKS;
 
             // Find celestial body
             GalaxiaCelestialAPI.get(outpost.celestialBodyId)

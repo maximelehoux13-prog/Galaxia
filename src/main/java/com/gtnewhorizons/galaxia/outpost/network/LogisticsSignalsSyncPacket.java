@@ -1,6 +1,5 @@
 package com.gtnewhorizons.galaxia.outpost.network;
 
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,15 +127,10 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
     }
 
     private static void writeString(ByteBuf buf, String s) {
-        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-        buf.writeShort(bytes.length);
-        buf.writeBytes(bytes);
+        PacketUtil.writeString(buf, s);
     }
 
     private static String readString(ByteBuf buf) {
-        int len = buf.readUnsignedShort();
-        byte[] bytes = new byte[len];
-        buf.readBytes(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+        return PacketUtil.readString(buf);
     }
 }
