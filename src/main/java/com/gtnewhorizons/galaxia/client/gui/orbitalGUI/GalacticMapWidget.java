@@ -7,7 +7,6 @@ import net.minecraft.client.gui.Gui;
 import com.cleanroommc.modularui.api.drawable.IDrawable;
 import com.cleanroommc.modularui.api.drawable.IKey;
 import com.cleanroommc.modularui.api.widget.IWidget;
-import com.cleanroommc.modularui.screen.viewport.GuiContext;
 import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;

@@ -85,15 +85,9 @@ public final class InterplanetaryTransferSystem {
     private InterplanetaryTransferSystem() {}
 
     @Desugar
-    public record LambertStressReport(
-        int requestedSimulations,
-        int executedSimulations,
-        int candidatePlanetCount,
-        int successfulTransfers,
-        double averageTotalDv,
-        double bestTotalDv,
-        double worstTotalDv
-    ) {
+    public record LambertStressReport(int requestedSimulations, int executedSimulations, int candidatePlanetCount,
+        int successfulTransfers, double averageTotalDv, double bestTotalDv, double worstTotalDv) {
+
         public LambertStressReport {
             requestedSimulations = Math.max(0, requestedSimulations);
             executedSimulations = Math.max(0, executedSimulations);

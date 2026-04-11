@@ -17,7 +17,6 @@ import org.lwjgl.opengl.GL12;
 
 import com.cleanroommc.modularui.api.drawable.IDrawable;
 import com.cleanroommc.modularui.api.drawable.IKey;
-import com.cleanroommc.modularui.screen.viewport.GuiContext;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
 import com.cleanroommc.modularui.utils.GlStateManager;

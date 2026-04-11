@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import net.minecraft.item.ItemStack;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.compat.GTUtility;
 
 @Desugar
 public record CelestialBodyProperties(CelestialConstructionProfile construction, CelestialGravityProfile gravity,
@@ -398,7 +399,7 @@ record CelestialResourceSet(List<ItemStack> vanillaOres, List<String> gtOreVeinI
     }
 
     List<GtOreVeinDefinition> activeGtOreVeins() {
-        if (!com.gtnewhorizons.galaxia.core.Galaxia.hasGT5U()) return Collections.emptyList();
+        if (!GTUtility.isGTLoaded) return Collections.emptyList();
         return GtOreVeinCatalog.resolveAll(gtOreVeinIds);
     }
 

@@ -7,17 +7,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import cpw.mods.fml.common.Loader;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
 
+import cpw.mods.fml.common.Loader;
+
 public final class GTUtility {
+
+    public static final boolean isGTLoaded = Loader.isModLoaded("gregtech");
 
     private static final Map<String, ItemStack> RAW_ORE_CACHE = new HashMap<>();
     private static final Set<String> RAW_ORE_FAILURES = new HashSet<>();
-    private static final boolean isGTLoaded = Loader.isModLoaded("gregtech");
 
     private GTUtility() {}
 

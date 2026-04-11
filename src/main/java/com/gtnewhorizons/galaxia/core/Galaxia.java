@@ -24,7 +24,6 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
 
-import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;

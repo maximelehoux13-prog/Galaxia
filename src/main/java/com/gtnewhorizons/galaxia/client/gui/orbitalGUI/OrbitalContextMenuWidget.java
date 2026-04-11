@@ -8,7 +8,6 @@ import net.minecraft.client.gui.Gui;
 
 import com.cleanroommc.modularui.api.drawable.IDrawable;
 import com.cleanroommc.modularui.api.drawable.IKey;
-import com.cleanroommc.modularui.screen.viewport.GuiContext;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
 import com.cleanroommc.modularui.widget.ParentWidget;

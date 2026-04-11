@@ -31,8 +31,8 @@ public final class CelestialAssetStore {
         return state.snapshot();
     }
 
-    public static CelestialManagedAsset createAssetInConstruction(String celestialObjectId,
-        String displayName, CelestialAssetKind kind, CelestialAssetLocation location) {
+    public static CelestialManagedAsset createAssetInConstruction(String celestialObjectId, String displayName,
+        CelestialAssetKind kind, CelestialAssetLocation location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         String assetId = "asset_" + UUID.randomUUID()
             .toString()
@@ -52,8 +52,8 @@ public final class CelestialAssetStore {
         return asset;
     }
 
-    public static CelestialManagedAsset createOperationalAsset(String celestialObjectId,
-        String displayName, CelestialAssetKind kind, CelestialAssetLocation location) {
+    public static CelestialManagedAsset createOperationalAsset(String celestialObjectId, String displayName,
+        CelestialAssetKind kind, CelestialAssetLocation location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         CelestialManagedAsset asset = new CelestialManagedAsset(
             "asset_" + UUID.randomUUID()
