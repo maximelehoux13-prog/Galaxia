@@ -183,7 +183,7 @@ public final class AssetManagementSystem {
         List<StationTransferTarget> getTransferTargetsInSystem(OrbitalCelestialBody root, OrbitalCelestialBody body) {
             List<StationTransferTarget> targets = new ArrayList<>();
             if (body == null) return targets;
-            OrbitalCelestialBody hostStar = findHostStar(root, body, null);
+            OrbitalCelestialBody hostStar = OrbitalTransferPlanner.findHostStar(root, body);
             if (hostStar == null) return targets;
             collectTargets(hostStar, targets);
             return targets;
@@ -227,17 +227,6 @@ public final class AssetManagementSystem {
                     .append(stored.displayName());
             }
             return sb.toString();
-        }
-
-        private OrbitalCelestialBody findHostStar(OrbitalCelestialBody current, OrbitalCelestialBody target,
-            OrbitalCelestialBody currentStar) {
-            OrbitalCelestialBody nextStar = current.objectClass() == CelestialObjectClass.STAR ? current : currentStar;
-            if (current == target) return nextStar;
-            for (OrbitalCelestialBody child : current.children()) {
-                OrbitalCelestialBody found = findHostStar(child, target, nextStar);
-                if (found != null) return found;
-            }
-            return null;
         }
 
     }
@@ -2985,19 +2974,6 @@ public final class AssetManagementSystem {
         }
 
         private final class PassiveRow extends ParentWidget<PassiveRow> {
-
-            @Override
-            public boolean canHover() {
-                return false;
-            }
-
-            @Override
-            public boolean canHoverThrough() {
-                return true;
-            }
-        }
-
-        private final class PassiveLayer extends ParentWidget<PassiveLayer> {
 
             @Override
             public boolean canHover() {

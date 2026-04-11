@@ -474,17 +474,5 @@ public final class OrbitalPinnedInfoContentBuilder {
             void draw(GuiContext context, int x, int y, int width, int height);
         }
 
-        private static final class PassiveLayer extends ParentWidget<PassiveLayer> {
-
-            @Override
-            public boolean canHover() {
-                return false;
-            }
-
-            @Override
-            public boolean canHoverThrough() {
-                return true;
-            }
-        }
     }
 }

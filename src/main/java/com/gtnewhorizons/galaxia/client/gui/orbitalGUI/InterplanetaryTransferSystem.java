@@ -25,7 +25,9 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.registry.orbital.LambertSolver;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 // ---------------------------------------------------------------------------
 // Package-level records
@@ -83,87 +85,80 @@ public final class InterplanetaryTransferSystem {
 
     private InterplanetaryTransferSystem() {}
 
-    static final class MutableLambertSolution {
+    public static final class MutableLambertSolution {
 
-        private double departureVelocityX;
-        private double departureVelocityY;
-        private double arrivalVelocityX;
-        private double arrivalVelocityY;
-        private boolean valid = false;
+        private final LambertSolver.MutableSolution delegate = new LambertSolver.MutableSolution();
 
         double departureVelocityX() {
-            return departureVelocityX;
+            return delegate.dvx1;
         }
 
         double departureVelocityY() {
-            return departureVelocityY;
+            return delegate.dvy1;
         }
 
         double arrivalVelocityX() {
-            return arrivalVelocityX;
+            return delegate.dvx2;
         }
 
         double arrivalVelocityY() {
-            return arrivalVelocityY;
+            return delegate.dvy2;
         }
 
         boolean valid() {
-            return valid;
+            return delegate.valid;
         }
 
         void set(double departureVelocityX, double departureVelocityY, double arrivalVelocityX,
             double arrivalVelocityY) {
-            this.departureVelocityX = departureVelocityX;
-            this.departureVelocityY = departureVelocityY;
-            this.arrivalVelocityX = arrivalVelocityX;
-            this.arrivalVelocityY = arrivalVelocityY;
-            this.valid = true;
+            delegate.dvx1 = departureVelocityX;
+            delegate.dvy1 = departureVelocityY;
+            delegate.dvx2 = arrivalVelocityX;
+            delegate.dvy2 = arrivalVelocityY;
+            delegate.valid = true;
         }
 
         void clear() {
-            departureVelocityX = 0.0;
-            departureVelocityY = 0.0;
-            arrivalVelocityX = 0.0;
-            arrivalVelocityY = 0.0;
-            valid = false;
+            delegate.dvx1 = 0.0;
+            delegate.dvy1 = 0.0;
+            delegate.dvx2 = 0.0;
+            delegate.dvy2 = 0.0;
+            delegate.valid = false;
         }
     }
 
     private static final class MutableLambertEvaluation {
 
-        private double departureDeltaV;
-        private double captureDeltaV;
-        private double totalDeltaV;
-        private boolean valid = false;
+        private final LambertSolver.MutableEvaluation delegate = new LambertSolver.MutableEvaluation();
 
         double departureDeltaV() {
-            return departureDeltaV;
+            return delegate.depDv;
         }
 
         double captureDeltaV() {
-            return captureDeltaV;
+            return delegate.capDv;
         }
 
         double totalDeltaV() {
-            return totalDeltaV;
+            return delegate.totalDv;
         }
 
         boolean valid() {
-            return valid;
+            return delegate.valid;
         }
 
         void set(double departureDeltaV, double captureDeltaV) {
-            this.departureDeltaV = departureDeltaV;
-            this.captureDeltaV = captureDeltaV;
-            this.totalDeltaV = departureDeltaV + captureDeltaV;
-            this.valid = true;
+            delegate.depDv = departureDeltaV;
+            delegate.capDv = captureDeltaV;
+            delegate.totalDv = departureDeltaV + captureDeltaV;
+            delegate.valid = true;
         }
 
         void clear() {
-            departureDeltaV = 0.0;
-            captureDeltaV = 0.0;
-            totalDeltaV = 0.0;
-            valid = false;
+            delegate.depDv = 0.0;
+            delegate.capDv = 0.0;
+            delegate.totalDv = 0.0;
+            delegate.valid = false;
         }
     }
 
@@ -314,169 +309,17 @@ public final class InterplanetaryTransferSystem {
     }
 
     // -----------------------------------------------------------------------
-    // Izzo Lambert solver (N=0 single revolution)
-    // Based on: D. Izzo, "Revisiting Lambert's Problem"
-    // Celestial Mechanics and Dynamical Astronomy 121(1), 2015
+    // Lambert solver wrapper (delegates to shared LambertSolver)
     // -----------------------------------------------------------------------
 
-    /**
-     * Solves Lambert's problem using Izzo's method.
-     *
-     * @param rx1      departure position X in attractor frame
-     * @param ry1      departure position Y in attractor frame
-     * @param rx2      arrival position X in attractor frame
-     * @param ry2      arrival position Y in attractor frame
-     * @param tof      time of flight (same units as mu)
-     * @param mu       gravitational parameter of attractor
-     * @param prograde true for prograde (CCW) transfer
-     * @return [vx1, vy1, vx2, vy2] or null if unsolvable
-     */
     static boolean solveLambertInto(double rx1, double ry1, double rx2, double ry2, double tof, double mu,
         boolean prograde, MutableLambertSolution out) {
         if (out == null || tof <= 0.0 || mu <= 0.0) return false;
         out.clear();
-
-        // Step 1: Geometry
-        double r1 = Math.hypot(rx1, ry1);
-        double r2 = Math.hypot(rx2, ry2);
-        if (r1 < 1e-10 || r2 < 1e-10) return false;
-
-        double cdx = rx2 - rx1;
-        double cdy = ry2 - ry1;
-        double c = Math.hypot(cdx, cdy);
-        if (c < 1e-10) return false;
-
-        double s = (r1 + r2 + c) * 0.5;
-        if (s < 1e-10) return false;
-
-        // Use atan2 instead of acos+sign(crossZ) for the transfer angle.
-        // acos gives dth in [0,π] and requires a crossZ sign check to determine
-        // which way around; that sign is noisy near 180° (crossZ ≈ 0) and flips
-        // each frame, producing alternating mirror trajectories (the visual jitter).
-        // atan2(crossZ, dot) returns the CCW angle in (-π,π] continuously:
-        // at exactly 180° atan2(0, negative) = π deterministically — no sign flip.
-        double dot = rx1 * rx2 + ry1 * ry2;
-        double crossZ = rx1 * ry2 - ry1 * rx2;
-        double dthCCW = Math.atan2(crossZ, dot);
-        if (dthCCW < 0.0) dthCCW += 2.0 * Math.PI;
-        // Prograde = travel the CCW arc; retrograde = travel the CW arc (2π - dthCCW).
-        double dth = prograde ? dthCCW : (2.0 * Math.PI - dthCCW);
-        if (dth < 1e-10 || dth > 2.0 * Math.PI - 1e-10) return false;
-
-        double lambda = Math.sqrt(Math.max(0.0, 1.0 - c / s));
-        if (dth > Math.PI) lambda = -lambda;
-
-        // Step 2: Normalized TOF
-        double T = tof * Math.sqrt(2.0 * mu / (s * s * s));
-
-        // Step 5: Initial guess
-        double T00 = Math.acos(lambda) + lambda * Math.sqrt(1.0 - lambda * lambda);
-        double T1 = 2.0 / 3.0 * (1.0 - lambda * lambda * lambda);
-
-        double x0;
-        if (T >= T00) {
-            x0 = T00 / T - 1.0;
-        } else if (T <= T1) {
-            if (T1 > 1e-12) {
-                x0 = 2.0 / 3.0 * (1.0 - T / T1);
-            } else {
-                x0 = 0.0;
-            }
-        } else {
-            if (T00 > 1e-12 && T1 > 1e-12) {
-                double logRatio = Math.log(T / T00) / Math.log(T1 / T00);
-                x0 = Math.exp(logRatio) - 1.0;
-            } else {
-                x0 = 0.0;
-            }
-        }
-        x0 = Math.max(-0.99, Math.min(0.99, x0));
-
-        // Step 6: Newton iteration
-        double x = x0;
-        for (int i = 0; i < 50; i++) {
-            double Tx = tofNormalized(x, lambda);
-            double err = T - Tx;
-            if (Math.abs(err) < 1e-12) break;
-            double dTdx = dTofNormalizeddx(x, Tx, lambda);
-            if (Math.abs(dTdx) < 1e-15) break;
-            double dx = err / dTdx;
-            x = Math.max(-0.999, Math.min(0.999, x + dx));
-            if (Math.abs(dx) < 1e-13) break;
-        }
-
-        // Convergence check
-        double finalT = tofNormalized(x, lambda);
-        if (Math.abs(T - finalT) > 0.01 * Math.max(1e-10, T)) return false;
-
-        // Step 7: Velocity reconstruction
-        double y = Math.sqrt(1.0 - lambda * lambda + lambda * lambda * x * x);
-        double gamma = Math.sqrt(mu * s / 2.0);
-        double rho = (r1 - r2) / c;
-        double sigma = Math.sqrt(Math.max(0.0, 1.0 - rho * rho));
-
-        double vr1 = gamma / r1 * ((lambda * y - x) - rho * (lambda * y + x));
-        double vt1 = gamma / r1 * sigma * (y + lambda * x);
-        double vr2 = -gamma / r2 * ((lambda * y - x) + rho * (lambda * y + x));
-        double vt2 = gamma / r2 * sigma * (y + lambda * x);
-
-        // Unit radial vectors
-        double urx1 = rx1 / r1, ury1 = ry1 / r1;
-        double urx2 = rx2 / r2, ury2 = ry2 / r2;
-
-        // Tangential unit vectors
-        double sign = prograde ? 1.0 : -1.0;
-        double utx1 = sign * (-ury1), uty1 = sign * urx1;
-        double utx2 = sign * (-ury2), uty2 = sign * urx2;
-
-        // Cartesian velocities
-        double vx1 = vr1 * urx1 + vt1 * utx1;
-        double vy1 = vr1 * ury1 + vt1 * uty1;
-        double vx2 = vr2 * urx2 + vt2 * utx2;
-        double vy2 = vr2 * ury2 + vt2 * uty2;
-
-        out.set(vx1, vy1, vx2, vy2);
+        LambertSolver.MutableSolution sol = new LambertSolver.MutableSolution();
+        if (!LambertSolver.solve(rx1, ry1, rx2, ry2, tof, mu, prograde, sol)) return false;
+        out.set(sol.dvx1, sol.dvy1, sol.dvx2, sol.dvy2);
         return true;
-    }
-
-    static double tofNormalized(double x, double lambda) {
-        double e = 1.0 - x * x;
-        double sinHalfBeta = lambda * Math.sqrt(Math.max(0.0, e));
-        sinHalfBeta = Math.max(-1.0, Math.min(1.0, sinHalfBeta));
-        double beta = 2.0 * Math.asin(sinHalfBeta);
-        double alpha = 2.0 * Math.acos(x);
-
-        // When alpha is small (x near 1), direct subtraction alpha - sin(alpha)
-        // loses nearly all significant digits (e.g. x=0.9999: alpha=0.028,
-        // sin(alpha)=0.027999... → only 2 sig figs remain).
-        // Series expansion a - sin(a) = a³/6·(1 - a²/20·(1 - a²/42)) is exact
-        // to ~1e-14 for a < 0.1 and avoids the cancellation entirely.
-        // Same issue affects beta when lambda·sqrt(e) is small (near 0° or 180°).
-        double a_minus_sina;
-        double alpha2 = alpha * alpha;
-        if (alpha2 < 0.01) {
-            a_minus_sina = alpha * alpha2 / 6.0 * (1.0 - alpha2 / 20.0 * (1.0 - alpha2 / 42.0));
-        } else {
-            a_minus_sina = alpha - Math.sin(alpha);
-        }
-
-        double b_minus_sinb;
-        double beta2 = beta * beta;
-        if (beta2 < 0.01) {
-            b_minus_sinb = beta * beta2 / 6.0 * (1.0 - beta2 / 20.0 * (1.0 - beta2 / 42.0));
-        } else {
-            b_minus_sinb = beta - Math.sin(beta);
-        }
-
-        double denom = Math.pow(Math.max(1e-30, e), 1.5);
-        return (a_minus_sina - b_minus_sinb) / (2.0 * denom);
-    }
-
-    static double dTofNormalizeddx(double x, double T, double lambda) {
-        double lambdaSq = lambda * lambda;
-        double oneMinusX2 = Math.max(1e-30, 1.0 - x * x);
-        double sigma = Math.sqrt(Math.max(0.0, 1.0 - lambdaSq * oneMinusX2));
-        return (3.0 * x * T - 2.0 + 2.0 * lambda * lambda * lambda * x / sigma) / oneMinusX2;
     }
 
     /**
@@ -502,30 +345,15 @@ public final class InterplanetaryTransferSystem {
     }
 
     // -----------------------------------------------------------------------
-    // Helper methods
+    // Helper methods (delegates to shared OrbitalTransferPlanner)
     // -----------------------------------------------------------------------
 
     private static OrbitalCelestialBody findHostStar(OrbitalCelestialBody root, OrbitalCelestialBody target) {
-        return findHostStarRec(root, target, null);
-    }
-
-    private static OrbitalCelestialBody findHostStarRec(OrbitalCelestialBody current, OrbitalCelestialBody target,
-        OrbitalCelestialBody currentStar) {
-        OrbitalCelestialBody nextStar = current.objectClass() == CelestialObjectClass.STAR ? current : currentStar;
-        if (current == target) return nextStar;
-        for (OrbitalCelestialBody child : current.children()) {
-            OrbitalCelestialBody found = findHostStarRec(child, target, nextStar);
-            if (found != null) return found;
-        }
-        return null;
+        return OrbitalTransferPlanner.findHostStar(root, target);
     }
 
     private static double getBodyMu(OrbitalCelestialBody body) {
-        if (body == null || body.properties() == null) return 0.0;
-        return Math.max(
-            0.0,
-            body.properties()
-                .standardGravitationalParameter());
+        return LambertSolver.getBodyMu(body);
     }
 
     public static LambertStressReport runLambertStress(OrbitalCelestialBody root, OrbitalCelestialBody star,
@@ -699,37 +527,13 @@ public final class InterplanetaryTransferSystem {
 
     private static double getHohmannTof(OrbitalCelestialBody star, OrbitalCelestialBody source,
         OrbitalCelestialBody dest, OrbitalCelestialBody root, double time) {
-        OrbitalMechanics.OrbitalState starState = OrbitalMechanics.resolveWorldState(root, star, time);
-        OrbitalMechanics.OrbitalState srcState = OrbitalMechanics.resolveWorldState(root, source, time);
-        OrbitalMechanics.OrbitalState dstState = OrbitalMechanics.resolveWorldState(root, dest, time);
-        if (starState == null || srcState == null || dstState == null) return 100.0;
-        double r1 = Math.hypot(srcState.x() - starState.x(), srcState.y() - starState.y());
-        double r2 = Math.hypot(dstState.x() - starState.x(), dstState.y() - starState.y());
-        double mu = Math.max(1e-6, getBodyMu(star));
-        double sma = (r1 + r2) * 0.5;
-        return Math.PI * Math.sqrt(sma * sma * sma / mu);
+        return LambertSolver.getHohmannTof(star, source, dest, root, time);
     }
 
-    /**
-     * Computes periapsis distance for an orbit defined by position and velocity.
-     * Works for elliptic, parabolic and hyperbolic orbits.
-     */
     private static double computePeriapsis(double rx, double ry, double vx, double vy, double mu) {
-        double r = Math.hypot(rx, ry);
-        if (r < 1e-10) return 0.0;
-        double v2 = vx * vx + vy * vy;
-        double energy = 0.5 * v2 - mu / r;
-        double h = rx * vy - ry * vx;
-        double p = h * h / Math.max(1e-30, mu);
-        double disc = 1.0 + 2.0 * energy * p / mu;
-        double ecc = Math.sqrt(Math.max(0.0, disc));
-        return p / (1.0 + ecc);
+        return LambertSolver.computePeriapsis(rx, ry, vx, vy, mu);
     }
 
-    /**
-     * Evaluates one Lambert candidate and returns [dvDep, dvCap, totalDv] or null if invalid.
-     * Rejects orbits whose periapsis falls below minPeriapsis.
-     */
     private static boolean evalLambertInto(double r1x, double r1y, double r2x, double r2y, double tof, double mu,
         boolean prograde, double vsrcX, double vsrcY, double vdstX, double vdstY, double minPeriapsis,
         MutableLambertSolution solutionOut, MutableLambertEvaluation evaluationOut) {
@@ -2148,16 +1952,4 @@ public final class InterplanetaryTransferSystem {
         return Long.toString(Math.round(value * 10.0) / 10L) + "." + Math.abs(Math.round(value * 10.0) % 10L);
     }
 
-    private static final class PassiveLayer extends ParentWidget<PassiveLayer> {
-
-        @Override
-        public boolean canHover() {
-            return false;
-        }
-
-        @Override
-        public boolean canHoverThrough() {
-            return true;
-        }
-    }
 }
