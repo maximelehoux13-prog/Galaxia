@@ -397,14 +397,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         return rows;
     }
 
-    private IDrawable drawable(DrawCommand cmd) {
+    private IDrawable drawable(DrawableCommand cmd) {
         return (ctx, x, y, w, h, theme) -> cmd.draw(ctx, x, y, w, h);
-    }
-
-    @FunctionalInterface
-    private interface DrawCommand {
-
-        void draw(GuiContext ctx, int x, int y, int w, int h);
     }
 
     private static void renderItemIcon(ItemStack stack, int x, int y) {

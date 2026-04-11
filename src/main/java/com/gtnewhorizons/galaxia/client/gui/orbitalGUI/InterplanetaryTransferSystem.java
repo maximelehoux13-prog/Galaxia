@@ -85,41 +85,21 @@ public final class InterplanetaryTransferSystem {
 
     private InterplanetaryTransferSystem() {}
 
-    public static final class LambertStressReport {
-
-        private final int requestedSimulations;
-        private final int executedSimulations;
-        private final int candidatePlanetCount;
-        private final int successfulTransfers;
-        private final double averageTotalDv;
-        private final double bestTotalDv;
-        private final double worstTotalDv;
-
-        LambertStressReport(int requestedSimulations, int executedSimulations, int candidatePlanetCount,
-            int successfulTransfers, double averageTotalDv, double bestTotalDv, double worstTotalDv) {
-            this.requestedSimulations = Math.max(0, requestedSimulations);
-            this.executedSimulations = Math.max(0, executedSimulations);
-            this.candidatePlanetCount = Math.max(0, candidatePlanetCount);
-            this.successfulTransfers = Math.max(0, successfulTransfers);
-            this.averageTotalDv = averageTotalDv;
-            this.bestTotalDv = bestTotalDv;
-            this.worstTotalDv = worstTotalDv;
-        }
-
-        public int requestedSimulations() {
-            return requestedSimulations;
-        }
-
-        public int executedSimulations() {
-            return executedSimulations;
-        }
-
-        public int candidatePlanetCount() {
-            return candidatePlanetCount;
-        }
-
-        public int successfulTransfers() {
-            return successfulTransfers;
+    @Desugar
+    public static record LambertStressReport(
+        int requestedSimulations,
+        int executedSimulations,
+        int candidatePlanetCount,
+        int successfulTransfers,
+        double averageTotalDv,
+        double bestTotalDv,
+        double worstTotalDv
+    ) {
+        public LambertStressReport {
+            requestedSimulations = Math.max(0, requestedSimulations);
+            executedSimulations = Math.max(0, executedSimulations);
+            candidatePlanetCount = Math.max(0, candidatePlanetCount);
+            successfulTransfers = Math.max(0, successfulTransfers);
         }
 
         public int failedTransfers() {
@@ -132,18 +112,6 @@ public final class InterplanetaryTransferSystem {
 
         public boolean hasSuccesses() {
             return successfulTransfers > 0;
-        }
-
-        public double averageTotalDv() {
-            return averageTotalDv;
-        }
-
-        public double bestTotalDv() {
-            return bestTotalDv;
-        }
-
-        public double worstTotalDv() {
-            return worstTotalDv;
         }
     }
 
@@ -1425,7 +1393,7 @@ public final class InterplanetaryTransferSystem {
             return body == null ? fallback : body.displayName();
         }
 
-        private IDrawable drawable(DrawCommand cmd) {
+        private IDrawable drawable(DrawableCommand cmd) {
             return (ctx, x, y, w, h, theme) -> cmd.draw(ctx, x, y, w, h);
         }
     }
@@ -1601,7 +1569,7 @@ public final class InterplanetaryTransferSystem {
             rootPanel.pos(left, top);
         }
 
-        private IDrawable drawable(DrawCommand cmd) {
+        private IDrawable drawable(DrawableCommand cmd) {
             return (ctx, x, y, w, h, theme) -> cmd.draw(ctx, x, y, w, h);
         }
     }
@@ -1609,12 +1577,6 @@ public final class InterplanetaryTransferSystem {
     // -----------------------------------------------------------------------
     // Internal helpers
     // -----------------------------------------------------------------------
-
-    @FunctionalInterface
-    private interface DrawCommand {
-
-        void draw(GuiContext context, int x, int y, int width, int height);
-    }
 
     private static String formatFixed1(double value) {
         return Long.toString(Math.round(value * 10.0) / 10L) + "." + Math.abs(Math.round(value * 10.0) % 10L);

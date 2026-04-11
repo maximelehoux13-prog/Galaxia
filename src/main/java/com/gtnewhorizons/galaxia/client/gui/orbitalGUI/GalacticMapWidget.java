@@ -126,13 +126,7 @@ public final class GalacticMapWidget extends ParentWidget<GalacticMapWidget> {
             });
     }
 
-    private IDrawable drawable(DrawCommand cmd) {
+    private IDrawable drawable(DrawableCommand cmd) {
         return (ctx, x, y, w, h, theme) -> cmd.draw(ctx, x, y, w, h);
-    }
-
-    @FunctionalInterface
-    private interface DrawCommand {
-
-        void draw(GuiContext ctx, int x, int y, int w, int h);
     }
 }

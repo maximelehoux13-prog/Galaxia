@@ -286,14 +286,8 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
         });
     }
 
-    private IDrawable drawable(DrawCommand drawCommand) {
+    private IDrawable drawable(DrawableCommand drawCommand) {
         return (context, x, y, width, height, widgetTheme) -> drawCommand.draw(context, x, y, width, height);
-    }
-
-    @FunctionalInterface
-    private interface DrawCommand {
-
-        void draw(GuiContext context, int x, int y, int width, int height);
     }
 
     public enum ContextMenuActionType {

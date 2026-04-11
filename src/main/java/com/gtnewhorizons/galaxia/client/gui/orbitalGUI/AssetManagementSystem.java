@@ -2954,14 +2954,8 @@ public final class AssetManagementSystem {
             return Minecraft.getMinecraft().fontRenderer.trimStringToWidth(text, width);
         }
 
-        private IDrawable drawable(DrawCommand drawCommand) {
+        private IDrawable drawable(DrawableCommand drawCommand) {
             return (context, x, y, width, height, widgetTheme) -> drawCommand.draw(context, x, y, width, height);
-        }
-
-        @FunctionalInterface
-        private interface DrawCommand {
-
-            void draw(GuiContext context, int x, int y, int width, int height);
         }
 
         private enum AssetManagerButtonGlyph {
