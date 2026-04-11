@@ -28,14 +28,6 @@ public record CelestialObjectRegistration(CelestialObjectId id, String name, Str
             .build() : properties;
     }
 
-    public String idString() {
-        return id.id();
-    }
-
-    public String parentIdString() {
-        return parentId != null ? parentId.id() : null;
-    }
-
     public static Builder builder() {
         return new Builder();
     }
@@ -78,11 +70,7 @@ public record CelestialObjectRegistration(CelestialObjectId id, String name, Str
 
         public Builder id(CelestialObjectId value) {
             this.id = value;
-            return this;
-        }
-
-        public Builder id(String value) {
-            this.id = CelestialObjectId.fromString(value);
+            this.name = value.displayName();
             return this;
         }
 
@@ -101,27 +89,15 @@ public record CelestialObjectRegistration(CelestialObjectId id, String name, Str
             return this;
         }
 
-        public Builder parent(String value) {
-            this.parentId = CelestialObjectId.fromString(value);
-            return this;
-        }
-
         public Builder parentId(CelestialObjectId value) {
             this.parentId = value;
-            return this;
-        }
-
-        public Builder parentId(String value) {
-            this.parentId = CelestialObjectId.fromString(value);
             return this;
         }
 
         public Builder dimension(DimensionEnum value) {
             this.dimensionEnum = value;
             if (value != null) {
-                if (this.id == null) this.id = CelestialObjectId.fromString(
-                    value.name()
-                        .toLowerCase());
+                if (this.id == null) this.id = CelestialObjectId.fromDimension(value);
                 if (this.name == null) this.name = value.getName();
                 if (this.nameKey == null) this.nameKey = value.getTranslationKey();
             }

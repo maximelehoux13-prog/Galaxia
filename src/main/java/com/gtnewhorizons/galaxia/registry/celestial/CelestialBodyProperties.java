@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 
 import com.github.bsideup.jabel.Desugar;
@@ -182,6 +183,16 @@ public record CelestialBodyProperties(boolean visitable, boolean canCreateStatio
         public Builder clearMetadata() {
             this.metadata.clear();
             return this;
+        }
+
+        public Builder withVanillaOres(Block... ores) {
+            for (Block ore : ores) ore(new ItemStack(ore));
+            return this;
+        }
+
+        public Builder withGravity(double standardGravitationalParameter, double sphereOfInfluenceRadius) {
+            return standardGravitationalParameter(standardGravitationalParameter)
+                .sphereOfInfluenceRadius(sphereOfInfluenceRadius);
         }
 
         public CelestialBodyProperties build() {
