@@ -156,10 +156,10 @@ public final class OrbitalTransferPlanner {
         OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime, RoutePriority priority) {
         if (root == null || attractor == null || source == null || dest == null || source == dest) return null;
 
-        double mu = LambertSolver.getBodyMu(attractor);
+        double mu = attractor.mu();
         if (mu <= 0.0) return null;
 
-        double hohmannTof = LambertSolver.getHohmannTof(attractor, source, dest, root, departureTime);
+        double hohmannTof = attractor.getHohmannTof(source, dest, root, departureTime);
         if (hohmannTof <= 0.0) return null;
 
         double minPeriapsis = Math.max(0.05, attractor.spriteSize() * 0.5);
@@ -173,11 +173,6 @@ public final class OrbitalTransferPlanner {
         double r1y0 = srcStateDep.y() - attractorAtDep.y();
         double vsrcX0 = srcStateDep.vx() - attractorAtDep.vx();
         double vsrcY0 = srcStateDep.vy() - attractorAtDep.vy();
-
-        LambertSolver.MutableSolution progSol = new LambertSolver.MutableSolution();
-        LambertSolver.MutableSolution retSol = new LambertSolver.MutableSolution();
-        LambertSolver.MutableEvaluation progEval = new LambertSolver.MutableEvaluation();
-        LambertSolver.MutableEvaluation retEval = new LambertSolver.MutableEvaluation();
 
         RoutePriority effectivePriority = priority != null ? priority : RoutePriority.PRIORITIZE_TOF;
         TransferRoute bestRoute = null;
@@ -204,42 +199,25 @@ public final class OrbitalTransferPlanner {
             double sinDth = Math.abs(crossZ) / Math.max(1e-20, r1mag * r2mag);
             if (sinDth < 1e-3) continue;
 
-            boolean hasPrograde = LambertSolver.evaluate(
-                r1x0,
-                r1y0,
-                r2x,
-                r2y,
-                tof,
-                mu,
-                true,
-                vsrcX0,
-                vsrcY0,
-                vdstX,
-                vdstY,
-                minPeriapsis,
-                progSol,
-                progEval);
-            boolean hasRetrograde = LambertSolver.evaluate(
-                r1x0,
-                r1y0,
-                r2x,
-                r2y,
-                tof,
-                mu,
-                false,
-                vsrcX0,
-                vsrcY0,
-                vdstX,
-                vdstY,
-                minPeriapsis,
-                retSol,
-                retEval);
+            LambertTransfer.Solution progSol = LambertTransfer.between(r1x0, r1y0, r2x, r2y)
+                .mu(mu)
+                .minPeriapsis(minPeriapsis)
+                .timeOfFlight(tof)
+                .prograde(true)
+                .evaluateAgainst(vsrcX0, vsrcY0, vdstX, vdstY);
 
-            LambertSolver.MutableEvaluation best;
-            if (hasPrograde && (!hasRetrograde || progEval.totalDv <= retEval.totalDv)) {
-                best = progEval;
-            } else if (hasRetrograde) {
-                best = retEval;
+            LambertTransfer.Solution retSol = LambertTransfer.between(r1x0, r1y0, r2x, r2y)
+                .mu(mu)
+                .minPeriapsis(minPeriapsis)
+                .timeOfFlight(tof)
+                .prograde(false)
+                .evaluateAgainst(vsrcX0, vsrcY0, vdstX, vdstY);
+
+            LambertTransfer.Solution best;
+            if (progSol.valid() && (!retSol.valid() || progSol.totalDv() <= retSol.totalDv())) {
+                best = progSol;
+            } else if (retSol.valid()) {
+                best = retSol;
             } else {
                 continue;
             }
@@ -248,15 +226,15 @@ public final class OrbitalTransferPlanner {
             if (bestRoute == null) {
                 acceptCandidate = true;
             } else if (effectivePriority == RoutePriority.PRIORITIZE_DV) {
-                acceptCandidate = best.totalDv < bestRoute.totalDv()
-                    || (Math.abs(best.totalDv - bestRoute.totalDv()) < 1e-9 && tof < bestRoute.tofOsu());
+                acceptCandidate = best.totalDv() < bestRoute.totalDv()
+                    || (Math.abs(best.totalDv() - bestRoute.totalDv()) < 1e-9 && tof < bestRoute.tofOsu());
             } else {
                 acceptCandidate = tof < bestRoute.tofOsu()
-                    || (Math.abs(tof - bestRoute.tofOsu()) < 1e-9 && best.totalDv < bestRoute.totalDv());
+                    || (Math.abs(tof - bestRoute.tofOsu()) < 1e-9 && best.totalDv() < bestRoute.totalDv());
             }
 
             if (acceptCandidate) {
-                bestRoute = new TransferRoute(tof, best.totalDv, best.depDv);
+                bestRoute = new TransferRoute(tof, best.totalDv(), best.depDv());
             }
         }
 

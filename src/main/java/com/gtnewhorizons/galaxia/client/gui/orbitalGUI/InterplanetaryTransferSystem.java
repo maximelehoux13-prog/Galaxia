@@ -25,7 +25,7 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
-import com.gtnewhorizons.galaxia.registry.orbital.LambertSolver;
+import com.gtnewhorizons.galaxia.registry.orbital.LambertTransfer;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -84,83 +84,6 @@ public final class InterplanetaryTransferSystem {
     private static final int PREVIEW_TRAJECTORY_SAMPLES = 96;
 
     private InterplanetaryTransferSystem() {}
-
-    public static final class MutableLambertSolution {
-
-        private final LambertSolver.MutableSolution delegate = new LambertSolver.MutableSolution();
-
-        double departureVelocityX() {
-            return delegate.dvx1;
-        }
-
-        double departureVelocityY() {
-            return delegate.dvy1;
-        }
-
-        double arrivalVelocityX() {
-            return delegate.dvx2;
-        }
-
-        double arrivalVelocityY() {
-            return delegate.dvy2;
-        }
-
-        boolean valid() {
-            return delegate.valid;
-        }
-
-        void set(double departureVelocityX, double departureVelocityY, double arrivalVelocityX,
-            double arrivalVelocityY) {
-            delegate.dvx1 = departureVelocityX;
-            delegate.dvy1 = departureVelocityY;
-            delegate.dvx2 = arrivalVelocityX;
-            delegate.dvy2 = arrivalVelocityY;
-            delegate.valid = true;
-        }
-
-        void clear() {
-            delegate.dvx1 = 0.0;
-            delegate.dvy1 = 0.0;
-            delegate.dvx2 = 0.0;
-            delegate.dvy2 = 0.0;
-            delegate.valid = false;
-        }
-    }
-
-    private static final class MutableLambertEvaluation {
-
-        private final LambertSolver.MutableEvaluation delegate = new LambertSolver.MutableEvaluation();
-
-        double departureDeltaV() {
-            return delegate.depDv;
-        }
-
-        double captureDeltaV() {
-            return delegate.capDv;
-        }
-
-        double totalDeltaV() {
-            return delegate.totalDv;
-        }
-
-        boolean valid() {
-            return delegate.valid;
-        }
-
-        void set(double departureDeltaV, double captureDeltaV) {
-            delegate.depDv = departureDeltaV;
-            delegate.capDv = captureDeltaV;
-            delegate.totalDv = departureDeltaV + captureDeltaV;
-            delegate.valid = true;
-        }
-
-        void clear() {
-            delegate.depDv = 0.0;
-            delegate.capDv = 0.0;
-            delegate.totalDv = 0.0;
-            delegate.valid = false;
-        }
-    }
 
     public static final class LambertStressReport {
 
@@ -309,19 +232,6 @@ public final class InterplanetaryTransferSystem {
     }
 
     // -----------------------------------------------------------------------
-    // Lambert solver wrapper (delegates to shared LambertSolver)
-    // -----------------------------------------------------------------------
-
-    static boolean solveLambertInto(double rx1, double ry1, double rx2, double ry2, double tof, double mu,
-        boolean prograde, MutableLambertSolution out) {
-        if (out == null || tof <= 0.0 || mu <= 0.0) return false;
-        out.clear();
-        LambertSolver.MutableSolution sol = new LambertSolver.MutableSolution();
-        if (!LambertSolver.solve(rx1, ry1, rx2, ry2, tof, mu, prograde, sol)) return false;
-        out.set(sol.dvx1, sol.dvy1, sol.dvx2, sol.dvy2);
-        return true;
-    }
-
     /**
      * Propagates a 2-body orbit and returns world-frame trajectory points.
      * anchorX/Y is the world position of the attractor at departure time.
@@ -350,10 +260,6 @@ public final class InterplanetaryTransferSystem {
 
     private static OrbitalCelestialBody findHostStar(OrbitalCelestialBody root, OrbitalCelestialBody target) {
         return OrbitalTransferPlanner.findHostStar(root, target);
-    }
-
-    private static double getBodyMu(OrbitalCelestialBody body) {
-        return LambertSolver.getBodyMu(body);
     }
 
     public static LambertStressReport runLambertStress(OrbitalCelestialBody root, OrbitalCelestialBody star,
@@ -423,134 +329,19 @@ public final class InterplanetaryTransferSystem {
         OrbitalCelestialBody origin, OrbitalCelestialBody destination, double departureTime, double dvLimit) {
         if (root == null || star == null || origin == null || destination == null || origin == destination) return -1.0;
 
-        double mu = Math.max(1e-6, getBodyMu(star));
-        double hohmannTof = getHohmannTof(star, origin, destination, root, departureTime);
-        if (hohmannTof <= 0.0) return -1.0;
-
         double minPeriapsis = Math.max(0.05, star.spriteSize() * 0.5);
-        OrbitalMechanics.OrbitalState srcStateDep = OrbitalMechanics.resolveWorldState(root, origin, departureTime);
-        OrbitalMechanics.OrbitalState starAtDep = OrbitalMechanics.resolveWorldState(root, star, departureTime);
-        if (srcStateDep == null || starAtDep == null) return -1.0;
 
-        double r1x0 = srcStateDep.x() - starAtDep.x();
-        double r1y0 = srcStateDep.y() - starAtDep.y();
-        double vsrcX0 = srcStateDep.vx() - starAtDep.vx();
-        double vsrcY0 = srcStateDep.vy() - starAtDep.vy();
+        TransferScanner.ScanResult result = TransferScanner.scan(
+            root,
+            origin,
+            destination,
+            star,
+            departureTime,
+            minPeriapsis,
+            (current, best) -> current.totalDv() <= dvLimit && current.tof() < best.tof()
+        );
 
-        MutableLambertSolution progradeSolution = new MutableLambertSolution();
-        MutableLambertSolution retrogradeSolution = new MutableLambertSolution();
-        MutableLambertEvaluation progradeEvaluation = new MutableLambertEvaluation();
-        MutableLambertEvaluation retrogradeEvaluation = new MutableLambertEvaluation();
-
-        int nScan = 64;
-        double bestTof = -1.0;
-        double bestDv = -1.0;
-
-        for (int i = 0; i < nScan; i++) {
-            double frac = 0.1 + (3.0 - 0.1) * i / (nScan - 1);
-            double tof = hohmannTof * frac;
-            if (tof <= 0.0) continue;
-
-            OrbitalMechanics.OrbitalState dstState = OrbitalMechanics
-                .resolveWorldState(root, destination, departureTime + tof);
-            OrbitalMechanics.OrbitalState starAtArr = OrbitalMechanics
-                .resolveWorldState(root, star, departureTime + tof);
-            if (dstState == null || starAtArr == null) continue;
-
-            double r1x = r1x0;
-            double r1y = r1y0;
-            double r2x = dstState.x() - starAtArr.x();
-            double r2y = dstState.y() - starAtArr.y();
-            double vsrcX = vsrcX0;
-            double vsrcY = vsrcY0;
-            double vdstX = dstState.vx() - starAtArr.vx();
-            double vdstY = dstState.vy() - starAtArr.vy();
-
-            double crossZ = r1x * r2y - r1y * r2x;
-            double r1mag = Math.hypot(r1x, r1y);
-            double r2mag = Math.hypot(r2x, r2y);
-            double sinDth = Math.abs(crossZ) / Math.max(1e-20, r1mag * r2mag);
-            if (sinDth < 1e-3) continue;
-
-            boolean hasPrograde = evalLambertInto(
-                r1x,
-                r1y,
-                r2x,
-                r2y,
-                tof,
-                mu,
-                true,
-                vsrcX,
-                vsrcY,
-                vdstX,
-                vdstY,
-                minPeriapsis,
-                progradeSolution,
-                progradeEvaluation);
-            boolean hasRetrograde = evalLambertInto(
-                r1x,
-                r1y,
-                r2x,
-                r2y,
-                tof,
-                mu,
-                false,
-                vsrcX,
-                vsrcY,
-                vdstX,
-                vdstY,
-                minPeriapsis,
-                retrogradeSolution,
-                retrogradeEvaluation);
-
-            MutableLambertEvaluation selectedEvaluation;
-            if (hasPrograde
-                && (!hasRetrograde || progradeEvaluation.totalDeltaV() <= retrogradeEvaluation.totalDeltaV())) {
-                selectedEvaluation = progradeEvaluation;
-            } else if (hasRetrograde) {
-                selectedEvaluation = retrogradeEvaluation;
-            } else {
-                continue;
-            }
-
-            double totalDv = selectedEvaluation.totalDeltaV();
-            if (totalDv <= dvLimit && (bestTof < 0.0 || tof < bestTof)) {
-                bestTof = tof;
-                bestDv = totalDv;
-                // TOF scan is ascending, so first valid candidate is already the minimum-TOF one.
-                break;
-            }
-        }
-
-        return bestDv;
-    }
-
-    private static double getHohmannTof(OrbitalCelestialBody star, OrbitalCelestialBody source,
-        OrbitalCelestialBody dest, OrbitalCelestialBody root, double time) {
-        return LambertSolver.getHohmannTof(star, source, dest, root, time);
-    }
-
-    private static double computePeriapsis(double rx, double ry, double vx, double vy, double mu) {
-        return LambertSolver.computePeriapsis(rx, ry, vx, vy, mu);
-    }
-
-    private static boolean evalLambertInto(double r1x, double r1y, double r2x, double r2y, double tof, double mu,
-        boolean prograde, double vsrcX, double vsrcY, double vdstX, double vdstY, double minPeriapsis,
-        MutableLambertSolution solutionOut, MutableLambertEvaluation evaluationOut) {
-        if (solutionOut == null || evaluationOut == null) return false;
-        evaluationOut.clear();
-        if (!solveLambertInto(r1x, r1y, r2x, r2y, tof, mu, prograde, solutionOut)) return false;
-        double peri = computePeriapsis(
-            r1x,
-            r1y,
-            solutionOut.departureVelocityX(),
-            solutionOut.departureVelocityY(),
-            mu);
-        if (peri < minPeriapsis) return false;
-        double dvDep = Math.hypot(solutionOut.departureVelocityX() - vsrcX, solutionOut.departureVelocityY() - vsrcY);
-        double dvCap = Math.hypot(vdstX - solutionOut.arrivalVelocityX(), vdstY - solutionOut.arrivalVelocityY());
-        evaluationOut.set(dvDep, dvCap);
-        return true;
+        return result.isValid() ? result.totalDv() : -1.0;
     }
 
     // -----------------------------------------------------------------------
@@ -574,8 +365,6 @@ public final class InterplanetaryTransferSystem {
             return;
         }
 
-        double mu = Math.max(1e-6, getBodyMu(star));
-        double hohmannTof = getHohmannTof(star, origin, dest, root, globalTime);
         double sliderDv = state.sliderDv();
         if (sliderDv <= 0.0) {
             state.clearPreview();
@@ -583,173 +372,63 @@ public final class InterplanetaryTransferSystem {
         }
         TransferOptimizationMode optimizationMode = state.optimizationMode();
 
-        // Minimum periapsis: reject transfers that skim through the star
         double minPeriapsis = Math.max(0.05, star.spriteSize() * 0.5);
+        double mu = Math.max(1e-6, star.mu());
 
-        // Scan 64 TOFs from 0.1x to 3.0x Hohmann
-        int nScan = 64;
-        double bestTof = -1.0;
-        double bestTotalDv = Double.POSITIVE_INFINITY;
-        double bestAnchorX = 0, bestAnchorY = 0;
-        double bestR1x = 0, bestR1y = 0, bestR2x = 0, bestR2y = 0;
-        OrbitalMechanics.OrbitalState bestDstState = null;
-        OrbitalMechanics.OrbitalState bestStarAtArr = null;
-        MutableLambertSolution bestLambert = state.previewBestLambert();
-        MutableLambertSolution progradeSolution = state.previewProgradeSolution();
-        MutableLambertSolution retrogradeSolution = state.previewRetrogradeSolution();
-        MutableLambertEvaluation progradeEvaluation = state.previewProgradeEvaluation();
-        MutableLambertEvaluation retrogradeEvaluation = state.previewRetrogradeEvaluation();
-        bestLambert.clear();
+        TransferScanner.ScanResult best = TransferScanner.scan(
+            root,
+            origin,
+            dest,
+            star,
+            globalTime,
+            minPeriapsis,
+            (current, bestResult) -> {
+                if (current.totalDv() > sliderDv) return false;
+                if (!bestResult.isValid()) return true;
+                if (optimizationMode == TransferOptimizationMode.MIN_TOF) {
+                    return current.tof() < bestResult.tof();
+                } else {
+                    return current.totalDv() < bestResult.totalDv()
+                        || (Math.abs(current.totalDv() - bestResult.totalDv()) < 1e-9 && current.tof() < bestResult.tof());
+                }
+            }
+        );
 
-        // Cache departure state — it's the same for every TOF sample
+        if (!best.isValid()) {
+            state.clearPreview();
+            return;
+        }
+
         OrbitalMechanics.OrbitalState srcStateDep = OrbitalMechanics.resolveWorldState(root, origin, globalTime);
         OrbitalMechanics.OrbitalState starAtDep = OrbitalMechanics.resolveWorldState(root, star, globalTime);
-        if (srcStateDep == null || starAtDep == null) {
-            state.clearPreview();
-            return;
-        }
-        double r1x0 = srcStateDep.x() - starAtDep.x();
-        double r1y0 = srcStateDep.y() - starAtDep.y();
-        double vsrcX0 = srcStateDep.vx() - starAtDep.vx();
-        double vsrcY0 = srcStateDep.vy() - starAtDep.vy();
 
-        for (int i = 0; i < nScan; i++) {
-            double frac = 0.1 + (3.0 - 0.1) * i / (nScan - 1);
-            double tof = hohmannTof * frac;
-            if (tof <= 0.0) continue;
+        double dvDep = best.depDv();
+        double dvCap = best.totalDv() - best.depDv();
 
-            OrbitalMechanics.OrbitalState dstState = OrbitalMechanics.resolveWorldState(root, dest, globalTime + tof);
-            OrbitalMechanics.OrbitalState starAtArr = OrbitalMechanics.resolveWorldState(root, star, globalTime + tof);
-            if (dstState == null || starAtArr == null) continue;
-
-            double r1x = r1x0;
-            double r1y = r1y0;
-            double r2x = dstState.x() - starAtArr.x();
-            double r2y = dstState.y() - starAtArr.y();
-            double vsrcX = vsrcX0;
-            double vsrcY = vsrcY0;
-            double vdstX = dstState.vx() - starAtArr.vx();
-            double vdstY = dstState.vy() - starAtArr.vy();
-
-            // Near-180° (and near-0°) singularity guard:
-            // crossZ / (r1*r2) = sin(Δθ), which approaches 0 at both 0° and 180°.
-            // At exactly 180°, the orbit plane is undefined in 2D — skip these cases.
-            double crossZ = r1x * r2y - r1y * r2x;
-            double r1mag = Math.hypot(r1x, r1y);
-            double r2mag = Math.hypot(r2x, r2y);
-            double sinDth = Math.abs(crossZ) / Math.max(1e-20, r1mag * r2mag);
-            if (sinDth < 1e-3) continue;
-
-            // Try both prograde and retrograde; pick whichever has lower dV
-            boolean hasPrograde = evalLambertInto(
-                r1x,
-                r1y,
-                r2x,
-                r2y,
-                tof,
-                mu,
-                true,
-                vsrcX,
-                vsrcY,
-                vdstX,
-                vdstY,
-                minPeriapsis,
-                progradeSolution,
-                progradeEvaluation);
-            boolean hasRetrograde = evalLambertInto(
-                r1x,
-                r1y,
-                r2x,
-                r2y,
-                tof,
-                mu,
-                false,
-                vsrcX,
-                vsrcY,
-                vdstX,
-                vdstY,
-                minPeriapsis,
-                retrogradeSolution,
-                retrogradeEvaluation);
-
-            MutableLambertSolution selectedSolution;
-            MutableLambertEvaluation selectedEvaluation;
-            if (hasPrograde
-                && (!hasRetrograde || progradeEvaluation.totalDeltaV() <= retrogradeEvaluation.totalDeltaV())) {
-                selectedSolution = progradeSolution;
-                selectedEvaluation = progradeEvaluation;
-            } else if (hasRetrograde) {
-                selectedSolution = retrogradeSolution;
-                selectedEvaluation = retrogradeEvaluation;
-            } else {
-                continue;
-            }
-
-            double totalDv = selectedEvaluation.totalDeltaV();
-            boolean acceptCandidate = false;
-            if (totalDv <= sliderDv) {
-                if (optimizationMode == TransferOptimizationMode.MIN_TOF) {
-                    acceptCandidate = (bestTof < 0 || tof < bestTof);
-                } else {
-                    acceptCandidate = (bestTof < 0 || totalDv < bestTotalDv
-                        || (Math.abs(totalDv - bestTotalDv) < 1e-9 && tof < bestTof));
-                }
-            }
-
-            if (acceptCandidate) {
-                bestTof = tof;
-                bestTotalDv = totalDv;
-                bestLambert.set(
-                    selectedSolution.departureVelocityX(),
-                    selectedSolution.departureVelocityY(),
-                    selectedSolution.arrivalVelocityX(),
-                    selectedSolution.arrivalVelocityY());
-                bestAnchorX = starAtDep.x();
-                bestAnchorY = starAtDep.y();
-                bestR1x = r1x;
-                bestR1y = r1y;
-                bestR2x = r2x;
-                bestR2y = r2y;
-                bestDstState = dstState;
-                bestStarAtArr = starAtArr;
-                if (optimizationMode == TransferOptimizationMode.MIN_TOF) {
-                    // TOF scan is ascending, so first valid candidate is already the minimum-TOF one.
-                    break;
-                }
-            }
-        }
-
-        if (!bestLambert.valid() || bestTof < 0) {
-            state.clearPreview();
-            return;
-        }
-
-        // Calculate dV details for display
-        double dvDep = 0, dvCap = 0;
-        if (srcStateDep != null && bestDstState != null && starAtDep != null && bestStarAtArr != null) {
+        if (srcStateDep != null && starAtDep != null) {
             double vsrcX = srcStateDep.vx() - starAtDep.vx();
             double vsrcY = srcStateDep.vy() - starAtDep.vy();
-            double vdstX = bestDstState.vx() - bestStarAtArr.vx();
-            double vdstY = bestDstState.vy() - bestStarAtArr.vy();
-            dvDep = Math.hypot(bestLambert.departureVelocityX() - vsrcX, bestLambert.departureVelocityY() - vsrcY);
-            dvCap = Math.hypot(vdstX - bestLambert.arrivalVelocityX(), vdstY - bestLambert.arrivalVelocityY());
+            double vdstX = best.dstState().vx() - best.attractorAtArr().vx();
+            double vdstY = best.dstState().vy() - best.attractorAtArr().vy();
+            dvDep = Math.hypot(best.solution().dvx1() - vsrcX, best.solution().dvy1() - vsrcY);
+            dvCap = Math.hypot(vdstX - best.solution().dvx2(), vdstY - best.solution().dvy2());
         }
 
         state.ensurePreviewCapacity(PREVIEW_TRAJECTORY_SAMPLES);
         int previewPointCount = sampleTransferArcInto(
-            bestAnchorX,
-            bestAnchorY,
-            bestR1x,
-            bestR1y,
-            bestLambert.departureVelocityX(),
-            bestLambert.departureVelocityY(),
-            bestTof,
+            best.anchorX(),
+            best.anchorY(),
+            best.r1x(),
+            best.r1y(),
+            best.solution().dvx1(),
+            best.solution().dvy1(),
+            best.tof(),
             mu,
             state.previewXs(),
             state.previewYs(),
             PREVIEW_TRAJECTORY_SAMPLES);
 
-        state.setPreview(previewPointCount, bestTof, dvDep + dvCap, dvDep, dvCap);
+        state.setPreview(previewPointCount, best.tof(), dvDep + dvCap, dvDep, dvCap);
     }
 
     // -----------------------------------------------------------------------
@@ -848,7 +527,7 @@ public final class InterplanetaryTransferSystem {
             if (star == null || star != destStar) return null;
 
             double tof = Math.max(1.0, duration);
-            double mu = Math.max(1e-6, getBodyMu(star));
+            double mu = Math.max(1e-6, star.mu());
 
             OrbitalMechanics.OrbitalState starAtDep = OrbitalMechanics.resolveWorldState(root, star, departureTime);
             OrbitalMechanics.OrbitalState srcState = OrbitalMechanics
@@ -864,9 +543,17 @@ public final class InterplanetaryTransferSystem {
             double r2x = dstState.x() - starAtArr.x();
             double r2y = dstState.y() - starAtArr.y();
 
-            MutableLambertSolution sol = new MutableLambertSolution();
-            if (!solveLambertInto(r1x, r1y, r2x, r2y, tof, mu, true, sol)) {
-                if (!solveLambertInto(r1x, r1y, r2x, r2y, tof, mu, false, sol)) sol.clear();
+            LambertTransfer.Solution sol = LambertTransfer.between(r1x, r1y, r2x, r2y)
+                .mu(mu)
+                .timeOfFlight(tof)
+                .prograde(true)
+                .solve();
+            if (!sol.valid()) {
+                sol = LambertTransfer.between(r1x, r1y, r2x, r2y)
+                    .mu(mu)
+                    .timeOfFlight(tof)
+                    .prograde(false)
+                    .solve();
             }
 
             double[] trajectoryXs;
@@ -880,8 +567,8 @@ public final class InterplanetaryTransferSystem {
                     starAtDep.y(),
                     r1x,
                     r1y,
-                    sol.departureVelocityX(),
-                    sol.departureVelocityY(),
+                    sol.dvx1(),
+                    sol.dvy1(),
                     tof,
                     mu,
                     trajectoryXs,
@@ -937,7 +624,7 @@ public final class InterplanetaryTransferSystem {
             }
             OrbitalCelestialBody star = findHostStar(root, sourceBody);
             if (star == null) return getTransferDuration(sourceBody, destinationBody);
-            double hohmann = getHohmannTof(star, sourceBody, destinationBody, root, departureTime);
+            double hohmann = star.getHohmannTof(sourceBody, destinationBody, root, departureTime);
             return Math.max(1.0, hohmann / Math.max(0.05, speedFactor));
         }
     }
@@ -1132,11 +819,6 @@ public final class InterplanetaryTransferSystem {
         private double previewTotalDv = 0.0;
         private double previewDvDep = 0.0;
         private double previewDvCap = 0.0;
-        private final MutableLambertSolution previewBestLambert = new MutableLambertSolution();
-        private final MutableLambertSolution previewProgradeSolution = new MutableLambertSolution();
-        private final MutableLambertSolution previewRetrogradeSolution = new MutableLambertSolution();
-        private final MutableLambertEvaluation previewProgradeEvaluation = new MutableLambertEvaluation();
-        private final MutableLambertEvaluation previewRetrogradeEvaluation = new MutableLambertEvaluation();
 
         boolean isOpen() {
             return open;
@@ -1298,26 +980,6 @@ public final class InterplanetaryTransferSystem {
 
         double previewDvCap() {
             return previewDvCap;
-        }
-
-        MutableLambertSolution previewBestLambert() {
-            return previewBestLambert;
-        }
-
-        MutableLambertSolution previewProgradeSolution() {
-            return previewProgradeSolution;
-        }
-
-        MutableLambertSolution previewRetrogradeSolution() {
-            return previewRetrogradeSolution;
-        }
-
-        MutableLambertEvaluation previewProgradeEvaluation() {
-            return previewProgradeEvaluation;
-        }
-
-        MutableLambertEvaluation previewRetrogradeEvaluation() {
-            return previewRetrogradeEvaluation;
         }
     }
 
