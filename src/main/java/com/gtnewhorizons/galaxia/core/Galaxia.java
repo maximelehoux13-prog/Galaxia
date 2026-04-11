@@ -46,7 +46,6 @@ public final class Galaxia {
 
     // spotless:off
     public static final String MODID = "galaxia";
-    public static final String GT5U_MODID = "gregtech";
     public static final String NAME = "Galaxia";
     public static final String UNLOCALIZED_PREFIX = MODID + ".";
     public static final String TEXTURE_PREFIX = MODID + ":";
@@ -137,7 +136,4 @@ public final class Galaxia {
         }
     };
 
-    public static boolean hasGT5U() {
-        return Loader.isModLoaded(GT5U_MODID);
-    }
 }

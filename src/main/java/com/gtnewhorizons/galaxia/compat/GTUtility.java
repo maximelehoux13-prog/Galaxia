@@ -1,4 +1,4 @@
-package com.gtnewhorizons.galaxia.registry;
+package com.gtnewhorizons.galaxia.compat;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import cpw.mods.fml.common.Loader;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -16,38 +17,12 @@ public final class GTUtility {
 
     private static final Map<String, ItemStack> RAW_ORE_CACHE = new HashMap<>();
     private static final Set<String> RAW_ORE_FAILURES = new HashSet<>();
+    private static final boolean isGTLoaded = Loader.isModLoaded("gregtech");
 
     private GTUtility() {}
 
-    /**
-     * Gets a stack of the given ore material.
-     * 
-     * @param materialName The internal name of the GT material (e.g. "Iron")
-     * @return The ore stack, or null if not found or GT not present.
-     */
-    public static ItemStack getOreStack(String materialName) {
-        if (!Galaxia.hasGT5U()) return null;
-        if (materialName == null || materialName.isEmpty()) return null;
-
-        try {
-            Class<?> materialsClass = Class.forName("gregtech.api.enums.Materials");
-            Object material = materialsClass.getField(materialName)
-                .get(null);
-
-            Class<?> orePrefixesClass = Class.forName("gregtech.api.enums.OrePrefixes");
-            Object orePrefix = orePrefixesClass.getField("ore")
-                .get(null);
-
-            Method getMethod = orePrefixesClass.getMethod("get", materialsClass);
-            return (ItemStack) getMethod.invoke(orePrefix, material);
-        } catch (Exception e) {
-            Galaxia.LOG.error("Failed to get GT ore stack for material: " + materialName, e);
-            return null;
-        }
-    }
-
     public static ItemStack getRawOreStack(String materialName) {
-        if (!Galaxia.hasGT5U()) return null;
+        if (!isGTLoaded) return null;
         if (materialName == null || materialName.isEmpty()) return null;
 
         ItemStack cached = RAW_ORE_CACHE.get(materialName);

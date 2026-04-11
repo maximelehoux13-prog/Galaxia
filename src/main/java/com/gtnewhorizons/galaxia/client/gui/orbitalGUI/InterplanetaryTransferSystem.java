@@ -11,7 +11,6 @@ import org.lwjgl.opengl.GL11;
 
 import com.cleanroommc.modularui.api.drawable.IDrawable;
 import com.cleanroommc.modularui.api.drawable.IKey;
-import com.cleanroommc.modularui.screen.viewport.GuiContext;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
 import com.cleanroommc.modularui.utils.GlStateManager;
@@ -86,7 +85,7 @@ public final class InterplanetaryTransferSystem {
     private InterplanetaryTransferSystem() {}
 
     @Desugar
-    public static record LambertStressReport(
+    public record LambertStressReport(
         int requestedSimulations,
         int executedSimulations,
         int candidatePlanetCount,
@@ -592,17 +591,6 @@ public final class InterplanetaryTransferSystem {
                 .semiMajorAxis();
             double orbitDistance = Math.abs(sourceRadius - destinationRadius);
             return DEFAULT_TRANSFER_DURATION + orbitDistance * 18.0;
-        }
-
-        double getTransferDurationForSpeedFactor(OrbitalCelestialBody root, OrbitalCelestialBody sourceBody,
-            OrbitalCelestialBody destinationBody, double departureTime, double speedFactor) {
-            if (root == null || sourceBody == null || destinationBody == null || speedFactor <= 0.0) {
-                return getTransferDuration(sourceBody, destinationBody);
-            }
-            OrbitalCelestialBody star = findHostStar(root, sourceBody);
-            if (star == null) return getTransferDuration(sourceBody, destinationBody);
-            double hohmann = star.getHohmannTof(sourceBody, destinationBody, root, departureTime);
-            return Math.max(1.0, hohmann / Math.max(0.05, speedFactor));
         }
     }
 

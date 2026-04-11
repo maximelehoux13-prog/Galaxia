@@ -147,10 +147,6 @@ public final class OrbitalTransferPlanner {
      *
      * @return the minimum-TOF {@link TransferRoute}, or {@code null} if no valid route exists
      */
-    public static TransferRoute computeMinTofRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
-        OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime) {
-        return computeRoute(root, attractor, source, dest, departureTime, RoutePriority.PRIORITIZE_TOF);
-    }
 
     public static TransferRoute computeRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
         OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime, RoutePriority priority) {
