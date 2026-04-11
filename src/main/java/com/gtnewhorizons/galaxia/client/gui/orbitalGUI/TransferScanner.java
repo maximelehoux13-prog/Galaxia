@@ -8,21 +8,23 @@ import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 public final class TransferScanner {
 
     @Desugar
-    public record ScanResult(
-        double tof,
-        double totalDv,
-        double depDv,
-        double r1x,
-        double r1y,
-        double r2x,
-        double r2y,
-        double anchorX,
-        double anchorY,
-        LambertTransfer.Solution solution,
-        OrbitalMechanics.OrbitalState dstState,
-        OrbitalMechanics.OrbitalState attractorAtArr
-    ) {
-        private static final ScanResult INVALID = new ScanResult(-1, Double.MAX_VALUE, 0, 0, 0, 0, 0, 0, 0, LambertTransfer.Solution.invalid(), null, null);
+    public record ScanResult(double tof, double totalDv, double depDv, double r1x, double r1y, double r2x, double r2y,
+        double anchorX, double anchorY, LambertTransfer.Solution solution, OrbitalMechanics.OrbitalState dstState,
+        OrbitalMechanics.OrbitalState attractorAtArr) {
+
+        private static final ScanResult INVALID = new ScanResult(
+            -1,
+            Double.MAX_VALUE,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            LambertTransfer.Solution.invalid(),
+            null,
+            null);
 
         public static ScanResult invalid() {
             return INVALID;
@@ -35,33 +37,20 @@ public final class TransferScanner {
 
     @FunctionalInterface
     public interface ScanAcceptor {
+
         boolean accept(ScanResult current, ScanResult best);
     }
 
     public static final int DEFAULT_SCAN_COUNT = 64;
 
-    public static ScanResult scan(
-        OrbitalCelestialBody root,
-        OrbitalCelestialBody origin,
-        OrbitalCelestialBody dest,
-        OrbitalCelestialBody attractor,
-        double departureTime,
-        double minPeriapsis,
-        ScanAcceptor acceptor
-    ) {
+    public static ScanResult scan(OrbitalCelestialBody root, OrbitalCelestialBody origin, OrbitalCelestialBody dest,
+        OrbitalCelestialBody attractor, double departureTime, double minPeriapsis, ScanAcceptor acceptor) {
         return scan(root, origin, dest, attractor, departureTime, minPeriapsis, acceptor, DEFAULT_SCAN_COUNT);
     }
 
-    public static ScanResult scan(
-        OrbitalCelestialBody root,
-        OrbitalCelestialBody origin,
-        OrbitalCelestialBody dest,
-        OrbitalCelestialBody attractor,
-        double departureTime,
-        double minPeriapsis,
-        ScanAcceptor acceptor,
-        int scanCount
-    ) {
+    public static ScanResult scan(OrbitalCelestialBody root, OrbitalCelestialBody origin, OrbitalCelestialBody dest,
+        OrbitalCelestialBody attractor, double departureTime, double minPeriapsis, ScanAcceptor acceptor,
+        int scanCount) {
         if (root == null || origin == null || dest == null || attractor == null) {
             return ScanResult.invalid();
         }
@@ -73,7 +62,8 @@ public final class TransferScanner {
         }
 
         OrbitalMechanics.OrbitalState srcStateDep = OrbitalMechanics.resolveWorldState(root, origin, departureTime);
-        OrbitalMechanics.OrbitalState attractorAtDep = OrbitalMechanics.resolveWorldState(root, attractor, departureTime);
+        OrbitalMechanics.OrbitalState attractorAtDep = OrbitalMechanics
+            .resolveWorldState(root, attractor, departureTime);
         if (srcStateDep == null || attractorAtDep == null) {
             return ScanResult.invalid();
         }
@@ -90,8 +80,10 @@ public final class TransferScanner {
             double tof = hohmannTof * frac;
             if (tof <= 0.0) continue;
 
-            OrbitalMechanics.OrbitalState dstState = OrbitalMechanics.resolveWorldState(root, dest, departureTime + tof);
-            OrbitalMechanics.OrbitalState attractorAtArr = OrbitalMechanics.resolveWorldState(root, attractor, departureTime + tof);
+            OrbitalMechanics.OrbitalState dstState = OrbitalMechanics
+                .resolveWorldState(root, dest, departureTime + tof);
+            OrbitalMechanics.OrbitalState attractorAtArr = OrbitalMechanics
+                .resolveWorldState(root, attractor, departureTime + tof);
             if (dstState == null || attractorAtArr == null) continue;
 
             double r2x = dstState.x() - attractorAtArr.x();
@@ -140,8 +132,7 @@ public final class TransferScanner {
                 attractorAtDep.y(),
                 bestSol,
                 dstState,
-                attractorAtArr
-            );
+                attractorAtArr);
 
             if (acceptor.accept(current, best)) {
                 best = current;

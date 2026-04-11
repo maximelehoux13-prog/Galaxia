@@ -338,8 +338,7 @@ public final class InterplanetaryTransferSystem {
             star,
             departureTime,
             minPeriapsis,
-            (current, best) -> current.totalDv() <= dvLimit && current.tof() < best.tof()
-        );
+            (current, best) -> current.totalDv() <= dvLimit && current.tof() < best.tof());
 
         return result.isValid() ? result.totalDv() : -1.0;
     }
@@ -375,24 +374,18 @@ public final class InterplanetaryTransferSystem {
         double minPeriapsis = Math.max(0.05, star.spriteSize() * 0.5);
         double mu = Math.max(1e-6, star.mu());
 
-        TransferScanner.ScanResult best = TransferScanner.scan(
-            root,
-            origin,
-            dest,
-            star,
-            globalTime,
-            minPeriapsis,
-            (current, bestResult) -> {
+        TransferScanner.ScanResult best = TransferScanner
+            .scan(root, origin, dest, star, globalTime, minPeriapsis, (current, bestResult) -> {
                 if (current.totalDv() > sliderDv) return false;
                 if (!bestResult.isValid()) return true;
                 if (optimizationMode == TransferOptimizationMode.MIN_TOF) {
                     return current.tof() < bestResult.tof();
                 } else {
                     return current.totalDv() < bestResult.totalDv()
-                        || (Math.abs(current.totalDv() - bestResult.totalDv()) < 1e-9 && current.tof() < bestResult.tof());
+                        || (Math.abs(current.totalDv() - bestResult.totalDv()) < 1e-9
+                            && current.tof() < bestResult.tof());
                 }
-            }
-        );
+            });
 
         if (!best.isValid()) {
             state.clearPreview();
@@ -408,10 +401,24 @@ public final class InterplanetaryTransferSystem {
         if (srcStateDep != null && starAtDep != null) {
             double vsrcX = srcStateDep.vx() - starAtDep.vx();
             double vsrcY = srcStateDep.vy() - starAtDep.vy();
-            double vdstX = best.dstState().vx() - best.attractorAtArr().vx();
-            double vdstY = best.dstState().vy() - best.attractorAtArr().vy();
-            dvDep = Math.hypot(best.solution().dvx1() - vsrcX, best.solution().dvy1() - vsrcY);
-            dvCap = Math.hypot(vdstX - best.solution().dvx2(), vdstY - best.solution().dvy2());
+            double vdstX = best.dstState()
+                .vx()
+                - best.attractorAtArr()
+                    .vx();
+            double vdstY = best.dstState()
+                .vy()
+                - best.attractorAtArr()
+                    .vy();
+            dvDep = Math.hypot(
+                best.solution()
+                    .dvx1() - vsrcX,
+                best.solution()
+                    .dvy1() - vsrcY);
+            dvCap = Math.hypot(
+                vdstX - best.solution()
+                    .dvx2(),
+                vdstY - best.solution()
+                    .dvy2());
         }
 
         state.ensurePreviewCapacity(PREVIEW_TRAJECTORY_SAMPLES);
@@ -420,8 +427,10 @@ public final class InterplanetaryTransferSystem {
             best.anchorY(),
             best.r1x(),
             best.r1y(),
-            best.solution().dvx1(),
-            best.solution().dvy1(),
+            best.solution()
+                .dvx1(),
+            best.solution()
+                .dvy1(),
             best.tof(),
             mu,
             state.previewXs(),
@@ -1227,7 +1236,12 @@ public final class InterplanetaryTransferSystem {
                 new PassiveLayer().pos(80, 112)
                     .size(INPUT_FIELD_WIDTH, INPUT_FIELD_HEIGHT)
                     .background(drawable((ctx, x, y, w, h) -> {
-                        BorderedRect.draw(x, y, w, h, EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                        BorderedRect.draw(
+                            x,
+                            y,
+                            w,
+                            h,
+                            EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
                             EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
                     })));
 
@@ -1381,12 +1395,15 @@ public final class InterplanetaryTransferSystem {
         }
 
         private ButtonWidget<?> createButton(String label, int backgroundColor, int borderColor, Runnable onClick) {
-            return new ButtonWidget<>().background(drawable((ctx, x, y, w, h) -> {
-                BorderedRect.draw(x, y, w, h, backgroundColor, borderColor);
-            }))
-                .hoverBackground(drawable((ctx, x, y, w, h) -> {
-                    BorderedRect.draw(x, y, w, h, EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor(), borderColor);
-                }))
+            return new ButtonWidget<>()
+                .background(
+                    drawable((ctx, x, y, w, h) -> { BorderedRect.draw(x, y, w, h, backgroundColor, borderColor); }))
+                .hoverBackground(
+                    drawable(
+                        (ctx, x, y, w, h) -> {
+                            BorderedRect
+                                .draw(x, y, w, h, EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor(), borderColor);
+                        }))
                 .overlay(drawable((ctx, x, y, w, h) -> {
                     net.minecraft.client.gui.FontRenderer fr = net.minecraft.client.Minecraft
                         .getMinecraft().fontRenderer;

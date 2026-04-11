@@ -5,17 +5,9 @@ import com.github.bsideup.jabel.Desugar;
 public final class LambertTransfer {
 
     @Desugar
-    public record Solution(
-        double dvx1,
-        double dvy1,
-        double dvx2,
-        double dvy2,
-        double depDv,
-        double capDv,
-        double totalDv,
-        double periapsis,
-        boolean valid
-    ) {
+    public record Solution(double dvx1, double dvy1, double dvx2, double dvy2, double depDv, double capDv,
+        double totalDv, double periapsis, boolean valid) {
+
         private static final Solution INVALID = new Solution(0, 0, 0, 0, 0, 0, 0, 0, false);
 
         public static Solution invalid() {

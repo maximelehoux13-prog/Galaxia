@@ -82,8 +82,8 @@ public final class Hierarchy {
             return Math.max(0.0, properties.standardGravitationalParameter());
         }
 
-        public double getHohmannTof(OrbitalCelestialBody source, OrbitalCelestialBody dest,
-            OrbitalCelestialBody root, double time) {
+        public double getHohmannTof(OrbitalCelestialBody source, OrbitalCelestialBody dest, OrbitalCelestialBody root,
+            double time) {
             OrbitalMechanics.OrbitalState aState = OrbitalMechanics.resolveWorldState(root, this, time);
             OrbitalMechanics.OrbitalState sState = OrbitalMechanics.resolveWorldState(root, source, time);
             OrbitalMechanics.OrbitalState dState = OrbitalMechanics.resolveWorldState(root, dest, time);
