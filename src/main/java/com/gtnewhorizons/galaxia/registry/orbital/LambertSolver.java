@@ -1,16 +1,8 @@
 package com.gtnewhorizons.galaxia.registry.orbital;
 
-import com.github.bsideup.jabel.Desugar;
-
 public final class LambertSolver {
 
     private LambertSolver() {}
-
-    @Desugar
-    public record LambertSolution(double dvx1, double dvy1, double dvx2, double dvy2) {}
-
-    @Desugar
-    public record LambertEvaluation(double departureDv, double captureDv, double totalDv) {}
 
     public static final class MutableSolution {
         public double dvx1, dvy1, dvx2, dvy2;

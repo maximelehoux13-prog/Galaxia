@@ -1565,11 +1565,8 @@ public final class InterplanetaryTransferSystem {
                 new PassiveLayer().pos(80, 112)
                     .size(INPUT_FIELD_WIDTH, INPUT_FIELD_HEIGHT)
                     .background(drawable((ctx, x, y, w, h) -> {
-                        Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor());
-                        Gui.drawRect(x, y, x + w, y + 1, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                        Gui.drawRect(x, y + h - 1, x + w, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                        Gui.drawRect(x, y, x + 1, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-                        Gui.drawRect(x + w - 1, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
+                        BorderedRect.draw(x, y, w, h, EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor(),
+                            EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
                     })));
 
             panel.child(
@@ -1723,18 +1720,10 @@ public final class InterplanetaryTransferSystem {
 
         private ButtonWidget<?> createButton(String label, int backgroundColor, int borderColor, Runnable onClick) {
             return new ButtonWidget<>().background(drawable((ctx, x, y, w, h) -> {
-                Gui.drawRect(x, y, x + w, y + h, backgroundColor);
-                Gui.drawRect(x, y, x + w, y + 1, borderColor);
-                Gui.drawRect(x, y + h - 1, x + w, y + h, borderColor);
-                Gui.drawRect(x, y, x + 1, y + h, borderColor);
-                Gui.drawRect(x + w - 1, y, x + w, y + h, borderColor);
+                BorderedRect.draw(x, y, w, h, backgroundColor, borderColor);
             }))
                 .hoverBackground(drawable((ctx, x, y, w, h) -> {
-                    Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor());
-                    Gui.drawRect(x, y, x + w, y + 1, borderColor);
-                    Gui.drawRect(x, y + h - 1, x + w, y + h, borderColor);
-                    Gui.drawRect(x, y, x + 1, y + h, borderColor);
-                    Gui.drawRect(x + w - 1, y, x + w, y + h, borderColor);
+                    BorderedRect.draw(x, y, w, h, EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor(), borderColor);
                 }))
                 .overlay(drawable((ctx, x, y, w, h) -> {
                     net.minecraft.client.gui.FontRenderer fr = net.minecraft.client.Minecraft
