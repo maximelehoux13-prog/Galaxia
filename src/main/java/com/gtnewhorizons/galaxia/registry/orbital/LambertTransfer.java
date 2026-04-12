@@ -152,24 +152,45 @@ public final class LambertTransfer {
     }
 
     private static double tofNormalized(double x, double lambda) {
+        if (Math.abs(x - 1.0) < 1e-12) {
+            return 2.0 / 3.0 * (1.0 - lambda * lambda * lambda);
+        }
+
         double e = 1.0 - x * x;
-        double sinHalfBeta = lambda * Math.sqrt(Math.max(0.0, e));
-        sinHalfBeta = Math.max(-1.0, Math.min(1.0, sinHalfBeta));
-        double beta = 2.0 * Math.asin(sinHalfBeta);
-        double alpha = 2.0 * Math.acos(x);
-
-        double a2 = alpha * alpha;
-        double ams = a2 < 0.01 ? alpha * a2 / 6.0 * (1.0 - a2 / 20.0 * (1.0 - a2 / 42.0)) : alpha - Math.sin(alpha);
-        double b2 = beta * beta;
-        double bms = b2 < 0.01 ? beta * b2 / 6.0 * (1.0 - b2 / 20.0 * (1.0 - b2 / 42.0)) : beta - Math.sin(beta);
-
-        return (ams - bms) / (2.0 * Math.pow(Math.max(1e-30, e), 1.5));
+        if (e > 1e-12) {
+            // Elliptic
+            double sinHalfBeta = lambda * Math.sqrt(e);
+            sinHalfBeta = Math.max(-1.0, Math.min(1.0, sinHalfBeta));
+            double beta = 2.0 * Math.asin(sinHalfBeta);
+            double alpha = 2.0 * Math.acos(x);
+            return (alpha - Math.sin(alpha) - (beta - Math.sin(beta))) / (2.0 * Math.pow(e, 1.5));
+        } else if (e < -1e-12) {
+            // Hyperbolic
+            double f = -e;
+            double sqrtF = Math.sqrt(f);
+            double argAlpha = x + sqrtF; // x + sqrt(x^2 - 1)
+            double alpha = 2.0 * Math.log(Math.max(1e-15, argAlpha));
+            double argBeta = lambda * x + Math.sqrt(Math.max(0.0, lambda * lambda * x * x - 1.0 + 1.0 - lambda * lambda));
+            // Correct argBeta for hyperbolic: y = sqrt(1 - l^2 + l^2*x^2)
+            double y = Math.sqrt(1.0 - lambda * lambda + lambda * lambda * x * x);
+            double beta = 2.0 * Math.log(Math.max(1e-15, lambda * x + y));
+            return (Math.sinh(alpha) - alpha - (Math.sinh(beta) - beta)) / (2.0 * Math.pow(f, 1.5));
+        } else {
+            // Near parabolic - Taylor expansion for (sin(a)-a)/sin^3(a/2) type terms
+            // Using a very small epsilon for x ~ 1.
+            double res = 2.0 / 3.0 * (1.0 - lambda * lambda * lambda);
+            // Higher order terms could be added if needed for precision
+            return res;
+        }
     }
 
     private static double dTofDx(double x, double T, double lambda) {
-        double l2 = lambda * lambda;
-        double omx2 = Math.max(1e-30, 1.0 - x * x);
-        double sigma = Math.sqrt(Math.max(0.0, 1.0 - l2 * omx2));
-        return (3.0 * x * T - 2.0 + 2.0 * l2 * lambda * x / sigma) / omx2;
+        double omx2 = 1.0 - x * x;
+        if (Math.abs(omx2) < 1e-12) {
+            // Derivative at x=1 for parabolic case
+            return -0.4 * (1.0 - lambda * lambda * lambda * lambda * lambda);
+        }
+        double y = Math.sqrt(1.0 - lambda * lambda + lambda * lambda * x * x);
+        return (3.0 * x * T - 2.0 + 2.0 * lambda * lambda * lambda * x / y) / omx2;
     }
 }
