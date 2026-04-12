@@ -1,42 +1,40 @@
 package com.gtnewhorizons.galaxia.registry.celestial;
 
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
+import net.minecraft.util.StatCollector;
 
 public enum CelestialObjectId {
 
-    // TODO: Remove duplication with the dimension enum
-    NOVA_CAELUM("novum_caelum", "Novum caelum", null),
-    VAEL("vael", "Vael", null),
-    ILIA("ilia", "Ilia", null),
-    PROXIMA_CENTAURI("proxima_centauri", "Proxima centauri", null),
-    ROMULUS("romulus", "Romulus", null),
-    REMUS("remus", "Remus", null),
-    EGORA("egora", "Egora", null),
-    PANSPIRA("panspira", "Panspira", DimensionEnum.PANSPIRA),
-    HEMATERIA("hemateria", "Hemateria", DimensionEnum.HEMATERIA),
-    THEIA("theia", "Theia", DimensionEnum.THEIA),
-    FROZEN_BELT("frozen_belt", "Frozen belt", DimensionEnum.FROZEN_BELT),
-    AMBERGRIS_FRAGMENT("ambergris_fragment", "Ambergris fragment", null),
-    VITRIS_SPACE("vitris_space", "Vitris space", DimensionEnum.VITRIS_SPACE),
+    NOVA_CAELUM("galaxia.celestial.novum_caelum", null),
+    VAEL("galaxia.celestial.vael", null),
+    ILIA("galaxia.celestial.ilia", null),
+    PROXIMA_CENTAURI("galaxia.celestial.proxima_centauri", null),
+    ROMULUS("galaxia.celestial.romulus", null),
+    REMUS("galaxia.celestial.remus", null),
+    EGORA("galaxia.celestial.egora", null),
+    PANSPIRA("galaxia.celestial.panspira", DimensionEnum.PANSPIRA),
+    HEMATERIA("galaxia.celestial.hemateria", DimensionEnum.HEMATERIA),
+    THEIA("galaxia.celestial.theia", DimensionEnum.THEIA),
+    FROZEN_BELT("galaxia.celestial.frozen_belt", DimensionEnum.FROZEN_BELT),
+    AMBERGRIS_FRAGMENT("galaxia.celestial.ambergris_fragment", null),
+    VITRIS_SPACE("galaxia.celestial.vitris_space", DimensionEnum.VITRIS_SPACE),
 
     ;
 
     private final String id;
-    private final String displayName;
     private final DimensionEnum dimension;
 
-    CelestialObjectId(String id, String displayName, DimensionEnum dimension) {
+    CelestialObjectId(String id, DimensionEnum dimension) {
         this.id = id;
-        this.displayName = displayName;
         this.dimension = dimension;
     }
 
     public String getId() {
-        return id;
+        return this.id;
     }
 
     public String displayName() {
-        return displayName;
+        return StatCollector.translateToLocal(this.id);
     }
 
     public DimensionEnum dimension() {

@@ -23,6 +23,21 @@ galaxia.dimension.tenebrae=Tenebrae
 galaxia.dimension.theia=Theia
 galaxia.dimension.vitris_space=Vitris Space Stations
 
+#### Celestial Bodies
+galaxia.celestial.novum_caelum=Novum Caelum
+galaxia.celestial.vael=Vael
+galaxia.celestial.ilia=Ilia
+galaxia.celestial.proxima_centauri=Proxima Centauri
+galaxia.celestial.romulus=Romulus
+galaxia.celestial.remus=Remus
+galaxia.celestial.egora=Egora
+galaxia.celestial.panspira=Panspira
+galaxia.celestial.hemateria=Hemateria
+galaxia.celestial.theia=Theia
+galaxia.celestial.frozen_belt=Frozen Belt
+galaxia.celestial.ambergris_fragment=Ambergris Fragment
+galaxia.celestial.vitris_space=Vitris Space
+
 #### Blocks
 # Blocks - "Theia"
 tile.theia_andesite.name=Theia Andesite
