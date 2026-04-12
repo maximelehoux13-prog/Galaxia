@@ -1,9 +1,12 @@
 package com.gtnewhorizons.galaxia.registry.celestial;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.annotation.Nonnull;
 
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
@@ -14,22 +17,22 @@ import com.gtnewhorizons.galaxia.compat.GTUtility;
 @Desugar
 public record CelestialBodyProperties(boolean visitable, boolean canCreateStation, boolean canCreateOutpost,
     double standardGravitationalParameter, double sphereOfInfluenceRadius, double parkingOrbitRadius, String oreProfile,
-    List<ItemStack> vanillaOres, List<String> gtOreVeinIds, double radiation, double temperature,
+    List<ItemStack> ores, List<String> gtOreVeinOres, double radiation, double temperature,
     Map<String, String> metadata) {
 
     public CelestialBodyProperties {
         if (oreProfile == null) oreProfile = "";
         if (metadata == null) metadata = Collections.emptyMap();
         else metadata = Collections.unmodifiableMap(new LinkedHashMap<>(metadata));
-        if (vanillaOres == null) vanillaOres = Collections.emptyList();
-        else vanillaOres = copyVanillaOres(vanillaOres);
-        if (gtOreVeinIds == null) gtOreVeinIds = Collections.emptyList();
-        else gtOreVeinIds = Collections.unmodifiableList(new java.util.ArrayList<>(gtOreVeinIds));
+        if (ores == null) ores = Collections.emptyList();
+        else ores = copyOres(ores);
+        if (gtOreVeinOres == null) gtOreVeinOres = Collections.emptyList();
+        else gtOreVeinOres = Collections.unmodifiableList(new ArrayList<>(gtOreVeinOres));
     }
 
-    private static List<ItemStack> copyVanillaOres(List<ItemStack> ores) {
+    private static List<ItemStack> copyOres(List<ItemStack> ores) {
         if (ores.isEmpty()) return Collections.emptyList();
-        List<ItemStack> copies = new java.util.ArrayList<>();
+        List<ItemStack> copies = new ArrayList<>();
         for (ItemStack ore : ores) {
             if (ore == null) continue;
             ItemStack copy = ore.copy();
@@ -39,17 +42,8 @@ public record CelestialBodyProperties(boolean visitable, boolean canCreateStatio
         return Collections.unmodifiableList(copies);
     }
 
-    public List<GtOreVeinDefinition> gtOreVeins() {
-        if (!GTUtility.isGTLoaded) return Collections.emptyList();
-        return GtOreVeinCatalog.resolveAll(gtOreVeinIds);
-    }
-
-    public boolean usesGtOreVeins() {
-        return !gtOreVeins().isEmpty();
-    }
-
-    public List<ItemStack> ores() {
-        return vanillaOres;
+    public boolean hasGtOreVeinOres() {
+        return !gtOreVeinOres.isEmpty();
     }
 
     public Builder toBuilder() {
@@ -69,8 +63,8 @@ public record CelestialBodyProperties(boolean visitable, boolean canCreateStatio
         private double sphereOfInfluenceRadius;
         private double parkingOrbitRadius;
         private String oreProfile = "";
-        private final List<ItemStack> vanillaOres = new java.util.ArrayList<>();
-        private final List<String> gtOreVeinIds = new java.util.ArrayList<>();
+        private final List<ItemStack> resolvedOres = new ArrayList<>();
+        private final List<String> resolvedGtOreVeinOres = new ArrayList<>();
         private double radiation;
         private double temperature;
         private final Map<String, String> metadata = new LinkedHashMap<>();
@@ -86,8 +80,8 @@ public record CelestialBodyProperties(boolean visitable, boolean canCreateStatio
             this.sphereOfInfluenceRadius = source.sphereOfInfluenceRadius;
             this.parkingOrbitRadius = source.parkingOrbitRadius;
             this.oreProfile = source.oreProfile;
-            this.vanillaOres.addAll(source.vanillaOres);
-            this.gtOreVeinIds.addAll(source.gtOreVeinIds);
+            this.resolvedOres.addAll(source.ores);
+            this.resolvedGtOreVeinOres.addAll(source.gtOreVeinOres);
             this.radiation = source.radiation;
             this.temperature = source.temperature;
             this.metadata.putAll(source.metadata);
@@ -128,40 +122,28 @@ public record CelestialBodyProperties(boolean visitable, boolean canCreateStatio
             return this;
         }
 
-        public Builder ore(ItemStack value) {
-            if (value != null) {
-                ItemStack copy = value.copy();
-                copy.stackSize = 1;
-                vanillaOres.add(copy);
-            }
+        public Builder ore(@Nonnull ItemStack value) {
+            ItemStack copy = value.copy();
+            copy.stackSize = 1;
+            resolvedOres.add(copy);
+
             return this;
         }
 
-        public Builder ores(ItemStack... values) {
-            if (values == null) return this;
+        public Builder ores(@Nonnull ItemStack... values) {
             for (ItemStack value : values) ore(value);
             return this;
         }
 
-        public Builder gtOreVeinId(String veinId) {
-            if (veinId != null && !veinId.isEmpty()) gtOreVeinIds.add(veinId);
+        public Builder ores(@Nonnull Block... ores) {
+            for (Block ore : ores) ore(new ItemStack(ore));
             return this;
         }
 
-        public Builder gtOreVeinIds(String... veinIds) {
-            if (veinIds == null) return this;
-            for (String veinId : veinIds) gtOreVeinId(veinId);
-            return this;
-        }
-
-        public Builder gtOreVein(GtOreVeinDefinition vein) {
-            if (vein != null) gtOreVeinId(vein.id());
-            return this;
-        }
-
-        public Builder gtOreVeins(GtOreVeinDefinition... veins) {
-            if (veins == null) return this;
-            for (GtOreVeinDefinition vein : veins) gtOreVein(vein);
+        public Builder gtOreVeinIds(@Nonnull String... veinIds) {
+            ores(
+                GTUtility.getRawOres(veinIds)
+                    .toArray(new ItemStack[0]));
             return this;
         }
 
@@ -185,11 +167,6 @@ public record CelestialBodyProperties(boolean visitable, boolean canCreateStatio
             return this;
         }
 
-        public Builder withVanillaOres(Block... ores) {
-            for (Block ore : ores) ore(new ItemStack(ore));
-            return this;
-        }
-
         public Builder withGravity(double standardGravitationalParameter, double sphereOfInfluenceRadius) {
             return standardGravitationalParameter(standardGravitationalParameter)
                 .sphereOfInfluenceRadius(sphereOfInfluenceRadius);
@@ -204,8 +181,8 @@ public record CelestialBodyProperties(boolean visitable, boolean canCreateStatio
                 sphereOfInfluenceRadius,
                 parkingOrbitRadius,
                 oreProfile,
-                vanillaOres,
-                gtOreVeinIds,
+                resolvedOres,
+                resolvedGtOreVeinOres,
                 radiation,
                 temperature,
                 metadata);

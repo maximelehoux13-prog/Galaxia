@@ -39,7 +39,6 @@ public class CommonProxy {
     // GameRegistry." (Remove if not needed)
     public void preInit(FMLPreInitializationEvent event) {
         SolarSystemRegistry.registerAll();
-        CelestialRegistry.registerDefaults();
 
         FMLCommonHandler.instance()
             .bus()

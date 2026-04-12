@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -31,13 +32,12 @@ public final class CelestialRegistry {
 
     private CelestialRegistry() {}
 
-    private static double seededPhase(String id) {
-        long hash = Objects.requireNonNull(id, "id")
-            .hashCode() & 0xFFFFFFFFL;
+    private static double seededPhase(@Nonnull String id) {
+        long hash = id.hashCode() & 0xFFFFFFFFL;
         return (hash / (double) 0xFFFFFFFFL) * Math.PI * 2.0;
     }
 
-    public static synchronized void registerDefaults() {
+    public static void registerDefaults() {
         if (bootstrapped) return;
         bootstrapped = true;
 
@@ -109,7 +109,7 @@ public final class CelestialRegistry {
                         .oreProfile("undefined")
                         .metadata("surface", "undefined")
                         .metadata("status", "placeholder_colony_world")
-                        .withVanillaOres(Blocks.iron_ore, Blocks.gold_ore, Blocks.redstone_ore, Blocks.diamond_ore)));
+                        .ores(Blocks.iron_ore, Blocks.gold_ore, Blocks.redstone_ore, Blocks.diamond_ore)));
 
         register(
             CelestialObjectId.REMUS,
@@ -127,7 +127,7 @@ public final class CelestialRegistry {
                         .radiation(0.14)
                         .oreProfile("undefined")
                         .metadata("surface", "undefined")
-                        .withVanillaOres(Blocks.coal_ore, Blocks.iron_ore, Blocks.lapis_ore, Blocks.redstone_ore)));
+                        .ores(Blocks.coal_ore, Blocks.iron_ore, Blocks.lapis_ore, Blocks.redstone_ore)));
 
         register(
             CelestialObjectId.EGORA,
@@ -147,7 +147,7 @@ public final class CelestialRegistry {
                         .gtOreVeinIds("ore.mix.lapis", "ore.mix.iron", "ore.mix.redstone")
                         .metadata("surface", "undefined")
                         .metadata("status", "placeholder_homeworld")
-                        .withVanillaOres(
+                        .ores(
                             Blocks.coal_ore,
                             Blocks.iron_ore,
                             Blocks.gold_ore,
@@ -169,7 +169,7 @@ public final class CelestialRegistry {
                         .radiation(0.20)
                         .oreProfile("undefined")
                         .metadata("surface", "undefined")
-                        .withVanillaOres(Blocks.iron_ore, Blocks.gold_ore, Blocks.redstone_ore, Blocks.emerald_ore)));
+                        .ores(Blocks.iron_ore, Blocks.gold_ore, Blocks.redstone_ore, Blocks.emerald_ore)));
 
         register(
             DimensionEnum.HEMATERIA,
@@ -187,7 +187,7 @@ public final class CelestialRegistry {
                         .radiation(0.10)
                         .oreProfile("undefined")
                         .metadata("surface", "undefined")
-                        .withVanillaOres(
+                        .ores(
                             Blocks.coal_ore,
                             Blocks.iron_ore,
                             Blocks.gold_ore,
@@ -210,7 +210,7 @@ public final class CelestialRegistry {
                         .radiation(0.18)
                         .oreProfile("undefined")
                         .metadata("surface", "undefined")
-                        .withVanillaOres(Blocks.coal_ore, Blocks.iron_ore, Blocks.gold_ore)));
+                        .ores(Blocks.coal_ore, Blocks.iron_ore, Blocks.gold_ore)));
 
         register(
             CelestialObjectId.FROZEN_BELT,
@@ -275,18 +275,14 @@ public final class CelestialRegistry {
     }
 
     public static void register(DimensionEnum dimension,
-        Consumer<CelestialObjectRegistration.Builder> registrationBuilder) {
-        Objects.requireNonNull(dimension, "dimension");
-        Objects.requireNonNull(registrationBuilder, "registrationBuilder");
+        @Nonnull Consumer<CelestialObjectRegistration.Builder> registrationBuilder) {
         CelestialObjectRegistration.Builder builder = CelestialObjectRegistration.builder()
             .dimension(dimension);
         registrationBuilder.accept(builder);
         register(builder.build());
     }
 
-    public static void register(CelestialObjectRegistration registration) {
-        Objects.requireNonNull(registration, "registration");
-        registerDefaults();
+    public static void register(@Nonnull CelestialObjectRegistration registration) {
         assertMutable();
         validateRegistration(registration, null);
         REGISTRATIONS.put(registration.id(), registration);
@@ -296,9 +292,8 @@ public final class CelestialRegistry {
         cachedRoots = null;
     }
 
-    public static void modify(CelestialObjectId id, Consumer<CelestialObjectRegistration.Builder> mutator) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(mutator, "mutator");
+    public static void modify(@Nonnull CelestialObjectId id,
+        @Nonnull Consumer<CelestialObjectRegistration.Builder> mutator) {
         registerDefaults();
         assertMutable();
         CelestialObjectRegistration existing = REGISTRATIONS.get(id);
@@ -318,7 +313,6 @@ public final class CelestialRegistry {
     public static void freezeAndBake() {
         registerDefaults();
         if (frozen) return;
-        GtOreVeinCatalog.reload();
         cachedRoots = buildRoots();
         frozen = true;
     }
@@ -327,29 +321,26 @@ public final class CelestialRegistry {
         return frozen;
     }
 
-    public static synchronized Optional<CelestialObjectRegistration> get(CelestialObjectId id) {
-        registerDefaults();
+    public static Optional<CelestialObjectRegistration> get(CelestialObjectId id) {
         return Optional.ofNullable(REGISTRATIONS.get(id));
     }
 
-    public static synchronized List<CelestialObjectRegistration> getAll() {
-        registerDefaults();
+    public static List<CelestialObjectRegistration> getAll() {
         return Collections.unmodifiableList(new ArrayList<>(REGISTRATIONS.values()));
     }
 
-    public static synchronized List<OrbitalCelestialBody> getRoots() {
-        registerDefaults();
+    public static List<OrbitalCelestialBody> getRoots() {
         if (cachedRoots == null) cachedRoots = buildRoots();
         return cachedRoots;
     }
 
-    public static synchronized OrbitalCelestialBody getPrimaryRoot() {
+    public static OrbitalCelestialBody getPrimaryRoot() {
         List<OrbitalCelestialBody> roots = getRoots();
         if (roots.isEmpty()) throw new IllegalStateException("No celestial objects have been registered");
         return roots.get(0);
     }
 
-    public static synchronized Optional<OrbitalCelestialBody> findByDimension(DimensionEnum dimension) {
+    public static Optional<OrbitalCelestialBody> findByDimension(DimensionEnum dimension) {
         registerDefaults();
         CelestialObjectId objectId = IDS_BY_DIMENSION.get(dimension);
         if (objectId == null) return Optional.empty();

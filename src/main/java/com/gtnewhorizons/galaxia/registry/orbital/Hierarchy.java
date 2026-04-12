@@ -2,9 +2,7 @@ package com.gtnewhorizons.galaxia.registry.orbital;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
@@ -21,18 +19,6 @@ public final class Hierarchy {
     @Desugar
     public record OrbitalParams(double semiMajorAxis, double eccentricity, double inclination,
         double longitudeOfAscendingNode, double argumentOfPeriapsis, double meanAnomalyAtEpoch, double orbitSpeed) {
-
-        public OrbitalParams(double semiMajorAxis, double eccentricity, double inclination,
-            double longitudeOfAscendingNode, double argumentOfPeriapsis, double meanAnomalyAtEpoch) {
-            this(
-                semiMajorAxis,
-                eccentricity,
-                inclination,
-                longitudeOfAscendingNode,
-                argumentOfPeriapsis,
-                meanAnomalyAtEpoch,
-                0.0);
-        }
 
         public static OrbitalParams circular(double radius, double orbitSpeed) {
             return new OrbitalParams(radius, 0.0, 0.0, 0.0, 0.0, 0.0, orbitSpeed);
@@ -105,20 +91,6 @@ public final class Hierarchy {
             double disc = 1.0 + 2.0 * energy * p / mu;
             double ecc = Math.sqrt(Math.max(0.0, disc));
             return p / (1.0 + ecc);
-        }
-    }
-
-    public static final class MetadataBuilder {
-
-        private final Map<String, String> values = new LinkedHashMap<>();
-
-        public MetadataBuilder put(String key, String value) {
-            values.put(key, value);
-            return this;
-        }
-
-        public Map<String, String> build() {
-            return Collections.unmodifiableMap(new LinkedHashMap<>(values));
         }
     }
 }

@@ -1,7 +1,8 @@
 package com.gtnewhorizons.galaxia.registry.celestial;
 
-import java.util.Objects;
 import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
 
 import net.minecraft.util.ResourceLocation;
 
@@ -114,8 +115,7 @@ public record CelestialObjectRegistration(CelestialObjectId id, String name, Str
             return this;
         }
 
-        public Builder orbitalParams(OrbitalParams value) {
-            this.orbitalParams = Objects.requireNonNull(value, "orbitalParams");
+        public Builder orbitalParams(@Nonnull OrbitalParams value) {
             return this;
         }
 

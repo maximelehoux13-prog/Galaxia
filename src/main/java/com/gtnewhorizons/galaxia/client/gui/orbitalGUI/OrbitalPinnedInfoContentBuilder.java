@@ -25,7 +25,6 @@ import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.celestial.GtOreVeinDefinition;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 
 public final class OrbitalPinnedInfoContentBuilder {
@@ -38,25 +37,18 @@ public final class OrbitalPinnedInfoContentBuilder {
         rows.add(new PinnedInfoRow("Dangers", buildDangerSummary(body)));
         if (body.objectClass() != CelestialObjectClass.STAR && body.objectClass() != CelestialObjectClass.GALAXY) {
             rows.add(new PinnedInfoRow("Surface", formatSurfaceType(body)));
-            if (!body.properties()
-                .gtOreVeins()
-                .isEmpty()) {
-                rows.add(PinnedInfoRow.section("Veins"));
-                for (GtOreVeinDefinition vein : body.properties()
-                    .gtOreVeins())
-                    rows.add(PinnedInfoRow.inlineItems(vein.displayName(), resolveGtVeinDisplayItems(vein)));
-            } else if (body.properties()
+            if (body.properties()
                 .ores()
                 .isEmpty()) {
-                    rows.add(new PinnedInfoRow("Ores", "Undefined"));
-                } else {
-                    rows.add(
-                        new PinnedInfoRow(
-                            "Ores",
-                            "",
-                            body.properties()
-                                .ores()));
-                }
+                rows.add(new PinnedInfoRow("Ores", "Undefined"));
+            } else {
+                rows.add(
+                    new PinnedInfoRow(
+                        "Ores",
+                        "",
+                        body.properties()
+                            .ores()));
+            }
         }
         return rows;
     }
@@ -93,15 +85,13 @@ public final class OrbitalPinnedInfoContentBuilder {
             .get("surface");
         signature.append('|')
             .append(surfaceType == null ? "" : surfaceType);
-        List<GtOreVeinDefinition> gtOreVeins = body.properties()
-            .gtOreVeins();
+        List<String> gtOreVeinOres = body.properties()
+            .gtOreVeinOres();
         signature.append('|')
-            .append(gtOreVeins.size());
-        for (GtOreVeinDefinition vein : gtOreVeins) {
+            .append(gtOreVeinOres.size());
+        for (String oreName : gtOreVeinOres) {
             signature.append('|')
-                .append(vein.displayName())
-                .append(':');
-            for (String oreName : vein.ores()) signature.append(oreName)
+                .append(oreName)
                 .append(',');
         }
         List<ItemStack> ores = body.properties()
@@ -177,13 +167,11 @@ public final class OrbitalPinnedInfoContentBuilder {
         return out.toString();
     }
 
-    private List<ItemStack> resolveGtVeinDisplayItems(GtOreVeinDefinition vein) {
+    private List<ItemStack> resolveGtVeinDisplayItems(String oreName) {
         List<ItemStack> items = new ArrayList<>();
-        if (vein == null) return items;
-        for (String oreName : vein.ores()) {
-            ItemStack stack = resolveGtOreDisplayStack(oreName);
-            if (stack != null) items.add(stack);
-        }
+        if (oreName == null || oreName.isEmpty()) return items;
+        ItemStack stack = resolveGtOreDisplayStack(oreName);
+        if (stack != null) items.add(stack);
         return items;
     }
 

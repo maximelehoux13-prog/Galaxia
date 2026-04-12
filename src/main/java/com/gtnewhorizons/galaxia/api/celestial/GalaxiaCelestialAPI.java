@@ -18,15 +18,13 @@ public final class GalaxiaCelestialAPI {
         CelestialRegistry.register(registration);
     }
 
-    public static void register(CelestialObjectId id,
-        Consumer<CelestialObjectRegistration.Builder> registrationBuilder) {
-        CelestialRegistry.register(id, registrationBuilder);
-    }
-
-    public static void register(DimensionEnum dimension,
-        Consumer<CelestialObjectRegistration.Builder> registrationBuilder) {
-        CelestialRegistry.register(dimension, registrationBuilder);
-    }
+    // public static void register(CelestialObjectId id, CelestialObjectRegistration.Builder registrationBuilder) {
+    // CelestialRegistry.register(id, registrationBuilder);
+    // }
+    //
+    // public static void register(DimensionEnum dimension, CelestialObjectRegistration.Builder registrationBuilder) {
+    // CelestialRegistry.register(dimension, registrationBuilder);
+    // }
 
     public static void modify(CelestialObjectId id, Consumer<CelestialObjectRegistration.Builder> mutator) {
         CelestialRegistry.modify(id, mutator);

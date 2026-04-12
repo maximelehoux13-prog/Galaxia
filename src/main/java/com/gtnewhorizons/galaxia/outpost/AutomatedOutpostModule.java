@@ -8,12 +8,10 @@ import java.util.Random;
 import net.minecraft.item.ItemStack;
 
 import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.compat.GTUtility;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
-import com.gtnewhorizons.galaxia.registry.celestial.GtOreVeinDefinition;
 
 /**
  * A single module instance installed in an {@link AutomatedOutpostState}.
@@ -190,32 +188,11 @@ public final class AutomatedOutpostModule {
 
     private ItemStack generateOre(CelestialObjectRegistration body) {
         MinerModuleData minerData = data instanceof MinerModuleData typed ? typed : new MinerModuleData();
-        if (body.properties()
-            .usesGtOreVeins()) {
-            List<GtOreVeinDefinition> veins = body.properties()
-                .gtOreVeins();
-            if (!veins.isEmpty()) {
-                GtOreVeinDefinition vein = veins.get(RANDOM.nextInt(veins.size()));
-                List<String> oreNames = vein.ores();
-                if (!oreNames.isEmpty()) {
-                    String chosenOre = oreNames.get(RANDOM.nextInt(oreNames.size()));
-                    if (chosenOre == null || chosenOre.isEmpty()) return null;
-                    if (minerData.isBlacklisted(chosenOre)) return null;
-                    ItemStack stack = GTUtility.getRawOreStack(chosenOre);
-                    if (stack == null) return null;
-                    ItemStack ore = stack.copy();
-                    ore.stackSize = 1;
-                    return ore;
-                }
-            }
-            return null;
-        }
 
         List<ItemStack> ores = body.properties()
             .ores();
         if (ores.isEmpty()) return null;
         ItemStack chosen = ores.get(RANDOM.nextInt(ores.size()));
-        if (chosen == null) return null;
         ItemStackWrapper wrapper = ItemStackWrapper.of(chosen);
         if (wrapper == null || minerData.isBlacklisted(wrapper.toKey())) return null;
 

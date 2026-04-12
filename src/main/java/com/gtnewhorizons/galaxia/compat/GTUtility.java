@@ -1,11 +1,16 @@
 package com.gtnewhorizons.galaxia.compat;
 
-import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
@@ -13,6 +18,11 @@ import net.minecraftforge.oredict.OreDictionary;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 
 import cpw.mods.fml.common.Loader;
+import gregtech.api.enums.Materials;
+import gregtech.api.enums.OreMixes;
+import gregtech.api.enums.OrePrefixes;
+import gregtech.api.util.GTOreDictUnificator;
+import gregtech.common.OreMixBuilder;
 
 public final class GTUtility {
 
@@ -22,6 +32,53 @@ public final class GTUtility {
     private static final Set<String> RAW_ORE_FAILURES = new HashSet<>();
 
     private GTUtility() {}
+
+    public static List<String> getGtVeinOres(@Nonnull String veinId) {
+        if (!isGTLoaded || veinId.isEmpty()) return Collections.emptyList();
+
+        OreMixes oreMix = null;
+        for (OreMixes mix : OreMixes.values()) {
+            if (mix.name()
+                .equals(veinId)) {
+                oreMix = mix;
+                break;
+            }
+        }
+        if (oreMix == null) return Collections.emptyList();
+
+        OreMixBuilder builder = oreMix.oreMixBuilder;
+        if (builder == null) return Collections.emptyList();
+
+        List<String> ores = new ArrayList<>();
+        ores.add(getMaterialName(builder.primary));
+        ores.add(getMaterialName(builder.secondary));
+        ores.add(getMaterialName(builder.between));
+        ores.add(getMaterialName(builder.sporadic));
+        ores.removeIf(s -> s == null || s.isEmpty());
+        return Collections.unmodifiableList(ores);
+    }
+
+    private static String getMaterialName(Object material) {
+        if (material == null) return "";
+        try {
+            Materials mat = (Materials) material;
+            String internalName = mat.getInternalName();
+            if (internalName != null && !internalName.isEmpty()) return internalName;
+            String localizedName = mat.getLocalizedName();
+            if (localizedName != null && !localizedName.isEmpty()) return localizedName;
+        } catch (Exception ignored) {}
+        return material.toString();
+    }
+
+    public static List<ItemStack> getRawOres(@Nonnull String... veinIDs) {
+        return Arrays.stream(veinIDs)
+            .filter(id -> id != null && !id.isEmpty())
+            .map(GTUtility::getGtVeinOres)
+            .flatMap(
+                ores -> ores.stream()
+                    .map(GTUtility::getRawOreStack))
+            .collect(Collectors.toList());
+    }
 
     public static ItemStack getRawOreStack(String materialName) {
         if (!isGTLoaded) return null;
@@ -65,22 +122,6 @@ public final class GTUtility {
     }
 
     private static ItemStack getUnifiedGtStack(String materialName) {
-        try {
-            Class<?> materialsClass = Class.forName("gregtech.api.enums.Materials");
-            Object material = materialsClass.getField(materialName)
-                .get(null);
-
-            Class<?> orePrefixesClass = Class.forName("gregtech.api.enums.OrePrefixes");
-            Object orePrefix = orePrefixesClass.getField("rawOre")
-                .get(null);
-
-            Class<?> oreDictUnificatorClass = Class.forName("gregtech.api.util.GT_OreDictUnificator");
-            Method getMethod = oreDictUnificatorClass.getMethod("get", orePrefixesClass, materialsClass, long.class);
-            Object stack = getMethod.invoke(null, orePrefix, material, 1L);
-            return stack instanceof ItemStack itemStack ? itemStack : null;
-        } catch (Exception ignored) {
-            return null;
-        }
+        return GTOreDictUnificator.get(OrePrefixes.rawOre, Materials.get(materialName), 1);
     }
-
 }

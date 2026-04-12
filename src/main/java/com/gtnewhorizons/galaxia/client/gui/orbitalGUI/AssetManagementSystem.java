@@ -2225,7 +2225,7 @@ public final class AssetManagementSystem {
             return GalaxiaCelestialAPI.get(outpost.celestialBodyId)
                 .map(
                     body -> body.properties()
-                        .usesGtOreVeins() ? buildGtMinerOreOptions(body, minerData)
+                        .hasGtOreVeinOres() ? buildGtMinerOreOptions(body, minerData)
                             : buildVanillaMinerOreOptions(body, minerData))
                 .orElse(Collections.emptyList());
         }
@@ -2234,21 +2234,15 @@ public final class AssetManagementSystem {
             MinerModuleData minerData) {
             Map<String, MinerOreOption> options = new LinkedHashMap<>();
             body.properties()
-                .gtOreVeins()
-                .forEach(
-                    vein -> vein.ores()
-                        .forEach(oreName -> {
-                            if (oreName == null || oreName.isEmpty() || options.containsKey(oreName)) return;
-                            ItemStack displayStack = GTUtility.getRawOreStack(oreName);
-                            String displayName = displayStack != null ? displayStack.getDisplayName() : oreName;
-                            options.put(
-                                oreName,
-                                new MinerOreOption(
-                                    oreName,
-                                    displayName,
-                                    displayStack,
-                                    minerData.isBlacklisted(oreName)));
-                        }));
+                .gtOreVeinOres()
+                .forEach(oreName -> {
+                    if (oreName == null || oreName.isEmpty() || options.containsKey(oreName)) return;
+                    ItemStack displayStack = GTUtility.getRawOreStack(oreName);
+                    String displayName = displayStack != null ? displayStack.getDisplayName() : oreName;
+                    options.put(
+                        oreName,
+                        new MinerOreOption(oreName, displayName, displayStack, minerData.isBlacklisted(oreName)));
+                });
             return new ArrayList<>(options.values());
         }
 
