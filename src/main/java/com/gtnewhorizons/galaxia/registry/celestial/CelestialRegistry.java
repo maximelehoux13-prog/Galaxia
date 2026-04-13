@@ -5,6 +5,7 @@ import static com.gtnewhorizons.galaxia.registry.dimension.planets.BasePlanet.ea
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,6 @@ public final class CelestialRegistry {
 
     private static boolean bootstrapped;
     private static boolean frozen;
-    private static List<OrbitalCelestialBody> cachedRoots;
 
     private CelestialRegistry() {}
 
@@ -289,7 +289,7 @@ public final class CelestialRegistry {
         if (registration.dimensionEnum() != null) {
             IDS_BY_DIMENSION.put(registration.dimensionEnum(), registration.id());
         }
-        cachedRoots = null;
+//        CelestialHierarchy.reset();
     }
 
     public static void modify(@Nonnull CelestialObjectId id,
@@ -307,13 +307,13 @@ public final class CelestialRegistry {
         if (existing.dimensionEnum() != null) IDS_BY_DIMENSION.remove(existing.dimensionEnum());
         REGISTRATIONS.put(id, modified);
         if (modified.dimensionEnum() != null) IDS_BY_DIMENSION.put(modified.dimensionEnum(), id);
-        cachedRoots = null;
+//        CelestialHierarchy.reset();
     }
 
     public static void freezeAndBake() {
         registerDefaults();
         if (frozen) return;
-        cachedRoots = buildRoots();
+        CelestialHierarchy.build(getAll());
         frozen = true;
     }
 
@@ -330,8 +330,11 @@ public final class CelestialRegistry {
     }
 
     public static List<OrbitalCelestialBody> getRoots() {
-        if (cachedRoots == null) cachedRoots = buildRoots();
-        return cachedRoots;
+        return CelestialHierarchy.getInstance().getRoots();
+    }
+
+    public static CelestialHierarchy getHierarchy() {
+        return CelestialHierarchy.getInstance();
     }
 
     public static OrbitalCelestialBody getPrimaryRoot() {
@@ -344,54 +347,7 @@ public final class CelestialRegistry {
         registerDefaults();
         CelestialObjectId objectId = IDS_BY_DIMENSION.get(dimension);
         if (objectId == null) return Optional.empty();
-        for (OrbitalCelestialBody root : getRoots()) {
-            Optional<OrbitalCelestialBody> found = findById(root, objectId);
-            if (found.isPresent()) return found;
-        }
-        return Optional.empty();
-    }
-
-    private static List<OrbitalCelestialBody> buildRoots() {
-        List<OrbitalCelestialBody> roots = new ArrayList<>();
-        for (CelestialObjectRegistration registration : REGISTRATIONS.values()) {
-            if (registration.parentId() == null) roots.add(buildBody(registration));
-        }
-        return Collections.unmodifiableList(roots);
-    }
-
-    private static Optional<OrbitalCelestialBody> findById(OrbitalCelestialBody current, CelestialObjectId id) {
-        if (current.id()
-            .equals(id.getId())) return Optional.of(current);
-        for (OrbitalCelestialBody child : current.children()) {
-            Optional<OrbitalCelestialBody> found = findById(child, id);
-            if (found.isPresent()) return found;
-        }
-        return Optional.empty();
-    }
-
-    private static OrbitalCelestialBody buildBody(CelestialObjectRegistration registration) {
-        List<OrbitalCelestialBody> children = new ArrayList<>();
-        for (CelestialObjectRegistration candidate : REGISTRATIONS.values()) {
-            if (Objects.equals(registration.id(), candidate.parentId())) {
-                children.add(buildBody(candidate));
-            }
-        }
-        DimensionEnum dimensionEnum = registration.dimensionEnum();
-        int dimensionId = dimensionEnum == null ? Integer.MIN_VALUE : dimensionEnum.getId();
-        return new OrbitalCelestialBody(
-            registration.id()
-                .getId(),
-            registration.name(),
-            registration.nameKey(),
-            dimensionId,
-            dimensionEnum,
-            registration.objectClass(),
-            registration.orbitalParams(),
-            registration.absolutePosition(),
-            registration.texture(),
-            registration.spriteSize(),
-            registration.properties(),
-            children);
+        return getHierarchy().findById(objectId);
     }
 
     private static void validateRegistration(CelestialObjectRegistration registration, CelestialObjectId existingId) {

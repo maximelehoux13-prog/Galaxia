@@ -10,6 +10,7 @@ import net.minecraft.util.StatCollector;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyProperties;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 
 public final class Hierarchy {
@@ -41,31 +42,81 @@ public final class Hierarchy {
     public record AbsolutePosition(double x, double y) {}
 
     @Desugar
-    public record OrbitalCelestialBody(String id, String name, String nameKey, int dimensionId,
-        DimensionEnum dimensionEnum, CelestialObjectClass objectClass, OrbitalParams orbitalParams,
-        AbsolutePosition absolutePosition, ResourceLocation texture, double spriteSize,
-        CelestialBodyProperties properties, List<OrbitalCelestialBody> children) {
+    public record OrbitalCelestialBody(CelestialObjectRegistration registration,
+        List<OrbitalCelestialBody> children) {
 
-        public OrbitalCelestialBody {
-            children = children == null ? Collections.emptyList()
+        public OrbitalCelestialBody(CelestialObjectRegistration registration) {
+            this(registration, Collections.emptyList());
+        }
+
+        public OrbitalCelestialBody(CelestialObjectRegistration registration,
+            List<OrbitalCelestialBody> children) {
+            this.registration = registration;
+            this.children = children == null ? Collections.emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(children));
         }
 
+        public String id() {
+            return registration.id().getId();
+        }
+
+        public String name() {
+            return registration.name();
+        }
+
+        public String nameKey() {
+            return registration.nameKey();
+        }
+
+        public int dimensionId() {
+            return registration.dimensionEnum() == null ? Integer.MIN_VALUE : registration.dimensionEnum().getId();
+        }
+
+        public DimensionEnum dimensionEnum() {
+            return registration.dimensionEnum();
+        }
+
+        public CelestialObjectClass objectClass() {
+            return registration.objectClass();
+        }
+
+        public OrbitalParams orbitalParams() {
+            return registration.orbitalParams();
+        }
+
+        public AbsolutePosition absolutePosition() {
+            return registration.absolutePosition();
+        }
+
+        public ResourceLocation texture() {
+            return registration.texture();
+        }
+
+        public double spriteSize() {
+            return registration.spriteSize();
+        }
+
+        public CelestialBodyProperties properties() {
+            return registration.properties();
+        }
+
         public String displayName() {
+            String nameKey = nameKey();
             if (nameKey != null && !nameKey.isEmpty()) {
                 String translated = StatCollector.translateToLocal(nameKey);
                 if (!nameKey.equals(translated)) return translated;
             }
-            return name;
+            return name();
         }
 
         public boolean hasDimension() {
-            return dimensionEnum != null;
+            return dimensionEnum() != null;
         }
 
         public double mu() {
-            if (properties == null) return 0.0;
-            return Math.max(0.0, properties.standardGravitationalParameter());
+            CelestialBodyProperties props = properties();
+            if (props == null) return 0.0;
+            return Math.max(0.0, props.standardGravitationalParameter());
         }
 
         public double getHohmannTof(OrbitalCelestialBody source, OrbitalCelestialBody dest, OrbitalCelestialBody root,

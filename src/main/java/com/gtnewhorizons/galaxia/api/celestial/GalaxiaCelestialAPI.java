@@ -1,9 +1,11 @@
 package com.gtnewhorizons.galaxia.api.celestial;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialHierarchy;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialRegistry;
@@ -61,5 +63,25 @@ public final class GalaxiaCelestialAPI {
 
     public static Optional<OrbitalCelestialBody> findByDimension(DimensionEnum dimension) {
         return CelestialRegistry.findByDimension(dimension);
+    }
+
+    public static CelestialHierarchy getHierarchy() {
+        return CelestialRegistry.getHierarchy();
+    }
+
+    public static Optional<OrbitalCelestialBody> findBodyById(CelestialObjectId id) {
+        return getHierarchy().findById(id);
+    }
+
+    public static List<OrbitalCelestialBody> getChildren(CelestialObjectId parentId) {
+        return getHierarchy().getChildren(parentId);
+    }
+
+    public static Map<CelestialObjectId, OrbitalCelestialBody> getAllBodies() {
+        return getHierarchy().getAllBodies();
+    }
+
+    public static Map<CelestialObjectId, List<OrbitalCelestialBody>> getAllChildren() {
+        return getHierarchy().getAllChildren();
     }
 }
