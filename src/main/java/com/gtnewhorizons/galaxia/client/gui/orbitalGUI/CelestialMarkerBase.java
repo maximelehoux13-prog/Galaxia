@@ -13,7 +13,7 @@ import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 
 public class CelestialMarkerBase {
 
@@ -22,10 +22,10 @@ public class CelestialMarkerBase {
 
     public static final class CelestialMarkerContext {
 
-        private Hierarchy.OrbitalCelestialBody body;
+        private CelestialObject body;
         private CelestialBodyAssetState assetState;
 
-        public Hierarchy.OrbitalCelestialBody body() {
+        public CelestialObject body() {
             return body;
         }
 
@@ -33,7 +33,7 @@ public class CelestialMarkerBase {
             return assetState;
         }
 
-        public CelestialMarkerContext set(Hierarchy.OrbitalCelestialBody body, CelestialBodyAssetState assetState) {
+        public CelestialMarkerContext set(CelestialObject body, CelestialBodyAssetState assetState) {
             this.body = body;
             this.assetState = assetState;
             return this;

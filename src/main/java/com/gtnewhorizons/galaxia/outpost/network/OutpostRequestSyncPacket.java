@@ -4,14 +4,14 @@ import java.util.UUID;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
-import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -81,12 +81,13 @@ public final class OutpostRequestSyncPacket implements IMessage {
      * Falls back to {@code bodyId} itself if the tree or host star cannot be found.
      */
     static String resolveSystemId(String bodyId) {
-        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
+        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         if (root == null || bodyId == null) return bodyId;
-        OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        CelestialObject body = OrbitalTransferPlanner.findBodyById(root, bodyId);
         if (body == null) return bodyId;
-        OrbitalCelestialBody star = OrbitalTransferPlanner.findHostStar(root, body);
-        return star != null ? star.id() : bodyId;
+        CelestialObject star = OrbitalTransferPlanner.findHostStar(root, body);
+        return star != null ? star.id()
+            .getId() : bodyId;
     }
 
     /**
@@ -96,12 +97,13 @@ public final class OutpostRequestSyncPacket implements IMessage {
      * Falls back to {@code bodyId} if resolution fails.
      */
     static String resolvePlanetaryAnchorId(String bodyId) {
-        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
+        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         if (root == null || bodyId == null) return bodyId;
-        OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        CelestialObject body = OrbitalTransferPlanner.findBodyById(root, bodyId);
         if (body == null) return bodyId;
-        OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(root, body);
-        return anchor != null ? anchor.id() : bodyId;
+        CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(root, body);
+        return anchor != null ? anchor.id()
+            .getId() : bodyId;
     }
 
     private static void writeString(ByteBuf buf, String s) {

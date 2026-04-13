@@ -1,7 +1,7 @@
 package com.gtnewhorizons.galaxia.client.gui.orbitalGUI;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.orbital.LambertTransfer;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 
@@ -43,14 +43,13 @@ public final class TransferScanner {
 
     public static final int DEFAULT_SCAN_COUNT = 64;
 
-    public static ScanResult scan(OrbitalCelestialBody root, OrbitalCelestialBody origin, OrbitalCelestialBody dest,
-        OrbitalCelestialBody attractor, double departureTime, double minPeriapsis, ScanAcceptor acceptor) {
+    public static ScanResult scan(CelestialObject root, CelestialObject origin, CelestialObject dest,
+        CelestialObject attractor, double departureTime, double minPeriapsis, ScanAcceptor acceptor) {
         return scan(root, origin, dest, attractor, departureTime, minPeriapsis, acceptor, DEFAULT_SCAN_COUNT);
     }
 
-    public static ScanResult scan(OrbitalCelestialBody root, OrbitalCelestialBody origin, OrbitalCelestialBody dest,
-        OrbitalCelestialBody attractor, double departureTime, double minPeriapsis, ScanAcceptor acceptor,
-        int scanCount) {
+    public static ScanResult scan(CelestialObject root, CelestialObject origin, CelestialObject dest,
+        CelestialObject attractor, double departureTime, double minPeriapsis, ScanAcceptor acceptor, int scanCount) {
         if (root == null || origin == null || dest == null || attractor == null) {
             return ScanResult.invalid();
         }

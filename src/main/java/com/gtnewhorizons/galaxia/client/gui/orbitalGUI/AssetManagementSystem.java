@@ -33,7 +33,7 @@ import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
@@ -62,9 +62,8 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import codechicken.nei.recipe.GuiCraftingRecipe;
@@ -101,7 +100,7 @@ record PendingConstructionCancellation(CelestialManagedAsset asset) {}
 record PendingResourceTransfer(CelestialManagedAsset asset, List<StationTransferTarget> targets) {}
 
 @Desugar
-record StationTransferTarget(String assetId, String displayName, OrbitalCelestialBody hostBody) {}
+record StationTransferTarget(String assetId, String displayName, CelestialObject hostBody) {}
 
 @Desugar
 record TransferTargetRow(StationTransferTarget target, int left, int top, int right, int bottom,
@@ -179,17 +178,19 @@ public final class AssetManagementSystem {
             return sb.toString();
         }
 
-        List<StationTransferTarget> getTransferTargetsInSystem(OrbitalCelestialBody root, OrbitalCelestialBody body) {
+        List<StationTransferTarget> getTransferTargetsInSystem(CelestialObject root, CelestialObject body) {
             List<StationTransferTarget> targets = new ArrayList<>();
             if (body == null) return targets;
-            OrbitalCelestialBody hostStar = OrbitalTransferPlanner.findHostStar(root, body);
+            CelestialObject hostStar = OrbitalTransferPlanner.findHostStar(root, body);
             if (hostStar == null) return targets;
             collectTargets(hostStar, targets);
             return targets;
         }
 
-        private void collectTargets(OrbitalCelestialBody current, List<StationTransferTarget> targets) {
-            CelestialBodyAssetState state = CelestialAssetStore.getState(current.id());
+        private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
+            CelestialBodyAssetState state = CelestialAssetStore.getState(
+                current.id()
+                    .getId());
             for (CelestialManagedAsset asset : state.assets()) {
                 if (asset.status() == CelestialAssetStatus.OPERATIONAL
                     && asset.location() == CelestialAssetLocation.ORBIT
@@ -198,7 +199,7 @@ public final class AssetManagementSystem {
                     targets.add(new StationTransferTarget(asset.assetId(), asset.displayName(), current));
                 }
             }
-            for (OrbitalCelestialBody child : current.children()) collectTargets(child, targets);
+            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) collectTargets(child, targets);
         }
 
         String formatAssetKind(CelestialAssetKind kind) {
@@ -244,7 +245,7 @@ public final class AssetManagementSystem {
 
             String getRenameInput();
 
-            void createResourceTransfer(OrbitalCelestialBody sourceBody, CelestialManagedAsset sourceAsset,
+            void createResourceTransfer(CelestialObject sourceBody, CelestialManagedAsset sourceAsset,
                 StationTransferTarget target);
         }
 
@@ -256,7 +257,7 @@ public final class AssetManagementSystem {
             this.callbacks = callbacks;
         }
 
-        void openAssetManagement(OrbitalAssetUiState state, OrbitalCelestialBody body) {
+        void openAssetManagement(OrbitalAssetUiState state, CelestialObject body) {
             if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) return;
             state.openAssetManagement(body);
             closePendingAssetRename(state);
@@ -267,29 +268,36 @@ public final class AssetManagementSystem {
             closePendingAssetRename(state);
         }
 
-        void createBaseStation(OrbitalCelestialBody body) {
+        void createBaseStation(CelestialObject body) {
             if (body == null) return;
             CelestialAssetStore.createOperationalAsset(
-                body.id(),
+                body.id()
+                    .getId(),
                 buildDefaultAssetDisplayName(body, CelestialAssetKind.STATION),
                 CelestialAssetKind.STATION,
                 getDefaultAssetLocation(CelestialAssetKind.STATION));
             callbacks.showActionStatus("Station created");
         }
 
-        void triggerAssetCreation(OrbitalAssetUiState state, OrbitalCelestialBody body, CelestialAssetKind kind,
+        void triggerAssetCreation(OrbitalAssetUiState state, CelestialObject body, CelestialAssetKind kind,
             boolean openManagementFirst) {
             if (body == null) return;
             if (openManagementFirst) openAssetManagement(state, body);
             CelestialAssetLocation location = getDefaultAssetLocation(kind);
             String displayName = buildDefaultAssetDisplayName(body, kind);
             if (callbacks.isCreativeBuildModeEnabled()) {
-                CelestialAssetStore.createOperationalAsset(body.id(), displayName, kind, location);
+                CelestialAssetStore.createOperationalAsset(
+                    body.id()
+                        .getId(),
+                    displayName,
+                    kind,
+                    location);
                 callbacks.showActionStatus(assetSupport.formatAssetKind(kind) + " created");
                 return;
             }
             state.pendingAssetCreation = new PendingAssetCreation(
-                body.id(),
+                body.id()
+                    .getId(),
                 displayName,
                 kind,
                 location,
@@ -384,8 +392,7 @@ public final class AssetManagementSystem {
             state.pendingConstructionCancellation = null;
         }
 
-        void openPendingResourceTransfer(OrbitalAssetUiState state, OrbitalCelestialBody root,
-            CelestialManagedAsset asset) {
+        void openPendingResourceTransfer(OrbitalAssetUiState state, CelestialObject root, CelestialManagedAsset asset) {
             if (asset == null) return;
             state.pendingResourceTransfer = new PendingResourceTransfer(
                 asset,
@@ -453,7 +460,7 @@ public final class AssetManagementSystem {
             if (state.pendingAssetCreation != null) dismissPendingAssetCreation(state);
         }
 
-        private String buildDefaultAssetDisplayName(OrbitalCelestialBody body, CelestialAssetKind kind) {
+        private String buildDefaultAssetDisplayName(CelestialObject body, CelestialAssetKind kind) {
             return body.displayName() + " " + assetSupport.formatAssetKind(kind);
         }
 
@@ -465,7 +472,7 @@ public final class AssetManagementSystem {
 
     public static final class OrbitalAssetUiState {
 
-        OrbitalCelestialBody assetManagementBody;
+        CelestialObject assetManagementBody;
         PendingAssetCreation pendingAssetCreation;
         PendingAssetDestruction pendingAssetDestruction;
         PendingConstructionCancellation pendingConstructionCancellation;
@@ -498,7 +505,7 @@ public final class AssetManagementSystem {
                 || pendingAssetRename != null;
         }
 
-        void openAssetManagement(OrbitalCelestialBody body) {
+        void openAssetManagement(CelestialObject body) {
             assetManagementBody = body;
             clearTransientState();
         }
@@ -542,11 +549,11 @@ public final class AssetManagementSystem {
 
             boolean isGT5AutomationAvailable();
 
-            boolean canCreateBaseStation(OrbitalCelestialBody body);
+            boolean canCreateBaseStation(CelestialObject body);
 
-            boolean canCreateAutomatedStation(OrbitalCelestialBody body);
+            boolean canCreateAutomatedStation(CelestialObject body);
 
-            boolean canCreateAutomatedOutpost(OrbitalCelestialBody body);
+            boolean canCreateAutomatedOutpost(CelestialObject body);
 
             boolean hasStoredConstructionResources(CelestialManagedAsset asset);
 
@@ -564,9 +571,9 @@ public final class AssetManagementSystem {
 
             void closeAssetManagement();
 
-            void createBaseStation(OrbitalCelestialBody body);
+            void createBaseStation(CelestialObject body);
 
-            void triggerAssetCreation(OrbitalCelestialBody body, CelestialAssetKind kind, boolean openManagementFirst);
+            void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind, boolean openManagementFirst);
 
             void openPendingAssetRename(CelestialManagedAsset asset);
 
@@ -819,7 +826,7 @@ public final class AssetManagementSystem {
             activeScrollWidget = null;
             removeAll();
             clearBounds();
-            OrbitalCelestialBody body = state.assetManagementBody;
+            CelestialObject body = state.assetManagementBody;
             if (body == null) return;
             child(createBackdropButton());
             if (state.hasBlockingModal()) {
@@ -875,7 +882,7 @@ public final class AssetManagementSystem {
             return state.assetManagementTab == 1 ? state.inventoryScrollPosition : state.modulesScrollPosition;
         }
 
-        private void buildMainPanel(OrbitalCelestialBody body) {
+        private void buildMainPanel(CelestialObject body) {
             ModalBounds bounds = calculateManagementBounds();
             updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
             int modalWidth = bounds.right() - bounds.left();
@@ -950,9 +957,11 @@ public final class AssetManagementSystem {
         private void refreshMainPanelContent() {
             if (!shouldShowPanel() || mainScrollContent == null || mainScrollWidget == null || mainScrollData == null)
                 return;
-            OrbitalCelestialBody body = state.assetManagementBody;
+            CelestialObject body = state.assetManagementBody;
             if (body == null) return;
-            CelestialBodyAssetState assetState = CelestialAssetStore.getState(body.id());
+            CelestialBodyAssetState assetState = CelestialAssetStore.getState(
+                body.id()
+                    .getId());
             int contentScrollSize = Math.max(mainContentHeight, computeContentHeight(assetState));
             mainScrollData.setScrollSize(contentScrollSize);
             mainScrollContent.removeAll();
@@ -2230,8 +2239,7 @@ public final class AssetManagementSystem {
                 .orElse(Collections.emptyList());
         }
 
-        private List<MinerOreOption> buildGtMinerOreOptions(CelestialObjectRegistration body,
-            MinerModuleData minerData) {
+        private List<MinerOreOption> buildGtMinerOreOptions(CelestialObject body, MinerModuleData minerData) {
             Map<String, MinerOreOption> options = new LinkedHashMap<>();
             body.properties()
                 .gtOreVeinOres()
@@ -2246,8 +2254,7 @@ public final class AssetManagementSystem {
             return new ArrayList<>(options.values());
         }
 
-        private List<MinerOreOption> buildVanillaMinerOreOptions(CelestialObjectRegistration body,
-            MinerModuleData minerData) {
+        private List<MinerOreOption> buildVanillaMinerOreOptions(CelestialObject body, MinerModuleData minerData) {
             List<MinerOreOption> options = new ArrayList<>();
             for (ItemStack ore : body.properties()
                 .ores()) {

@@ -24,12 +24,12 @@ import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.gtnewhorizons.galaxia.client.EnumColors;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 
 public final class OrbitalPinnedInfoContentBuilder {
 
-    List<PinnedInfoRow> buildRows(OrbitalCelestialBody body) {
+    List<PinnedInfoRow> buildRows(CelestialObject body) {
         List<PinnedInfoRow> rows = new ArrayList<>();
         rows.add(new PinnedInfoRow("Name", body.displayName()));
         rows.add(new PinnedInfoRow("Type", formatObjectClass(body.objectClass())));
@@ -53,7 +53,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         return rows;
     }
 
-    void buildSignatureInto(StringBuilder signature, OrbitalCelestialBody body, int width, int height) {
+    void buildSignatureInto(StringBuilder signature, CelestialObject body, int width, int height) {
         signature.setLength(0);
         signature.append(body.id())
             .append('|')
@@ -114,7 +114,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         }
     }
 
-    private String buildDangerSummary(OrbitalCelestialBody body) {
+    private String buildDangerSummary(CelestialObject body) {
         List<String> dangers = new ArrayList<>();
         if (body.properties()
             .radiation() >= 0.25) dangers.add("Radiation");
@@ -139,7 +139,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         return Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
     }
 
-    private boolean isLandable(OrbitalCelestialBody body) {
+    private boolean isLandable(CelestialObject body) {
         return switch (body.objectClass()) {
             case PLANET, MOON, ASTEROID -> body.properties()
                 .visitable();
@@ -147,7 +147,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         };
     }
 
-    private String formatSurfaceType(OrbitalCelestialBody body) {
+    private String formatSurfaceType(CelestialObject body) {
         String surfaceType = body.properties()
             .metadata()
             .get("surface");
@@ -193,15 +193,15 @@ public final class OrbitalPinnedInfoContentBuilder {
 
         interface Callbacks {
 
-            OrbitalCelestialBody getPinnedInfoBody();
+            CelestialObject getPinnedInfoBody();
 
             int getViewportWidth();
 
             int getViewportHeight();
 
-            void buildSignatureInto(StringBuilder buf, OrbitalCelestialBody body, int width, int height);
+            void buildSignatureInto(StringBuilder buf, CelestialObject body, int width, int height);
 
-            List<PinnedInfoRow> buildRows(OrbitalCelestialBody body);
+            List<PinnedInfoRow> buildRows(CelestialObject body);
         }
 
         private static final int PANEL_WIDTH = 116;
@@ -227,7 +227,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         @Override
         public void onUpdate() {
             super.onUpdate();
-            OrbitalCelestialBody body = callbacks.getPinnedInfoBody();
+            CelestialObject body = callbacks.getPinnedInfoBody();
             if (body == null) {
                 if (isEnabled()) {
                     removeAll();
@@ -259,7 +259,7 @@ public final class OrbitalPinnedInfoContentBuilder {
             return true;
         }
 
-        private void rebuildChildren(OrbitalCelestialBody body, List<PinnedInfoRow> rows) {
+        private void rebuildChildren(CelestialObject body, List<PinnedInfoRow> rows) {
             removeAll();
             Minecraft mc = Minecraft.getMinecraft();
             int viewportWidth = callbacks.getViewportWidth();

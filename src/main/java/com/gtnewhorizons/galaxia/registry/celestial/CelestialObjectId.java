@@ -1,7 +1,8 @@
 package com.gtnewhorizons.galaxia.registry.celestial;
 
-import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 import net.minecraft.util.StatCollector;
+
+import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 
 public enum CelestialObjectId {
 

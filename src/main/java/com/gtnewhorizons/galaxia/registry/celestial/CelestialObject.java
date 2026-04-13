@@ -5,20 +5,22 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.StatCollector;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaAPI;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.AbsolutePosition;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalParams;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 
 @Desugar
-public record CelestialObjectRegistration(CelestialObjectId id, String name, String nameKey, CelestialObjectId parentId,
+public record CelestialObject(CelestialObjectId id, String name, String nameKey, CelestialObjectId parentId,
     DimensionEnum dimensionEnum, CelestialObjectClass objectClass, OrbitalParams orbitalParams,
     AbsolutePosition absolutePosition, ResourceLocation texture, double spriteSize,
     CelestialBodyProperties properties) {
 
-    public CelestialObjectRegistration {
+    public CelestialObject {
         if (id == null) throw new IllegalStateException("Celestial object id is required");
         if (name == null || name.isEmpty()) throw new IllegalStateException("Celestial object name is required");
         objectClass = objectClass == null ? CelestialObjectClass.PLANET : objectClass;
@@ -35,6 +37,45 @@ public record CelestialObjectRegistration(CelestialObjectId id, String name, Str
 
     public Builder toBuilder() {
         return new Builder(this);
+    }
+
+    public double mu() {
+        CelestialBodyProperties props = properties();
+        if (props == null) return 0.0;
+        return Math.max(0.0, props.standardGravitationalParameter());
+    }
+
+    public double getHohmannTof(CelestialObject source, CelestialObject dest, CelestialObject root, double time) {
+        OrbitalMechanics.OrbitalState aState = OrbitalMechanics.resolveWorldState(root, this, time);
+        OrbitalMechanics.OrbitalState sState = OrbitalMechanics.resolveWorldState(root, source, time);
+        OrbitalMechanics.OrbitalState dState = OrbitalMechanics.resolveWorldState(root, dest, time);
+        if (aState == null || sState == null || dState == null) return -1.0;
+        double r1 = Math.hypot(sState.x() - aState.x(), sState.y() - aState.y());
+        double r2 = Math.hypot(dState.x() - aState.x(), dState.y() - aState.y());
+        double bodyMu = mu();
+        double sma = (r1 + r2) * 0.5;
+        return Math.PI * Math.sqrt(sma * sma * sma / Math.max(1e-6, bodyMu));
+    }
+
+    public static double computePeriapsis(double rx, double ry, double vx, double vy, double mu) {
+        double r = Math.hypot(rx, ry);
+        if (r < 1e-10) return 0.0;
+        double v2 = vx * vx + vy * vy;
+        double energy = 0.5 * v2 - mu / r;
+        double h = rx * vy - ry * vx;
+        double p = h * h / Math.max(1e-30, mu);
+        double disc = 1.0 + 2.0 * energy * p / mu;
+        double ecc = Math.sqrt(Math.max(0.0, disc));
+        return p / (1.0 + ecc);
+    }
+
+    public String displayName() {
+        String nameKey = nameKey();
+        if (nameKey != null && !nameKey.isEmpty()) {
+            String translated = StatCollector.translateToLocal(nameKey);
+            if (!nameKey.equals(translated)) return translated;
+        }
+        return name();
     }
 
     public static final class Builder {
@@ -54,7 +95,7 @@ public record CelestialObjectRegistration(CelestialObjectId id, String name, Str
 
         public Builder() {}
 
-        public Builder(CelestialObjectRegistration source) {
+        public Builder(CelestialObject source) {
             if (source == null) return;
             this.id = source.id;
             this.name = source.name;
@@ -172,8 +213,8 @@ public record CelestialObjectRegistration(CelestialObjectId id, String name, Str
             return this;
         }
 
-        public CelestialObjectRegistration build() {
-            return new CelestialObjectRegistration(
+        public CelestialObject build() {
+            return new CelestialObject(
                 id,
                 name,
                 nameKey,

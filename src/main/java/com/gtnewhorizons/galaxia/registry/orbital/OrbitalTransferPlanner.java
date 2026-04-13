@@ -1,8 +1,9 @@
 package com.gtnewhorizons.galaxia.registry.orbital;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 
 /**
  * Shared (non-client) utilities for interplanetary trajectory planning.
@@ -71,15 +72,15 @@ public final class OrbitalTransferPlanner {
      * Finds a body in the hierarchy by id, starting from {@code root}.
      * Returns {@code null} if not found.
      */
-    public static OrbitalCelestialBody findBodyById(OrbitalCelestialBody root, String id) {
+    public static CelestialObject findBodyById(CelestialObject root, String id) {
         if (root == null || id == null) return null;
         return findBodyByIdRec(root, id);
     }
 
-    private static OrbitalCelestialBody findBodyByIdRec(OrbitalCelestialBody current, String id) {
+    private static CelestialObject findBodyByIdRec(CelestialObject current, String id) {
         if (id.equals(current.id())) return current;
-        for (OrbitalCelestialBody child : current.children()) {
-            OrbitalCelestialBody found = findBodyByIdRec(child, id);
+        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
+            CelestialObject found = findBodyByIdRec(child, id);
             if (found != null) return found;
         }
         return null;
@@ -89,17 +90,17 @@ public final class OrbitalTransferPlanner {
      * Finds the nearest {@link CelestialObjectClass#STAR} ancestor of {@code target}.
      * Returns {@code null} if no star is found above the target.
      */
-    public static OrbitalCelestialBody findHostStar(OrbitalCelestialBody root, OrbitalCelestialBody target) {
+    public static CelestialObject findHostStar(CelestialObject root, CelestialObject target) {
         if (root == null || target == null) return null;
         return findHostStarRec(root, target, null);
     }
 
-    private static OrbitalCelestialBody findHostStarRec(OrbitalCelestialBody current, OrbitalCelestialBody target,
-        OrbitalCelestialBody currentStar) {
-        OrbitalCelestialBody nextStar = current.objectClass() == CelestialObjectClass.STAR ? current : currentStar;
+    private static CelestialObject findHostStarRec(CelestialObject current, CelestialObject target,
+        CelestialObject currentStar) {
+        CelestialObject nextStar = current.objectClass() == CelestialObjectClass.STAR ? current : currentStar;
         if (current == target) return nextStar;
-        for (OrbitalCelestialBody child : current.children()) {
-            OrbitalCelestialBody found = findHostStarRec(child, target, nextStar);
+        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
+            CelestialObject found = findHostStarRec(child, target, nextStar);
             if (found != null) return found;
         }
         return null;
@@ -113,21 +114,21 @@ public final class OrbitalTransferPlanner {
      * PLANET/GAS_GIANT ancestor, or the target itself if none is found.</li>
      * </ul>
      */
-    public static OrbitalCelestialBody findPlanetaryAnchor(OrbitalCelestialBody root, OrbitalCelestialBody target) {
+    public static CelestialObject findPlanetaryAnchor(CelestialObject root, CelestialObject target) {
         if (root == null || target == null) return target;
-        OrbitalCelestialBody anchor = findPlanetaryAnchorRec(root, target, null);
+        CelestialObject anchor = findPlanetaryAnchorRec(root, target, null);
         return anchor != null ? anchor : target;
     }
 
-    private static OrbitalCelestialBody findPlanetaryAnchorRec(OrbitalCelestialBody current,
-        OrbitalCelestialBody target, OrbitalCelestialBody currentPlanet) {
+    private static CelestialObject findPlanetaryAnchorRec(CelestialObject current, CelestialObject target,
+        CelestialObject currentPlanet) {
         CelestialObjectClass cls = current.objectClass();
-        OrbitalCelestialBody nextPlanet = (cls == CelestialObjectClass.PLANET || cls == CelestialObjectClass.GAS_GIANT)
+        CelestialObject nextPlanet = (cls == CelestialObjectClass.PLANET || cls == CelestialObjectClass.GAS_GIANT)
             ? current
             : currentPlanet;
         if (current == target) return nextPlanet != null ? nextPlanet : current;
-        for (OrbitalCelestialBody child : current.children()) {
-            OrbitalCelestialBody found = findPlanetaryAnchorRec(child, target, nextPlanet);
+        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
+            CelestialObject found = findPlanetaryAnchorRec(child, target, nextPlanet);
             if (found != null) return found;
         }
         return null;
@@ -148,8 +149,8 @@ public final class OrbitalTransferPlanner {
      * @return the minimum-TOF {@link TransferRoute}, or {@code null} if no valid route exists
      */
 
-    public static TransferRoute computeRoute(OrbitalCelestialBody root, OrbitalCelestialBody attractor,
-        OrbitalCelestialBody source, OrbitalCelestialBody dest, double departureTime, RoutePriority priority) {
+    public static TransferRoute computeRoute(CelestialObject root, CelestialObject attractor, CelestialObject source,
+        CelestialObject dest, double departureTime, RoutePriority priority) {
         if (root == null || attractor == null || source == null || dest == null || source == dest) return null;
 
         double mu = attractor.mu();

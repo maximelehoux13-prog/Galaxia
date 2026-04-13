@@ -1,6 +1,7 @@
 package com.gtnewhorizons.galaxia.registry.orbital;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 
 public final class LambertTransfer {
 
@@ -141,7 +142,7 @@ public final class LambertTransfer {
         Solution sol = solve();
         if (!sol.valid()) return Solution.invalid();
 
-        double periapsis = Hierarchy.OrbitalCelestialBody.computePeriapsis(r1x, r1y, sol.dvx1(), sol.dvy1(), mu);
+        double periapsis = CelestialObject.computePeriapsis(r1x, r1y, sol.dvx1(), sol.dvy1(), mu);
         if (periapsis < minPeriapsis) return Solution.invalid();
 
         double depDv = Math.hypot(sol.dvx1() - vsrcX, sol.dvy1() - vsrcY);

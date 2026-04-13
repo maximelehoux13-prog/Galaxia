@@ -23,6 +23,7 @@ import com.cleanroommc.modularui.widgets.slot.ItemSlot;
 import com.cleanroommc.modularui.widgets.slot.ModularSlot;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.client.gui.mui.SafePhantomItemSlot;
@@ -34,23 +35,23 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 
 @Desugar
-record VisibleEntry(OrbitalCelestialBody body, int depth, boolean hasChildren) {}
+record VisibleEntry(CelestialObject body, int depth, boolean hasChildren) {}
 
 @Desugar
 record RowLayout(VisibleEntry entry, int left, int right, int top, int bottom) {}
 
 public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget> {
 
-    private final OrbitalCelestialBody root;
+    private final CelestialObject root;
     private final OrbitalView.OrbitalMapWidget map;
-    private OrbitalCelestialBody currentSystem;
-    private OrbitalCelestialBody activeLayer;
+    private CelestialObject currentSystem;
+    private CelestialObject activeLayer;
     private String searchQuery = "";
-    private final Set<OrbitalCelestialBody> expanded = new HashSet<>();
+    private final Set<CelestialObject> expanded = new HashSet<>();
     private double scrollOffset = 0;
     private TextFieldWidget searchField;
     // Supply Debug panel state
@@ -90,7 +91,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private static final int DEBUG_PICK_BUTTON_LEFT = DEBUG_PANEL_PADDING + 134;
     private static final int DEBUG_PICK_BUTTON_WIDTH = 68;
 
-    public CelestialSidebarWidget(OrbitalCelestialBody root, OrbitalCelestialBody currentSystem,
+    public CelestialSidebarWidget(CelestialObject root, CelestialObject currentSystem,
         OrbitalView.OrbitalMapWidget map) {
         this.root = root;
         this.map = map;
@@ -195,26 +196,24 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         if (!visibleEntriesDirty) return;
         cachedVisibleEntries.clear();
         if (activeLayer != root) {
-            for (OrbitalCelestialBody child : activeLayer.children()) collect(child, 0, cachedVisibleEntries);
+            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(activeLayer))
+                collect(child, 0, cachedVisibleEntries);
         }
         visibleEntriesDirty = false;
         rowLayoutsDirty = true;
     }
 
-    private void collect(OrbitalCelestialBody body, int depth, List<VisibleEntry> list) {
+    private void collect(CelestialObject body, int depth, List<VisibleEntry> list) {
         boolean matches = searchQuery.isEmpty() || body.displayName()
             .toLowerCase()
             .contains(searchQuery);
+
+        List<CelestialObject> childs = GalaxiaCelestialAPI.getChildren(body);
         if (matches || searchQuery.isEmpty()) {
-            list.add(
-                new VisibleEntry(
-                    body,
-                    depth,
-                    !body.children()
-                        .isEmpty()));
+            list.add(new VisibleEntry(body, depth, !childs.isEmpty()));
         }
         if (expanded.contains(body) || !searchQuery.isEmpty()) {
-            for (OrbitalCelestialBody child : body.children()) collect(child, depth + 1, list);
+            for (CelestialObject child : childs) collect(child, depth + 1, list);
         }
     }
 
@@ -339,7 +338,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         return false;
     }
 
-    private void selectLayer(OrbitalCelestialBody layerRoot) {
+    private void selectLayer(CelestialObject layerRoot) {
         activeLayer = layerRoot == null ? root : layerRoot;
         if (activeLayer != null) expanded.add(activeLayer);
         scrollOffset = 0;
@@ -347,7 +346,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         map.showLayer(activeLayer);
     }
 
-    private void handleMapSelection(OrbitalCelestialBody body) {
+    private void handleMapSelection(CelestialObject body) {
         if (body.objectClass() == CelestialObjectClass.STAR) {
             currentSystem = body;
             if (activeLayer == root) {
@@ -542,7 +541,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private String resolveSupplyDebugTargetLabel() {
         CelestialManagedAsset asset = resolveSupplyDebugAsset();
         if (asset == null) {
-            OrbitalCelestialBody focused = map.getFocusedBody();
+            CelestialObject focused = map.getFocusedBody();
             if (focused == null) return "No body selected";
             return "No outpost on " + focused.displayName();
         }
@@ -572,9 +571,11 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     }
 
     private String resolveSupplyDebugAssetId() {
-        OrbitalCelestialBody focused = map.getFocusedBody();
+        CelestialObject focused = map.getFocusedBody();
         if (focused == null) return null;
-        CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());
+        CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(
+            focused.id()
+                .getId());
         for (CelestialManagedAsset asset : state.assets()) {
             if (asset.status() != CelestialAssetStatus.OPERATIONAL) continue;
             if (asset.kind() == CelestialAssetKind.AUTOMATED_OUTPOST
@@ -710,7 +711,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         int mouseLocalX = getContext().getMouseX() - getArea().rx;
         int mouseLocalY = getContext().getMouseY() - getArea().ry;
         VisibleEntry hoveredEntry = findVisibleRowAt(mouseLocalX, mouseLocalY);
-        OrbitalCelestialBody hoveredBody = hoveredEntry == null ? null : hoveredEntry.body();
+        CelestialObject hoveredBody = hoveredEntry == null ? null : hoveredEntry.body();
         for (RowLayout row : cachedRowLayouts) {
             VisibleEntry e = row.entry();
             int sy = row.top();

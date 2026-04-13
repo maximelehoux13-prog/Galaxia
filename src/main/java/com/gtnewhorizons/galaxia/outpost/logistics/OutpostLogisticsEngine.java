@@ -6,7 +6,7 @@ import java.util.Map;
 
 import net.minecraft.server.MinecraftServer;
 
-import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
@@ -21,7 +21,7 @@ import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostFullSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -74,7 +74,7 @@ public final class OutpostLogisticsEngine {
         tickOutposts();
         tickModuleCooldowns();
         tickTasks();
-        OrbitalCelestialBody root = GalaxiaCelestialAPI.getPrimaryRoot();
+        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         rebuildSignals(root);
         matchAndDispatch(root);
         syncClients();
@@ -133,7 +133,7 @@ public final class OutpostLogisticsEngine {
     // Step 2 – Rebuild signal registries
     // -------------------------------------------------------------------------
 
-    private void rebuildSignals(OrbitalCelestialBody root) {
+    private void rebuildSignals(CelestialObject root) {
         LogisticsSignalStore store = LogisticsSignalStore.get();
         store.clear();
 
@@ -197,7 +197,7 @@ public final class OutpostLogisticsEngine {
     // Step 3 – Match signals and dispatch tasks
     // -------------------------------------------------------------------------
 
-    private void matchAndDispatch(OrbitalCelestialBody root) {
+    private void matchAndDispatch(CelestialObject root) {
         double orbitalTime = currentOrbitalTime();
         LogisticsSignalStore store = LogisticsSignalStore.get();
 
@@ -211,7 +211,7 @@ public final class OutpostLogisticsEngine {
         }
     }
 
-    private void matchSystemBucket(List<LogisticsSignal> signals, double orbitalTime, OrbitalCelestialBody root) {
+    private void matchSystemBucket(List<LogisticsSignal> signals, double orbitalTime, CelestialObject root) {
         List<LogisticsSignal> requests = new ArrayList<>();
         List<LogisticsSignal> supplies = new ArrayList<>();
         for (LogisticsSignal s : signals) {
@@ -258,13 +258,13 @@ public final class OutpostLogisticsEngine {
      * (i.e. same planet/gas-giant or both on the same planet's moon system).
      * Used to gate BIG_HAMMER on the {@code planetaryTransferHandling} toggle.
      */
-    private static boolean sharesPlanetaryAnchor(OrbitalCelestialBody root, String bodyIdA, String bodyIdB) {
+    private static boolean sharesPlanetaryAnchor(CelestialObject root, String bodyIdA, String bodyIdB) {
         if (root == null || bodyIdA == null || bodyIdB == null) return false;
-        OrbitalCelestialBody a = OrbitalTransferPlanner.findBodyById(root, bodyIdA);
-        OrbitalCelestialBody b = OrbitalTransferPlanner.findBodyById(root, bodyIdB);
+        CelestialObject a = OrbitalTransferPlanner.findBodyById(root, bodyIdA);
+        CelestialObject b = OrbitalTransferPlanner.findBodyById(root, bodyIdB);
         if (a == null || b == null) return false;
-        OrbitalCelestialBody anchorA = OrbitalTransferPlanner.findPlanetaryAnchor(root, a);
-        OrbitalCelestialBody anchorB = OrbitalTransferPlanner.findPlanetaryAnchor(root, b);
+        CelestialObject anchorA = OrbitalTransferPlanner.findPlanetaryAnchor(root, a);
+        CelestialObject anchorB = OrbitalTransferPlanner.findPlanetaryAnchor(root, b);
         return anchorA != null && anchorA == anchorB;
     }
 
@@ -273,7 +273,7 @@ public final class OutpostLogisticsEngine {
     // -------------------------------------------------------------------------
 
     private boolean tryDispatchHammer(AutomatedOutpostState supplier, AutomatedOutpostState requester,
-        LogisticsSignal request, double orbitalTime, OrbitalCelestialBody root) {
+        LogisticsSignal request, double orbitalTime, CelestialObject root) {
         AutomatedOutpostModule hammer = supplier.firstOperationalModule(OutpostModuleKind.HAMMER);
         if (hammer == null || hammer.cooldownTicks > 0) return false;
 
@@ -305,10 +305,9 @@ public final class OutpostLogisticsEngine {
         }
 
         // Cross-body: compute trajectory
-        OrbitalCelestialBody srcBody = OrbitalTransferPlanner.findBodyById(root, supplier.celestialBodyId);
-        OrbitalCelestialBody dstBody = OrbitalTransferPlanner.findBodyById(root, requester.celestialBodyId);
-        OrbitalCelestialBody attractor = srcBody != null ? OrbitalTransferPlanner.findPlanetaryAnchor(root, srcBody)
-            : null;
+        CelestialObject srcBody = OrbitalTransferPlanner.findBodyById(root, supplier.celestialBodyId);
+        CelestialObject dstBody = OrbitalTransferPlanner.findBodyById(root, requester.celestialBodyId);
+        CelestialObject attractor = srcBody != null ? OrbitalTransferPlanner.findPlanetaryAnchor(root, srcBody) : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && attractor != null)
             ? OrbitalTransferPlanner
@@ -361,7 +360,7 @@ public final class OutpostLogisticsEngine {
     // -------------------------------------------------------------------------
 
     private boolean tryDispatchBigHammer(AutomatedOutpostState supplier, AutomatedOutpostState requester,
-        LogisticsSignal request, double orbitalTime, OrbitalCelestialBody root) {
+        LogisticsSignal request, double orbitalTime, CelestialObject root) {
         AutomatedOutpostModule bigHammer = supplier.firstOperationalModule(OutpostModuleKind.BIG_HAMMER);
         if (bigHammer == null || bigHammer.cooldownTicks > 0) return false;
 
@@ -392,9 +391,9 @@ public final class OutpostLogisticsEngine {
         }
 
         // Cross-body: Lambert route (attractor = host star)
-        OrbitalCelestialBody srcBody = OrbitalTransferPlanner.findBodyById(root, supplier.celestialBodyId);
-        OrbitalCelestialBody dstBody = OrbitalTransferPlanner.findBodyById(root, requester.celestialBodyId);
-        OrbitalCelestialBody star = srcBody != null ? OrbitalTransferPlanner.findHostStar(root, srcBody) : null;
+        CelestialObject srcBody = OrbitalTransferPlanner.findBodyById(root, supplier.celestialBodyId);
+        CelestialObject dstBody = OrbitalTransferPlanner.findBodyById(root, requester.celestialBodyId);
+        CelestialObject star = srcBody != null ? OrbitalTransferPlanner.findHostStar(root, srcBody) : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && star != null)
             ? OrbitalTransferPlanner

@@ -30,8 +30,8 @@ import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 /**
@@ -73,8 +73,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         PLANETARY
     }
 
-    private final OrbitalCelestialBody galaxyRoot;
-    private final Supplier<OrbitalCelestialBody> viewRootSupplier;
+    private final CelestialObject galaxyRoot;
+    private final Supplier<CelestialObject> viewRootSupplier;
     private final Supplier<Boolean> openSupplier;
     private final ParentWidget<?> panelRoot;
     private ScrollWidget<?> scrollWidget;
@@ -86,7 +86,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
     private String cachedTitle = "";
     private final Map<String, SignalRowState> rowStates = new LinkedHashMap<>();
 
-    LogisticsSignalsWidget(OrbitalCelestialBody galaxyRoot, Supplier<OrbitalCelestialBody> viewRootSupplier,
+    LogisticsSignalsWidget(CelestialObject galaxyRoot, Supplier<CelestialObject> viewRootSupplier,
         Supplier<Boolean> openSupplier) {
         this.galaxyRoot = galaxyRoot;
         this.viewRootSupplier = viewRootSupplier;
@@ -116,7 +116,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             return;
         }
 
-        OrbitalCelestialBody viewRoot = currentViewRoot();
+        CelestialObject viewRoot = currentViewRoot();
         int rev = currentDataRevision(viewRoot);
         if (rev == lastDataRevision) return;
         lastDataRevision = rev;
@@ -144,12 +144,12 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             && localY <= PANEL_Y + getArea().height;
     }
 
-    private OrbitalCelestialBody currentViewRoot() {
-        OrbitalCelestialBody viewRoot = viewRootSupplier.get();
+    private CelestialObject currentViewRoot() {
+        CelestialObject viewRoot = viewRootSupplier.get();
         return viewRoot == null ? galaxyRoot : viewRoot;
     }
 
-    private int currentDataRevision(OrbitalCelestialBody viewRoot) {
+    private int currentDataRevision(CelestialObject viewRoot) {
         int r = 0x1A2B3C4D;
         r = r * 31 + OutpostDataStore.get()
             .clientSignalRevision();
@@ -176,7 +176,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         return sig.toString();
     }
 
-    private void rebuildPanel(ViewScope scope, OrbitalCelestialBody viewRoot, List<SignalRow> rows) {
+    private void rebuildPanel(ViewScope scope, CelestialObject viewRoot, List<SignalRow> rows) {
         int rowsToShow = Math.min(MAX_VISIBLE_ROWS, rows.size());
         int panelH = 30 + 16 + rowsToShow * (ROW_H + 2) + (rows.isEmpty() ? 18 : 0) + 8;
 
@@ -234,14 +234,14 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         scheduleResize();
     }
 
-    private String buildScopeLabel(ViewScope scope, OrbitalCelestialBody viewRoot) {
+    private String buildScopeLabel(ViewScope scope, CelestialObject viewRoot) {
         if (scope == ViewScope.GALACTIC) return "Logistics Signals \u2014 Galaxy";
         if (scope == ViewScope.SYSTEM) return "Logistics Signals \u2014 " + viewRoot.name() + " system";
-        OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+        CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
         return "Logistics Signals \u2014 " + (anchor != null ? anchor.name() : viewRoot.name());
     }
 
-    private void updateRowStates(List<SignalRow> rows, ViewScope scope, OrbitalCelestialBody viewRoot) {
+    private void updateRowStates(List<SignalRow> rows, ViewScope scope, CelestialObject viewRoot) {
         cachedTitle = buildScopeLabel(scope, viewRoot);
         Map<String, SignalRowState> nextStates = new HashMap<>();
         for (SignalRow row : rows) {
@@ -305,14 +305,14 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         return rowWidget;
     }
 
-    private ViewScope scopeFor(OrbitalCelestialBody viewRoot) {
+    private ViewScope scopeFor(CelestialObject viewRoot) {
         if (viewRoot == null || viewRoot == galaxyRoot || viewRoot.objectClass() == CelestialObjectClass.GALAXY)
             return ViewScope.GALACTIC;
         if (viewRoot.objectClass() == CelestialObjectClass.STAR) return ViewScope.SYSTEM;
         return ViewScope.PLANETARY;
     }
 
-    private boolean isOutpostInScope(AutomatedOutpostState outpost, ViewScope scope, OrbitalCelestialBody viewRoot) {
+    private boolean isOutpostInScope(AutomatedOutpostState outpost, ViewScope scope, CelestialObject viewRoot) {
         switch (scope) {
             case GALACTIC:
                 return true;
@@ -320,8 +320,11 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
                 return viewRoot.id()
                     .equals(outpost.systemId);
             case PLANETARY: {
-                OrbitalCelestialBody viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
-                String viewAnchorId = viewAnchor != null ? viewAnchor.id() : viewRoot.id();
+                CelestialObject viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+                String viewAnchorId = viewAnchor != null ? viewAnchor.id()
+                    .getId()
+                    : viewRoot.id()
+                        .getId();
                 return outpost.planetaryAnchorBodyId != null && outpost.planetaryAnchorBodyId.equals(viewAnchorId);
             }
             default:
@@ -329,22 +332,22 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         }
     }
 
-    private boolean isBodyIdInScope(String bodyId, ViewScope scope, OrbitalCelestialBody viewRoot) {
+    private boolean isBodyIdInScope(String bodyId, ViewScope scope, CelestialObject viewRoot) {
         if (bodyId == null || bodyId.isEmpty()) return false;
         switch (scope) {
             case GALACTIC:
                 return true;
             case SYSTEM: {
-                OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(galaxyRoot, bodyId);
+                CelestialObject body = OrbitalTransferPlanner.findBodyById(galaxyRoot, bodyId);
                 if (body == null) return false;
-                OrbitalCelestialBody star = OrbitalTransferPlanner.findHostStar(galaxyRoot, body);
+                CelestialObject star = OrbitalTransferPlanner.findHostStar(galaxyRoot, body);
                 return star != null && star == viewRoot;
             }
             case PLANETARY: {
-                OrbitalCelestialBody body = OrbitalTransferPlanner.findBodyById(galaxyRoot, bodyId);
+                CelestialObject body = OrbitalTransferPlanner.findBodyById(galaxyRoot, bodyId);
                 if (body == null) return false;
-                OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, body);
-                OrbitalCelestialBody viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+                CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, body);
+                CelestialObject viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
                 return anchor != null && anchor == viewAnchor;
             }
             default:
@@ -352,16 +355,21 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         }
     }
 
-    private List<SignalRow> aggregateSignals(ViewScope scope, OrbitalCelestialBody viewRoot) {
+    private List<SignalRow> aggregateSignals(ViewScope scope, CelestialObject viewRoot) {
         Map<String, Long> signalData;
         switch (scope) {
             case SYSTEM:
                 signalData = OutpostDataStore.get()
-                    .clientSignalsForSystem(viewRoot.id());
+                    .clientSignalsForSystem(
+                        viewRoot.id()
+                            .getId());
                 break;
             case PLANETARY: {
-                OrbitalCelestialBody anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
-                String anchorId = anchor != null ? anchor.id() : viewRoot.id();
+                CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+                String anchorId = anchor != null ? anchor.id()
+                    .getId()
+                    : viewRoot.id()
+                        .getId();
                 signalData = OutpostDataStore.get()
                     .clientSignalsForPlanet(anchorId);
                 break;
@@ -450,7 +458,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             this.item = item;
         }
 
-        private void refresh(SignalRow row, ViewScope scope, OrbitalCelestialBody viewRoot) {
+        private void refresh(SignalRow row, ViewScope scope, CelestialObject viewRoot) {
             this.displayStack = item.toStack(1);
             String fullName = displayStack != null ? displayStack.getDisplayName() : item.toKey();
             this.trimmedName = trimToPixels(fullName, NAME_W - 6);

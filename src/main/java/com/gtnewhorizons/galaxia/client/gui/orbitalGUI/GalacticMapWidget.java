@@ -11,7 +11,7 @@ import com.cleanroommc.modularui.widget.ParentWidget;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.gtnewhorizons.galaxia.client.EnumColors;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 
 public final class GalacticMapWidget extends ParentWidget<GalacticMapWidget> {
 
@@ -28,8 +28,7 @@ public final class GalacticMapWidget extends ParentWidget<GalacticMapWidget> {
     private String signalsLabel = "Signals";
     private String transfersLabel = "Hide Transfers";
 
-    public GalacticMapWidget(OrbitalCelestialBody galaxyRoot, OrbitalCelestialBody initialLayer,
-        TextFieldWidget renameField) {
+    public GalacticMapWidget(CelestialObject galaxyRoot, CelestialObject initialLayer, TextFieldWidget renameField) {
         this.mapWidget = new OrbitalView.OrbitalMapWidget(galaxyRoot).withInitialLayer(initialLayer)
             .attachRenameField(renameField);
         this.signalsButton = createTopBarButton(() -> signalsLabel, () -> {

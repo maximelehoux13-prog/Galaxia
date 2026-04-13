@@ -16,8 +16,8 @@ import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 
 @Desugar
 record ContextMenuAction(String label, boolean enabled, OrbitalContextMenuWidget.ContextMenuActionType actionType) {}
@@ -45,17 +45,17 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
 
         int getViewportHeight();
 
-        boolean canCreateBaseStation(OrbitalCelestialBody body);
+        boolean canCreateBaseStation(CelestialObject body);
 
-        boolean canCreateAutomatedStation(OrbitalCelestialBody body);
+        boolean canCreateAutomatedStation(CelestialObject body);
 
-        boolean canCreateAutomatedOutpost(OrbitalCelestialBody body);
+        boolean canCreateAutomatedOutpost(CelestialObject body);
 
-        void openAssetManagement(OrbitalCelestialBody body);
+        void openAssetManagement(CelestialObject body);
 
-        void createBaseStation(OrbitalCelestialBody body);
+        void createBaseStation(CelestialObject body);
 
-        void triggerAssetCreation(OrbitalCelestialBody body, CelestialAssetKind kind, boolean openManagementFirst);
+        void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind, boolean openManagementFirst);
 
         void closeContextMenu();
     }
@@ -115,9 +115,10 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
     }
 
     private String buildSignature() {
-        OrbitalCelestialBody body = state.body();
+        CelestialObject body = state.body();
         if (body == null) return "";
-        return body.id() + '|'
+        return body.id()
+            .getId() + '|'
             + body.displayName()
             + '|'
             + state.x()
@@ -139,7 +140,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
         removeAll();
         menuRoot = null;
 
-        OrbitalCelestialBody body = state.body();
+        CelestialObject body = state.body();
         ContextMenuLayout layout = getLayout(body, state.x(), state.y(), getArea().width, getArea().height);
         if (layout == null) return;
 
@@ -171,7 +172,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
         child(root);
     }
 
-    private ParentWidget<?> createActionRow(OrbitalCelestialBody body, ContextMenuAction action, int height) {
+    private ParentWidget<?> createActionRow(CelestialObject body, ContextMenuAction action, int height) {
         ParentWidget<?> row = new ParentWidget<>().widthRel(1f)
             .height(height);
 
@@ -204,7 +205,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
         return row;
     }
 
-    private void handleAction(OrbitalCelestialBody body, ContextMenuActionType actionType) {
+    private void handleAction(CelestialObject body, ContextMenuActionType actionType) {
         switch (actionType) {
             case MANAGE_ASSETS -> callbacks.openAssetManagement(body);
             case CREATE_STATION -> callbacks.createBaseStation(body);
@@ -217,8 +218,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
         callbacks.closeContextMenu();
     }
 
-    private ContextMenuLayout getLayout(OrbitalCelestialBody body, int menuX, int menuY, int widgetWidth,
-        int widgetHeight) {
+    private ContextMenuLayout getLayout(CelestialObject body, int menuX, int menuY, int widgetWidth, int widgetHeight) {
         if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) return null;
 
         List<ContextMenuAction> actions = buildActions(body);
@@ -239,7 +239,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
         return new ContextMenuLayout(left, top, left + width, top + height, headerHeight, rowHeight, actions);
     }
 
-    private List<ContextMenuAction> buildActions(OrbitalCelestialBody body) {
+    private List<ContextMenuAction> buildActions(CelestialObject body) {
         List<ContextMenuAction> actions = new ArrayList<>();
         actions.add(new ContextMenuAction("Manage Assets", true, ContextMenuActionType.MANAGE_ASSETS));
         if (callbacks.canCreateBaseStation(body)) {

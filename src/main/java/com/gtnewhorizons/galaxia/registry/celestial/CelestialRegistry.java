@@ -5,14 +5,11 @@ import static com.gtnewhorizons.galaxia.registry.dimension.planets.BasePlanet.ea
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -20,15 +17,16 @@ import net.minecraft.init.Blocks;
 
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 
 public final class CelestialRegistry {
 
-    private static final Map<CelestialObjectId, CelestialObjectRegistration> REGISTRATIONS = new LinkedHashMap<>();
+    private static final Map<CelestialObjectId, CelestialObject> REGISTRATIONS = new LinkedHashMap<>();
     private static final Map<DimensionEnum, CelestialObjectId> IDS_BY_DIMENSION = new EnumMap<>(DimensionEnum.class);
 
     private static boolean bootstrapped;
     private static boolean frozen;
+
+    public static CelestialHierarchy hierarchy;
 
     private CelestialRegistry() {}
 
@@ -265,9 +263,8 @@ public final class CelestialRegistry {
                         .metadata("stationRole", "orbital_logistics")));
     }
 
-    public static void register(CelestialObjectId id,
-        @Nonnull Consumer<CelestialObjectRegistration.Builder> registrationBuilder) {
-        CelestialObjectRegistration.Builder builder = CelestialObjectRegistration.builder()
+    public static void register(CelestialObjectId id, @Nonnull Consumer<CelestialObject.Builder> registrationBuilder) {
+        CelestialObject.Builder builder = CelestialObject.builder()
             .id(id);
 
         registrationBuilder.accept(builder);
@@ -275,45 +272,30 @@ public final class CelestialRegistry {
     }
 
     public static void register(DimensionEnum dimension,
-        @Nonnull Consumer<CelestialObjectRegistration.Builder> registrationBuilder) {
-        CelestialObjectRegistration.Builder builder = CelestialObjectRegistration.builder()
+        @Nonnull Consumer<CelestialObject.Builder> registrationBuilder) {
+        CelestialObject.Builder builder = CelestialObject.builder()
             .dimension(dimension);
         registrationBuilder.accept(builder);
         register(builder.build());
     }
 
-    public static void register(@Nonnull CelestialObjectRegistration registration) {
+    public static void register(@Nonnull CelestialObject registration) {
         assertMutable();
         validateRegistration(registration, null);
         REGISTRATIONS.put(registration.id(), registration);
         if (registration.dimensionEnum() != null) {
             IDS_BY_DIMENSION.put(registration.dimensionEnum(), registration.id());
         }
-//        CelestialHierarchy.reset();
-    }
-
-    public static void modify(@Nonnull CelestialObjectId id,
-        @Nonnull Consumer<CelestialObjectRegistration.Builder> mutator) {
-        registerDefaults();
-        assertMutable();
-        CelestialObjectRegistration existing = REGISTRATIONS.get(id);
-        if (existing == null) throw new IllegalArgumentException("Unknown celestial object id: " + id);
-        CelestialObjectRegistration.Builder builder = existing.toBuilder();
-        mutator.accept(builder);
-        CelestialObjectRegistration modified = builder.build();
-        if (!id.equals(modified.id()))
-            throw new IllegalArgumentException("Celestial object id cannot be modified: " + id);
-        validateRegistration(modified, id);
-        if (existing.dimensionEnum() != null) IDS_BY_DIMENSION.remove(existing.dimensionEnum());
-        REGISTRATIONS.put(id, modified);
-        if (modified.dimensionEnum() != null) IDS_BY_DIMENSION.put(modified.dimensionEnum(), id);
-//        CelestialHierarchy.reset();
     }
 
     public static void freezeAndBake() {
         registerDefaults();
         if (frozen) return;
-        CelestialHierarchy.build(getAll());
+
+        hierarchy = CelestialHierarchy.builder()
+            .add(getAll())
+            .build();
+
         frozen = true;
     }
 
@@ -321,36 +303,41 @@ public final class CelestialRegistry {
         return frozen;
     }
 
-    public static Optional<CelestialObjectRegistration> get(CelestialObjectId id) {
+    public static Optional<CelestialObject> get(CelestialObjectId id) {
         return Optional.ofNullable(REGISTRATIONS.get(id));
     }
 
-    public static List<CelestialObjectRegistration> getAll() {
+    public static List<CelestialObject> getAll() {
         return Collections.unmodifiableList(new ArrayList<>(REGISTRATIONS.values()));
     }
 
-    public static List<OrbitalCelestialBody> getRoots() {
-        return CelestialHierarchy.getInstance().getRoots();
+    public static List<CelestialObject> getRoots() {
+        return hierarchy.roots();
     }
 
-    public static CelestialHierarchy getHierarchy() {
-        return CelestialHierarchy.getInstance();
-    }
-
-    public static OrbitalCelestialBody getPrimaryRoot() {
-        List<OrbitalCelestialBody> roots = getRoots();
+    public static CelestialObject getPrimaryRoot() {
+        List<CelestialObject> roots = getRoots();
         if (roots.isEmpty()) throw new IllegalStateException("No celestial objects have been registered");
         return roots.get(0);
     }
 
-    public static Optional<OrbitalCelestialBody> findByDimension(DimensionEnum dimension) {
+    public static Optional<CelestialObject> findByDimension(DimensionEnum dimension) {
         registerDefaults();
         CelestialObjectId objectId = IDS_BY_DIMENSION.get(dimension);
         if (objectId == null) return Optional.empty();
-        return getHierarchy().findById(objectId);
+        return Optional.ofNullable(
+            hierarchy.bodiesById()
+                .get(objectId));
     }
 
-    private static void validateRegistration(CelestialObjectRegistration registration, CelestialObjectId existingId) {
+    public static Optional<CelestialObject> findById(CelestialObjectId id) {
+        registerDefaults();
+        return Optional.ofNullable(
+            hierarchy.bodiesById()
+                .get(id));
+    }
+
+    private static void validateRegistration(CelestialObject registration, CelestialObjectId existingId) {
         if (REGISTRATIONS.containsKey(registration.id()) && !registration.id()
             .equals(existingId)) {
             throw new IllegalArgumentException("Duplicate celestial object id: " + registration.id());

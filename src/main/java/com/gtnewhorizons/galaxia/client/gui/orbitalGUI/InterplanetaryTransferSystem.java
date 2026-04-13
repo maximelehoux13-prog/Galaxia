@@ -21,9 +21,10 @@ import com.cleanroommc.modularui.widgets.SliderWidget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.orbital.LambertTransfer;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
@@ -34,8 +35,8 @@ import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 @Desugar
 record InterplanetaryTransferJob(String transferId, String displayName, String inventorySummary,
-    OrbitalCelestialBody rootBody, OrbitalCelestialBody sourceBody, OrbitalCelestialBody destinationBody,
-    OrbitalCelestialBody orbitAnchorBody, double departureTime, double arrivalTime, double[] trajectoryXs,
+    CelestialObject rootBody, CelestialObject sourceBody, CelestialObject destinationBody,
+    CelestialObject orbitAnchorBody, double departureTime, double arrivalTime, double[] trajectoryXs,
     double[] trajectoryYs, int trajectoryPointCount) {
 
     public InterplanetaryTransferJob {
@@ -219,18 +220,18 @@ public final class InterplanetaryTransferSystem {
     // Helper methods (delegates to shared OrbitalTransferPlanner)
     // -----------------------------------------------------------------------
 
-    private static OrbitalCelestialBody findHostStar(OrbitalCelestialBody root, OrbitalCelestialBody target) {
+    private static CelestialObject findHostStar(CelestialObject root, CelestialObject target) {
         return OrbitalTransferPlanner.findHostStar(root, target);
     }
 
-    public static LambertStressReport runLambertStress(OrbitalCelestialBody root, OrbitalCelestialBody star,
-        double globalTime, int simulations, double maxDvLimit) {
+    public static LambertStressReport runLambertStress(CelestialObject root, CelestialObject star, double globalTime,
+        int simulations, double maxDvLimit) {
         int requested = Math.max(0, simulations);
         if (requested == 0 || root == null || star == null || star.objectClass() != CelestialObjectClass.STAR) {
             return new LambertStressReport(requested, 0, 0, 0, 0.0, 0.0, 0.0);
         }
 
-        List<OrbitalCelestialBody> candidatePlanets = new ArrayList<>();
+        List<CelestialObject> candidatePlanets = new ArrayList<>();
         collectStressPlanets(star, candidatePlanets);
         if (candidatePlanets.size() < 2) {
             return new LambertStressReport(requested, 0, candidatePlanets.size(), 0, 0.0, 0.0, 0.0);
@@ -248,8 +249,8 @@ public final class InterplanetaryTransferSystem {
             int destinationIndex = random.nextInt(candidatePlanets.size() - 1);
             if (destinationIndex >= sourceIndex) destinationIndex++;
 
-            OrbitalCelestialBody source = candidatePlanets.get(sourceIndex);
-            OrbitalCelestialBody destination = candidatePlanets.get(destinationIndex);
+            CelestialObject source = candidatePlanets.get(sourceIndex);
+            CelestialObject destination = candidatePlanets.get(destinationIndex);
 
             double departureOffset = random.nextDouble(0.0, 600.0);
             double departureTime = globalTime + departureOffset;
@@ -275,19 +276,19 @@ public final class InterplanetaryTransferSystem {
             clampedWorstDv);
     }
 
-    private static void collectStressPlanets(OrbitalCelestialBody current, List<OrbitalCelestialBody> out) {
+    private static void collectStressPlanets(CelestialObject current, List<CelestialObject> out) {
         if (current == null || out == null) return;
         CelestialObjectClass objectClass = current.objectClass();
         if (objectClass == CelestialObjectClass.PLANET || objectClass == CelestialObjectClass.GAS_GIANT) {
             out.add(current);
         }
-        for (OrbitalCelestialBody child : current.children()) {
+        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
             collectStressPlanets(child, out);
         }
     }
 
-    private static double findBestLambertWithinDvLimit(OrbitalCelestialBody root, OrbitalCelestialBody star,
-        OrbitalCelestialBody origin, OrbitalCelestialBody destination, double departureTime, double dvLimit) {
+    private static double findBestLambertWithinDvLimit(CelestialObject root, CelestialObject star,
+        CelestialObject origin, CelestialObject destination, double departureTime, double dvLimit) {
         if (root == null || star == null || origin == null || destination == null || origin == destination) return -1.0;
 
         double minPeriapsis = Math.max(0.05, star.spriteSize() * 0.5);
@@ -308,18 +309,17 @@ public final class InterplanetaryTransferSystem {
     // updatePreview (called from OrbitalView)
     // -----------------------------------------------------------------------
 
-    public static void updatePreview(OrbitalTransferSimulatorState state, OrbitalCelestialBody root,
-        double globalTime) {
+    public static void updatePreview(OrbitalTransferSimulatorState state, CelestialObject root, double globalTime) {
         if (state == null || !state.isOpen()) return;
-        OrbitalCelestialBody origin = state.originBody();
-        OrbitalCelestialBody dest = state.destinationBody();
+        CelestialObject origin = state.originBody();
+        CelestialObject dest = state.destinationBody();
         if (origin == null || dest == null || origin == dest) {
             state.clearPreview();
             return;
         }
 
-        OrbitalCelestialBody star = findHostStar(root, origin);
-        OrbitalCelestialBody destStar = findHostStar(root, dest);
+        CelestialObject star = findHostStar(root, origin);
+        CelestialObject destStar = findHostStar(root, dest);
         if (star == null || star != destStar) {
             state.clearPreview();
             return;
@@ -476,8 +476,8 @@ public final class InterplanetaryTransferSystem {
         private static final double DEFAULT_TRANSFER_DURATION = 72.0;
         private static final int TRAJECTORY_SAMPLES = 96;
 
-        InterplanetaryTransferJob createTransferJob(OrbitalCelestialBody root, OrbitalCelestialBody sourceBody,
-            OrbitalCelestialBody destinationBody, String transferName, String inventorySummary, double departureTime) {
+        InterplanetaryTransferJob createTransferJob(CelestialObject root, CelestialObject sourceBody,
+            CelestialObject destinationBody, String transferName, String inventorySummary, double departureTime) {
             return createTransferJob(
                 root,
                 sourceBody,
@@ -488,12 +488,12 @@ public final class InterplanetaryTransferSystem {
                 getTransferDuration(sourceBody, destinationBody));
         }
 
-        InterplanetaryTransferJob createTransferJob(OrbitalCelestialBody root, OrbitalCelestialBody sourceBody,
-            OrbitalCelestialBody destinationBody, String transferName, String inventorySummary, double departureTime,
+        InterplanetaryTransferJob createTransferJob(CelestialObject root, CelestialObject sourceBody,
+            CelestialObject destinationBody, String transferName, String inventorySummary, double departureTime,
             double duration) {
             if (root == null || sourceBody == null || destinationBody == null) return null;
-            OrbitalCelestialBody star = findHostStar(root, sourceBody);
-            OrbitalCelestialBody destStar = findHostStar(root, destinationBody);
+            CelestialObject star = findHostStar(root, sourceBody);
+            CelestialObject destStar = findHostStar(root, destinationBody);
             if (star == null || star != destStar) return null;
 
             double tof = Math.max(1.0, duration);
@@ -573,7 +573,7 @@ public final class InterplanetaryTransferSystem {
                 trajectoryPointCount);
         }
 
-        double getTransferDuration(OrbitalCelestialBody sourceBody, OrbitalCelestialBody destinationBody) {
+        double getTransferDuration(CelestialObject sourceBody, CelestialObject destinationBody) {
             if (sourceBody == null || destinationBody == null
                 || sourceBody.orbitalParams() == null
                 || destinationBody.orbitalParams() == null) {
@@ -600,7 +600,7 @@ public final class InterplanetaryTransferSystem {
 
             float worldToScreenY(double worldY);
 
-            double[] getWorldPosition(OrbitalCelestialBody body);
+            double[] getWorldPosition(CelestialObject body);
 
             double getServerOrbitalTime();
         }
@@ -762,8 +762,8 @@ public final class InterplanetaryTransferSystem {
         private boolean open = false;
         private TransferPickMode pickMode = TransferPickMode.NONE;
         private TransferOptimizationMode optimizationMode = TransferOptimizationMode.MIN_TOF;
-        private OrbitalCelestialBody originBody = null;
-        private OrbitalCelestialBody destinationBody = null;
+        private CelestialObject originBody = null;
+        private CelestialObject destinationBody = null;
         private int version = 0;
 
         // New dV fields
@@ -787,11 +787,11 @@ public final class InterplanetaryTransferSystem {
             return pickMode;
         }
 
-        OrbitalCelestialBody originBody() {
+        CelestialObject originBody() {
             return originBody;
         }
 
-        OrbitalCelestialBody destinationBody() {
+        CelestialObject destinationBody() {
             return destinationBody;
         }
 
@@ -851,7 +851,7 @@ public final class InterplanetaryTransferSystem {
             version++;
         }
 
-        void applyPickedBody(OrbitalCelestialBody body) {
+        void applyPickedBody(CelestialObject body) {
             if (!open || pickMode == TransferPickMode.NONE || body == null) return;
             if (pickMode == TransferPickMode.ORIGIN) originBody = body;
             else if (pickMode == TransferPickMode.DESTINATION) destinationBody = body;
@@ -958,7 +958,7 @@ public final class InterplanetaryTransferSystem {
 
             void beginTransferPick(TransferPickMode pickMode);
 
-            OrbitalCelestialBody getCurrentSystemBody();
+            CelestialObject getCurrentSystemBody();
 
             void onPreviewNeeded();
 
@@ -1371,7 +1371,7 @@ public final class InterplanetaryTransferSystem {
                 });
         }
 
-        private String formatBodyLabel(OrbitalCelestialBody body, String fallback) {
+        private String formatBodyLabel(CelestialObject body, String fallback) {
             return body == null ? fallback : body.displayName();
         }
 

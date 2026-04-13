@@ -22,6 +22,7 @@ import com.cleanroommc.modularui.utils.GlStateManager;
 import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
@@ -29,9 +30,9 @@ import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -53,9 +54,9 @@ public class OrbitalView {
     }
 
     @Desugar
-    record OrbitalLayerTransitionState(OrbitalCelestialBody pendingTarget, OrbitalCelestialBody pendingAnchor,
-        double pendingStartZoom, double pendingTargetZoom, Phase phase, OrbitalCelestialBody activeTarget,
-        OrbitalCelestialBody activeAnchor, double activeStartZoom, double activeTargetZoom, float activeStartSpriteSize,
+    record OrbitalLayerTransitionState(CelestialObject pendingTarget, CelestialObject pendingAnchor,
+        double pendingStartZoom, double pendingTargetZoom, Phase phase, CelestialObject activeTarget,
+        CelestialObject activeAnchor, double activeStartZoom, double activeTargetZoom, float activeStartSpriteSize,
         float activeTargetSpriteSize) {
 
         enum Phase {
@@ -78,8 +79,8 @@ public class OrbitalView {
             return phase != Phase.NONE;
         }
 
-        OrbitalLayerTransitionState beginPending(OrbitalCelestialBody target, OrbitalCelestialBody anchor,
-            double startZoom, double targetZoom) {
+        OrbitalLayerTransitionState beginPending(CelestialObject target, CelestialObject anchor, double startZoom,
+            double targetZoom) {
             return new OrbitalLayerTransitionState(
                 target,
                 anchor,
@@ -109,9 +110,8 @@ public class OrbitalView {
                 activeTargetSpriteSize);
         }
 
-        OrbitalLayerTransitionState beginActive(Phase nextPhase, OrbitalCelestialBody target,
-            OrbitalCelestialBody anchor, double startZoom, double targetZoom, float startSpriteSize,
-            float targetSpriteSize) {
+        OrbitalLayerTransitionState beginActive(Phase nextPhase, CelestialObject target, CelestialObject anchor,
+            double startZoom, double targetZoom, float startSpriteSize, float targetSpriteSize) {
             return new OrbitalLayerTransitionState(
                 pendingTarget,
                 pendingAnchor,
@@ -148,14 +148,14 @@ public class OrbitalView {
 
     public static final class OrbitalContextMenuState {
 
-        private OrbitalCelestialBody body;
+        private CelestialObject body;
         private int x, y;
 
         boolean isOpen() {
             return body != null;
         }
 
-        OrbitalCelestialBody body() {
+        CelestialObject body() {
             return body;
         }
 
@@ -167,7 +167,7 @@ public class OrbitalView {
             return y;
         }
 
-        void open(OrbitalCelestialBody body, int x, int y) {
+        void open(CelestialObject body, int x, int y) {
             this.body = body;
             this.x = x;
             this.y = y;
@@ -230,11 +230,11 @@ public class OrbitalView {
 
     public static final class OrbitalWorldStateCache {
 
-        private final Map<OrbitalCelestialBody, BodyWorldState> states = new IdentityHashMap<>();
+        private final Map<CelestialObject, BodyWorldState> states = new IdentityHashMap<>();
         private double cachedTime = Double.NaN;
         private int rebuildVersion = 0;
 
-        void ensure(OrbitalCelestialBody root, double globalTime) {
+        void ensure(CelestialObject root, double globalTime) {
             if (root == null) {
                 states.clear();
                 cachedTime = Double.NaN;
@@ -244,24 +244,24 @@ public class OrbitalView {
             rebuild(root, globalTime);
         }
 
-        double[] getWorldPosition(OrbitalCelestialBody body) {
+        double[] getWorldPosition(CelestialObject body) {
             BodyWorldState state = states.get(body);
             if (state == null) return null;
             return new double[] { state.worldX, state.worldY };
         }
 
-        double[] getWorldVelocity(OrbitalCelestialBody body) {
+        double[] getWorldVelocity(CelestialObject body) {
             BodyWorldState state = states.get(body);
             if (state == null) return null;
             return new double[] { state.worldVx, state.worldVy };
         }
 
-        OrbitalCelestialBody getParent(OrbitalCelestialBody body) {
+        CelestialObject getParent(CelestialObject body) {
             BodyWorldState state = states.get(body);
             return state == null ? null : state.parent;
         }
 
-        private void rebuild(OrbitalCelestialBody root, double globalTime) {
+        private void rebuild(CelestialObject root, double globalTime) {
             rebuildVersion++;
             populate(root, null, new OrbitalMechanics.OrbitalState(0.0, 0.0, 0.0, 0.0), globalTime);
             states.entrySet()
@@ -269,27 +269,27 @@ public class OrbitalView {
             cachedTime = globalTime;
         }
 
-        private void populate(OrbitalCelestialBody body, OrbitalCelestialBody parent,
-            OrbitalMechanics.OrbitalState worldState, double globalTime) {
+        private void populate(CelestialObject body, CelestialObject parent, OrbitalMechanics.OrbitalState worldState,
+            double globalTime) {
             BodyWorldState cachedState = states.get(body);
             if (cachedState == null) {
                 cachedState = new BodyWorldState();
                 states.put(body, cachedState);
             }
             cachedState.set(parent, worldState.x(), worldState.y(), worldState.vx(), worldState.vy(), rebuildVersion);
-            for (OrbitalCelestialBody child : body.children()) {
+            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(body)) {
                 OrbitalMechanics.OrbitalState childWorldState = OrbitalMechanics
                     .resolveChildWorldState(body, child, worldState, globalTime);
                 populate(child, body, childWorldState, globalTime);
             }
         }
 
-        static boolean usesAbsolutePosition(OrbitalCelestialBody parent, OrbitalCelestialBody child) {
+        static boolean usesAbsolutePosition(CelestialObject parent, CelestialObject child) {
             return OrbitalMechanics.usesAbsolutePosition(parent, child);
         }
 
-        static OrbitalMechanics.OrbitalState resolveChildWorldState(OrbitalCelestialBody parent,
-            OrbitalCelestialBody child, double parentWX, double parentWY, double globalTime) {
+        static OrbitalMechanics.OrbitalState resolveChildWorldState(CelestialObject parent, CelestialObject child,
+            double parentWX, double parentWY, double globalTime) {
             return OrbitalMechanics.resolveChildWorldState(
                 parent,
                 child,
@@ -305,14 +305,14 @@ public class OrbitalView {
 
         private static final class BodyWorldState {
 
-            private OrbitalCelestialBody parent;
+            private CelestialObject parent;
             private double worldX;
             private double worldY;
             private double worldVx;
             private double worldVy;
             private int rebuildStamp = 0;
 
-            void set(OrbitalCelestialBody parent, double worldX, double worldY, double worldVx, double worldVy,
+            void set(CelestialObject parent, double worldX, double worldY, double worldVx, double worldVy,
                 int rebuildStamp) {
                 this.parent = parent;
                 this.worldX = worldX;
@@ -329,12 +329,12 @@ public class OrbitalView {
         @FunctionalInterface
         public interface BodySelectionListener {
 
-            void onBodySelected(OrbitalCelestialBody body);
+            void onBodySelected(CelestialObject body);
         }
 
-        private final OrbitalCelestialBody root;
-        private OrbitalCelestialBody viewRoot;
-        private OrbitalCelestialBody initialLayer;
+        private final CelestialObject root;
+        private CelestialObject viewRoot;
+        private CelestialObject initialLayer;
         private BodySelectionListener bodySelectionListener;
         private OrbitalScene.OrbitalSceneFrame sceneFrame = new OrbitalScene.OrbitalSceneFrame();
         private final OrbitalViewState viewState = new OrbitalViewState(-0.8);
@@ -349,14 +349,14 @@ public class OrbitalView {
         private double serverOrbitalTimeAnchor = Double.NaN;
         private final InterplanetaryTransferSystem.MutableTransferPoint focusedTransferPoint = new InterplanetaryTransferSystem.MutableTransferPoint();
         private final float[] isoScratchPos = new float[2];
-        private OrbitalCelestialBody focusedBody = null;
-        private OrbitalCelestialBody hoveredBody = null;
+        private CelestialObject focusedBody = null;
+        private CelestialObject hoveredBody = null;
         private InterplanetaryTransferJob focusedTransfer = null;
         private boolean isFollowing = false;
-        private OrbitalCelestialBody pendingFocusBody = null;
+        private CelestialObject pendingFocusBody = null;
         private boolean clickCandidate = false;
         private boolean dragEnabledForCurrentPress = false;
-        private OrbitalCelestialBody pressedBodyCandidate = null;
+        private CelestialObject pressedBodyCandidate = null;
         private boolean debugOverlayEnabled = true;
         private int pressMouseX, pressMouseY;
         private final OrbitalContextMenuState contextMenuState = new OrbitalContextMenuState();
@@ -408,7 +408,7 @@ public class OrbitalView {
         private static final float GALAXY_MAP_STAR_SPRITE_SIZE = 0.5f;
         private static final double SYSTEM_DEPARTURE_EXTENT_MULTIPLIER = 24.0;
 
-        public OrbitalMapWidget(OrbitalCelestialBody root) {
+        public OrbitalMapWidget(CelestialObject root) {
             this.root = root;
             this.viewRoot = root;
             this.initialLayer = root;
@@ -445,8 +445,8 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public void createResourceTransfer(OrbitalCelestialBody sourceBody,
-                        CelestialManagedAsset sourceAsset, StationTransferTarget target) {
+                    public void createResourceTransfer(CelestialObject sourceBody, CelestialManagedAsset sourceAsset,
+                        StationTransferTarget target) {
                         OrbitalMapWidget.this.createResourceTransfer(sourceBody, sourceAsset, target);
                     }
                 });
@@ -482,17 +482,17 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public boolean canCreateBaseStation(OrbitalCelestialBody body) {
+                    public boolean canCreateBaseStation(CelestialObject body) {
                         return OrbitalMapWidget.this.canCreateBaseStation(body);
                     }
 
                     @Override
-                    public boolean canCreateAutomatedStation(OrbitalCelestialBody body) {
+                    public boolean canCreateAutomatedStation(CelestialObject body) {
                         return OrbitalMapWidget.this.canCreateAutomatedStation(body);
                     }
 
                     @Override
-                    public boolean canCreateAutomatedOutpost(OrbitalCelestialBody body) {
+                    public boolean canCreateAutomatedOutpost(CelestialObject body) {
                         return OrbitalMapWidget.this.canCreateAutomatedOutpost(body);
                     }
 
@@ -532,13 +532,13 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public void createBaseStation(OrbitalCelestialBody body) {
+                    public void createBaseStation(CelestialObject body) {
                         assetActionController.createBaseStation(body);
                         assetManagementWidget.markContentDirty();
                     }
 
                     @Override
-                    public void triggerAssetCreation(OrbitalCelestialBody body, CelestialAssetKind kind,
+                    public void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind,
                         boolean openManagementFirst) {
                         assetActionController.triggerAssetCreation(assetUiState, body, kind, openManagementFirst);
                         assetManagementWidget.markStructureDirty();
@@ -670,7 +670,7 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public double[] getWorldPosition(OrbitalCelestialBody body) {
+                    public double[] getWorldPosition(CelestialObject body) {
                         return OrbitalMapWidget.this.getAbsoluteWorldPos(body);
                     }
 
@@ -760,7 +760,7 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public OrbitalCelestialBody getCurrentSystemBody() {
+                    public CelestialObject getCurrentSystemBody() {
                         return viewRoot.objectClass() == CelestialObjectClass.STAR ? viewRoot : null;
                     }
 
@@ -803,12 +803,12 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public ResourceLocation getRenderTexture(OrbitalCelestialBody body) {
+                    public ResourceLocation getRenderTexture(CelestialObject body) {
                         return OrbitalMapWidget.this.getRenderTexture(body);
                     }
 
                     @Override
-                    public float getDisplaySpriteSize(OrbitalCelestialBody body) {
+                    public float getDisplaySpriteSize(CelestialObject body) {
                         return OrbitalMapWidget.this.getDisplaySpriteSize(body);
                     }
 
@@ -826,7 +826,7 @@ public class OrbitalView {
                 new OrbitalPinnedInfoContentBuilder.OrbitalPinnedInfoWidget.Callbacks() {
 
                     @Override
-                    public OrbitalCelestialBody getPinnedInfoBody() {
+                    public CelestialObject getPinnedInfoBody() {
                         return OrbitalMapWidget.this.getPinnedInfoBody();
                     }
 
@@ -841,13 +841,12 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public void buildSignatureInto(StringBuilder buf, OrbitalCelestialBody body, int width,
-                        int height) {
+                    public void buildSignatureInto(StringBuilder buf, CelestialObject body, int width, int height) {
                         pinnedInfoContentBuilder.buildSignatureInto(buf, body, width, height);
                     }
 
                     @Override
-                    public List<PinnedInfoRow> buildRows(OrbitalCelestialBody body) {
+                    public List<PinnedInfoRow> buildRows(CelestialObject body) {
                         return pinnedInfoContentBuilder.buildRows(body);
                     }
                 });
@@ -866,34 +865,34 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public boolean canCreateBaseStation(OrbitalCelestialBody body) {
+                    public boolean canCreateBaseStation(CelestialObject body) {
                         return OrbitalMapWidget.this.canCreateBaseStation(body);
                     }
 
                     @Override
-                    public boolean canCreateAutomatedStation(OrbitalCelestialBody body) {
+                    public boolean canCreateAutomatedStation(CelestialObject body) {
                         return OrbitalMapWidget.this.canCreateAutomatedStation(body);
                     }
 
                     @Override
-                    public boolean canCreateAutomatedOutpost(OrbitalCelestialBody body) {
+                    public boolean canCreateAutomatedOutpost(CelestialObject body) {
                         return OrbitalMapWidget.this.canCreateAutomatedOutpost(body);
                     }
 
                     @Override
-                    public void openAssetManagement(OrbitalCelestialBody body) {
+                    public void openAssetManagement(CelestialObject body) {
                         assetActionController.openAssetManagement(assetUiState, body);
                         assetManagementWidget.markStructureDirty();
                     }
 
                     @Override
-                    public void createBaseStation(OrbitalCelestialBody body) {
+                    public void createBaseStation(CelestialObject body) {
                         assetActionController.createBaseStation(body);
                         assetManagementWidget.markContentDirty();
                     }
 
                     @Override
-                    public void triggerAssetCreation(OrbitalCelestialBody body, CelestialAssetKind kind,
+                    public void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind,
                         boolean openManagementFirst) {
                         assetActionController.triggerAssetCreation(assetUiState, body, kind, openManagementFirst);
                         assetManagementWidget.markStructureDirty();
@@ -909,19 +908,18 @@ public class OrbitalView {
                 new OrbitalScene.OrbitalSceneFrameBuilder.Callbacks() {
 
                     @Override
-                    public double[] getViewOrigin(OrbitalCelestialBody viewRoot) {
+                    public double[] getViewOrigin(CelestialObject viewRoot) {
                         return OrbitalMapWidget.this.getAbsoluteWorldPos(viewRoot);
                     }
 
                     @Override
-                    public void fillResolvedBodyDrawState(OrbitalScene.ResolvedBodyDrawState out,
-                        OrbitalCelestialBody body, OrbitalCelestialBody parent, double worldX, double worldY,
-                        float labelAlpha) {
+                    public void fillResolvedBodyDrawState(OrbitalScene.ResolvedBodyDrawState out, CelestialObject body,
+                        CelestialObject parent, double worldX, double worldY, float labelAlpha) {
                         OrbitalMapWidget.this.fillResolvedBodyDrawState(out, body, parent, worldX, worldY, labelAlpha);
                     }
 
                     @Override
-                    public boolean shouldTraverseChildren(OrbitalCelestialBody body) {
+                    public boolean shouldTraverseChildren(CelestialObject body) {
                         return OrbitalMapWidget.this.shouldTraverseChildren(body);
                     }
 
@@ -938,7 +936,7 @@ public class OrbitalView {
             this.signalsWidget = new LogisticsSignalsWidget(root, () -> this.viewRoot, () -> this.signalsOpen);
         }
 
-        public OrbitalMapWidget withInitialLayer(OrbitalCelestialBody layerRoot) {
+        public OrbitalMapWidget withInitialLayer(CelestialObject layerRoot) {
             this.initialLayer = layerRoot == null ? root : layerRoot;
             return this;
         }
@@ -993,14 +991,14 @@ public class OrbitalView {
             transfersHidden = !transfersHidden;
         }
 
-        public void showLayer(OrbitalCelestialBody layerRoot) {
-            OrbitalCelestialBody targetLayer = layerRoot == null ? root : layerRoot;
+        public void showLayer(CelestialObject layerRoot) {
+            CelestialObject targetLayer = layerRoot == null ? root : layerRoot;
             if (this.viewRoot == targetLayer) return;
             clearLayerSwitchState();
             closeContextMenu();
             assetActionController.closeAssetManagement(assetUiState);
             transferSimulatorState.resetSelection();
-            OrbitalCelestialBody anchorBody = null;
+            CelestialObject anchorBody = null;
             if (this.viewRoot == root && targetLayer.objectClass() == CelestialObjectClass.STAR)
                 anchorBody = targetLayer;
             else if (this.viewRoot.objectClass() == CelestialObjectClass.STAR && targetLayer == root)
@@ -1019,12 +1017,12 @@ public class OrbitalView {
             applyLayerSwitch(targetLayer, targetLayer);
         }
 
-        public OrbitalCelestialBody getViewRoot() {
+        public CelestialObject getViewRoot() {
             return viewRoot;
         }
 
         /** Returns the currently focused (selected) celestial body, or {@code null} if none. */
-        public OrbitalCelestialBody getFocusedBody() {
+        public CelestialObject getFocusedBody() {
             return focusedBody;
         }
 
@@ -1074,7 +1072,7 @@ public class OrbitalView {
         @Override
         public void onInit() {
             super.onInit();
-            OrbitalCelestialBody startingLayer = initialLayer == null ? root : initialLayer;
+            CelestialObject startingLayer = initialLayer == null ? root : initialLayer;
             resetForLayer(startingLayer);
             this.viewRoot = startingLayer;
             setFocusImmediately(startingLayer);
@@ -1179,7 +1177,7 @@ public class OrbitalView {
                         if (mouseButton == 1 && contextMenuWidget.isPointInMenu(localMouseX, localMouseY)) return true;
                 }
                 if (mouseButton == 1) {
-                    OrbitalCelestialBody clickedBody = findBodyAtLocal(localMouseX, localMouseY);
+                    CelestialObject clickedBody = findBodyAtLocal(localMouseX, localMouseY);
                     if (clickedBody != null) {
                         openContextMenu(clickedBody, localMouseX, localMouseY);
                         clickCandidate = false;
@@ -1192,7 +1190,7 @@ public class OrbitalView {
                     return false;
                 }
                 if (mouseButton == 0 && !dragging) {
-                    OrbitalCelestialBody clickedBody = pressedBodyCandidate;
+                    CelestialObject clickedBody = pressedBodyCandidate;
                     if (clickedBody == null) clickedBody = findBodyAtLocal(localMouseX, localMouseY);
                     if (handleTransferSimulatorPick(clickedBody)) {
                         clickCandidate = false;
@@ -1390,7 +1388,7 @@ public class OrbitalView {
             return a + (b - a) * t;
         }
 
-        private float getCubeSizeForBody(OrbitalCelestialBody body) {
+        private float getCubeSizeForBody(CelestialObject body) {
             if (focusedBody == null) return body.spriteSize() <= 0.0001f ? ISO_BASE_CUBE_SIZE
                 : (float) (ISO_BASE_CUBE_SIZE * Math.sqrt(body.spriteSize()));
             double focusSize = focusedBody.spriteSize();
@@ -1400,7 +1398,7 @@ public class OrbitalView {
             return (float) (ISO_BASE_CUBE_SIZE * scale);
         }
 
-        private float getSpriteRadius(OrbitalCelestialBody body) {
+        private float getSpriteRadius(CelestialObject body) {
             float spriteSize = getDisplaySpriteSize(body);
             if (spriteSize > 0.0001f) {
                 float radius = spriteSize * (MAP_ICON_BASE_SCALE + (float) getScale() * MAP_ICON_ZOOM_SCALE);
@@ -1409,7 +1407,7 @@ public class OrbitalView {
             return 2f;
         }
 
-        private float getDisplaySpriteSize(OrbitalCelestialBody body) {
+        private float getDisplaySpriteSize(CelestialObject body) {
             if (body == null) return 0f;
             float systemSize = (float) body.spriteSize();
             float galaxySize = GALAXY_MAP_STAR_SPRITE_SIZE;
@@ -1437,7 +1435,7 @@ public class OrbitalView {
                     progress);
             }
             if (viewRoot == root && body.objectClass() == CelestialObjectClass.STAR) {
-                OrbitalCelestialBody parent = findParent(root, body);
+                CelestialObject parent = findParent(root, body);
                 if (parent != null && parent.objectClass() == CelestialObjectClass.GALAXY) return galaxySize;
             }
             return systemSize;
@@ -1449,7 +1447,7 @@ public class OrbitalView {
             return (float) Math.max(0.0, Math.min(1.0, (current - start) / delta));
         }
 
-        private float getRenderedBodyRadius(OrbitalCelestialBody body) {
+        private float getRenderedBodyRadius(CelestialObject body) {
             if (getRenderTexture(body) != null && getDisplaySpriteSize(body) > 0.0001f) {
                 float spriteR = getSpriteRadius(body);
                 float cubeR = getCubeSizeForBody(body) * 0.5f;
@@ -1458,7 +1456,7 @@ public class OrbitalView {
             return body == viewRoot ? 11f : 7f;
         }
 
-        private ResourceLocation getRenderTexture(OrbitalCelestialBody body) {
+        private ResourceLocation getRenderTexture(CelestialObject body) {
             if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) return null;
             ResourceLocation texture = body.texture();
             if (isMapBodyIcon(texture)) return texture;
@@ -1471,7 +1469,7 @@ public class OrbitalView {
                     .contains("textures/gui/bodyicons/");
         }
 
-        public void focusOn(OrbitalCelestialBody body) {
+        public void focusOn(CelestialObject body) {
             if (body == null) return;
             focusedTransfer = null;
             if (viewState.isometricProgress < 0.01) setFocusImmediately(body);
@@ -1481,7 +1479,7 @@ public class OrbitalView {
             }
         }
 
-        private void centerOnBody(OrbitalCelestialBody body) {
+        private void centerOnBody(CelestialObject body) {
             if (body == null) return;
             focusedBody = body;
             focusedTransfer = null;
@@ -1494,12 +1492,12 @@ public class OrbitalView {
             viewState.targetIsometricProgress = 0.0;
         }
 
-        private void applyLayerSwitch(OrbitalCelestialBody targetLayer, OrbitalCelestialBody focusBody) {
+        private void applyLayerSwitch(CelestialObject targetLayer, CelestialObject focusBody) {
             this.viewRoot = targetLayer == null ? root : targetLayer;
             focusOn(focusBody == null ? this.viewRoot : focusBody);
         }
 
-        private void setFocusImmediately(OrbitalCelestialBody body) {
+        private void setFocusImmediately(CelestialObject body) {
             focusedBody = body;
             focusedTransfer = null;
             isFollowing = true;
@@ -1513,7 +1511,7 @@ public class OrbitalView {
             viewState.targetZoomLevel = getOverviewZoomForBody(body);
         }
 
-        private void resetForLayer(OrbitalCelestialBody layerRoot) {
+        private void resetForLayer(CelestialObject layerRoot) {
             isFollowing = false;
             focusedBody = null;
             focusedTransfer = null;
@@ -1530,10 +1528,10 @@ public class OrbitalView {
                 && Math.abs(viewState.zoomLevel - viewState.targetZoomLevel) < LAYER_SWITCH_CONVERGE_THRESHOLD;
         }
 
-        private double calculateOverviewExtent(OrbitalCelestialBody body) {
+        private double calculateOverviewExtent(CelestialObject body) {
             if (body.objectClass() == CelestialObjectClass.GALAXY) {
                 double maxDistance = 0.0;
-                for (OrbitalCelestialBody child : body.children()) {
+                for (CelestialObject child : GalaxiaCelestialAPI.getChildren(body)) {
                     double[] pos = getAbsoluteWorldPos(child);
                     if (pos == null) continue;
                     maxDistance = Math.max(maxDistance, Math.hypot(pos[0], pos[1]));
@@ -1541,29 +1539,29 @@ public class OrbitalView {
                 return maxDistance;
             }
             double maxSize = 0.0;
-            for (OrbitalCelestialBody child : body.children()) maxSize = Math.max(
+            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(body)) maxSize = Math.max(
                 maxSize,
                 child.orbitalParams()
                     .apogee());
             return maxSize;
         }
 
-        private boolean shouldUseIsometricOverview(OrbitalCelestialBody body) {
+        private boolean shouldUseIsometricOverview(CelestialObject body) {
             return body.objectClass() != CelestialObjectClass.GALAXY && body.objectClass() != CelestialObjectClass.STAR;
         }
 
-        private double calculateFocusedOrbitExtent(OrbitalCelestialBody body) {
-            OrbitalCelestialBody parent = findParent(root, body);
+        private double calculateFocusedOrbitExtent(CelestialObject body) {
+            CelestialObject parent = findParent(root, body);
             if (parent == null) return 0.0;
             double maxApogee = 0.0;
-            for (OrbitalCelestialBody sibling : parent.children()) maxApogee = Math.max(
+            for (CelestialObject sibling : GalaxiaCelestialAPI.getChildren(parent)) maxApogee = Math.max(
                 maxApogee,
                 sibling.orbitalParams()
                     .apogee());
             return maxApogee;
         }
 
-        private double computeOverviewZoom(OrbitalCelestialBody body, boolean goIso) {
+        private double computeOverviewZoom(CelestialObject body, boolean goIso) {
             double extent = goIso ? calculateFocusedOrbitExtent(body) : calculateOverviewExtent(body);
             double screenRadius = goIso ? ISO_OVERVIEW_SCREEN_RADIUS : OVERVIEW_SCREEN_RADIUS;
             return extent > 1e-9 ? zoomForWorldDistance(extent, screenRadius) : goIso ? 3.0 : -0.8;
@@ -1590,20 +1588,20 @@ public class OrbitalView {
             return Math.min(width, height);
         }
 
-        private double getOverviewZoomForBody(OrbitalCelestialBody body) {
+        private double getOverviewZoomForBody(CelestialObject body) {
             return computeOverviewZoom(body, shouldUseIsometricOverview(body));
         }
 
-        private double getSystemDepartureZoom(OrbitalCelestialBody star) {
+        private double getSystemDepartureZoom(CelestialObject star) {
             double farthestOrbit = calculateOverviewExtent(star);
             return zoomForWorldDistance(farthestOrbit * SYSTEM_DEPARTURE_EXTENT_MULTIPLIER, OVERVIEW_SCREEN_RADIUS);
         }
 
-        private double getNearestOtherStarDistance(OrbitalCelestialBody anchorStar) {
+        private double getNearestOtherStarDistance(CelestialObject anchorStar) {
             double[] anchorPos = getAbsoluteWorldPos(anchorStar);
             if (anchorPos == null) return Double.MAX_VALUE;
             double nearestDistance = Double.MAX_VALUE;
-            for (OrbitalCelestialBody child : root.children()) {
+            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(anchorStar)) {
                 if (child == anchorStar || child.objectClass() != CelestialObjectClass.STAR) continue;
                 double[] childPos = getAbsoluteWorldPos(child);
                 if (childPos == null) continue;
@@ -1613,13 +1611,13 @@ public class OrbitalView {
             return nearestDistance;
         }
 
-        private double getGalaxyOverviewZoom(OrbitalCelestialBody anchorStar) {
+        private double getGalaxyOverviewZoom(CelestialObject anchorStar) {
             double nearestDistance = getNearestOtherStarDistance(anchorStar);
             if (nearestDistance == Double.MAX_VALUE || nearestDistance <= 1e-9) return getOverviewZoomForBody(root);
             return zoomForWorldDistance(nearestDistance, getViewportMinDimension() * 0.2);
         }
 
-        private double getGalaxyCutZoom(OrbitalCelestialBody anchorStar) {
+        private double getGalaxyCutZoom(CelestialObject anchorStar) {
             double nearestDistance = getNearestOtherStarDistance(anchorStar);
             if (nearestDistance == Double.MAX_VALUE || nearestDistance <= 1e-9)
                 return getGalaxyOverviewZoom(anchorStar);
@@ -1634,7 +1632,7 @@ public class OrbitalView {
             transitionState = transitionState.clear();
         }
 
-        private void startLayerSwitchTransition(OrbitalCelestialBody targetLayer, OrbitalCelestialBody anchorBody,
+        private void startLayerSwitchTransition(CelestialObject targetLayer, CelestialObject anchorBody,
             float currentAnchorSpriteSize) {
             if (targetLayer == root) {
                 transitionState = transitionState.beginActive(
@@ -1715,18 +1713,18 @@ public class OrbitalView {
             worldStateCache.ensure(root, globalTime);
         }
 
-        private double[] getAbsoluteWorldPos(OrbitalCelestialBody target) {
+        private double[] getAbsoluteWorldPos(CelestialObject target) {
             ensureWorldStateCache();
             return worldStateCache.getWorldPosition(target);
         }
 
-        private OrbitalCelestialBody findParent(OrbitalCelestialBody cur, OrbitalCelestialBody target) {
+        private CelestialObject findParent(CelestialObject cur, CelestialObject target) {
             if (cur != root) return null;
             ensureWorldStateCache();
             return worldStateCache.getParent(target);
         }
 
-        private void fillIsometricScreenPos(OrbitalCelestialBody body, float[] out) {
+        private void fillIsometricScreenPos(CelestialObject body, float[] out) {
             float cx = getArea().width / 2f;
             float cy = getArea().height / 2f + ISO_Y_OFFSET;
             if (focusedBody == null || focusedBody == root) {
@@ -1734,7 +1732,7 @@ public class OrbitalView {
                 out[1] = cy;
                 return;
             }
-            OrbitalCelestialBody parent = findParent(root, focusedBody);
+            CelestialObject parent = findParent(root, focusedBody);
             if (parent == null) {
                 out[0] = cx;
                 out[1] = cy;
@@ -1750,7 +1748,7 @@ public class OrbitalView {
                 out[1] = cy;
                 return;
             }
-            List<OrbitalCelestialBody> children = focusedBody.children();
+            List<CelestialObject> children = GalaxiaCelestialAPI.getChildren(focusedBody);
             int index = children.indexOf(body);
             if (index >= 0) {
                 out[0] = cx + ISO_OFFSET + index * ISO_SPACING;
@@ -1761,26 +1759,27 @@ public class OrbitalView {
             out[1] = -1000f;
         }
 
-        private boolean isImportantInIsoMode(OrbitalCelestialBody body) {
+        private boolean isImportantInIsoMode(CelestialObject body) {
             if (focusedBody == null || focusedBody == root) return true;
-            OrbitalCelestialBody parent = findParent(root, focusedBody);
+            CelestialObject parent = findParent(root, focusedBody);
             if (parent == null) return false;
             return body == parent || body == focusedBody
-                || focusedBody.children()
+                || GalaxiaCelestialAPI.getChildren(focusedBody)
                     .contains(body);
         }
 
-        private boolean shouldTraverseChildren(OrbitalCelestialBody body) {
+        private boolean shouldTraverseChildren(CelestialObject body) {
             return viewRoot != root || body == root;
         }
 
-        private boolean isVisibleInCurrentLayer(OrbitalCelestialBody body) {
+        private boolean isVisibleInCurrentLayer(CelestialObject body) {
             return isDescendantOrSelf(viewRoot, body);
         }
 
-        private boolean isDescendantOrSelf(OrbitalCelestialBody ancestor, OrbitalCelestialBody target) {
+        private boolean isDescendantOrSelf(CelestialObject ancestor, CelestialObject target) {
             if (ancestor == target) return true;
-            for (OrbitalCelestialBody child : ancestor.children()) if (isDescendantOrSelf(child, target)) return true;
+            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(ancestor))
+                if (isDescendantOrSelf(child, target)) return true;
             return false;
         }
 
@@ -1798,8 +1797,8 @@ public class OrbitalView {
                 pendingFocusBody = null;
             }
             if (transitionState.hasPending() && isReadyForPendingLayerSwitch()) {
-                OrbitalCelestialBody targetLayer = transitionState.pendingTarget();
-                OrbitalCelestialBody anchorBody = transitionState.pendingAnchor();
+                CelestialObject targetLayer = transitionState.pendingTarget();
+                CelestialObject anchorBody = transitionState.pendingAnchor();
                 float currentAnchorSpriteSize = getDisplaySpriteSize(anchorBody);
                 transitionState = transitionState.clearPending();
                 startLayerSwitchTransition(targetLayer, anchorBody, currentAnchorSpriteSize);
@@ -1900,8 +1899,8 @@ public class OrbitalView {
             super.drawBackground(context, widgetTheme);
         }
 
-        private void fillResolvedBodyDrawState(OrbitalScene.ResolvedBodyDrawState out, OrbitalCelestialBody body,
-            OrbitalCelestialBody parent, double worldX, double worldY, float labelAlpha) {
+        private void fillResolvedBodyDrawState(OrbitalScene.ResolvedBodyDrawState out, CelestialObject body,
+            CelestialObject parent, double worldX, double worldY, float labelAlpha) {
             fillIsometricScreenPos(body, isoScratchPos);
             float screenX = snapToPixel(
                 (float) lerp(worldToScreenX(worldX), isoScratchPos[0], viewState.isometricProgress));
@@ -1936,13 +1935,13 @@ public class OrbitalView {
                 labelColor);
         }
 
-        private float getBodyRenderAlpha(OrbitalCelestialBody body) {
+        private float getBodyRenderAlpha(CelestialObject body) {
             if (viewState.isometricProgress < 0.01) return 1f;
             if (isImportantInIsoMode(body)) return 1f;
             return (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 3.0);
         }
 
-        private float getLabelRenderAlpha(OrbitalCelestialBody body, float labelAlpha) {
+        private float getLabelRenderAlpha(CelestialObject body, float labelAlpha) {
             if (viewState.isometricProgress < 0.01 || isImportantInIsoMode(body)) return labelAlpha;
             return labelAlpha * (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 3.0);
         }
@@ -1955,8 +1954,8 @@ public class OrbitalView {
             return transferRenderer.findHoveredTransfer(transferState, globalTime, mouseX, mouseY);
         }
 
-        private OrbitalCelestialBody findBodyAtLocal(float localX, float localY) {
-            OrbitalCelestialBody best = null;
+        private CelestialObject findBodyAtLocal(float localX, float localY) {
+            CelestialObject best = null;
             double bestScore = Double.MAX_VALUE;
             for (int i = sceneFrame.screenBodies.size() - 1; i >= 0; i--) {
                 OrbitalScene.ScreenBodyBounds bounds = sceneFrame.screenBodies.get(i);
@@ -1969,7 +1968,7 @@ public class OrbitalView {
             return best;
         }
 
-        private boolean handleTransferSimulatorPick(OrbitalCelestialBody clickedBody) {
+        private boolean handleTransferSimulatorPick(CelestialObject clickedBody) {
             if (!transferSimulatorState.isWaitingForPick()) return false;
             if (viewRoot.objectClass() != CelestialObjectClass.STAR) {
                 transferSimulatorState.cancelPick();
@@ -1988,7 +1987,7 @@ public class OrbitalView {
             return true;
         }
 
-        private void createResourceTransfer(OrbitalCelestialBody sourceBody, CelestialManagedAsset sourceAsset,
+        private void createResourceTransfer(CelestialObject sourceBody, CelestialManagedAsset sourceAsset,
             StationTransferTarget target) {
             if (sourceBody == null || sourceAsset == null || target == null || target.hostBody() == null) {
                 showActionStatus("Transfer failed");
@@ -2039,8 +2038,8 @@ public class OrbitalView {
 
         private InterplanetaryTransferJob buildRenderedLogisticsTransfer(OutpostDataStore.ClientLogisticsTask task) {
             if (task == null || task.resource() == null) return null;
-            OrbitalCelestialBody sourceBody = OrbitalTransferPlanner.findBodyById(root, task.fromBodyId());
-            OrbitalCelestialBody destinationBody = OrbitalTransferPlanner.findBodyById(root, task.toBodyId());
+            CelestialObject sourceBody = OrbitalTransferPlanner.findBodyById(root, task.fromBodyId());
+            CelestialObject destinationBody = OrbitalTransferPlanner.findBodyById(root, task.toBodyId());
             if (sourceBody == null || destinationBody == null) return null;
 
             String itemName = task.resource()
@@ -2165,7 +2164,7 @@ public class OrbitalView {
             Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(actionStatusMessage, 12, 24, 0xFFD9E0FF);
         }
 
-        private void drawViewStatusLabel(OrbitalCelestialBody viewRoot, int widgetWidth) {
+        private void drawViewStatusLabel(CelestialObject viewRoot, int widgetWidth) {
             if (viewRoot == null) return;
             String title = viewRoot.objectClass() == CelestialObjectClass.GALAXY ? viewRoot.displayName()
                 : viewRoot.objectClass() == CelestialObjectClass.STAR ? viewRoot.displayName() + " System" : null;
@@ -2190,7 +2189,7 @@ public class OrbitalView {
             return cut <= 0 ? "0" : text.substring(0, cut);
         }
 
-        private void openContextMenu(OrbitalCelestialBody body, int localMouseX, int localMouseY) {
+        private void openContextMenu(CelestialObject body, int localMouseX, int localMouseY) {
             if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) {
                 closeContextMenu();
                 return;
@@ -2202,10 +2201,10 @@ public class OrbitalView {
             contextMenuState.close();
         }
 
-        private boolean shouldRenderBodyAtCurrentZoom(OrbitalCelestialBody body) {
+        private boolean shouldRenderBodyAtCurrentZoom(CelestialObject body) {
             if (viewState.isometricProgress > 0.01 || body == viewRoot || body == focusedBody) return true;
             if (!shouldUseOverlapDeclutter(body)) return true;
-            OrbitalCelestialBody parent = findParent(root, body);
+            CelestialObject parent = findParent(root, body);
             if (parent == null || parent.objectClass() == CelestialObjectClass.GALAXY) return true;
             if (OrbitalWorldStateCache.usesAbsolutePosition(parent, body)) return true;
             float separation = (float) (body.orbitalParams()
@@ -2214,7 +2213,7 @@ public class OrbitalView {
             return separation >= minimumSeparation;
         }
 
-        private boolean shouldUseOverlapDeclutter(OrbitalCelestialBody body) {
+        private boolean shouldUseOverlapDeclutter(CelestialObject body) {
             return body != root;
         }
 
@@ -2255,22 +2254,22 @@ public class OrbitalView {
             return GTUtility.isGTLoaded;
         }
 
-        private boolean canCreateBaseStation(OrbitalCelestialBody body) {
+        private boolean canCreateBaseStation(CelestialObject body) {
             return body != null && body.properties()
                 .canCreateStation();
         }
 
-        private boolean canCreateAutomatedStation(OrbitalCelestialBody body) {
+        private boolean canCreateAutomatedStation(CelestialObject body) {
             return canCreateBaseStation(body) && isGT5AutomationAvailable();
         }
 
-        private boolean canCreateAutomatedOutpost(OrbitalCelestialBody body) {
+        private boolean canCreateAutomatedOutpost(CelestialObject body) {
             return body != null && isGT5AutomationAvailable()
                 && body.properties()
                     .canCreateOutpost();
         }
 
-        private float getInteractionRadius(OrbitalCelestialBody body) {
+        private float getInteractionRadius(CelestialObject body) {
             return getInteractionRadius(getRenderedBodyRadius(body));
         }
 
@@ -2282,7 +2281,7 @@ public class OrbitalView {
             return sx >= 0 && sy >= 0 && sx <= getArea().width && sy <= getArea().height;
         }
 
-        private float getLabelYOffset(OrbitalCelestialBody body) {
+        private float getLabelYOffset(CelestialObject body) {
             return getLabelYOffset(getRenderedBodyRadius(body));
         }
 
@@ -2295,7 +2294,7 @@ public class OrbitalView {
             return (color & 0x00FFFFFF) | (a << 24);
         }
 
-        private OrbitalCelestialBody getPinnedInfoBody() {
+        private CelestialObject getPinnedInfoBody() {
             if (hoveredBody != null && hoveredBody.objectClass() != CelestialObjectClass.GALAXY
                 && isVisibleInCurrentLayer(hoveredBody)) return hoveredBody;
             if (focusedBody != null && focusedBody.objectClass() != CelestialObjectClass.GALAXY

@@ -12,11 +12,12 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import com.cleanroommc.modularui.utils.GlStateManager;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalCelestialBody;
 import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalParams;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 
@@ -26,8 +27,8 @@ public class OrbitalScene {
 
     static final class ResolvedBodyDrawState {
 
-        private OrbitalCelestialBody body;
-        private OrbitalCelestialBody parent;
+        private CelestialObject body;
+        private CelestialObject parent;
         private double worldX;
         private double worldY;
         private float screenX;
@@ -39,7 +40,7 @@ public class OrbitalScene {
         private float labelY;
         private int labelColor;
 
-        void set(OrbitalCelestialBody body, OrbitalCelestialBody parent, double worldX, double worldY, float screenX,
+        void set(CelestialObject body, CelestialObject parent, double worldX, double worldY, float screenX,
             float screenY, float renderedRadius, float bodyAlpha, boolean renderBody, boolean drawLabel, float labelY,
             int labelColor) {
             this.body = body;
@@ -56,11 +57,11 @@ public class OrbitalScene {
             this.labelColor = labelColor;
         }
 
-        OrbitalCelestialBody body() {
+        CelestialObject body() {
             return body;
         }
 
-        OrbitalCelestialBody parent() {
+        CelestialObject parent() {
             return parent;
         }
 
@@ -107,14 +108,13 @@ public class OrbitalScene {
 
     static final class ScreenBodyBounds {
 
-        private OrbitalCelestialBody body;
+        private CelestialObject body;
         private float centerX;
         private float centerY;
         private float renderedRadius;
         private float interactionRadius;
 
-        void set(OrbitalCelestialBody body, float centerX, float centerY, float renderedRadius,
-            float interactionRadius) {
+        void set(CelestialObject body, float centerX, float centerY, float renderedRadius, float interactionRadius) {
             this.body = body;
             this.centerX = centerX;
             this.centerY = centerY;
@@ -122,7 +122,7 @@ public class OrbitalScene {
             this.interactionRadius = interactionRadius;
         }
 
-        OrbitalCelestialBody body() {
+        CelestialObject body() {
             return body;
         }
 
@@ -225,7 +225,7 @@ public class OrbitalScene {
     public static final class OrbitalSceneFrame {
 
         final List<ResolvedBodyDrawState> resolvedBodies = new ArrayList<>();
-        final IdentityHashMap<OrbitalCelestialBody, ResolvedBodyDrawState> resolvedBodiesByBody = new IdentityHashMap<>();
+        final IdentityHashMap<CelestialObject, ResolvedBodyDrawState> resolvedBodiesByBody = new IdentityHashMap<>();
         final List<ScreenBodyBounds> screenBodies = new ArrayList<>();
         final List<LabelDrawCall> labelDrawCalls = new ArrayList<>();
         final List<MarkerDrawCall> markerDrawCalls = new ArrayList<>();
@@ -250,7 +250,7 @@ public class OrbitalScene {
             markerPoolIndex = 0;
         }
 
-        ResolvedBodyDrawState addResolvedBody(OrbitalCelestialBody body, OrbitalCelestialBody parent, double worldX,
+        ResolvedBodyDrawState addResolvedBody(CelestialObject body, CelestialObject parent, double worldX,
             double worldY, float screenX, float screenY, float renderedRadius, float bodyAlpha, boolean renderBody,
             boolean drawLabel, float labelY, int labelColor) {
             ResolvedBodyDrawState state = resolvedBodyPoolIndex < resolvedBodyPool.size()
@@ -275,7 +275,7 @@ public class OrbitalScene {
             return state;
         }
 
-        ScreenBodyBounds addScreenBody(OrbitalCelestialBody body, float centerX, float centerY, float renderedRadius,
+        ScreenBodyBounds addScreenBody(CelestialObject body, float centerX, float centerY, float renderedRadius,
             float interactionRadius) {
             ScreenBodyBounds bounds = screenBodyPoolIndex < screenBodyPool.size()
                 ? screenBodyPool.get(screenBodyPoolIndex)
@@ -332,12 +332,12 @@ public class OrbitalScene {
 
         interface Callbacks {
 
-            double[] getViewOrigin(OrbitalCelestialBody viewRoot);
+            double[] getViewOrigin(CelestialObject viewRoot);
 
-            void fillResolvedBodyDrawState(ResolvedBodyDrawState out, OrbitalCelestialBody body,
-                OrbitalCelestialBody parent, double worldX, double worldY, float labelAlpha);
+            void fillResolvedBodyDrawState(ResolvedBodyDrawState out, CelestialObject body, CelestialObject parent,
+                double worldX, double worldY, float labelAlpha);
 
-            boolean shouldTraverseChildren(OrbitalCelestialBody body);
+            boolean shouldTraverseChildren(CelestialObject body);
 
             float getInteractionRadius(float renderedRadius);
 
@@ -351,7 +351,7 @@ public class OrbitalScene {
             this.callbacks = callbacks;
         }
 
-        OrbitalSceneFrame buildInto(OrbitalSceneFrame frame, OrbitalCelestialBody viewRoot, double globalTime,
+        OrbitalSceneFrame buildInto(OrbitalSceneFrame frame, CelestialObject viewRoot, double globalTime,
             float labelAlpha) {
             frame.resetForReuse();
             double[] viewOrigin = callbacks.getViewOrigin(viewRoot);
@@ -360,7 +360,7 @@ public class OrbitalScene {
             return frame;
         }
 
-        private void collectRecursive(OrbitalSceneFrame frame, OrbitalCelestialBody body, OrbitalCelestialBody parent,
+        private void collectRecursive(OrbitalSceneFrame frame, CelestialObject body, CelestialObject parent,
             double worldX, double worldY, double globalTime, float labelAlpha) {
             ResolvedBodyDrawState state = frame
                 .addResolvedBody(body, parent, worldX, worldY, 0f, 0f, 0f, 0f, false, false, 0f, 0);
@@ -380,7 +380,7 @@ public class OrbitalScene {
                     state.labelColor());
             }
             if (!callbacks.shouldTraverseChildren(body)) return;
-            for (OrbitalCelestialBody child : body.children()) {
+            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(body)) {
                 OrbitalMechanics.OrbitalState childWorldState = OrbitalView.OrbitalWorldStateCache
                     .resolveChildWorldState(body, child, worldX, worldY, globalTime);
                 collectRecursive(frame, child, body, childWorldState.x(), childWorldState.y(), globalTime, labelAlpha);
@@ -404,7 +404,8 @@ public class OrbitalScene {
                 state.body(),
                 CelestialAssetStore.getStateIfPresent(
                     state.body()
-                        .id()));
+                        .id()
+                        .getId()));
             List<CelestialMarkerBase.CelestialMarker> markers = CelestialMarkerBase.CelestialMarkerRegistry
                 .getMarkers(context);
             if (markers.isEmpty()) return;
@@ -430,9 +431,9 @@ public class OrbitalScene {
 
             float worldToScreenY(double wy);
 
-            ResourceLocation getRenderTexture(OrbitalCelestialBody body);
+            ResourceLocation getRenderTexture(CelestialObject body);
 
-            float getDisplaySpriteSize(OrbitalCelestialBody body);
+            float getDisplaySpriteSize(CelestialObject body);
 
             float getSelectionBoxRadius(ScreenBodyBounds bounds);
 
@@ -449,7 +450,7 @@ public class OrbitalScene {
             this.callbacks = callbacks;
         }
 
-        void drawBodies(OrbitalSceneFrame frame, OrbitalCelestialBody viewRoot) {
+        void drawBodies(OrbitalSceneFrame frame, CelestialObject viewRoot) {
             for (ResolvedBodyDrawState state : frame.resolvedBodies) {
                 if (state.body()
                     .objectClass() == CelestialObjectClass.GALAXY || state.bodyAlpha() <= 0.01f
@@ -514,7 +515,7 @@ public class OrbitalScene {
                 drawUiSprite(marker.texture(), marker.x(), marker.y(), marker.size(), marker.alpha());
         }
 
-        void drawSelectionHighlight(OrbitalCelestialBody body, OrbitalSceneFrame frame) {
+        void drawSelectionHighlight(CelestialObject body, OrbitalSceneFrame frame) {
             ScreenBodyBounds bounds = findScreenBodyBounds(frame, body);
             if (bounds == null) return;
             float box = callbacks.getSelectionBoxRadius(bounds);
@@ -527,7 +528,7 @@ public class OrbitalScene {
                 EnumColors.MAP_COLOR_TITLE_BANNER_TEXT.getColor());
         }
 
-        void drawHoverHighlight(OrbitalCelestialBody body, OrbitalSceneFrame frame) {
+        void drawHoverHighlight(CelestialObject body, OrbitalSceneFrame frame) {
             ScreenBodyBounds bounds = findScreenBodyBounds(frame, body);
             if (bounds == null) return;
             drawSelectionOverlay(bounds.centerX(), bounds.centerY(), callbacks.getSelectionBoxRadius(bounds), 0.45f);
@@ -560,7 +561,7 @@ public class OrbitalScene {
             }
         }
 
-        void drawViewTitleBanner(OrbitalCelestialBody viewRoot, int widgetWidth) {
+        void drawViewTitleBanner(CelestialObject viewRoot, int widgetWidth) {
             if (viewRoot == null) return;
             String title = viewRoot.objectClass() == CelestialObjectClass.GALAXY ? viewRoot.displayName()
                 : viewRoot.objectClass() == CelestialObjectClass.STAR ? viewRoot.displayName() + " System" : null;
@@ -595,7 +596,7 @@ public class OrbitalScene {
             if (texture != null) drawUiSprite(texture, x, y, size, alpha);
         }
 
-        private ScreenBodyBounds findScreenBodyBounds(OrbitalSceneFrame frame, OrbitalCelestialBody body) {
+        private ScreenBodyBounds findScreenBodyBounds(OrbitalSceneFrame frame, CelestialObject body) {
             for (int i = frame.screenBodies.size() - 1; i >= 0; i--) {
                 ScreenBodyBounds bounds = frame.screenBodies.get(i);
                 if (bounds.body() == body) return bounds;

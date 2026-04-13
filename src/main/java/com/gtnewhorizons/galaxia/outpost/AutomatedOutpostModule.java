@@ -7,11 +7,11 @@ import java.util.Random;
 
 import net.minecraft.item.ItemStack;
 
-import com.gtnewhorizons.galaxia.api.celestial.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectRegistration;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 
 /**
  * A single module instance installed in an {@link AutomatedOutpostState}.
@@ -186,7 +186,7 @@ public final class AutomatedOutpostModule {
         outpost.addEnergy(PowerModuleData.GENERATION_EU_PER_TICK);
     }
 
-    private ItemStack generateOre(CelestialObjectRegistration body) {
+    private ItemStack generateOre(CelestialObject body) {
         MinerModuleData minerData = data instanceof MinerModuleData typed ? typed : new MinerModuleData();
 
         List<ItemStack> ores = body.properties()
