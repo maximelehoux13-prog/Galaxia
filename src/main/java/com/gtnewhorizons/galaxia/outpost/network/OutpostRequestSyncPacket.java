@@ -56,7 +56,8 @@ public final class OutpostRequestSyncPacket implements IMessage {
                 if (asset != null && asset.status() == CelestialAssetStatus.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
-                    String bodyId = asset.celestialObjectId();
+                    String bodyId = asset.celestialObjectId()
+                        .toString();
                     String systemId = resolveSystemId(bodyId);
                     String anchorBodyId = resolvePlanetaryAnchorId(bodyId);
                     state = new AutomatedOutpostState(asset.assetId(), teamId, bodyId, systemId, anchorBodyId);

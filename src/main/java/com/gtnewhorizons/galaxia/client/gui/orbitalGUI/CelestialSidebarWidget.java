@@ -573,9 +573,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private String resolveSupplyDebugAssetId() {
         CelestialObject focused = map.getFocusedBody();
         if (focused == null) return null;
-        CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(
-            focused.id()
-                .getId());
+        CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());
         for (CelestialManagedAsset asset : state.assets()) {
             if (asset.status() != CelestialAssetStatus.OPERATIONAL) continue;
             if (asset.kind() == CelestialAssetKind.AUTOMATED_OUTPOST

@@ -64,6 +64,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import codechicken.nei.recipe.GuiCraftingRecipe;
@@ -81,7 +82,7 @@ record ButtonRect(int left, int top, int right, int bottom) {
 record ModalBounds(int left, int top, int right, int bottom) {}
 
 @Desugar
-record PendingAssetCreation(String celestialObjectId, String displayName, CelestialAssetKind kind,
+record PendingAssetCreation(CelestialObjectId celestialObjectId, String displayName, CelestialAssetKind kind,
     CelestialAssetLocation location, List<CelestialAssetRequirement> requiredResources) {}
 
 @Desugar
@@ -188,9 +189,7 @@ public final class AssetManagementSystem {
         }
 
         private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
-            CelestialBodyAssetState state = CelestialAssetStore.getState(
-                current.id()
-                    .getId());
+            CelestialBodyAssetState state = CelestialAssetStore.getState(current.id());
             for (CelestialManagedAsset asset : state.assets()) {
                 if (asset.status() == CelestialAssetStatus.OPERATIONAL
                     && asset.location() == CelestialAssetLocation.ORBIT
@@ -271,8 +270,7 @@ public final class AssetManagementSystem {
         void createBaseStation(CelestialObject body) {
             if (body == null) return;
             CelestialAssetStore.createOperationalAsset(
-                body.id()
-                    .getId(),
+                body.id(),
                 buildDefaultAssetDisplayName(body, CelestialAssetKind.STATION),
                 CelestialAssetKind.STATION,
                 getDefaultAssetLocation(CelestialAssetKind.STATION));
@@ -286,18 +284,12 @@ public final class AssetManagementSystem {
             CelestialAssetLocation location = getDefaultAssetLocation(kind);
             String displayName = buildDefaultAssetDisplayName(body, kind);
             if (callbacks.isCreativeBuildModeEnabled()) {
-                CelestialAssetStore.createOperationalAsset(
-                    body.id()
-                        .getId(),
-                    displayName,
-                    kind,
-                    location);
+                CelestialAssetStore.createOperationalAsset(body.id(), displayName, kind, location);
                 callbacks.showActionStatus(assetSupport.formatAssetKind(kind) + " created");
                 return;
             }
             state.pendingAssetCreation = new PendingAssetCreation(
-                body.id()
-                    .getId(),
+                body.id(),
                 displayName,
                 kind,
                 location,
@@ -959,9 +951,7 @@ public final class AssetManagementSystem {
                 return;
             CelestialObject body = state.assetManagementBody;
             if (body == null) return;
-            CelestialBodyAssetState assetState = CelestialAssetStore.getState(
-                body.id()
-                    .getId());
+            CelestialBodyAssetState assetState = CelestialAssetStore.getState(body.id());
             int contentScrollSize = Math.max(mainContentHeight, computeContentHeight(assetState));
             mainScrollData.setScrollSize(contentScrollSize);
             mainScrollContent.removeAll();

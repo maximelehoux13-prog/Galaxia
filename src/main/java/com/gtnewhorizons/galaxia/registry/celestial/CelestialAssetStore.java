@@ -14,16 +14,16 @@ import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
 public final class CelestialAssetStore {
 
-    private static final Map<String, MutableBodyState> STATE_BY_BODY = new LinkedHashMap<>();
+    private static final Map<CelestialObjectId, MutableBodyState> STATE_BY_BODY = new LinkedHashMap<>();
 
     private CelestialAssetStore() {}
 
-    public static CelestialBodyAssetState getState(String celestialObjectId) {
+    public static CelestialBodyAssetState getState(CelestialObjectId celestialObjectId) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         return state.snapshot();
     }
 
-    public static CelestialBodyAssetState getStateIfPresent(String celestialObjectId) {
+    public static CelestialBodyAssetState getStateIfPresent(CelestialObjectId celestialObjectId) {
         MutableBodyState state = STATE_BY_BODY.get(celestialObjectId);
         if (state == null) {
             return new CelestialBodyAssetState(celestialObjectId, Collections.emptyList());
@@ -31,8 +31,8 @@ public final class CelestialAssetStore {
         return state.snapshot();
     }
 
-    public static CelestialManagedAsset createAssetInConstruction(String celestialObjectId, String displayName,
-        CelestialAssetKind kind, CelestialAssetLocation location) {
+    public static CelestialManagedAsset createAssetInConstruction(CelestialObjectId celestialObjectId,
+        String displayName, CelestialAssetKind kind, CelestialAssetLocation location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         String assetId = "asset_" + UUID.randomUUID()
             .toString()
@@ -52,7 +52,7 @@ public final class CelestialAssetStore {
         return asset;
     }
 
-    public static CelestialManagedAsset createOperationalAsset(String celestialObjectId, String displayName,
+    public static CelestialManagedAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
         CelestialAssetKind kind, CelestialAssetLocation location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         CelestialManagedAsset asset = new CelestialManagedAsset(
@@ -231,7 +231,8 @@ public final class CelestialAssetStore {
         if (assets == null || assets.isEmpty()) return;
         for (CelestialManagedAsset asset : assets) {
             if (asset == null || asset.celestialObjectId() == null || asset.assetId() == null) continue;
-            MutableBodyState state = STATE_BY_BODY.computeIfAbsent(asset.celestialObjectId(), MutableBodyState::new);
+            CelestialObjectId objectId = asset.celestialObjectId();
+            MutableBodyState state = STATE_BY_BODY.computeIfAbsent(objectId, MutableBodyState::new);
             state.assets.add(asset);
         }
     }
@@ -304,10 +305,10 @@ public final class CelestialAssetStore {
 
     private static final class MutableBodyState {
 
-        private final String celestialObjectId;
+        private final CelestialObjectId celestialObjectId;
         private final List<CelestialManagedAsset> assets = new ArrayList<>();
 
-        private MutableBodyState(String celestialObjectId) {
+        private MutableBodyState(CelestialObjectId celestialObjectId) {
             this.celestialObjectId = celestialObjectId;
         }
 

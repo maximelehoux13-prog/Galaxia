@@ -404,8 +404,7 @@ public class OrbitalScene {
                 state.body(),
                 CelestialAssetStore.getStateIfPresent(
                     state.body()
-                        .id()
-                        .getId()));
+                        .id()));
             List<CelestialMarkerBase.CelestialMarker> markers = CelestialMarkerBase.CelestialMarkerRegistry
                 .getMarkers(context);
             if (markers.isEmpty()) return;

@@ -7,7 +7,7 @@ import java.util.List;
 import com.github.bsideup.jabel.Desugar;
 
 @Desugar
-public record CelestialManagedAsset(String assetId, String celestialObjectId, String displayName,
+public record CelestialManagedAsset(String assetId, CelestialObjectId celestialObjectId, String displayName,
     CelestialAssetKind kind, CelestialAssetLocation location, CelestialAssetStatus status,
     List<CelestialAssetRequirement> requiredResources, List<CelestialAssetRequirement> constructionInventory) {
 

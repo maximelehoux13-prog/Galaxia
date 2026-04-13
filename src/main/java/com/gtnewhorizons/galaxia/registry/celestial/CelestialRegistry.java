@@ -18,6 +18,9 @@ import net.minecraft.init.Blocks;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 
+/*
+ * TODO: Figure out if there is a need to merge this with SolarSystemRegistry, and if so, how to do it
+ */
 public final class CelestialRegistry {
 
     private static final Map<CelestialObjectId, CelestialObject> REGISTRATIONS = new LinkedHashMap<>();

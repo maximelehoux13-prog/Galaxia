@@ -47,6 +47,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -256,7 +257,8 @@ public final class OutpostPersistenceManager {
     private AssetJson encodeAsset(CelestialManagedAsset asset) {
         AssetJson json = new AssetJson();
         json.assetId = asset.assetId();
-        json.celestialObjectId = asset.celestialObjectId();
+        json.celestialObjectId = asset.celestialObjectId()
+            .toString();
         json.displayName = asset.displayName();
         json.kind = asset.kind()
             .name();
@@ -277,9 +279,11 @@ public final class OutpostPersistenceManager {
             || json.status == null) {
             return null;
         }
+        CelestialObjectId objectId = CelestialObjectId.fromString(json.celestialObjectId);
+        if (objectId == null) return null;
         return new CelestialManagedAsset(
             json.assetId,
-            json.celestialObjectId,
+            objectId,
             json.displayName == null ? json.assetId : json.displayName,
             CelestialAssetKind.valueOf(json.kind),
             CelestialAssetLocation.valueOf(json.location),
@@ -345,7 +349,9 @@ public final class OutpostPersistenceManager {
 
     private AutomatedOutpostState decodeOutpostState(CelestialManagedAsset asset, OutpostStateJson json) {
         if (asset == null || json == null || json.teamId == null || json.systemId == null) return null;
-        String bodyId = json.celestialBodyId != null ? json.celestialBodyId : asset.celestialObjectId();
+        String bodyId = json.celestialBodyId != null ? json.celestialBodyId
+            : asset.celestialObjectId()
+                .toString();
         String anchorBodyId = json.planetaryAnchorBodyId != null ? json.planetaryAnchorBodyId
             : resolvePlanetaryAnchorId(bodyId);
         AutomatedOutpostState state = new AutomatedOutpostState(
