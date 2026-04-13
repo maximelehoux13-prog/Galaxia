@@ -90,13 +90,13 @@ public final class AutomatedOutpostState {
 
     /** Returns {@code true} if at least one module of the given kind is installed. */
     public boolean hasModule(OutpostModuleKind kind) {
-        for (AutomatedOutpostModule m : modules) if (m.kind == kind) return true;
+        for (AutomatedOutpostModule m : modules) if (m.getData().moduleKind() == kind) return true;
         return false;
     }
 
     public boolean hasOperationalModule(OutpostModuleKind kind) {
         for (AutomatedOutpostModule m : modules) {
-            if (m.kind == kind && m.isOperational()) return true;
+            if (m.getData().moduleKind() == kind && m.isOperational()) return true;
         }
         return false;
     }
@@ -105,13 +105,13 @@ public final class AutomatedOutpostState {
      * Returns the first module of the given kind, or {@code null} if not installed.
      */
     public AutomatedOutpostModule firstModule(OutpostModuleKind kind) {
-        for (AutomatedOutpostModule m : modules) if (m.kind == kind) return m;
+        for (AutomatedOutpostModule m : modules) if (m.getData().moduleKind() == kind) return m;
         return null;
     }
 
     public AutomatedOutpostModule firstOperationalModule(OutpostModuleKind kind) {
         for (AutomatedOutpostModule m : modules) {
-            if (m.kind == kind && m.isOperational()) return m;
+            if (m.getData().moduleKind() == kind && m.isOperational()) return m;
         }
         return null;
     }

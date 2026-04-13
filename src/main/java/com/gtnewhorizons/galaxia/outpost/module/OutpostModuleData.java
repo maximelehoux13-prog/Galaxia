@@ -1,10 +1,15 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
+import java.util.Map;
+
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
+
 /**
- * Marker interface for static (serializable) configuration data attached to an outpost module.
- * Each {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind} has its own concrete record
- * implementing this interface. Runtime-only state (cooldowns, energy counters) lives in
- * {@link com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule} directly.
+ * Static configuration data and behavior for an outpost module.
+ * Each module type has a concrete record implementing this interface.
  *
  * <p>
  * GSON polymorphic serialization is handled by
@@ -12,4 +17,19 @@ package com.gtnewhorizons.galaxia.outpost.module;
  * via a registered {@code TypeAdapter} that writes/reads a {@code "type"} discriminator field.
  */
 public interface OutpostModuleData {
+
+    /** Module type identifier. */
+    OutpostModuleKind moduleKind();
+
+    /** Default energy capacity in EU. */
+    long baseEnergyCapacity();
+
+    /** EU consumed per tick while operational (positive) or generated (negative). */
+    int powerDrawEuPerTick();
+
+    /** Resources required for construction. */
+    Map<ItemStackWrapper, Integer> requiredResources();
+
+    /** Tick the module logic. Called each server tick when module is OPERATIONAL. */
+    void tick(AutomatedOutpostModule module, AutomatedOutpostState outpost);
 }

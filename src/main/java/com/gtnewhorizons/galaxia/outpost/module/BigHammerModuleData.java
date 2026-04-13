@@ -1,6 +1,17 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
+
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -10,22 +21,14 @@ import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
  * <p>
  * BIG_HAMMER operates within the same stellar system as the host outpost without
  * range restrictions or batch-size limits.
- *
- * <p>
- * Configuration fields:
- * <ul>
- * <li>{@code planetaryTransferHandling} – when {@code true} the module also handles
- * PLANETARY-scope signals (same planet + moons), duplicating HAMMER coverage.</li>
- * <li>{@code allowShooting} – shooting permission; {@code null} in old saves
- * is treated as {@link AllowShootingConfig#ALWAYS} via {@link #effectiveShooting()}.</li>
- * <li>Cooldown: 20 ticks (1 second) between operations.</li>
- * </ul>
  */
 @Desugar
 public record BigHammerModuleData(boolean planetaryTransferHandling, AllowShootingConfig allowShooting,
     OrbitalTransferPlanner.RoutePriority routePriority) implements OutpostModuleData {
 
-    /** Creates a default instance: no planetary-transfer duplication, always allow. */
+    public static final long BASE_ENERGY_CAPACITY = 5000L;
+    public static final int POWER_DRAW_EU_PER_TICK = 25;
+
     public static BigHammerModuleData getDefault() {
         return new BigHammerModuleData(
             false,
@@ -33,7 +36,38 @@ public record BigHammerModuleData(boolean planetaryTransferHandling, AllowShooti
             OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF);
     }
 
-    /** Returns the effective shooting config, defaulting to ALWAYS for pre-migration saves. */
+    @Override
+    public OutpostModuleKind moduleKind() {
+        return OutpostModuleKind.BIG_HAMMER;
+    }
+
+    @Override
+    public long baseEnergyCapacity() {
+        return BASE_ENERGY_CAPACITY;
+    }
+
+    @Override
+    public int powerDrawEuPerTick() {
+        return POWER_DRAW_EU_PER_TICK;
+    }
+
+    @Override
+    public Map<ItemStackWrapper, Integer> requiredResources() {
+        Map<ItemStackWrapper, Integer> resources = new LinkedHashMap<>();
+        resources.put(ItemStackWrapper.of(new ItemStack(Items.diamond)), 8);
+        resources.put(ItemStackWrapper.of(new ItemStack(Items.gold_ingot)), 64);
+        return resources;
+    }
+
+    @Override
+    public void tick(AutomatedOutpostModule module, AutomatedOutpostState outpost) {
+        if (module.cooldownTicks > 0) {
+            module.cooldownTicks--;
+            return;
+        }
+        module.cooldownTicks = COOLDOWN_TICKS;
+    }
+
     public AllowShootingConfig effectiveShooting() {
         return allowShooting != null ? allowShooting : AllowShootingConfig.ALWAYS;
     }
@@ -42,6 +76,5 @@ public record BigHammerModuleData(boolean planetaryTransferHandling, AllowShooti
         return routePriority != null ? routePriority : OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
     }
 
-    /** Ticks between successive BIG_HAMMER dispatches (1 s at 20 TPS). */
     public static final int COOLDOWN_TICKS = 20;
 }

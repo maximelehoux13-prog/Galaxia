@@ -1,5 +1,8 @@
 package com.gtnewhorizons.galaxia.outpost;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,7 +19,7 @@ public final class AutomatedOutpostInventory {
     private final Map<ItemStackWrapper, Long> amounts = new LinkedHashMap<>();
 
     /** Returns the stored amount for the given item, or 0 if absent. */
-    public synchronized long getAmount(ItemStackWrapper item) {
+    public long getAmount(ItemStackWrapper item) {
         Long v = amounts.get(item);
         return v == null ? 0L : v;
     }
@@ -27,7 +30,7 @@ public final class AutomatedOutpostInventory {
      *
      * @return the actual amount added (positive) or removed (negative as negative value)
      */
-    public synchronized long add(ItemStackWrapper item, long delta) {
+    public long add(ItemStackWrapper item, long delta) {
         long current = getAmount(item);
         if (delta < 0) {
             long actual = Math.max(delta, -current);
@@ -47,7 +50,7 @@ public final class AutomatedOutpostInventory {
      * Attempts to remove exactly {@code amount} units. Returns {@code true} only if
      * the buffer holds at least that many units, in which case they are consumed.
      */
-    public synchronized boolean tryConsume(ItemStackWrapper item, long amount) {
+    public boolean tryConsume(ItemStackWrapper item, long amount) {
         if (amount <= 0) return true;
         long current = getAmount(item);
         if (current < amount) return false;
@@ -61,12 +64,12 @@ public final class AutomatedOutpostInventory {
     }
 
     /** Returns an unmodifiable snapshot of the full inventory contents. */
-    public synchronized Map<ItemStackWrapper, Long> snapshot() {
+    public @NotNull @UnmodifiableView Map<ItemStackWrapper, Long> snapshot() {
         return Collections.unmodifiableMap(new LinkedHashMap<>(amounts));
     }
 
     /** Replaces the entire inventory contents (used during deserialization and migration). */
-    public synchronized void loadFromSnapshot(Map<ItemStackWrapper, Long> snapshot) {
+    public void loadFromSnapshot(@NotNull Map<ItemStackWrapper, Long> snapshot) {
         amounts.clear();
         for (Map.Entry<ItemStackWrapper, Long> e : snapshot.entrySet()) {
             if (e.getValue() > 0) amounts.put(e.getKey(), e.getValue());
@@ -74,7 +77,7 @@ public final class AutomatedOutpostInventory {
     }
 
     /** Returns {@code true} if the inventory contains no resources. */
-    public synchronized boolean isEmpty() {
+    public boolean isEmpty() {
         return amounts.isEmpty();
     }
 }

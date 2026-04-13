@@ -841,7 +841,7 @@ public final class AssetManagementSystem {
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
                         .get(state.configuringModuleIndex);
-                    if (module.kind == OutpostModuleKind.MINER) {
+                    if (module.getData().moduleKind() == OutpostModuleKind.MINER) {
                         state.minerConfigScrollPosition = scroll;
                     } else {
                         state.logisticsScrollPosition = scroll;
@@ -867,7 +867,7 @@ public final class AssetManagementSystem {
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
                         .get(state.configuringModuleIndex);
-                    return module.kind == OutpostModuleKind.MINER ? state.minerConfigScrollPosition
+                    return module.getData().moduleKind() == OutpostModuleKind.MINER ? state.minerConfigScrollPosition
                         : state.logisticsScrollPosition;
                 }
             }
@@ -1231,11 +1231,11 @@ public final class AssetManagementSystem {
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
                         .get(state.configuringModuleIndex);
-                    if (module.kind == OutpostModuleKind.HAMMER || module.kind == OutpostModuleKind.BIG_HAMMER) {
+                    if (module.getData().moduleKind() == OutpostModuleKind.HAMMER || module.getData().moduleKind() == OutpostModuleKind.BIG_HAMMER) {
                         buildLogisticsSubMenu(modal, outpost);
-                    } else if (module.kind == OutpostModuleKind.MINER) {
+                    } else if (module.getData().moduleKind() == OutpostModuleKind.MINER) {
                         buildMinerConfigSubMenu(modal, outpost, module);
-                    } else if (module.kind == OutpostModuleKind.POWER) {
+                    } else if (module.getData().moduleKind() == OutpostModuleKind.POWER) {
                         buildPowerConfigSubMenu(modal, outpost, module);
                     }
                 } else if (state.assetManagementTab == 0) {
@@ -1323,11 +1323,11 @@ public final class AssetManagementSystem {
                             (c, x, y1, w, h) -> Gui
                                 .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
-                row.child(createBodyText(m.kind.displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 6));
+                row.child(createBodyText(m.getData().moduleKind().displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 6));
 
-                boolean isHammer = m.kind == OutpostModuleKind.HAMMER || m.kind == OutpostModuleKind.BIG_HAMMER;
-                boolean isConfigurable = isHammer || m.kind == OutpostModuleKind.MINER
-                    || m.kind == OutpostModuleKind.POWER;
+                boolean isHammer = m.getData().moduleKind() == OutpostModuleKind.HAMMER || m.getData().moduleKind() == OutpostModuleKind.BIG_HAMMER;
+                boolean isConfigurable = isHammer || m.getData().moduleKind() == OutpostModuleKind.MINER
+                    || m.getData().moduleKind() == OutpostModuleKind.POWER;
                 boolean operational = m.getStatus() != AutomatedOutpostModule.Status.IN_CONSTRUCTION;
                 boolean isDisabled = m.getStatus() == AutomatedOutpostModule.Status.DISABLED;
 
@@ -1344,8 +1344,8 @@ public final class AssetManagementSystem {
                         .size(100, 4));
                 } else {
                     String statusLabel = isDisabled ? "Disabled" : "Active";
-                    String powerLabel = m.kind == OutpostModuleKind.POWER
-                        ? "Generating power: " + (isDisabled ? 0 : PowerModuleData.GENERATION_EU_PER_TICK) + " EU/t"
+                    String powerLabel = m.getData().moduleKind() == OutpostModuleKind.POWER
+                        ? "Generating power: " + (isDisabled ? 0 : -m.getData().powerDrawEuPerTick()) + " EU/t"
                         : "Power: " + Math.max(0L, m.getDisplayedPowerEuPerTick()) + " EU/t";
                     row.child(
                         createBodyText(statusLabel + " | " + powerLabel, EnumColors.MAP_COLOR_TEXT_BODY.getColor())
@@ -1771,8 +1771,8 @@ public final class AssetManagementSystem {
             List<AutomatedOutpostModule> modules = outpost.modules();
             AutomatedOutpostModule module = (state.configuringModuleIndex >= 0
                 && state.configuringModuleIndex < modules.size()) ? modules.get(state.configuringModuleIndex) : null;
-            String moduleLabel = module != null ? module.kind.displayName : "HAMMER";
-            boolean isBigHammer = module != null && module.kind == OutpostModuleKind.BIG_HAMMER;
+            String moduleLabel = module != null ? module.getData().moduleKind().displayName : "HAMMER";
+            boolean isBigHammer = module != null && module.getData().moduleKind() == OutpostModuleKind.BIG_HAMMER;
 
             // Extract current shooting config and planetary flag from live module data
             AllowShootingConfig shootingCfg;
@@ -2289,8 +2289,9 @@ public final class AssetManagementSystem {
             long drawPerTick = 0L;
             for (AutomatedOutpostModule module : outpost.modules()) {
                 if (!module.isOperational()) continue;
-                if (module.kind == OutpostModuleKind.POWER) generationPerTick += PowerModuleData.GENERATION_EU_PER_TICK;
-                else drawPerTick += module.kind.powerDrawEuPerTick;
+                int power = module.getData().powerDrawEuPerTick();
+                if (power < 0) generationPerTick -= power;
+                else drawPerTick += power;
             }
             long netPerSecond = (generationPerTick - drawPerTick) * 20L;
             String sign = netPerSecond >= 0 ? "+" : "";

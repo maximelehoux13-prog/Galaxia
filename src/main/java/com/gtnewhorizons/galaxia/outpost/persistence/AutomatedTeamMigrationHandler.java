@@ -3,6 +3,7 @@ package com.gtnewhorizons.galaxia.outpost.persistence;
 import java.util.UUID;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * Handles team membership changes from NHLib.
@@ -59,6 +60,7 @@ public final class AutomatedTeamMigrationHandler {
      * @param oldTeamId the UUID of the team the player is leaving
      * @param newTeamId the UUID of the team the player is joining (may differ from old)
      */
+    @SubscribeEvent
     public void onTeamChanged(UUID oldTeamId, UUID newTeamId) {
         if (oldTeamId.equals(newTeamId)) return;
         int countBefore = OutpostDataStore.get()

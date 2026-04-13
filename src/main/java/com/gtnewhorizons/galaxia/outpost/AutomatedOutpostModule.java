@@ -1,25 +1,14 @@
 package com.gtnewhorizons.galaxia.outpost;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
-import net.minecraft.item.ItemStack;
-
-import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 
 /**
  * A single module instance installed in an {@link AutomatedOutpostState}.
  */
 public final class AutomatedOutpostModule {
-
-    private static final Random RANDOM = new Random();
-    private static final int MINER_COOLDOWN_TICKS = 20;
 
     public enum Status {
         IN_CONSTRUCTION,
@@ -27,29 +16,19 @@ public final class AutomatedOutpostModule {
         DISABLED
     }
 
-    /** The type of this module. */
-    public final OutpostModuleKind kind;
-
-    /** Static configuration data (kind-specific record). */
     private OutpostModuleData data;
 
-    /** Current status of the module. */
     private Status status;
 
-    /** Construction progress (0.0 to 1.0). */
     private float constructionProgress;
 
-    /** Resources already consumed for construction. */
     private final Map<ItemStackWrapper, Integer> consumedResources = new LinkedHashMap<>();
 
-    /** Remaining cooldown ticks before this module may act again. */
     public int cooldownTicks;
 
-    /** Internal energy buffer in EU. */
     public long energyBuffer;
 
-    public AutomatedOutpostModule(OutpostModuleKind kind, OutpostModuleData data) {
-        this.kind = kind;
+    public AutomatedOutpostModule(OutpostModuleData data) {
         this.data = data;
         this.status = Status.IN_CONSTRUCTION;
         this.constructionProgress = 0.0f;
@@ -99,18 +78,15 @@ public final class AutomatedOutpostModule {
 
     public void completeConstructionInstantly() {
         consumedResources.clear();
-        for (Map.Entry<ItemStackWrapper, Integer> entry : kind.getRequiredResources()
-            .entrySet()) {
+        for (Map.Entry<ItemStackWrapper, Integer> entry : data.requiredResources().entrySet()) {
             consumedResources.put(entry.getKey(), entry.getValue());
         }
         status = Status.OPERATIONAL;
         constructionProgress = 1.0f;
         cooldownTicks = 0;
+        energyBuffer = data.baseEnergyCapacity();
     }
 
-    /**
-     * Ticks the module logic.
-     */
     public void tick(AutomatedOutpostState outpost) {
         if (status == Status.IN_CONSTRUCTION) {
             updateConstruction(outpost);
@@ -120,7 +96,7 @@ public final class AutomatedOutpostModule {
     }
 
     private void updateConstruction(AutomatedOutpostState outpost) {
-        Map<ItemStackWrapper, Integer> requirements = kind.getRequiredResources();
+        Map<ItemStackWrapper, Integer> requirements = data.requiredResources();
         boolean finished = true;
         int totalNeeded = 0;
         int totalConsumed = 0;
@@ -135,7 +111,6 @@ public final class AutomatedOutpostModule {
 
             if (consumed < required) {
                 finished = false;
-                // Try to consume from inventory (max 1 per tick for over-time effect)
                 if (outpost.inventory.tryConsume(item, 1)) {
                     consumedResources.put(item, consumed + 1);
                     totalConsumed++;
@@ -152,58 +127,20 @@ public final class AutomatedOutpostModule {
         if (finished) {
             status = Status.OPERATIONAL;
             constructionProgress = 1.0f;
+            energyBuffer = data.baseEnergyCapacity();
         }
     }
 
     private void updateOperational(AutomatedOutpostState outpost) {
-        if (kind.powerDrawEuPerTick > 0 && !outpost.tryConsumeEnergy(kind.powerDrawEuPerTick)) {
+        int powerDraw = data.powerDrawEuPerTick();
+        if (powerDraw > 0 && !outpost.tryConsumeEnergy(powerDraw)) {
             return;
         }
-        switch (kind) {
-            case MINER -> tickMiner(outpost);
-            case POWER -> tickPower(outpost);
-            default -> {}
-        }
-    }
-
-    private void tickMiner(AutomatedOutpostState outpost) {
-        // Mining Module logic: produce 1 raw ore every 20 ticks
-        if (cooldownTicks <= 0) {
-            cooldownTicks = MINER_COOLDOWN_TICKS;
-
-            // Find celestial body
-            GalaxiaCelestialAPI.get(outpost.celestialBodyId)
-                .ifPresent(registration -> {
-                    ItemStack ore = generateOre(registration);
-                    if (ore != null) {
-                        outpost.inventory.add(ItemStackWrapper.of(ore), 1);
-                    }
-                });
-        }
-    }
-
-    private void tickPower(AutomatedOutpostState outpost) {
-        outpost.addEnergy(PowerModuleData.GENERATION_EU_PER_TICK);
-    }
-
-    private ItemStack generateOre(CelestialObject body) {
-        MinerModuleData minerData = data instanceof MinerModuleData typed ? typed : new MinerModuleData();
-
-        List<ItemStack> ores = body.properties()
-            .ores();
-        if (ores.isEmpty()) return null;
-        ItemStack chosen = ores.get(RANDOM.nextInt(ores.size()));
-        ItemStackWrapper wrapper = ItemStackWrapper.of(chosen);
-        if (wrapper == null || minerData.isBlacklisted(wrapper.toKey())) return null;
-
-        ItemStack ore = chosen.copy();
-        ore.stackSize = 1;
-        return ore;
+        data.tick(this, outpost);
     }
 
     public long getDisplayedPowerEuPerTick() {
         if (status != Status.OPERATIONAL) return 0L;
-        if (kind == OutpostModuleKind.POWER) return -PowerModuleData.GENERATION_EU_PER_TICK;
-        return kind.powerDrawEuPerTick;
+        return data.powerDrawEuPerTick();
     }
 }

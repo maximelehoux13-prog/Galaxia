@@ -19,6 +19,7 @@ import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
@@ -84,7 +85,7 @@ public final class OutpostFullSyncPacket implements IMessage {
             }
             modules.add(
                 new ModuleSyncData(
-                    m.kind.name(),
+                    m.getData().moduleKind().name(),
                     m.getStatus()
                         .name(),
                     m.getConstructionProgress(),
@@ -242,8 +243,8 @@ public final class OutpostFullSyncPacket implements IMessage {
                     // keyed by (assetId, moduleIndex, moduleKind). That way this clear+rebuild remains safe.
                     state.clearModules();
                     for (ModuleSyncData md : packet.modules) {
-                        OutpostModuleKind kind = OutpostModuleKind.valueOf(md.kind);
-                        AutomatedOutpostModule m = new AutomatedOutpostModule(kind, createModuleData(kind, md));
+                        OutpostModuleData data = createModuleData(md);
+                        AutomatedOutpostModule m = new AutomatedOutpostModule(data);
                         m.setStatus(AutomatedOutpostModule.Status.valueOf(md.status));
                         m.setConstructionProgress(md.progress);
                         state.addModule(m);
@@ -288,8 +289,8 @@ public final class OutpostFullSyncPacket implements IMessage {
     private static record LogisticsConfigSyncData(int minReserve, int orderSize, boolean isImportEnabled,
         boolean isSupplyEnabled) {}
 
-    private static com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData createModuleData(OutpostModuleKind kind,
-        ModuleSyncData syncData) {
+    private static com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData createModuleData(ModuleSyncData syncData) {
+        OutpostModuleKind kind = OutpostModuleKind.valueOf(syncData.kind());
         return switch (kind) {
             case HAMMER -> new HammerModuleData(parseAllowShooting(syncData), parseRoutePriority(syncData));
             case BIG_HAMMER -> new BigHammerModuleData(

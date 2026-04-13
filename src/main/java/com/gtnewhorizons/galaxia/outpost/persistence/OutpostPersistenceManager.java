@@ -302,7 +302,7 @@ public final class OutpostPersistenceManager {
         out.modules = new ArrayList<>();
         for (AutomatedOutpostModule m : state.modules()) {
             ModuleJson mj = new ModuleJson();
-            mj.kind = m.kind.name();
+            mj.kind = m.getData().moduleKind().name();
             mj.status = m.getStatus()
                 .name();
             mj.constructionProgress = m.getConstructionProgress();
@@ -364,9 +364,8 @@ public final class OutpostPersistenceManager {
 
         if (json.modules != null) {
             for (ModuleJson mj : json.modules) {
-                OutpostModuleKind kind = OutpostModuleKind.valueOf(mj.kind);
                 OutpostModuleData data = gson.fromJson(mj.data, OutpostModuleData.class);
-                AutomatedOutpostModule module = new AutomatedOutpostModule(kind, data);
+                AutomatedOutpostModule module = new AutomatedOutpostModule(data);
                 if (mj.status != null) {
                     module.setStatus(AutomatedOutpostModule.Status.valueOf(mj.status));
                 }

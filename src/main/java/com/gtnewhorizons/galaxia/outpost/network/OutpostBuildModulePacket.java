@@ -119,7 +119,7 @@ public final class OutpostBuildModulePacket implements IMessage {
                         .getName());
                 return null;
             }
-            AutomatedOutpostModule module = new AutomatedOutpostModule(kind, data);
+            AutomatedOutpostModule module = new AutomatedOutpostModule(data);
             if (packet.instantBuild && player.capabilities.isCreativeMode) {
                 module.completeConstructionInstantly();
             }
