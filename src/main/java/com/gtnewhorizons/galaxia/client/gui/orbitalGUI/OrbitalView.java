@@ -32,8 +32,8 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 public class OrbitalView {
@@ -297,7 +297,7 @@ public class OrbitalView {
                 globalTime);
         }
 
-        static double[] calculatePosition(Hierarchy.OrbitalParams p, double t) {
+        static double[] calculatePosition(OrbitalParams p, double t) {
             OrbitalMechanics.OrbitalState state = OrbitalMechanics
                 .calculateOrbitalState(p, OrbitalMechanics.resolveAttractorMu(null, p), t);
             return new double[] { state.x(), state.y() };

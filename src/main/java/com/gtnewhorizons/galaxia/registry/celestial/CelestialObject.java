@@ -10,14 +10,13 @@ import net.minecraft.util.StatCollector;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaAPI;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.AbsolutePosition;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalParams;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
 
 @Desugar
 public record CelestialObject(CelestialObjectId id, String name, String nameKey, CelestialObjectId parentId,
     DimensionEnum dimensionEnum, CelestialObjectClass objectClass, OrbitalParams orbitalParams,
-    AbsolutePosition absolutePosition, ResourceLocation texture, double spriteSize,
+    OrbitalMechanics.AbsolutePosition absolutePosition, ResourceLocation texture, double spriteSize,
     CelestialBodyProperties properties) {
 
     public CelestialObject {
@@ -87,7 +86,7 @@ public record CelestialObject(CelestialObjectId id, String name, String nameKey,
         private DimensionEnum dimensionEnum;
         private CelestialObjectClass objectClass = CelestialObjectClass.PLANET;
         private OrbitalParams orbitalParams = OrbitalParams.circular(0.0, 0.0);
-        private AbsolutePosition absolutePosition;
+        private OrbitalMechanics.AbsolutePosition absolutePosition;
         private ResourceLocation texture;
         private double spriteSize;
         private CelestialBodyProperties properties = CelestialBodyProperties.builder()
@@ -171,11 +170,11 @@ public record CelestialObject(CelestialObjectId id, String name, String nameKey,
         }
 
         public Builder absolutePosition(double x, double y) {
-            this.absolutePosition = new AbsolutePosition(x, y);
+            this.absolutePosition = new OrbitalMechanics.AbsolutePosition(x, y);
             return this;
         }
 
-        public Builder absolutePosition(AbsolutePosition value) {
+        public Builder absolutePosition(OrbitalMechanics.AbsolutePosition value) {
             this.absolutePosition = value;
             return this;
         }

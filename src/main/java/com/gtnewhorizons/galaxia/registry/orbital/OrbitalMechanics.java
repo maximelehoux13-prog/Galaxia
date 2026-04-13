@@ -4,8 +4,6 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.AbsolutePosition;
-import com.gtnewhorizons.galaxia.registry.orbital.Hierarchy.OrbitalParams;
 
 public final class OrbitalMechanics {
 
@@ -33,6 +31,9 @@ public final class OrbitalMechanics {
             return Math.hypot(vx, vy);
         }
     }
+
+    @Desugar
+    public record AbsolutePosition(double x, double y) {}
 
     public static OrbitalState resolveWorldState(CelestialObject root, CelestialObject target, double globalTime) {
         if (root == null || target == null) return null;
