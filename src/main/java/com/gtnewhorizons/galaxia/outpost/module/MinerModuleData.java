@@ -13,10 +13,9 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 
 /**
- * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#MINER} module.
+ * Static configuration data for a {@link OutpostModuleKind#MINER} module.
  */
 @Desugar
 public record MinerModuleData(List<String> blacklistedItemKeys, boolean copySettingsToOtherMiners)

@@ -78,9 +78,7 @@ public final class AutomatedOutpostModule {
 
     public void completeConstructionInstantly() {
         consumedResources.clear();
-        for (Map.Entry<ItemStackWrapper, Integer> entry : data.requiredResources().entrySet()) {
-            consumedResources.put(entry.getKey(), entry.getValue());
-        }
+        consumedResources.putAll(data.requiredResources());
         status = Status.OPERATIONAL;
         constructionProgress = 1.0f;
         cooldownTicks = 0;

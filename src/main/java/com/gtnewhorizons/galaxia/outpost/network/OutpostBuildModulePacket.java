@@ -5,7 +5,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
@@ -127,7 +127,7 @@ public final class OutpostBuildModulePacket implements IMessage {
 
             Galaxia.LOG.debug(
                 "[Outpost] BuildModule: queued {} construction on outpost {} (by {})",
-                kind.displayName,
+                kind.getDisplayName(),
                 packet.assetId,
                 player.getGameProfile()
                     .getName());

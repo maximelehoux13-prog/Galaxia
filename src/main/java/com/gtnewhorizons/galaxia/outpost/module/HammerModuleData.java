@@ -1,6 +1,5 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,12 +10,11 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 /**
- * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#HAMMER} module.
+ * Static configuration data for a {@link OutpostModuleKind#HAMMER} module.
  *
  * <p>
  * Operational constants:
@@ -37,6 +35,10 @@ public record HammerModuleData(AllowShootingConfig allowShooting, OrbitalTransfe
 
     public static final long BASE_ENERGY_CAPACITY = 1000L;
     public static final int POWER_DRAW_EU_PER_TICK = 10;
+
+    public HammerModuleData() {
+        this(AllowShootingConfig.ALWAYS, OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF);
+    }
 
     public static HammerModuleData getDefault() {
         return new HammerModuleData(AllowShootingConfig.ALWAYS, OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF);

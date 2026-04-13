@@ -1,6 +1,5 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,10 +10,9 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 
 /**
- * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#POWER} module.
+ * Static configuration data for a {@link OutpostModuleKind#POWER} module.
  */
 @Desugar
 public record PowerModuleData() implements OutpostModuleData {

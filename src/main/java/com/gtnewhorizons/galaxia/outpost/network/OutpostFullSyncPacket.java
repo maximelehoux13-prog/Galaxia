@@ -14,7 +14,7 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;

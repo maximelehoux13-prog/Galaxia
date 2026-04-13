@@ -5,7 +5,6 @@ import java.util.Map;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 
 /**
  * Static configuration data and behavior for an outpost module.
@@ -32,4 +31,14 @@ public interface OutpostModuleData {
 
     /** Tick the module logic. Called each server tick when module is OPERATIONAL. */
     void tick(AutomatedOutpostModule module, AutomatedOutpostState outpost);
+
+    /** Returns the default data for a module kind (for UI display). */
+    static OutpostModuleData forKind(OutpostModuleKind kind) {
+        return switch (kind) {
+            case HAMMER -> new HammerModuleData();
+            case BIG_HAMMER -> new BigHammerModuleData();
+            case MINER -> new MinerModuleData();
+            case POWER -> new PowerModuleData();
+        };
+    }
 }

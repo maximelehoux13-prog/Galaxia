@@ -268,6 +268,12 @@ galaxia.tooltip.protection_shield_radiation.high=High Pressure Shielding: +%s
 galaxia.tooltip.rocket_silo.builder.return_modules=Disassemble Rocket
 galaxia.tooltip.rocket_silo.builder.enter_rocket=Add some modules first
 
+# Outpost Modules
+galaxia.outpost.module.hammer=HAMMER
+galaxia.outpost.module.big_hammer=BIG HAMMER
+galaxia.outpost.module.miner=MINER
+galaxia.outpost.module.power=POWER
+
 # Elements - "Other"
 # Elements - Other - "Effect"
 galaxia.effect.low_oxygen=Low Oxygen

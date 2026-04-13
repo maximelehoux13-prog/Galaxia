@@ -1,6 +1,5 @@
 package com.gtnewhorizons.galaxia.outpost.module;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,12 +10,11 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 /**
- * Static configuration data for a {@link com.gtnewhorizons.galaxia.outpost.OutpostModuleKind#BIG_HAMMER} module.
+ * Static configuration data for a {@link OutpostModuleKind#BIG_HAMMER} module.
  *
  * <p>
  * BIG_HAMMER operates within the same stellar system as the host outpost without
@@ -28,6 +26,10 @@ public record BigHammerModuleData(boolean planetaryTransferHandling, AllowShooti
 
     public static final long BASE_ENERGY_CAPACITY = 5000L;
     public static final int POWER_DRAW_EU_PER_TICK = 25;
+
+    public BigHammerModuleData() {
+        this(false, AllowShootingConfig.ALWAYS, OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF);
+    }
 
     public static BigHammerModuleData getDefault() {
         return new BigHammerModuleData(

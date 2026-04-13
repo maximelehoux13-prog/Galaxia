@@ -42,11 +42,12 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
-import com.gtnewhorizons.galaxia.outpost.OutpostModuleKind;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsConfigUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
@@ -1323,7 +1324,7 @@ public final class AssetManagementSystem {
                             (c, x, y1, w, h) -> Gui
                                 .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
 
-                row.child(createBodyText(m.getData().moduleKind().displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 6));
+                row.child(createBodyText(m.getData().moduleKind().getDisplayName(), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 6));
 
                 boolean isHammer = m.getData().moduleKind() == OutpostModuleKind.HAMMER || m.getData().moduleKind() == OutpostModuleKind.BIG_HAMMER;
                 boolean isConfigurable = isHammer || m.getData().moduleKind() == OutpostModuleKind.MINER
@@ -1460,7 +1461,7 @@ public final class AssetManagementSystem {
                         drawable(
                             (c, x, y1, w, h) -> Gui
                                 .drawRect(x, y1, x + w, y1 + h, EnumColors.MAP_COLOR_ROW_BG.getColor())));
-                row.child(createBodyText(kind.displayName, EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 8));
+                row.child(createBodyText(kind.getDisplayName(), EnumColors.MAP_COLOR_TEXT_TITLE.getColor()).pos(8, 8));
                 row.child(
                     createBodyText(buildModuleDescription(kind), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(8, 24)
                         .size(Math.max(240, pickerWidth - 170), 24));
@@ -1771,7 +1772,7 @@ public final class AssetManagementSystem {
             List<AutomatedOutpostModule> modules = outpost.modules();
             AutomatedOutpostModule module = (state.configuringModuleIndex >= 0
                 && state.configuringModuleIndex < modules.size()) ? modules.get(state.configuringModuleIndex) : null;
-            String moduleLabel = module != null ? module.getData().moduleKind().displayName : "HAMMER";
+            String moduleLabel = module != null ? module.getData().moduleKind().getDisplayName() : "HAMMER";
             boolean isBigHammer = module != null && module.getData().moduleKind() == OutpostModuleKind.BIG_HAMMER;
 
             // Extract current shooting config and planetary flag from live module data
@@ -2309,17 +2310,19 @@ public final class AssetManagementSystem {
         }
 
         private String buildModuleStats(OutpostModuleKind kind) {
+            var data = OutpostModuleData.forKind(kind);
             String powerLine = kind == OutpostModuleKind.POWER
-                ? "Generates " + PowerModuleData.GENERATION_EU_PER_TICK + " EU/t"
-                : "Consumes " + kind.powerDrawEuPerTick + " EU/t";
+                ? "Generates " + (-data.powerDrawEuPerTick()) + " EU/t"
+                : "Consumes " + data.powerDrawEuPerTick() + " EU/t";
             String restrictionLine = kind == OutpostModuleKind.MINER ? "Only on Automated Outposts" : "Buildable here";
-            return powerLine + " | Cap " + kind.baseEnergyCapacity + " EU | " + restrictionLine;
+            return powerLine + " | Cap " + data.baseEnergyCapacity() + " EU | " + restrictionLine;
         }
 
         private String buildModuleCost(OutpostModuleKind kind) {
+            var data = OutpostModuleData.forKind(kind);
             StringBuilder sb = new StringBuilder("Cost: ");
             boolean first = true;
-            for (Map.Entry<ItemStackWrapper, Integer> entry : kind.getRequiredResources()
+            for (Map.Entry<ItemStackWrapper, Integer> entry : data.requiredResources()
                 .entrySet()) {
                 ItemStack stack = entry.getKey()
                     .toStack(1);

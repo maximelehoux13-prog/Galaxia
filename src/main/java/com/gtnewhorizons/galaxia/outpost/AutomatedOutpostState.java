@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.outpost;
 
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
