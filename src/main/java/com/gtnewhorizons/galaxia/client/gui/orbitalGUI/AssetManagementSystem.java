@@ -39,7 +39,7 @@ import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
@@ -720,7 +720,7 @@ public final class AssetManagementSystem {
                     markStructureDirty();
                 }
                 if (present) {
-                    AutomatedOutpostState outpost = OutpostDataStore.get()
+                    AutomatedOutpost outpost = OutpostDataStore.get()
                         .getByAssetId(
                             state.pendingAssetManagement.asset()
                                 .assetId());
@@ -755,7 +755,7 @@ public final class AssetManagementSystem {
             if (ItemPickerScreen.hasPendingPickForOutpost()) {
                 String targetId = ItemPickerScreen.getPendingForOutpostId();
                 ItemStack pickedStack = ItemPickerScreen.pollPendingPickForOutpost();
-                AutomatedOutpostState outpost = targetId != null ? OutpostDataStore.get()
+                AutomatedOutpost outpost = targetId != null ? OutpostDataStore.get()
                     .getByAssetId(targetId) : null;
                 if (pickedStack != null && outpost != null) {
                     ItemStackWrapper wrapper = ItemStackWrapper.of(pickedStack);
@@ -834,7 +834,7 @@ public final class AssetManagementSystem {
             if (state.selectingModuleBuild) {
                 state.buildModuleScrollPosition = scroll;
             } else if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
-                AutomatedOutpostState outpost = OutpostDataStore.get()
+                AutomatedOutpost outpost = OutpostDataStore.get()
                     .getByAssetId(
                         state.pendingAssetManagement.asset()
                             .assetId());
@@ -860,7 +860,7 @@ public final class AssetManagementSystem {
         private int getCurrentModalScrollPosition() {
             if (state.selectingModuleBuild) return state.buildModuleScrollPosition;
             if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
-                AutomatedOutpostState outpost = OutpostDataStore.get()
+                AutomatedOutpost outpost = OutpostDataStore.get()
                     .getByAssetId(
                         state.pendingAssetManagement.asset()
                             .assetId());
@@ -1217,7 +1217,7 @@ public final class AssetManagementSystem {
                 return;
             }
 
-            AutomatedOutpostState outpost = OutpostDataStore.get()
+            AutomatedOutpost outpost = OutpostDataStore.get()
                 .getByAssetId(asset.assetId());
             ModalBounds bounds = createCenteredModalBounds(MODAL_MAX_WIDTH, MODAL_MAX_HEIGHT);
             updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
@@ -1252,7 +1252,7 @@ public final class AssetManagementSystem {
             child(modal);
         }
 
-        private void buildModulesTab(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+        private void buildModulesTab(ParentWidget<?> modal, AutomatedOutpost outpost) {
             int modalWidth = Math.max(520, modalRight - modalLeft);
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 102);
             int destroyWidth = 58;
@@ -1401,7 +1401,7 @@ public final class AssetManagementSystem {
             }
         }
 
-        private void buildModuleSelectionOverlay(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+        private void buildModuleSelectionOverlay(ParentWidget<?> modal, AutomatedOutpost outpost) {
             final int modalWidth = Math.max(520, modalRight - modalLeft);
             final int modalHeight = Math.max(360, modalBottom - modalTop);
             final int pickerLeft = 24;
@@ -1492,7 +1492,7 @@ public final class AssetManagementSystem {
             modal.child(picker);
         }
 
-        private void buildInventoryTab(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+        private void buildInventoryTab(ParentWidget<?> modal, AutomatedOutpost outpost) {
             int modalWidth = Math.max(520, modalRight - modalLeft);
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 80);
             modal.child(createTitleText("Manage Outpost").pos(12, 10));
@@ -1637,7 +1637,7 @@ public final class AssetManagementSystem {
             }, false).pos(x, y);
         }
 
-        private List<Map.Entry<ItemStackWrapper, Long>> getSortedInventoryEntries(AutomatedOutpostState outpost) {
+        private List<Map.Entry<ItemStackWrapper, Long>> getSortedInventoryEntries(AutomatedOutpost outpost) {
             List<Map.Entry<ItemStackWrapper, Long>> entries = new ArrayList<>(
                 outpost.inventory.snapshot()
                     .entrySet());
@@ -1767,7 +1767,7 @@ public final class AssetManagementSystem {
          * The reserve value is displayed as a text widget between the decrement/increment
          * buttons, while the buttons themselves send a {@link LogisticsConfigUpdatePacket}.
          */
-        private void buildLogisticsSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost) {
+        private void buildLogisticsSubMenu(ParentWidget<?> modal, AutomatedOutpost outpost) {
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 106);
             List<AutomatedOutpostModule> modules = outpost.modules();
             AutomatedOutpostModule module = (state.configuringModuleIndex >= 0
@@ -2048,8 +2048,8 @@ public final class AssetManagementSystem {
             modal.child(scroll);
         }
 
-        private void applyShootingModeUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost, int modIdx,
-            boolean isBigHammer, AllowShootingConfig.Mode newMode, double threshold) {
+        private void applyShootingModeUpdate(AutomatedOutpostModule module, AutomatedOutpost outpost, int modIdx,
+                                             boolean isBigHammer, AllowShootingConfig.Mode newMode, double threshold) {
             if (module == null) return;
             AllowShootingConfig newCfg = new AllowShootingConfig(newMode, threshold);
             if (isBigHammer) {
@@ -2066,7 +2066,7 @@ public final class AssetManagementSystem {
                 new OutpostModuleConfigPacket(outpost.assetId, modIdx, "SET_ALLOW_SHOOTING_MODE", newMode.name()));
         }
 
-        private void applyShootingThresholdUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost,
+        private void applyShootingThresholdUpdate(AutomatedOutpostModule module, AutomatedOutpost outpost,
             int modIdx, boolean isBigHammer, AllowShootingConfig.Mode mode, double newThreshold) {
             if (module == null) return;
             AllowShootingConfig newCfg = new AllowShootingConfig(mode, newThreshold);
@@ -2101,8 +2101,8 @@ public final class AssetManagementSystem {
             return 0.0;
         }
 
-        private void applyRoutePriorityUpdate(AutomatedOutpostModule module, AutomatedOutpostState outpost, int modIdx,
-            OrbitalTransferPlanner.RoutePriority priority) {
+        private void applyRoutePriorityUpdate(AutomatedOutpostModule module, AutomatedOutpost outpost, int modIdx,
+                                              OrbitalTransferPlanner.RoutePriority priority) {
             if (module == null || priority == null) return;
             if (module.getData() instanceof BigHammerModuleData bd) {
                 module
@@ -2116,7 +2116,7 @@ public final class AssetManagementSystem {
                 new OutpostModuleConfigPacket(outpost.assetId, modIdx, "SET_ROUTE_PRIORITY", priority.name()));
         }
 
-        private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost,
+        private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpost outpost,
             AutomatedOutpostModule module) {
             int visibleHeight = Math.max(220, (modalBottom - modalTop) - 88);
             MinerModuleData minerData = module.getData() instanceof MinerModuleData typed ? typed
@@ -2221,7 +2221,7 @@ public final class AssetManagementSystem {
             modal.child(scroll);
         }
 
-        private List<MinerOreOption> buildMinerOreOptions(AutomatedOutpostState outpost, MinerModuleData minerData) {
+        private List<MinerOreOption> buildMinerOreOptions(AutomatedOutpost outpost, MinerModuleData minerData) {
             return GalaxiaCelestialAPI.get(outpost.celestialBodyId)
                 .map(
                     body -> body.properties()
@@ -2264,7 +2264,7 @@ public final class AssetManagementSystem {
             return options;
         }
 
-        private void buildPowerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpostState outpost,
+        private void buildPowerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpost outpost,
             AutomatedOutpostModule module) {
             modal.child(createTitleText("Power Configuration").pos(12, 10));
             modal.child(createFooterButton("Back", true, () -> {
@@ -2285,8 +2285,8 @@ public final class AssetManagementSystem {
             return (amount / 1000000) + "M";
         }
 
-        private String buildPowerSummary(AutomatedOutpostState outpost) {
-            long generationPerTick = AutomatedOutpostState.PASSIVE_GENERATION;
+        private String buildPowerSummary(AutomatedOutpost outpost) {
+            long generationPerTick = AutomatedOutpost.PASSIVE_GENERATION;
             long drawPerTick = 0L;
             for (AutomatedOutpostModule module : outpost.modules()) {
                 if (!module.isOperational()) continue;
@@ -2297,7 +2297,7 @@ public final class AssetManagementSystem {
             long netPerSecond = (generationPerTick - drawPerTick) * 20L;
             String sign = netPerSecond >= 0 ? "+" : "";
             return "Power: " + outpost
-                .getEnergyStored() + "/" + AutomatedOutpostState.MAX_ENERGY + " " + sign + netPerSecond + "/s";
+                .getEnergyStored() + "/" + AutomatedOutpost.MAX_ENERGY + " " + sign + netPerSecond + "/s";
         }
 
         private String buildModuleDescription(OutpostModuleKind kind) {

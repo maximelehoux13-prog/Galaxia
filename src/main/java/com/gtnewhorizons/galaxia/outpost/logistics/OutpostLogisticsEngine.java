@@ -9,7 +9,7 @@ import net.minecraft.server.MinecraftServer;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsConfiguration;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
@@ -81,7 +81,7 @@ public final class OutpostLogisticsEngine {
     }
 
     private void tickOutposts() {
-        for (AutomatedOutpostState outpost : OutpostDataStore.get()
+        for (AutomatedOutpost outpost : OutpostDataStore.get()
             .allOutposts()) {
             outpost.tick();
         }
@@ -111,7 +111,7 @@ public final class OutpostLogisticsEngine {
     }
 
     private void deliverTask(LogisticsTask task) {
-        AutomatedOutpostState dest = OutpostDataStore.get()
+        AutomatedOutpost dest = OutpostDataStore.get()
             .getByAssetId(task.toAssetId());
         if (dest == null) {
             Galaxia.LOG.warn(
@@ -137,13 +137,13 @@ public final class OutpostLogisticsEngine {
         LogisticsSignalStore store = LogisticsSignalStore.get();
         store.clear();
 
-        for (AutomatedOutpostState outpost : OutpostDataStore.get()
+        for (AutomatedOutpost outpost : OutpostDataStore.get()
             .allOutposts()) {
             emitSignals(outpost, store);
         }
     }
 
-    private void emitSignals(AutomatedOutpostState outpost, LogisticsSignalStore store) {
+    private void emitSignals(AutomatedOutpost outpost, LogisticsSignalStore store) {
         Map<ItemStackWrapper, Long> snapshot = outpost.inventory.snapshot();
         LogisticsConfiguration config = outpost.logisticsConfig;
 
@@ -226,9 +226,9 @@ public final class OutpostLogisticsEngine {
                 if (supply.outpostAssetId()
                     .equals(request.outpostAssetId())) continue;
 
-                AutomatedOutpostState supplier = OutpostDataStore.get()
+                AutomatedOutpost supplier = OutpostDataStore.get()
                     .getByAssetId(supply.outpostAssetId());
-                AutomatedOutpostState requester = OutpostDataStore.get()
+                AutomatedOutpost requester = OutpostDataStore.get()
                     .getByAssetId(request.outpostAssetId());
                 if (supplier == null || requester == null) continue;
 
@@ -245,7 +245,7 @@ public final class OutpostLogisticsEngine {
         }
     }
 
-    private static boolean hasPlanetaryTransferHandling(AutomatedOutpostState supplier) {
+    private static boolean hasPlanetaryTransferHandling(AutomatedOutpost supplier) {
         AutomatedOutpostModule bh = supplier.firstOperationalModule(OutpostModuleKind.BIG_HAMMER);
         if (bh == null) return false;
         BigHammerModuleData data = bh.getData() instanceof BigHammerModuleData bd ? bd
@@ -272,8 +272,8 @@ public final class OutpostLogisticsEngine {
     // HAMMER dispatch (PLANETARY scope, EU cost, cooldown)
     // -------------------------------------------------------------------------
 
-    private boolean tryDispatchHammer(AutomatedOutpostState supplier, AutomatedOutpostState requester,
-        LogisticsSignal request, double orbitalTime, CelestialObject root) {
+    private boolean tryDispatchHammer(AutomatedOutpost supplier, AutomatedOutpost requester,
+                                      LogisticsSignal request, double orbitalTime, CelestialObject root) {
         AutomatedOutpostModule hammer = supplier.firstOperationalModule(OutpostModuleKind.HAMMER);
         if (hammer == null || hammer.cooldownTicks > 0) return false;
 
@@ -359,8 +359,8 @@ public final class OutpostLogisticsEngine {
     // BIG_HAMMER dispatch (SYSTEM scope, EU cost = 100 × amount × departureDv)
     // -------------------------------------------------------------------------
 
-    private boolean tryDispatchBigHammer(AutomatedOutpostState supplier, AutomatedOutpostState requester,
-        LogisticsSignal request, double orbitalTime, CelestialObject root) {
+    private boolean tryDispatchBigHammer(AutomatedOutpost supplier, AutomatedOutpost requester,
+                                         LogisticsSignal request, double orbitalTime, CelestialObject root) {
         AutomatedOutpostModule bigHammer = supplier.firstOperationalModule(OutpostModuleKind.BIG_HAMMER);
         if (bigHammer == null || bigHammer.cooldownTicks > 0) return false;
 
@@ -445,7 +445,7 @@ public final class OutpostLogisticsEngine {
     // -------------------------------------------------------------------------
 
     private void tickModuleCooldowns() {
-        for (AutomatedOutpostState outpost : OutpostDataStore.get()
+        for (AutomatedOutpost outpost : OutpostDataStore.get()
             .allOutposts()) {
             for (AutomatedOutpostModule module : outpost.modules()) {
                 if (module.cooldownTicks > 0) module.cooldownTicks--;
@@ -471,7 +471,7 @@ public final class OutpostLogisticsEngine {
         syncCooldownTicks--;
         if (syncCooldownTicks > 0) return;
         syncCooldownTicks = 20;
-        for (AutomatedOutpostState outpost : OutpostDataStore.get()
+        for (AutomatedOutpost outpost : OutpostDataStore.get()
             .allOutposts()) {
             Galaxia.GALAXIA_NETWORK.sendToAll(new OutpostFullSyncPacket(outpost));
         }

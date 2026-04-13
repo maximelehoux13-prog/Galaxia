@@ -3,7 +3,7 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -88,7 +88,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             // for SERVER-bound packets, so direct mutation is safe (same as DestinationSetPacket).
             String playerName = player.getGameProfile()
                 .getName();
-            AutomatedOutpostState state = OutpostDataStore.get()
+            AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) {
                 Galaxia.LOG.warn(

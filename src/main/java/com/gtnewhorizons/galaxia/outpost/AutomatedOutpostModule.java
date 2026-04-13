@@ -6,7 +6,7 @@ import java.util.Map;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
 
 /**
- * A single module instance installed in an {@link AutomatedOutpostState}.
+ * A single module instance installed in an {@link AutomatedOutpost}.
  */
 public final class AutomatedOutpostModule {
 
@@ -85,7 +85,7 @@ public final class AutomatedOutpostModule {
         energyBuffer = data.baseEnergyCapacity();
     }
 
-    public void tick(AutomatedOutpostState outpost) {
+    public void tick(AutomatedOutpost outpost) {
         if (status == Status.IN_CONSTRUCTION) {
             updateConstruction(outpost);
         } else if (status == Status.OPERATIONAL) {
@@ -93,7 +93,7 @@ public final class AutomatedOutpostModule {
         }
     }
 
-    private void updateConstruction(AutomatedOutpostState outpost) {
+    private void updateConstruction(AutomatedOutpost outpost) {
         Map<ItemStackWrapper, Integer> requirements = data.requiredResources();
         boolean finished = true;
         int totalNeeded = 0;
@@ -129,7 +129,7 @@ public final class AutomatedOutpostModule {
         }
     }
 
-    private void updateOperational(AutomatedOutpostState outpost) {
+    private void updateOperational(AutomatedOutpost outpost) {
         int powerDraw = data.powerDrawEuPerTick();
         if (powerDraw > 0 && !outpost.tryConsumeEnergy(powerDraw)) {
             return;

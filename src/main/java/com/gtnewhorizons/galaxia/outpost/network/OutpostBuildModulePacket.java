@@ -4,7 +4,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
@@ -68,7 +68,7 @@ public final class OutpostBuildModulePacket implements IMessage {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player == null) return null;
 
-            AutomatedOutpostState state = OutpostDataStore.get()
+            AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) {
                 Galaxia.LOG.warn(

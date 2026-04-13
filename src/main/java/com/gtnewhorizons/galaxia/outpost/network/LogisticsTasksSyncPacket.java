@@ -5,7 +5,7 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -46,12 +46,12 @@ public final class LogisticsTasksSyncPacket implements IMessage {
 
             // Resolve empty body IDs from the outpost store (same-body instant tasks)
             if (fromBodyId.isEmpty()) {
-                AutomatedOutpostState from = OutpostDataStore.get()
+                AutomatedOutpost from = OutpostDataStore.get()
                     .getByAssetId(t.fromAssetId());
                 fromBodyId = from != null ? from.celestialBodyId : "";
             }
             if (toBodyId.isEmpty()) {
-                AutomatedOutpostState to = OutpostDataStore.get()
+                AutomatedOutpost to = OutpostDataStore.get()
                     .getByAssetId(t.toAssetId());
                 toBodyId = to != null ? to.celestialBodyId : "";
             }

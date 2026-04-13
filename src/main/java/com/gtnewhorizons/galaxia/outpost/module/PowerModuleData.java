@@ -8,7 +8,7 @@ import net.minecraft.item.ItemStack;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 
 /**
@@ -45,7 +45,7 @@ public record PowerModuleData() implements OutpostModuleData {
     }
 
     @Override
-    public void tick(AutomatedOutpostModule module, AutomatedOutpostState outpost) {
+    public void tick(AutomatedOutpostModule module, AutomatedOutpost outpost) {
         outpost.addEnergy(GENERATION_EU_PER_TICK);
     }
 }

@@ -11,7 +11,7 @@ import net.minecraft.client.Minecraft;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
@@ -48,7 +48,7 @@ public final class OutpostFullSyncPacket implements IMessage {
 
     public OutpostFullSyncPacket() {}
 
-    public OutpostFullSyncPacket(AutomatedOutpostState state) {
+    public OutpostFullSyncPacket(AutomatedOutpost state) {
         this.assetId = state.assetId;
         this.teamId = state.teamId;
         this.celestialBodyId = state.celestialBodyId;
@@ -223,10 +223,10 @@ public final class OutpostFullSyncPacket implements IMessage {
         public IMessage onMessage(OutpostFullSyncPacket packet, MessageContext ctx) {
             Minecraft.getMinecraft()
                 .func_152344_a(() -> {
-                    AutomatedOutpostState state = OutpostDataStore.get()
+                    AutomatedOutpost state = OutpostDataStore.get()
                         .getByAssetId(packet.assetId);
                     if (state == null) {
-                        state = new AutomatedOutpostState(
+                        state = new AutomatedOutpost(
                             packet.assetId,
                             packet.teamId,
                             packet.celestialBodyId,

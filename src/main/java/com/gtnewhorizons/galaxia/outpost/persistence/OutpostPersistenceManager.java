@@ -29,7 +29,7 @@ import com.google.gson.reflect.TypeToken;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
@@ -147,7 +147,7 @@ public final class OutpostPersistenceManager {
                 if (asset == null) continue;
                 assets.add(asset);
 
-                AutomatedOutpostState outpost = decodeOutpostState(asset, json.outpost);
+                AutomatedOutpost outpost = decodeOutpostState(asset, json.outpost);
                 if (outpost != null) {
                     OutpostDataStore.get()
                         .put(outpost);
@@ -163,7 +163,7 @@ public final class OutpostPersistenceManager {
         List<AssetJson> list = new ArrayList<>();
         for (CelestialManagedAsset asset : CelestialAssetStore.allAssets()) {
             AssetJson json = encodeAsset(asset);
-            AutomatedOutpostState outpost = OutpostDataStore.get()
+            AutomatedOutpost outpost = OutpostDataStore.get()
                 .getByAssetId(asset.assetId());
             if (outpost != null) {
                 json.outpost = encodeOutpostState(outpost);
@@ -291,7 +291,7 @@ public final class OutpostPersistenceManager {
             decodeRequirements(json.constructionInventory));
     }
 
-    private OutpostStateJson encodeOutpostState(AutomatedOutpostState state) {
+    private OutpostStateJson encodeOutpostState(AutomatedOutpost state) {
         OutpostStateJson out = new OutpostStateJson();
         out.teamId = state.teamId.toString();
         out.celestialBodyId = state.celestialBodyId;
@@ -346,14 +346,14 @@ public final class OutpostPersistenceManager {
         return out;
     }
 
-    private AutomatedOutpostState decodeOutpostState(CelestialManagedAsset asset, OutpostStateJson json) {
+    private AutomatedOutpost decodeOutpostState(CelestialManagedAsset asset, OutpostStateJson json) {
         if (asset == null || json == null || json.teamId == null || json.systemId == null) return null;
         String bodyId = json.celestialBodyId != null ? json.celestialBodyId
             : asset.celestialObjectId()
                 .toString();
         String anchorBodyId = json.planetaryAnchorBodyId != null ? json.planetaryAnchorBodyId
             : resolvePlanetaryAnchorId(bodyId);
-        AutomatedOutpostState state = new AutomatedOutpostState(
+        AutomatedOutpost state = new AutomatedOutpost(
             asset.assetId(),
             UUID.fromString(json.teamId),
             bodyId,

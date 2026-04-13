@@ -3,7 +3,7 @@ package com.gtnewhorizons.galaxia.outpost.module;
 import java.util.Map;
 
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 
 /**
@@ -30,7 +30,7 @@ public interface OutpostModuleData {
     Map<ItemStackWrapper, Integer> requiredResources();
 
     /** Tick the module logic. Called each server tick when module is OPERATIONAL. */
-    void tick(AutomatedOutpostModule module, AutomatedOutpostState outpost);
+    void tick(AutomatedOutpostModule module, AutomatedOutpost outpost);
 
     /** Returns the default data for a module kind (for UI display). */
     static OutpostModuleData forKind(OutpostModuleKind kind) {

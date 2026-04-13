@@ -9,11 +9,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 
 /**
- * In-memory store for all {@link AutomatedOutpostState} instances.
+ * In-memory store for all {@link AutomatedOutpost} instances.
  *
  * <p>
  * Two access paths:
@@ -32,10 +32,10 @@ public final class OutpostDataStore {
     private static final OutpostDataStore INSTANCE = new OutpostDataStore();
 
     /** Primary index: assetId → state. */
-    private final Map<String, AutomatedOutpostState> byAssetId = new LinkedHashMap<>();
+    private final Map<String, AutomatedOutpost> byAssetId = new LinkedHashMap<>();
 
     /** Secondary index: teamId → (assetId → state). */
-    private final Map<UUID, Map<String, AutomatedOutpostState>> byTeam = new LinkedHashMap<>();
+    private final Map<UUID, Map<String, AutomatedOutpost>> byTeam = new LinkedHashMap<>();
 
     /**
      * Client-side snapshot of aggregated logistics signals, indexed by system id.
@@ -73,17 +73,17 @@ public final class OutpostDataStore {
     // -------------------------------------------------------------------------
 
     /** Registers a new outpost state in both indexes. */
-    public void put(AutomatedOutpostState state) {
+    public void put(AutomatedOutpost state) {
         byAssetId.put(state.assetId, state);
         byTeam.computeIfAbsent(state.teamId, k -> new LinkedHashMap<>())
             .put(state.assetId, state);
     }
 
     /** Removes an outpost from both indexes. Returns the removed state or {@code null}. */
-    public AutomatedOutpostState remove(String assetId) {
-        AutomatedOutpostState removed = byAssetId.remove(assetId);
+    public AutomatedOutpost remove(String assetId) {
+        AutomatedOutpost removed = byAssetId.remove(assetId);
         if (removed != null) {
-            Map<String, AutomatedOutpostState> teamMap = byTeam.get(removed.teamId);
+            Map<String, AutomatedOutpost> teamMap = byTeam.get(removed.teamId);
             if (teamMap != null) {
                 teamMap.remove(assetId);
                 if (teamMap.isEmpty()) byTeam.remove(removed.teamId);
@@ -97,12 +97,12 @@ public final class OutpostDataStore {
      * Used by {@link AutomatedTeamMigrationHandler}.
      */
     public void migrateTeam(UUID oldTeamId, UUID newTeamId) {
-        Map<String, AutomatedOutpostState> teamMap = byTeam.remove(oldTeamId);
+        Map<String, AutomatedOutpost> teamMap = byTeam.remove(oldTeamId);
         if (teamMap == null || teamMap.isEmpty()) return;
         // Re-create states with the new team id and rebuild indexes.
-        Map<String, AutomatedOutpostState> newMap = new LinkedHashMap<>();
-        for (AutomatedOutpostState old : teamMap.values()) {
-            AutomatedOutpostState migrated = new AutomatedOutpostState(
+        Map<String, AutomatedOutpost> newMap = new LinkedHashMap<>();
+        for (AutomatedOutpost old : teamMap.values()) {
+            AutomatedOutpost migrated = new AutomatedOutpost(
                 old.assetId,
                 newTeamId,
                 old.celestialBodyId,
@@ -134,7 +134,7 @@ public final class OutpostDataStore {
     // -------------------------------------------------------------------------
 
     /** Returns the outpost state for the given asset id, or {@code null} if absent. */
-    public AutomatedOutpostState getByAssetId(String assetId) {
+    public AutomatedOutpost getByAssetId(String assetId) {
         return byAssetId.get(assetId);
     }
 
@@ -142,13 +142,13 @@ public final class OutpostDataStore {
      * Returns an unmodifiable view of all outposts belonging to the given team.
      * Returns an empty collection if the team has no outposts.
      */
-    public Collection<AutomatedOutpostState> getByTeam(UUID teamId) {
-        Map<String, AutomatedOutpostState> teamMap = byTeam.get(teamId);
+    public Collection<AutomatedOutpost> getByTeam(UUID teamId) {
+        Map<String, AutomatedOutpost> teamMap = byTeam.get(teamId);
         return teamMap == null ? Collections.emptyList() : Collections.unmodifiableCollection(teamMap.values());
     }
 
     /** Returns an unmodifiable view of ALL outposts across all teams. */
-    public Collection<AutomatedOutpostState> allOutposts() {
+    public Collection<AutomatedOutpost> allOutposts() {
         return Collections.unmodifiableCollection(byAssetId.values());
     }
 

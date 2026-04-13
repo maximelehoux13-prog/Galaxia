@@ -3,7 +3,7 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import java.util.List;
 
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -46,7 +46,7 @@ public final class OutpostModuleActionPacket implements IMessage {
 
         @Override
         public IMessage onMessage(OutpostModuleActionPacket packet, MessageContext ctx) {
-            AutomatedOutpostState state = OutpostDataStore.get()
+            AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) return null;
 

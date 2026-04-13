@@ -2,7 +2,7 @@ package com.gtnewhorizons.galaxia.outpost.network;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
@@ -42,7 +42,7 @@ public final class OutpostInventoryRemovePacket implements IMessage {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player == null) return null;
 
-            AutomatedOutpostState state = OutpostDataStore.get()
+            AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) return null;
 

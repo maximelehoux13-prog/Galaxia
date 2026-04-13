@@ -3,7 +3,7 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
@@ -71,7 +71,7 @@ public final class OutpostDebugAddItemPacket implements IMessage {
             }
             long clampedAmount = Math.min(packet.amount, Integer.MAX_VALUE);
 
-            AutomatedOutpostState state = OutpostDataStore.get()
+            AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) {
                 Galaxia.LOG

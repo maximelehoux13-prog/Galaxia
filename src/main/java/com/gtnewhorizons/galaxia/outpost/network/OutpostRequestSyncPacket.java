@@ -6,7 +6,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -48,7 +48,7 @@ public final class OutpostRequestSyncPacket implements IMessage {
         @Override
         public IMessage onMessage(OutpostRequestSyncPacket packet, MessageContext ctx) {
             if (ctx.side != Side.SERVER) return null;
-            AutomatedOutpostState state = OutpostDataStore.get()
+            AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) {
                 // Lazily create state the first time a client opens the management UI
@@ -60,7 +60,7 @@ public final class OutpostRequestSyncPacket implements IMessage {
                         .toString();
                     String systemId = resolveSystemId(bodyId);
                     String anchorBodyId = resolvePlanetaryAnchorId(bodyId);
-                    state = new AutomatedOutpostState(asset.assetId(), teamId, bodyId, systemId, anchorBodyId);
+                    state = new AutomatedOutpost(asset.assetId(), teamId, bodyId, systemId, anchorBodyId);
                     OutpostDataStore.get()
                         .put(state);
                     Galaxia.LOG.info(

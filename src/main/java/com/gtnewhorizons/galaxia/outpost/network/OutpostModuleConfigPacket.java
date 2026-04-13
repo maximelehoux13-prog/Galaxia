@@ -1,7 +1,7 @@
 package com.gtnewhorizons.galaxia.outpost.network;
 
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
 import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
@@ -50,7 +50,7 @@ public final class OutpostModuleConfigPacket implements IMessage {
 
         @Override
         public IMessage onMessage(OutpostModuleConfigPacket packet, MessageContext ctx) {
-            AutomatedOutpostState state = OutpostDataStore.get()
+            AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) return null;
             if (packet.moduleIndex < 0 || packet.moduleIndex >= state.modules()
@@ -178,8 +178,8 @@ public final class OutpostModuleConfigPacket implements IMessage {
         return PacketUtil.readString(buf);
     }
 
-    private static void copyMinerSettingsToOtherMiners(AutomatedOutpostState state, int sourceModuleIndex,
-        MinerModuleData sourceData) {
+    private static void copyMinerSettingsToOtherMiners(AutomatedOutpost state, int sourceModuleIndex,
+                                                       MinerModuleData sourceData) {
         for (int i = 0; i < state.modules()
             .size(); i++) {
             if (i == sourceModuleIndex) continue;

@@ -14,7 +14,7 @@ import java.util.UUID;
  * The outpost is the operational layer on top of a {@code CelestialManagedAsset}.
  * It adds logistics, inventory, and module state that only exist while the outpost is OPERATIONAL.
  */
-public final class AutomatedOutpostState {
+public final class AutomatedOutpost {
 
     /** Matches the {@code assetId} in {@code CelestialManagedAsset}. */
     public final String assetId;
@@ -56,8 +56,8 @@ public final class AutomatedOutpostState {
     public static final long MAX_ENERGY = 1_000_000L;
     public static final long PASSIVE_GENERATION = 512L;
 
-    public AutomatedOutpostState(String assetId, UUID teamId, String celestialBodyId, String systemId,
-        String planetaryAnchorBodyId) {
+    public AutomatedOutpost(String assetId, UUID teamId, String celestialBodyId, String systemId,
+                            String planetaryAnchorBodyId) {
         this.assetId = assetId;
         this.teamId = teamId;
         this.celestialBodyId = celestialBodyId;

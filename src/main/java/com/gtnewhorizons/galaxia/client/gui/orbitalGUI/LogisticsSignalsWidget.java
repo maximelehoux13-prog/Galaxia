@@ -24,7 +24,7 @@ import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumColors;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostState;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -312,7 +312,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         return ViewScope.PLANETARY;
     }
 
-    private boolean isOutpostInScope(AutomatedOutpostState outpost, ViewScope scope, CelestialObject viewRoot) {
+    private boolean isOutpostInScope(AutomatedOutpost outpost, ViewScope scope, CelestialObject viewRoot) {
         switch (scope) {
             case GALACTIC:
                 return true;
@@ -469,7 +469,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
 
             tooltipLines.clear();
             tooltipLines.add(fullName);
-            for (AutomatedOutpostState outpost : OutpostDataStore.get()
+            for (AutomatedOutpost outpost : OutpostDataStore.get()
                 .allOutposts()) {
                 if (!isOutpostInScope(outpost, scope, viewRoot)) continue;
                 CelestialManagedAsset asset = CelestialAssetStore.findAsset(outpost.assetId);
