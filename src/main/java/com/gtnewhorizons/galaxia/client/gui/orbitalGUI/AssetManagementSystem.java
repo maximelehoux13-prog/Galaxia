@@ -99,7 +99,7 @@ record PendingConstructionCancellation(CelestialManagedAsset asset) {}
 record PendingResourceTransfer(CelestialManagedAsset asset, List<StationTransferTarget> targets) {}
 
 @Desugar
-record StationTransferTarget(String assetId, String displayName, CelestialObject hostBody) {}
+record StationTransferTarget(CelestialAsset.ID assetId, String displayName, CelestialObject hostBody) {}
 
 @Desugar
 record TransferTargetRow(StationTransferTarget target, int left, int top, int right, int bottom,
@@ -750,7 +750,7 @@ public final class AssetManagementSystem {
             // Consume item picker result — works even if the starmap was closed and reopened
             // between the button click and the user returning from the item picker screen.
             if (ItemPickerScreen.hasPendingPickForOutpost()) {
-                String targetId = ItemPickerScreen.getPendingForOutpostId();
+                CelestialAsset.ID targetId = ItemPickerScreen.getPendingForOutpostId();
                 ItemStack pickedStack = ItemPickerScreen.pollPendingPickForOutpost();
                 AutomatedOutpost outpost = targetId != null ? OutpostDataStore.get()
                     .getByAssetId(targetId) : null;

@@ -5,6 +5,7 @@ import java.util.List;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -16,13 +17,11 @@ import io.netty.buffer.ByteBuf;
  */
 public final class OutpostModuleActionPacket implements IMessage {
 
-    private String assetId;
+    private CelestialAsset.ID assetId;
     private int moduleIndex;
     private String action;
 
-    public OutpostModuleActionPacket() {}
-
-    public OutpostModuleActionPacket(String assetId, int moduleIndex, String action) {
+    public OutpostModuleActionPacket(CelestialAsset.ID assetId, int moduleIndex, String action) {
         this.assetId = assetId;
         this.moduleIndex = moduleIndex;
         this.action = action;
@@ -30,14 +29,14 @@ public final class OutpostModuleActionPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId);
+        writeString(buf, String.valueOf(assetId));
         buf.writeInt(moduleIndex);
         writeString(buf, action);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = readString(buf);
+        assetId = CelestialAsset.ID.from(readString(buf));
         moduleIndex = buf.readInt();
         action = readString(buf);
     }

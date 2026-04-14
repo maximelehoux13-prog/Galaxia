@@ -21,6 +21,8 @@ import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
 import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -35,11 +37,11 @@ import io.netty.buffer.ByteBuf;
  */
 public final class OutpostFullSyncPacket implements IMessage {
 
-    private String assetId;
+    private CelestialAsset.ID assetId;
     private UUID teamId;
-    private String celestialBodyId;
-    private String systemId;
-    private String planetaryAnchorBodyId;
+    private CelestialObjectId celestialBodyId;
+    private CelestialObjectId systemId;
+    private CelestialObjectId planetaryAnchorBodyId;
     private long energyStored;
     private List<ModuleSyncData> modules;
     private Map<String, Long> inventory;
@@ -123,12 +125,12 @@ public final class OutpostFullSyncPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId);
+        writeString(buf, String.valueOf(assetId));
         buf.writeLong(teamId.getMostSignificantBits());
         buf.writeLong(teamId.getLeastSignificantBits());
-        writeString(buf, celestialBodyId);
-        writeString(buf, systemId);
-        writeString(buf, planetaryAnchorBodyId);
+        writeString(buf, String.valueOf(celestialBodyId));
+        writeString(buf, String.valueOf(systemId));
+        writeString(buf, String.valueOf(planetaryAnchorBodyId));
         buf.writeLong(energyStored);
 
         buf.writeInt(modules.size());
@@ -165,11 +167,11 @@ public final class OutpostFullSyncPacket implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = readString(buf);
+        assetId = CelestialAsset.ID.from(readString(buf));
         teamId = new UUID(buf.readLong(), buf.readLong());
-        celestialBodyId = readString(buf);
-        systemId = readString(buf);
-        planetaryAnchorBodyId = readString(buf);
+        celestialBodyId = CelestialObjectId.valueOf(readString(buf));
+        systemId = CelestialObjectId.valueOf(readString(buf));
+        planetaryAnchorBodyId = CelestialObjectId.valueOf(readString(buf));
         energyStored = buf.readLong();
 
         int moduleCount = buf.readInt();

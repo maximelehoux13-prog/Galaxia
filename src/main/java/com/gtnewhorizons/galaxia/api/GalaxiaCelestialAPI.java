@@ -140,12 +140,12 @@ public final class GalaxiaCelestialAPI {
         return Optional.empty();
     }
 
-    public static CelestialObject findBodyById(CelestialObject root, String id) {
+    public static CelestialObject findBodyById(CelestialObject root, CelestialObjectId id) {
         if (root == null || id == null) return null;
         return findBodyByIdRec(root, id);
     }
 
-    private static CelestialObject findBodyByIdRec(CelestialObject current, String id) {
+    private static CelestialObject findBodyByIdRec(CelestialObject current, CelestialObjectId id) {
         for (CelestialObject child : getChildren(current)) {
             CelestialObject found = findBodyByIdRec(child, id);
             if (found != null) return found;

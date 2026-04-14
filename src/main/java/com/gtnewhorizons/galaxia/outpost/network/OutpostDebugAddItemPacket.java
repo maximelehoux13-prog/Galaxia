@@ -6,6 +6,7 @@ import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -21,13 +22,11 @@ import io.netty.buffer.ByteBuf;
  */
 public final class OutpostDebugAddItemPacket implements IMessage {
 
-    private String assetId;
+    private CelestialAsset.ID assetId;
     private String resourceKey;
     private long amount;
 
-    public OutpostDebugAddItemPacket() {}
-
-    public OutpostDebugAddItemPacket(String assetId, ItemStackWrapper resource, long amount) {
+    public OutpostDebugAddItemPacket(CelestialAsset.ID assetId, ItemStackWrapper resource, long amount) {
         this.assetId = assetId;
         this.resourceKey = resource.toKey();
         this.amount = amount;
@@ -35,14 +34,14 @@ public final class OutpostDebugAddItemPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId);
+        writeString(buf, String.valueOf(assetId));
         writeString(buf, resourceKey);
         buf.writeLong(amount);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = readString(buf);
+        assetId = CelestialAsset.ID.from(readString(buf));
         resourceKey = readString(buf);
         amount = buf.readLong();
     }

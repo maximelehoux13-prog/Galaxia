@@ -33,6 +33,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 /**
  * Map overlay that shows aggregated logistics signals for the current map scope.
@@ -332,8 +333,8 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         }
     }
 
-    private boolean isBodyIdInScope(String bodyId, ViewScope scope, CelestialObject viewRoot) {
-        if (bodyId == null || bodyId.isEmpty()) return false;
+    private boolean isBodyIdInScope(CelestialObjectId bodyId, ViewScope scope, CelestialObject viewRoot) {
+        if (bodyId == null) return false;
         switch (scope) {
             case GALACTIC:
                 return true;

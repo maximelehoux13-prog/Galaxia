@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
@@ -34,13 +33,9 @@ public final class CelestialAssetStore {
     public static CelestialManagedAsset createAssetInConstruction(CelestialObjectId celestialObjectId,
         String displayName, CelestialAsset.Kind kind, CelestialAsset.Location location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
-        String assetId = "asset_" + UUID.randomUUID()
-            .toString()
-            .replace("-", "")
-            .substring(0, 8);
         List<CelestialAssetRequirement> required = defaultRequirements(kind);
         CelestialManagedAsset asset = new CelestialManagedAsset(
-            assetId,
+            CelestialAsset.ID.create(),
             celestialObjectId,
             displayName,
             kind,
@@ -56,10 +51,7 @@ public final class CelestialAssetStore {
         CelestialAsset.Kind kind, CelestialAsset.Location location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         CelestialManagedAsset asset = new CelestialManagedAsset(
-            "asset_" + UUID.randomUUID()
-                .toString()
-                .replace("-", "")
-                .substring(0, 8),
+            CelestialAsset.ID.create(),
             celestialObjectId,
             displayName,
             kind,
@@ -71,7 +63,7 @@ public final class CelestialAssetStore {
         return asset;
     }
 
-    public static boolean cancelConstruction(String assetId) {
+    public static boolean cancelConstruction(CelestialAsset.ID assetId) {
         for (MutableBodyState state : STATE_BY_BODY.values()) {
             for (int i = 0; i < state.assets.size(); i++) {
                 CelestialManagedAsset asset = state.assets.get(i);
@@ -86,7 +78,7 @@ public final class CelestialAssetStore {
         return false;
     }
 
-    public static boolean startDeconstruction(String assetId) {
+    public static boolean startDeconstruction(CelestialAsset.ID assetId) {
         for (MutableBodyState state : STATE_BY_BODY.values()) {
             for (int i = 0; i < state.assets.size(); i++) {
                 CelestialManagedAsset asset = state.assets.get(i);
@@ -159,7 +151,7 @@ public final class CelestialAssetStore {
         return false;
     }
 
-    public static CelestialManagedAsset findAsset(String assetId) {
+    public static CelestialManagedAsset findAsset(CelestialAsset.ID assetId) {
         for (MutableBodyState state : STATE_BY_BODY.values()) {
             for (CelestialManagedAsset asset : state.assets) {
                 if (asset.assetId()
@@ -169,7 +161,7 @@ public final class CelestialAssetStore {
         return null;
     }
 
-    public static boolean destroyAsset(String assetId) {
+    public static boolean destroyAsset(CelestialAsset.ID assetId) {
         for (MutableBodyState state : STATE_BY_BODY.values()) {
             for (int i = 0; i < state.assets.size(); i++) {
                 if (state.assets.get(i)
@@ -184,7 +176,7 @@ public final class CelestialAssetStore {
         return false;
     }
 
-    public static boolean renameAsset(String assetId, String displayName) {
+    public static boolean renameAsset(CelestialAsset.ID assetId, String displayName) {
         if (displayName == null || displayName.trim()
             .isEmpty()) {
             return false;
@@ -298,7 +290,7 @@ public final class CelestialAssetStore {
         return required;
     }
 
-    private static void cleanupLogisticsForAsset(String assetId) {
+    private static void cleanupLogisticsForAsset(CelestialAsset.ID assetId) {
         OutpostDataStore.get()
             .remove(assetId);
     }

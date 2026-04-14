@@ -2,6 +2,8 @@ package com.gtnewhorizons.galaxia.outpost.logistics;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 /**
  * An in-flight logistics shipment between two outposts.
@@ -27,9 +29,9 @@ public record LogisticsTask(
     /** Unique task id (UUID string). */
     String taskId,
     /** Asset id of the outpost sending the resources. */
-    String fromAssetId,
+    CelestialAsset.ID fromAssetId,
     /** Asset id of the outpost receiving the resources. */
-    String toAssetId,
+    CelestialAsset.ID toAssetId,
     /** What is being transported. */
     ItemStackWrapper resourceId,
     /** Number of resource units in this shipment. */
@@ -45,9 +47,9 @@ public record LogisticsTask(
      */
     String transportKind,
     /** Celestial body id of the departure outpost (for arc rendering). Empty = unknown. */
-    String fromBodyId,
+    CelestialObjectId fromBodyId,
     /** Celestial body id of the destination outpost (for arc rendering). Empty = unknown. */
-    String toBodyId,
+    CelestialObjectId toBodyId,
     /**
      * Orbital departure time (in orbital simulation units = world ticks × 2.1).
      * Used to anchor the trajectory arc on the client starmap.
@@ -60,8 +62,8 @@ public record LogisticsTask(
     double tofOrbitalSeconds) {
 
     /** Creates a new task with a freshly generated task id. */
-    public static LogisticsTask create(String fromAssetId, String toAssetId, ItemStackWrapper resourceId, long amount,
-        int deliveryTicks, String transportKind) {
+    public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
+        ItemStackWrapper resourceId, long amount, int deliveryTicks, String transportKind) {
         String taskId = makeId();
         return new LogisticsTask(
             taskId,
@@ -71,16 +73,16 @@ public record LogisticsTask(
             amount,
             deliveryTicks,
             transportKind,
-            "",
-            "",
+            CelestialObjectId.INVALID,
+            CelestialObjectId.INVALID,
             0.0,
             0.0);
     }
 
     /** Creates a new task with trajectory metadata for arc rendering. */
-    public static LogisticsTask createWithTrajectory(String fromAssetId, String toAssetId, ItemStackWrapper resourceId,
-        long amount, int deliveryTicks, String transportKind, String fromBodyId, String toBodyId,
-        double departureOrbitalTime, double tofOrbitalSeconds) {
+    public static LogisticsTask createWithTrajectory(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
+        ItemStackWrapper resourceId, long amount, int deliveryTicks, String transportKind, CelestialObjectId fromBodyId,
+        CelestialObjectId toBodyId, double departureOrbitalTime, double tofOrbitalSeconds) {
         return new LogisticsTask(
             makeId(),
             fromAssetId,

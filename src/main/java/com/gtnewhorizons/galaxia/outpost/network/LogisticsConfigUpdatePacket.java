@@ -7,6 +7,7 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -23,7 +24,7 @@ import io.netty.buffer.ByteBuf;
  */
 public final class LogisticsConfigUpdatePacket implements IMessage {
 
-    private String assetId;
+    private CelestialAsset.ID assetId;
     private String resourceKey;
     private int minReserve;
     private int orderSize;
@@ -33,7 +34,8 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
 
     public LogisticsConfigUpdatePacket() {}
 
-    public LogisticsConfigUpdatePacket(String assetId, ItemStackWrapper resource, LogisticsResourceConfig config) {
+    public LogisticsConfigUpdatePacket(CelestialAsset.ID assetId, ItemStackWrapper resource,
+        LogisticsResourceConfig config) {
         this.assetId = assetId;
         this.resourceKey = resource.toKey();
         this.minReserve = config.minReserve();
@@ -43,7 +45,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
         this.removeEntry = false;
     }
 
-    public static LogisticsConfigUpdatePacket remove(String assetId, ItemStackWrapper resource) {
+    public static LogisticsConfigUpdatePacket remove(CelestialAsset.ID assetId, ItemStackWrapper resource) {
         LogisticsConfigUpdatePacket packet = new LogisticsConfigUpdatePacket();
         packet.assetId = assetId;
         packet.resourceKey = resource.toKey();
@@ -57,7 +59,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId);
+        writeString(buf, String.valueOf(assetId));
         writeString(buf, resourceKey);
         buf.writeInt(minReserve);
         buf.writeInt(orderSize);
@@ -68,7 +70,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = readString(buf);
+        assetId = CelestialAsset.ID.from(readString(buf));
         resourceKey = readString(buf);
         minReserve = buf.readInt();
         orderSize = buf.readInt();

@@ -6,9 +6,12 @@ import java.util.Map;
 
 import net.minecraft.client.Minecraft;
 
+import org.jetbrains.annotations.UnknownNullability;
+
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignal;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignalStore;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -39,9 +42,9 @@ import io.netty.buffer.ByteBuf;
 public final class LogisticsSignalsSyncPacket implements IMessage {
 
     /** systemId → resourceKey → net signed amount */
-    private Map<String, Map<String, Long>> bySystem;
+    private Map<CelestialObjectId, Map<String, Long>> bySystem;
     /** planetaryAnchorBodyId → resourceKey → net signed amount */
-    private Map<String, Map<String, Long>> byPlanet;
+    private Map<CelestialObjectId, Map<String, Long>> byPlanet;
 
     public LogisticsSignalsSyncPacket() {}
 
@@ -54,17 +57,18 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
         bySystem = new LinkedHashMap<>();
         byPlanet = new LinkedHashMap<>();
 
-        for (Map.Entry<String, List<LogisticsSignal>> entry : store.allSignalsForScope(LogisticsSignal.Scope.SYSTEM)
+        for (Map.Entry<CelestialObjectId, List<LogisticsSignal>> entry : store
+            .allSignalsForScope(LogisticsSignal.Scope.SYSTEM)
             .entrySet()) {
-            String systemId = entry.getKey();
+            CelestialObjectId systemId = entry.getKey();
             Map<String, Long> systemAgg = new LinkedHashMap<>();
             for (LogisticsSignal sig : entry.getValue()) {
                 String key = sig.resourceId()
                     .toKey();
                 systemAgg.merge(key, sig.amount(), Long::sum);
                 // Build planet-level aggregate in parallel
-                String anchorId = sig.planetaryAnchorBodyId();
-                if (anchorId != null && !anchorId.isEmpty()) {
+                CelestialObjectId anchorId = sig.planetaryAnchorBodyId();
+                if (anchorId != null) {
                     byPlanet.computeIfAbsent(anchorId, k -> new LinkedHashMap<>())
                         .merge(key, sig.amount(), Long::sum);
                 }
@@ -100,10 +104,10 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
 
     // ── Serialization helpers ────────────────────────────────────────────────
 
-    private static void writeAggMap(ByteBuf buf, Map<String, Map<String, Long>> map) {
+    private static void writeAggMap(ByteBuf buf, @UnknownNullability Map<CelestialObjectId, Map<String, Long>> map) {
         buf.writeInt(map.size());
-        for (Map.Entry<String, Map<String, Long>> outer : map.entrySet()) {
-            writeString(buf, outer.getKey());
+        for (Map.Entry<CelestialObjectId, Map<String, Long>> outer : map.entrySet()) {
+            writeString(buf, String.valueOf(outer.getKey()));
             Map<String, Long> inner = outer.getValue();
             buf.writeInt(inner.size());
             for (Map.Entry<String, Long> e : inner.entrySet()) {
@@ -113,11 +117,11 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
         }
     }
 
-    private static Map<String, Map<String, Long>> readAggMap(ByteBuf buf) {
+    private static Map<CelestialObjectId, Map<String, Long>> readAggMap(ByteBuf buf) {
         int outerCount = buf.readInt();
-        Map<String, Map<String, Long>> map = new LinkedHashMap<>(outerCount);
+        Map<CelestialObjectId, Map<String, Long>> map = new LinkedHashMap<>(outerCount);
         for (int i = 0; i < outerCount; i++) {
-            String outerKey = readString(buf);
+            CelestialObjectId outerKey = CelestialObjectId.valueOf(readString(buf));
             int innerCount = buf.readInt();
             Map<String, Long> inner = new LinkedHashMap<>(innerCount);
             for (int j = 0; j < innerCount; j++) {

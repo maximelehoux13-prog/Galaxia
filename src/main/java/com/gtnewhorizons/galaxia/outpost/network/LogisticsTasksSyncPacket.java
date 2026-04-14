@@ -5,10 +5,12 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 
+import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -41,21 +43,16 @@ public final class LogisticsTasksSyncPacket implements IMessage {
         for (LogisticsTask t : activeTasks) {
             if (t.resourceId() == null) continue;
 
-            String fromBodyId = t.fromBodyId();
-            String toBodyId = t.toBodyId();
+            CelestialObjectId fromBodyId = t.fromBodyId();
+            CelestialObjectId toBodyId = t.toBodyId();
 
             // Resolve empty body IDs from the outpost store (same-body instant tasks)
-            if (fromBodyId.isEmpty()) {
-                AutomatedOutpost from = OutpostDataStore.get()
-                    .getByAssetId(t.fromAssetId());
-                fromBodyId = from != null ? from.celestialBodyId : "";
-            }
-            if (toBodyId.isEmpty()) {
-                AutomatedOutpost to = OutpostDataStore.get()
-                    .getByAssetId(t.toAssetId());
-                toBodyId = to != null ? to.celestialBodyId : "";
-            }
-            if (fromBodyId.isEmpty() || toBodyId.isEmpty()) continue;
+            AutomatedOutpost from = OutpostDataStore.get()
+                .getByAssetId(t.fromAssetId());
+            fromBodyId = from.celestialBodyId;
+            AutomatedOutpost to = OutpostDataStore.get()
+                .getByAssetId(t.toAssetId());
+            toBodyId = to.celestialBodyId;
 
             tasks.add(
                 new TaskEntry(
@@ -79,8 +76,8 @@ public final class LogisticsTasksSyncPacket implements IMessage {
             writeString(buf, e.resourceKey);
             buf.writeLong(e.amount);
             writeString(buf, e.transportKind);
-            writeString(buf, e.fromBodyId);
-            writeString(buf, e.toBodyId);
+            writeString(buf, String.valueOf(e.fromBodyId));
+            writeString(buf, String.valueOf(e.toBodyId));
             buf.writeDouble(e.departureOrbitalTime);
             buf.writeDouble(e.tofOrbitalSeconds);
         }
@@ -95,8 +92,8 @@ public final class LogisticsTasksSyncPacket implements IMessage {
             String resourceKey = readString(buf);
             long amount = buf.readLong();
             String transportKind = readString(buf);
-            String fromBodyId = readString(buf);
-            String toBodyId = readString(buf);
+            CelestialObjectId fromBodyId = CelestialObjectId.valueOf(readString(buf));
+            CelestialObjectId toBodyId = CelestialObjectId.valueOf(readString(buf));
             double departureOrbitalTime = buf.readDouble();
             double tofOrbitalSeconds = buf.readDouble();
             tasks.add(
@@ -141,28 +138,11 @@ public final class LogisticsTasksSyncPacket implements IMessage {
         }
     }
 
-    private static final class TaskEntry {
+    @Desugar
+    private record TaskEntry(String taskId, String resourceKey, long amount, String transportKind,
+        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
+        double tofOrbitalSeconds) {
 
-        final String taskId;
-        final String resourceKey;
-        final long amount;
-        final String transportKind;
-        final String fromBodyId;
-        final String toBodyId;
-        final double departureOrbitalTime;
-        final double tofOrbitalSeconds;
-
-        TaskEntry(String taskId, String resourceKey, long amount, String transportKind, String fromBodyId,
-            String toBodyId, double departureOrbitalTime, double tofOrbitalSeconds) {
-            this.taskId = taskId;
-            this.resourceKey = resourceKey;
-            this.amount = amount;
-            this.transportKind = transportKind;
-            this.fromBodyId = fromBodyId;
-            this.toBodyId = toBodyId;
-            this.departureOrbitalTime = departureOrbitalTime;
-            this.tofOrbitalSeconds = tofOrbitalSeconds;
-        }
     }
 
     private static void writeString(ByteBuf buf, String s) {

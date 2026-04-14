@@ -6,6 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+
 /**
  * Unified logistics signal registry, scoped by {@link LogisticsSignal.Scope}.
  *
@@ -30,7 +32,7 @@ public final class LogisticsSignalStore {
     }
 
     /** scope → scopeKey → signals */
-    private final Map<LogisticsSignal.Scope, Map<String, List<LogisticsSignal>>> store = new LinkedHashMap<>();
+    private final Map<LogisticsSignal.Scope, Map<CelestialObjectId, List<LogisticsSignal>>> store = new LinkedHashMap<>();
 
     private LogisticsSignalStore() {}
 
@@ -41,7 +43,7 @@ public final class LogisticsSignalStore {
 
     /** Registers a signal in the appropriate scope bucket. */
     public void addSignal(LogisticsSignal signal) {
-        String scopeKey = scopeKeyFor(signal);
+        CelestialObjectId scopeKey = scopeKeyFor(signal);
         if (scopeKey == null) return;
         store.computeIfAbsent(signal.scope(), s -> new LinkedHashMap<>())
             .computeIfAbsent(scopeKey, k -> new ArrayList<>())
@@ -53,7 +55,7 @@ public final class LogisticsSignalStore {
      * Returns an empty list if none are registered.
      */
     public List<LogisticsSignal> getSignals(LogisticsSignal.Scope scope, String scopeKey) {
-        Map<String, List<LogisticsSignal>> byKey = store.get(scope);
+        Map<CelestialObjectId, List<LogisticsSignal>> byKey = store.get(scope);
         if (byKey == null) return Collections.emptyList();
         List<LogisticsSignal> list = byKey.get(scopeKey);
         return list == null ? Collections.emptyList() : Collections.unmodifiableList(list);
@@ -63,17 +65,17 @@ public final class LogisticsSignalStore {
      * Returns an unmodifiable map of (scopeKey → signals) for the given scope.
      * Returns an empty map if no signals exist for that scope.
      */
-    public Map<String, List<LogisticsSignal>> allSignalsForScope(LogisticsSignal.Scope scope) {
-        Map<String, List<LogisticsSignal>> byKey = store.get(scope);
+    public Map<CelestialObjectId, List<LogisticsSignal>> allSignalsForScope(LogisticsSignal.Scope scope) {
+        Map<CelestialObjectId, List<LogisticsSignal>> byKey = store.get(scope);
         if (byKey == null) return Collections.emptyMap();
-        Map<String, List<LogisticsSignal>> safe = new LinkedHashMap<>(byKey.size());
-        for (Map.Entry<String, List<LogisticsSignal>> e : byKey.entrySet()) {
+        Map<CelestialObjectId, List<LogisticsSignal>> safe = new LinkedHashMap<>(byKey.size());
+        for (Map.Entry<CelestialObjectId, List<LogisticsSignal>> e : byKey.entrySet()) {
             safe.put(e.getKey(), Collections.unmodifiableList(e.getValue()));
         }
         return Collections.unmodifiableMap(safe);
     }
 
-    private static String scopeKeyFor(LogisticsSignal signal) {
+    private static CelestialObjectId scopeKeyFor(LogisticsSignal signal) {
         return switch (signal.scope()) {
             case PLANETARY -> signal.planetaryAnchorBodyId();
             case SYSTEM -> signal.systemId();

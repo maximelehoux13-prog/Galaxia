@@ -6,6 +6,7 @@ import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 
 public enum CelestialObjectId {
 
+    INVALID("", null),
     NOVA_CAELUM("galaxia.celestial.novum_caelum", null),
     VAEL("galaxia.celestial.vael", null),
     ILIA("galaxia.celestial.ilia", null),

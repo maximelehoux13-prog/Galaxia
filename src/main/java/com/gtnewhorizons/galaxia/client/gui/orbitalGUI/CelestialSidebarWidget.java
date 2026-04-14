@@ -55,7 +55,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private TextFieldWidget searchField;
     // Supply Debug panel state
     private boolean supplyDebugPanelOpen = false;
-    private String supplyDebugTargetAssetId = null;
+    private CelestialAsset.ID supplyDebugTargetAssetId = null;
     private TextFieldWidget supplyDebugAmountField;
     private ItemSlot supplyDebugGhostSlot;
     private ItemStackHandler supplyDebugGhostHandler;
@@ -561,7 +561,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
             }
             supplyDebugTargetAssetId = null;
         }
-        String currentAssetId = resolveSupplyDebugAssetId();
+        CelestialAsset.ID currentAssetId = resolveSupplyDebugAssetId();
         if (currentAssetId != null) {
             supplyDebugTargetAssetId = currentAssetId;
             return CelestialAssetStore.findAsset(currentAssetId);
@@ -569,7 +569,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         return null;
     }
 
-    private String resolveSupplyDebugAssetId() {
+    private CelestialAsset.ID resolveSupplyDebugAssetId() {
         CelestialObject focused = map.getFocusedBody();
         if (focused == null) return null;
         CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());

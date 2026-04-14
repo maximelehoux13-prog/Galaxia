@@ -19,8 +19,10 @@ import com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostFullSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -153,9 +155,9 @@ public final class OutpostLogisticsEngine {
             if (!resources.contains(r)) resources.add(r);
         }
 
-        String bodyId = outpost.celestialBodyId;
-        String systemId = outpost.systemId;
-        String planetaryAnchorBodyId = outpost.planetaryAnchorBodyId;
+        CelestialObjectId bodyId = outpost.celestialBodyId;
+        CelestialObjectId systemId = outpost.systemId;
+        CelestialObjectId planetaryAnchorBodyId = outpost.planetaryAnchorBodyId;
 
         for (ItemStackWrapper resource : resources) {
             long stock = outpost.inventory.getAmount(resource);
@@ -204,7 +206,8 @@ public final class OutpostLogisticsEngine {
         // Dispatch routing is decided at match time:
         // same planetary anchor → HAMMER (then BIG_HAMMER if planetaryTransferHandling is on)
         // different planetary anchors → BIG_HAMMER only
-        for (Map.Entry<String, List<LogisticsSignal>> entry : store.allSignalsForScope(LogisticsSignal.Scope.SYSTEM)
+        for (Map.Entry<CelestialObjectId, List<LogisticsSignal>> entry : store
+            .allSignalsForScope(LogisticsSignal.Scope.SYSTEM)
             .entrySet()) {
             matchSystemBucket(entry.getValue(), orbitalTime, root);
         }
@@ -255,7 +258,8 @@ public final class OutpostLogisticsEngine {
      * (i.e. same planet/gas-giant or both on the same planet's moon system).
      * Used to gate BIG_HAMMER on the {@code planetaryTransferHandling} toggle.
      */
-    private static boolean sharesPlanetaryAnchor(CelestialObject root, String bodyIdA, String bodyIdB) {
+    private static boolean sharesPlanetaryAnchor(CelestialObject root, CelestialObjectId bodyIdA,
+        CelestialObjectId bodyIdB) {
         if (root == null || bodyIdA == null || bodyIdB == null) return false;
         CelestialObject a = GalaxiaCelestialAPI.findBodyById(root, bodyIdA);
         CelestialObject b = GalaxiaCelestialAPI.findBodyById(root, bodyIdB);
@@ -445,7 +449,7 @@ public final class OutpostLogisticsEngine {
         // }
     }
 
-    private long getInboundInTransitAmount(String toAssetId, ItemStackWrapper resource) {
+    private long getInboundInTransitAmount(CelestialAsset.ID toAssetId, ItemStackWrapper resource) {
         long total = 0L;
         for (LogisticsTask task : activeTasks) {
             if (!toAssetId.equals(task.toAssetId())) continue;

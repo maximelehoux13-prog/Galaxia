@@ -11,6 +11,8 @@ import java.util.UUID;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 /**
  * In-memory store for all {@link AutomatedOutpost} instances.
@@ -32,10 +34,10 @@ public final class OutpostDataStore {
     private static final OutpostDataStore INSTANCE = new OutpostDataStore();
 
     /** Primary index: assetId → state. */
-    private final Map<String, AutomatedOutpost> byAssetId = new LinkedHashMap<>();
+    private final Map<CelestialAsset.ID, AutomatedOutpost> byAssetId = new LinkedHashMap<CelestialAsset.ID, AutomatedOutpost>();
 
     /** Secondary index: teamId → (assetId → state). */
-    private final Map<UUID, Map<String, AutomatedOutpost>> byTeam = new LinkedHashMap<>();
+    private final Map<UUID, Map<CelestialAsset.ID, AutomatedOutpost>> byTeam = new LinkedHashMap<>();
 
     /**
      * Client-side snapshot of aggregated logistics signals, indexed by system id.
@@ -44,13 +46,13 @@ public final class OutpostDataStore {
      * <p>
      * Inner map: resourceKey → net signed amount (positive = surplus, negative = deficit).
      */
-    private final Map<String, Map<String, Long>> clientSystemSignals = new LinkedHashMap<>();
+    private final Map<CelestialObjectId, Map<String, Long>> clientSystemSignals = new LinkedHashMap<>();
 
     /**
      * Client-side snapshot of aggregated logistics signals, indexed by planetary anchor body id.
      * Updated alongside {@link #clientSystemSignals}.
      */
-    private final Map<String, Map<String, Long>> clientPlanetSignals = new LinkedHashMap<>();
+    private final Map<CelestialObjectId, Map<String, Long>> clientPlanetSignals = new LinkedHashMap<>();
 
     private int clientSignalRevision = 0;
 
@@ -80,10 +82,10 @@ public final class OutpostDataStore {
     }
 
     /** Removes an outpost from both indexes. Returns the removed state or {@code null}. */
-    public AutomatedOutpost remove(String assetId) {
+    public AutomatedOutpost remove(CelestialAsset.ID assetId) {
         AutomatedOutpost removed = byAssetId.remove(assetId);
         if (removed != null) {
-            Map<String, AutomatedOutpost> teamMap = byTeam.get(removed.teamId);
+            Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.get(removed.teamId);
             if (teamMap != null) {
                 teamMap.remove(assetId);
                 if (teamMap.isEmpty()) byTeam.remove(removed.teamId);
@@ -97,10 +99,10 @@ public final class OutpostDataStore {
      * Used by {@link AutomatedTeamMigrationHandler}.
      */
     public void migrateTeam(UUID oldTeamId, UUID newTeamId) {
-        Map<String, AutomatedOutpost> teamMap = byTeam.remove(oldTeamId);
+        Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.remove(oldTeamId);
         if (teamMap == null || teamMap.isEmpty()) return;
         // Re-create states with the new team id and rebuild indexes.
-        Map<String, AutomatedOutpost> newMap = new LinkedHashMap<>();
+        Map<CelestialAsset.ID, AutomatedOutpost> newMap = new LinkedHashMap<>();
         for (AutomatedOutpost old : teamMap.values()) {
             AutomatedOutpost migrated = new AutomatedOutpost(
                 old.assetId,
@@ -134,7 +136,7 @@ public final class OutpostDataStore {
     // -------------------------------------------------------------------------
 
     /** Returns the outpost state for the given asset id, or {@code null} if absent. */
-    public AutomatedOutpost getByAssetId(String assetId) {
+    public AutomatedOutpost getByAssetId(CelestialAsset.ID assetId) {
         return byAssetId.get(assetId);
     }
 
@@ -143,7 +145,7 @@ public final class OutpostDataStore {
      * Returns an empty collection if the team has no outposts.
      */
     public Collection<AutomatedOutpost> getByTeam(UUID teamId) {
-        Map<String, AutomatedOutpost> teamMap = byTeam.get(teamId);
+        Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.get(teamId);
         return teamMap == null ? Collections.emptyList() : Collections.unmodifiableCollection(teamMap.values());
     }
 
@@ -160,7 +162,8 @@ public final class OutpostDataStore {
      * Replaces the client signal maps and bumps the signal revision counter.
      * Client-side only.
      */
-    public void updateClientSignals(Map<String, Map<String, Long>> bySystem, Map<String, Map<String, Long>> byPlanet) {
+    public void updateClientSignals(Map<CelestialObjectId, Map<String, Long>> bySystem,
+        Map<CelestialObjectId, Map<String, Long>> byPlanet) {
         clientSystemSignals.clear();
         clientSystemSignals.putAll(bySystem);
         clientPlanetSignals.clear();
@@ -226,5 +229,6 @@ public final class OutpostDataStore {
      */
     @Desugar
     public record ClientLogisticsTask(String taskId, ItemStackWrapper resource, long amount, String transportKind,
-        String fromBodyId, String toBodyId, double departureOrbitalTime, double tofOrbitalSeconds) {}
+        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
+        double tofOrbitalSeconds) {}
 }

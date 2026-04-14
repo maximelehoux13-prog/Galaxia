@@ -2,6 +2,8 @@ package com.gtnewhorizons.galaxia.outpost.logistics;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 /**
  * A single logistics signal emitted by an outpost for one resource.
@@ -29,9 +31,9 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 @Desugar
 public record LogisticsSignal(
     /** Asset id of the outpost that emitted this signal. */
-    String outpostAssetId,
+    CelestialAsset.ID outpostAssetId,
     /** Stellar system id – the id of the host star. */
-    String systemId,
+    CelestialObjectId systemId,
     /** The resource this signal concerns. */
     ItemStackWrapper resourceId,
     /**
@@ -42,14 +44,14 @@ public record LogisticsSignal(
     /** Scope that determines which modules can see this signal. */
     Scope scope,
     /** Celestial body id of the outpost's host body. */
-    String bodyId,
+    CelestialObjectId bodyId,
     /**
      * Planetary anchor for PLANETARY-scope signals.
      * For planets: same as {@code bodyId}.
      * For moons: the parent planet's body id.
      * {@code null} for SYSTEM-scope signals.
      */
-    String planetaryAnchorBodyId) {
+    CelestialObjectId planetaryAnchorBodyId) {
 
     /**
      * Determines which logistics modules can see (and respond to) a given signal.

@@ -2,16 +2,17 @@ package com.gtnewhorizons.galaxia.outpost.network;
 
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -24,22 +25,22 @@ import io.netty.buffer.ByteBuf;
  */
 public final class OutpostRequestSyncPacket implements IMessage {
 
-    private String assetId;
+    private CelestialAsset.ID assetId;
 
     public OutpostRequestSyncPacket() {}
 
-    public OutpostRequestSyncPacket(String assetId) {
+    public OutpostRequestSyncPacket(CelestialAsset.ID assetId) {
         this.assetId = assetId;
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId);
+        writeString(buf, assetId.toString());
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = readString(buf);
+        assetId = CelestialAsset.ID.from(readString(buf));
     }
 
     public static final class Handler implements IMessageHandler<OutpostRequestSyncPacket, IMessage> {
@@ -55,10 +56,9 @@ public final class OutpostRequestSyncPacket implements IMessage {
                 if (asset != null && asset.status() == CelestialAsset.Status.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
-                    String bodyId = asset.celestialObjectId()
-                        .toString();
-                    String systemId = resolveSystemId(bodyId);
-                    String anchorBodyId = resolvePlanetaryAnchorId(bodyId);
+                    CelestialObjectId bodyId = asset.celestialObjectId();
+                    CelestialObjectId systemId = resolveSystemId(bodyId);
+                    CelestialObjectId anchorBodyId = resolvePlanetaryAnchorId(bodyId);
                     state = new AutomatedOutpost(asset.assetId(), teamId, bodyId, systemId, anchorBodyId);
                     OutpostDataStore.get()
                         .put(state);
@@ -80,14 +80,13 @@ public final class OutpostRequestSyncPacket implements IMessage {
      * Resolves the stellar system id (host star body id) for a given celestial body id.
      * Falls back to {@code bodyId} itself if the tree or host star cannot be found.
      */
-    static String resolveSystemId(String bodyId) {
+    static CelestialObjectId resolveSystemId(CelestialObjectId bodyId) {
         CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         if (root == null || bodyId == null) return bodyId;
         CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
         if (body == null) return bodyId;
         CelestialObject star = GalaxiaCelestialAPI.findStar(root, body);
-        return star != null ? star.id()
-            .getId() : bodyId;
+        return star != null ? star.id() : bodyId;
     }
 
     /**
@@ -96,14 +95,13 @@ public final class OutpostRequestSyncPacket implements IMessage {
      * For moons/stations: returns the nearest planet ancestor's id.
      * Falls back to {@code bodyId} if resolution fails.
      */
-    static String resolvePlanetaryAnchorId(String bodyId) {
+    static CelestialObjectId resolvePlanetaryAnchorId(CelestialObjectId bodyId) {
         CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         if (root == null || bodyId == null) return bodyId;
         CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
         if (body == null) return bodyId;
         CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(root, body);
-        return anchor != null ? anchor.id()
-            .getId() : bodyId;
+        return anchor != null ? anchor.id() : bodyId;
     }
 
     private static void writeString(ByteBuf buf, String s) {

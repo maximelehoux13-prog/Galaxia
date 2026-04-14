@@ -7,6 +7,7 @@ import com.gtnewhorizons.galaxia.outpost.module.ModuleBigHammer;
 import com.gtnewhorizons.galaxia.outpost.module.ModuleHammer;
 import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -16,14 +17,12 @@ import io.netty.buffer.ByteBuf;
 
 public final class OutpostModuleConfigPacket implements IMessage {
 
-    private String assetId;
+    private CelestialAsset.ID assetId;
     private int moduleIndex;
     private String action;
     private String payload;
 
-    public OutpostModuleConfigPacket() {}
-
-    public OutpostModuleConfigPacket(String assetId, int moduleIndex, String action, String payload) {
+    public OutpostModuleConfigPacket(CelestialAsset.ID assetId, int moduleIndex, String action, String payload) {
         this.assetId = assetId;
         this.moduleIndex = moduleIndex;
         this.action = action;
@@ -32,7 +31,7 @@ public final class OutpostModuleConfigPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId);
+        writeString(buf, String.valueOf(assetId));
         buf.writeInt(moduleIndex);
         writeString(buf, action);
         writeString(buf, payload);
@@ -40,7 +39,7 @@ public final class OutpostModuleConfigPacket implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = readString(buf);
+        assetId = CelestialAsset.ID.from(readString(buf));
         moduleIndex = buf.readInt();
         action = readString(buf);
         payload = readString(buf);

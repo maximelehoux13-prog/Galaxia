@@ -34,13 +34,11 @@ import io.netty.buffer.ByteBuf;
  */
 public final class OutpostBuildModulePacket implements IMessage {
 
-    private String assetId;
+    private CelestialAsset.ID assetId;
     private String moduleKind;
     private boolean instantBuild;
 
-    public OutpostBuildModulePacket() {}
-
-    public OutpostBuildModulePacket(String assetId, OutpostModuleKind kind, boolean instantBuild) {
+    public OutpostBuildModulePacket(CelestialAsset.ID assetId, OutpostModuleKind kind, boolean instantBuild) {
         this.assetId = assetId;
         this.moduleKind = kind.name();
         this.instantBuild = instantBuild;
@@ -48,14 +46,14 @@ public final class OutpostBuildModulePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId);
+        writeString(buf, String.valueOf(assetId));
         writeString(buf, moduleKind);
         buf.writeBoolean(instantBuild);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = readString(buf);
+        assetId = CelestialAsset.ID.from(readString(buf));
         moduleKind = readString(buf);
         instantBuild = buf.readBoolean();
     }

@@ -2,8 +2,6 @@ package com.gtnewhorizons.galaxia.registry.celestial;
 
 import java.util.UUID;
 
-import org.jetbrains.annotations.NotNull;
-
 import com.github.bsideup.jabel.Desugar;
 
 public class CelestialAsset {
@@ -22,12 +20,26 @@ public class CelestialAsset {
     @Desugar
     public record ID(UUID id) {
 
-        public static @NotNull ID create() {
+        public static ID create() {
             return new ID(UUID.randomUUID());
         }
 
-        public boolean equals(@NotNull ID id) {
-            return this.id.equals(id.id);
+        public static ID from(String value) {
+            if (value == null) return null;
+            return new ID(UUID.fromString(value));
+        }
+
+        public static ID from(UUID value) {
+            return value == null ? null : new ID(value);
+        }
+
+        public static ID from(CelestialAsset.ID id) {
+            if (id == null) return null;
+            return new ID(id.id());
+        }
+
+        public String toString() {
+            return id.toString();
         }
     }
 

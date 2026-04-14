@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 /**
  * Complete runtime state for a single automated outpost.
@@ -18,18 +20,18 @@ import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 public final class AutomatedOutpost {
 
     /** Matches the {@code assetId} in {@code CelestialManagedAsset}. */
-    public final String assetId;
+    public final CelestialAsset.ID assetId;
 
     /** Owner team UUID resolved via NHLib. */
     public final UUID teamId;
 
     /** Parent celestial body id (key in CelestialRegistry). */
-    public final String celestialBodyId;
+    public final CelestialObjectId celestialBodyId;
 
     /**
      * The stellar system id (host star body id) used to bucket this outpost in {@code LogisticsSignalStore}.
      */
-    public final String systemId;
+    public final CelestialObjectId systemId;
 
     /**
      * The id of the nearest PLANET/GAS_GIANT ancestor of this outpost's body.
@@ -38,7 +40,7 @@ public final class AutomatedOutpost {
      * For moons/stations/asteroids: the parent planet id.
      * Falls back to {@code celestialBodyId} if resolution fails.
      */
-    public final String planetaryAnchorBodyId;
+    public final CelestialObjectId planetaryAnchorBodyId;
 
     /** Installed modules; ordering is significant for multi-module interactions. */
     private final List<AutomatedOutpostModule> modules;
@@ -57,12 +59,13 @@ public final class AutomatedOutpost {
     public static final long MAX_ENERGY = 1_000_000L;
     public static final long PASSIVE_GENERATION = 512L;
 
-    public AutomatedOutpost(String assetId, UUID teamId, String celestialBodyId, String systemId,
-        String planetaryAnchorBodyId) {
+    public AutomatedOutpost(CelestialAsset.ID assetId, UUID teamId, CelestialObjectId celestialBodyId,
+        CelestialObjectId systemId, CelestialObjectId planetaryAnchorBodyId) {
         this.assetId = assetId;
         this.teamId = teamId;
         this.celestialBodyId = celestialBodyId;
         this.systemId = systemId;
+        // TODO: get this automatically
         this.planetaryAnchorBodyId = planetaryAnchorBodyId != null ? planetaryAnchorBodyId : celestialBodyId;
         this.modules = new ArrayList<>();
         this.inventory = new AutomatedOutpostInventory();

@@ -43,7 +43,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetRequirement;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -187,14 +186,14 @@ public final class OutpostPersistenceManager {
                     tasks.add(
                         new LogisticsTask(
                             tj.taskId,
-                            tj.fromAssetId,
-                            tj.toAssetId,
+                            CelestialAsset.ID.from(tj.fromAssetId),
+                            CelestialAsset.ID.from(tj.toAssetId),
                             resource,
                             tj.amount,
                             tj.remainingTicks,
                             tj.transportKind,
-                            tj.fromBodyId != null ? tj.fromBodyId : "",
-                            tj.toBodyId != null ? tj.toBodyId : "",
+                            CelestialObjectId.valueOf(tj.fromBodyId),
+                            CelestialObjectId.valueOf(tj.toBodyId),
                             tj.departureOrbitalTime,
                             tj.tofOrbitalSeconds));
                 }
@@ -210,15 +209,15 @@ public final class OutpostPersistenceManager {
             .activeTasksInternal()) {
             TaskJson tj = new TaskJson();
             tj.taskId = task.taskId();
-            tj.fromAssetId = task.fromAssetId();
-            tj.toAssetId = task.toAssetId();
+            tj.fromAssetId = String.valueOf(task.fromAssetId());
+            tj.toAssetId = String.valueOf(task.toAssetId());
             tj.resourceId = task.resourceId()
                 .toKey();
             tj.amount = task.amount();
             tj.remainingTicks = task.remainingTicks();
             tj.transportKind = task.transportKind();
-            tj.fromBodyId = task.fromBodyId();
-            tj.toBodyId = task.toBodyId();
+            tj.fromBodyId = String.valueOf(task.fromBodyId());
+            tj.toBodyId = String.valueOf(task.toBodyId());
             tj.departureOrbitalTime = task.departureOrbitalTime();
             tj.tofOrbitalSeconds = task.tofOrbitalSeconds();
             list.add(tj);
@@ -283,7 +282,7 @@ public final class OutpostPersistenceManager {
         return new CelestialManagedAsset(
             json.assetId,
             objectId,
-            json.displayName == null ? json.assetId : json.displayName,
+            json.displayName == null ? json.assetId.toString() : json.displayName,
             CelestialAsset.Kind.valueOf(json.kind),
             CelestialAsset.Location.valueOf(json.location),
             CelestialAsset.Status.valueOf(json.status),
@@ -294,9 +293,9 @@ public final class OutpostPersistenceManager {
     private OutpostStateJson encodeOutpostState(AutomatedOutpost state) {
         OutpostStateJson out = new OutpostStateJson();
         out.teamId = state.teamId.toString();
-        out.celestialBodyId = state.celestialBodyId;
-        out.systemId = state.systemId;
-        out.planetaryAnchorBodyId = state.planetaryAnchorBodyId;
+        out.celestialBodyId = String.valueOf(state.celestialBodyId);
+        out.systemId = String.valueOf(state.systemId);
+        out.planetaryAnchorBodyId = String.valueOf(state.planetaryAnchorBodyId);
         out.energyStored = state.getEnergyStored();
         out.modules = new ArrayList<>();
         for (AutomatedOutpostModule m : state.modules()) {
@@ -362,16 +361,22 @@ public final class OutpostPersistenceManager {
 
     private AutomatedOutpost decodeOutpostState(CelestialManagedAsset asset, OutpostStateJson json) {
         if (asset == null || json == null || json.teamId == null || json.systemId == null) return null;
-        String bodyId = json.celestialBodyId != null ? json.celestialBodyId
-            : asset.celestialObjectId()
-                .toString();
-        String anchorBodyId = json.planetaryAnchorBodyId != null ? json.planetaryAnchorBodyId
-            : resolvePlanetaryAnchorId(bodyId);
+        CelestialObjectId bodyId = json.celestialBodyId != null ? CelestialObjectId.valueOf(json.celestialBodyId)
+            : asset.celestialObjectId();
+        CelestialObjectId anchorBodyId = json.planetaryAnchorBodyId != null
+            ? CelestialObjectId.valueOf(json.planetaryAnchorBodyId)
+            : GalaxiaCelestialAPI
+                .findPlanetaryAnchor(
+                    GalaxiaCelestialAPI.getPrimaryRoot(),
+                    GalaxiaCelestialAPI.findBodyById(bodyId)
+                        .get())
+                .id();
+
         AutomatedOutpost state = new AutomatedOutpost(
             asset.assetId(),
             UUID.fromString(json.teamId),
             bodyId,
-            json.systemId,
+            CelestialObjectId.valueOf(json.systemId),
             anchorBodyId);
         state.setEnergyStored(json.energyStored);
 
@@ -505,7 +510,7 @@ public final class OutpostPersistenceManager {
 
     static final class AssetJson {
 
-        String assetId;
+        CelestialAsset.ID assetId;
         String celestialObjectId;
         String displayName;
         String kind;
@@ -560,16 +565,6 @@ public final class OutpostPersistenceManager {
         String toBodyId;
         double departureOrbitalTime;
         double tofOrbitalSeconds;
-    }
-
-    private static String resolvePlanetaryAnchorId(String bodyId) {
-        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
-        if (root == null || bodyId == null) return bodyId;
-        CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
-        if (body == null) return bodyId;
-        CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(root, body);
-        return anchor != null ? anchor.id()
-            .getId() : bodyId;
     }
 
     private static final class OutpostModuleDataAdapter

@@ -14,6 +14,7 @@ import com.cleanroommc.modularui.utils.item.ItemStackHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.slot.ModularSlot;
 import com.cleanroommc.modularui.widgets.slot.PhantomItemSlot;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 
 /**
  * A minimal MUI screen with a single phantom item slot and NEI enabled.
@@ -42,7 +43,7 @@ public final class ItemPickerScreen implements IGuiHolder<GuiData> {
     /** Set on the client when the user places an item in the slot; consumed by the map widget. */
     private static volatile ItemStack pendingPick = null;
     /** Outpost assetId that this pick belongs to; set before opening the screen. */
-    private static volatile String pendingForOutpostId = null;
+    private static volatile CelestialAsset.ID pendingForOutpostId = null;
     /** Module index for module-scoped picks such as miner blacklist configuration. */
     private static volatile int pendingModuleIndex = -1;
     /** Routing context for the pending pick result. */
@@ -54,14 +55,14 @@ public final class ItemPickerScreen implements IGuiHolder<GuiData> {
      * Call before opening the screen so the result can be routed back to the correct outpost
      * even if the starmap screen was closed and reopened in between.
      */
-    public static void setPendingForOutpost(String outpostId) {
+    public static void setPendingForOutpost(CelestialAsset.ID outpostId) {
         pendingReturnScreen = Minecraft.getMinecraft().currentScreen;
         pendingForOutpostId = outpostId;
         pendingModuleIndex = -1;
         pendingContext = PickContext.OUTPOST_LOGISTICS;
     }
 
-    public static void setPendingForMinerBlacklist(String outpostId, int moduleIndex) {
+    public static void setPendingForMinerBlacklist(CelestialAsset.ID outpostId, int moduleIndex) {
         pendingReturnScreen = Minecraft.getMinecraft().currentScreen;
         pendingForOutpostId = outpostId;
         pendingModuleIndex = moduleIndex;
@@ -75,7 +76,7 @@ public final class ItemPickerScreen implements IGuiHolder<GuiData> {
         pendingContext = PickContext.SIDEBAR_DEBUG;
     }
 
-    public static String getPendingForOutpostId() {
+    public static CelestialAsset.ID getPendingForOutpostId() {
         return pendingForOutpostId;
     }
 
