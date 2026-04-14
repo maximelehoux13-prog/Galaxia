@@ -11,7 +11,6 @@ import net.minecraft.util.ResourceLocation;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 
 public class CelestialMarkerBase {
@@ -19,20 +18,22 @@ public class CelestialMarkerBase {
     @Desugar
     public record CelestialMarker(String id, ResourceLocation texture, float alpha) {}
 
+    /// This is just duplication of what we have in the store
+    @Deprecated
     public static final class CelestialMarkerContext {
 
         private CelestialObject body;
-        private CelestialBodyAssetState assetState;
+        private List<CelestialAsset> assetState;
 
         public CelestialObject body() {
             return body;
         }
 
-        public CelestialBodyAssetState assetState() {
+        public List<CelestialAsset> assetState() {
             return assetState;
         }
 
-        public CelestialMarkerContext set(CelestialObject body, CelestialBodyAssetState assetState) {
+        public CelestialMarkerContext set(CelestialObject body, List<CelestialAsset> assetState) {
             this.body = body;
             this.assetState = assetState;
             return this;
@@ -50,13 +51,11 @@ public class CelestialMarkerBase {
         public List<CelestialMarker> getMarkers(CelestialMarkerContext context) {
             if (context == null || context.assetState() == null
                 || context.assetState()
-                    .assets()
                     .isEmpty()) {
                 return Collections.emptyList();
             }
             List<CelestialMarker> markers = new ArrayList<>();
-            for (CelestialAsset asset : context.assetState()
-                .assets()) {
+            for (CelestialAsset asset : context.assetState()) {
                 ResourceLocation texture = CelestialAssetIcons.get(asset.kind);
                 if (texture == null) continue;
                 float alpha = switch (asset.status()) {

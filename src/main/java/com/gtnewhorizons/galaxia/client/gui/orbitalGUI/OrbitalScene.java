@@ -402,7 +402,7 @@ public class OrbitalScene {
         private void registerMarkers(OrbitalSceneFrame frame, ResolvedBodyDrawState state) {
             CelestialMarkerBase.CelestialMarkerContext context = markerContext.set(
                 state.body(),
-                CelestialAssetStore.getStateIfPresent(
+                CelestialAssetStore.getState(
                     state.body()
                         .id()));
             List<CelestialMarkerBase.CelestialMarker> markers = CelestialMarkerBase.CelestialMarkerRegistry

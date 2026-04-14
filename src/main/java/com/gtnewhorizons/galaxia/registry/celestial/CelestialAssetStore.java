@@ -13,27 +13,32 @@ import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
 public final class CelestialAssetStore {
 
-    private static final Map<CelestialObjectId, MutableBodyState> STATE_BY_BODY = new LinkedHashMap<>();
+    private static final Map<CelestialObjectId, List<CelestialAsset>> STATE_BY_BODY = new LinkedHashMap<>();
+    private static final Map<CelestialAsset.ID, CelestialAsset> BY_ID = new LinkedHashMap<>();
 
     private CelestialAssetStore() {}
 
-    public static CelestialBodyAssetState getState(CelestialObjectId celestialObjectId) {
-        MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
-        return state.snapshot();
+    public static List<CelestialAsset> getState(CelestialObjectId celestialObjectId) {
+        List<CelestialAsset> celestialAssets = STATE_BY_BODY.computeIfAbsent(celestialObjectId, t -> new ArrayList<>());
+        return new ArrayList<>(celestialAssets);
     }
 
-    public static CelestialBodyAssetState getStateIfPresent(CelestialObjectId celestialObjectId) {
-        MutableBodyState state = STATE_BY_BODY.get(celestialObjectId);
-        if (state == null) {
-            return new CelestialBodyAssetState(celestialObjectId, Collections.emptyList());
+    public static CelestialAsset findAsset(CelestialAsset.ID assetId) {
+        return BY_ID.get(assetId);
+    }
+
+    public static List<CelestialAsset> allAssets() {
+        List<CelestialAsset> all = new ArrayList<>();
+        for (List<CelestialAsset> state : STATE_BY_BODY.values()) {
+            all.addAll(state);
         }
-        return state.snapshot();
+        return Collections.unmodifiableList(all);
     }
 
     public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,
         CelestialAsset.Kind kind, CelestialAsset.Location location) {
-        MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
-        Map<ItemStack, Long> required = defaultRequirements(kind);
+        List<CelestialAsset> celestialAssets = STATE_BY_BODY.computeIfAbsent(celestialObjectId, t -> new ArrayList<>());
+
         CelestialAsset asset = new CelestialAsset(
             CelestialAsset.ID.create(),
             celestialObjectId,
@@ -41,15 +46,19 @@ public final class CelestialAssetStore {
             kind,
             location,
             CelestialAsset.Status.CONSTRUCTION_SITE,
-            required,
+            defaultRequirements(kind),
             Collections.emptyMap());
-        state.assets.add(asset);
+
+        celestialAssets.add(asset);
+        BY_ID.put(asset.assetId, asset);
+
         return asset;
     }
 
     public static CelestialAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
         CelestialAsset.Kind kind, CelestialAsset.Location location) {
-        MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
+        List<CelestialAsset> celestialAssets = STATE_BY_BODY.computeIfAbsent(celestialObjectId, t -> new ArrayList<>());
+
         CelestialAsset asset = new CelestialAsset(
             CelestialAsset.ID.create(),
             celestialObjectId,
@@ -59,103 +68,51 @@ public final class CelestialAssetStore {
             CelestialAsset.Status.OPERATIONAL,
             Collections.emptyMap(),
             Collections.emptyMap());
-        state.assets.add(asset);
+
+        celestialAssets.add(asset);
+        BY_ID.put(asset.assetId, asset);
+
         return asset;
     }
 
-    public static boolean cancelConstruction(CelestialAsset.ID assetId) {
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            for (int i = 0; i < state.assets.size(); i++) {
-                CelestialAsset asset = state.assets.get(i);
-                if (asset.assetId.equals(assetId) && asset.status() == CelestialAsset.Status.CONSTRUCTION_SITE) {
-                    // TODO: this feels like duplication
-                    state.assets.remove(i);
-                    OutpostDataStore.get()
-                        .remove(assetId);
-                    return true;
-                }
-            }
+    public static boolean destroyAsset(CelestialAsset.ID assetId) {
+        CelestialAsset asset = BY_ID.remove(assetId);
+        if (asset == null) return false;
+
+        List<CelestialAsset> list = STATE_BY_BODY.get(asset.celestialObjectId);
+        if (list != null) {
+            list.remove(asset);
         }
-        return false;
+
+        OutpostDataStore.get()
+            .remove(assetId);
+        return true;
+    }
+
+    public static boolean cancelConstruction(CelestialAsset.ID assetId) {
+        CelestialAsset asset = BY_ID.get(assetId);
+        if (asset == null || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
+            return false;
+        }
+        return destroyAsset(assetId);
     }
 
     public static boolean startDeconstruction(CelestialAsset.ID assetId) {
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            for (int i = 0; i < state.assets.size(); i++) {
-                CelestialAsset asset = state.assets.get(i);
-                if (!asset.assetId.equals(assetId) || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
-                    continue;
-                }
-                asset.updateStatus(CelestialAsset.Status.DECONSTRUCTION);
-                return true;
-            }
+        CelestialAsset asset = BY_ID.get(assetId);
+        if (asset == null || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
+            return false;
         }
-        return false;
+        asset.updateStatus(CelestialAsset.Status.DECONSTRUCTION);
+        return true;
     }
 
     public static boolean completeConstruction(CelestialAsset.ID assetId) {
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            for (int i = 0; i < state.assets.size(); i++) {
-                CelestialAsset asset = state.assets.get(i);
-                if (!asset.assetId.equals(assetId) || (asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE)) {
-                    continue;
-                }
-                asset.completeConstruction();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean addToConstructionInventory(CelestialAsset.ID assetId, ItemStack stack, long amount) {
-        if (stack == null || amount <= 0) {
+        CelestialAsset asset = BY_ID.get(assetId);
+        if (asset == null || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
             return false;
         }
-
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            for (int i = 0; i < state.assets.size(); i++) {
-                CelestialAsset asset = state.assets.get(i);
-                if (!asset.assetId.equals(assetId) || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
-                    continue;
-                }
-
-                Map<ItemStack, Long> inventory = mergeIntoConstructionInventory(
-                    asset.constructionInventory(),
-                    stack,
-                    amount);
-
-                asset.setConstructionInventory(inventory);
-                if (asset.isConstructionSatisfied()) {
-                    asset.updateStatus(CelestialAsset.Status.OPERATIONAL);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static CelestialAsset findAsset(CelestialAsset.ID assetId) {
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            for (CelestialAsset asset : state.assets) {
-                if (asset.assetId.equals(assetId)) return asset;
-            }
-        }
-        return null;
-    }
-
-    public static boolean destroyAsset(CelestialAsset.ID assetId) {
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            for (int i = 0; i < state.assets.size(); i++) {
-                if (state.assets.get(i).assetId.equals(assetId)) {
-                    // TODO: this feels like duplicated logic
-                    state.assets.remove(i);
-                    OutpostDataStore.get()
-                        .remove(assetId);
-                    return true;
-                }
-            }
-        }
-        return false;
+        asset.completeConstruction();
+        return true;
     }
 
     public static boolean renameAsset(CelestialAsset.ID assetId, String displayName) {
@@ -163,41 +120,51 @@ public final class CelestialAssetStore {
             .isEmpty()) {
             return false;
         }
-        String trimmedName = displayName.trim();
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            for (int i = 0; i < state.assets.size(); i++) {
-                CelestialAsset asset = state.assets.get(i);
-                if (!asset.assetId.equals(assetId)) {
-                    continue;
-                }
 
-                asset.setDisplayName(trimmedName);
-                return true;
-            }
+        CelestialAsset asset = BY_ID.get(assetId);
+        if (asset == null) return false;
+
+        asset.setDisplayName(displayName.trim());
+        return true;
+    }
+
+    public static boolean addToConstructionInventory(CelestialAsset.ID assetId, ItemStack stack, long amount) {
+        if (stack == null || amount <= 0) return false;
+
+        CelestialAsset asset = BY_ID.get(assetId);
+        if (asset == null || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
+            return false;
         }
-        return false;
+
+        Map<ItemStack, Long> inventory = mergeIntoConstructionInventory(asset.constructionInventory(), stack, amount);
+
+        asset.setConstructionInventory(inventory);
+
+        if (asset.isConstructionSatisfied()) {
+            asset.updateStatus(CelestialAsset.Status.OPERATIONAL);
+        }
+
+        return true;
     }
 
     public static void clear() {
         STATE_BY_BODY.clear();
-    }
-
-    public static List<CelestialAsset> allAssets() {
-        List<CelestialAsset> all = new ArrayList<>();
-        for (MutableBodyState state : STATE_BY_BODY.values()) {
-            all.addAll(state.assets);
-        }
-        return Collections.unmodifiableList(all);
+        BY_ID.clear();
     }
 
     public static void loadAssets(List<CelestialAsset> assets) {
         STATE_BY_BODY.clear();
+        BY_ID.clear();
+
         if (assets == null || assets.isEmpty()) return;
+
         for (CelestialAsset asset : assets) {
             if (asset == null || asset.celestialObjectId == null || asset.assetId == null) continue;
-            CelestialObjectId objectId = asset.celestialObjectId;
-            MutableBodyState state = STATE_BY_BODY.computeIfAbsent(objectId, MutableBodyState::new);
-            state.assets.add(asset);
+
+            List<CelestialAsset> list = STATE_BY_BODY.computeIfAbsent(asset.celestialObjectId, t -> new ArrayList<>());
+
+            list.add(asset);
+            BY_ID.put(asset.assetId, asset);
         }
     }
 
@@ -218,28 +185,14 @@ public final class CelestialAssetStore {
         switch (kind) {
             case STATION -> {}
             case AUTOMATED_STATION -> {
-                required.put(new net.minecraft.item.ItemStack(Blocks.stone), 64L);
-                required.put(new net.minecraft.item.ItemStack(Blocks.dirt), 64L);
+                required.put(new ItemStack(Blocks.stone), 64L);
+                required.put(new ItemStack(Blocks.dirt), 64L);
             }
             case AUTOMATED_OUTPOST -> {
-                required.put(new net.minecraft.item.ItemStack(Blocks.stone), 64L);
-                required.put(new net.minecraft.item.ItemStack(Blocks.dirt), 64L);
+                required.put(new ItemStack(Blocks.stone), 64L);
+                required.put(new ItemStack(Blocks.dirt), 64L);
             }
         }
         return required;
-    }
-
-    private static final class MutableBodyState {
-
-        private final CelestialObjectId celestialObjectId;
-        private final List<CelestialAsset> assets = new ArrayList<>();
-
-        private MutableBodyState(CelestialObjectId celestialObjectId) {
-            this.celestialObjectId = celestialObjectId;
-        }
-
-        private CelestialBodyAssetState snapshot() {
-            return new CelestialBodyAssetState(celestialObjectId, assets);
-        }
     }
 }

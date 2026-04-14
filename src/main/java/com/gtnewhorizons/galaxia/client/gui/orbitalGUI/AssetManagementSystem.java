@@ -16,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.item.ItemStack;
 
+import org.jetbrains.annotations.UnknownNullability;
 import org.lwjgl.input.Keyboard;
 
 import com.cleanroommc.modularui.api.UpOrDown;
@@ -57,7 +58,6 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
@@ -188,8 +188,8 @@ public final class AssetManagementSystem {
         }
 
         private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
-            CelestialBodyAssetState state = CelestialAssetStore.getState(current.id());
-            for (CelestialAsset asset : state.assets()) {
+            List<CelestialAsset> state = CelestialAssetStore.getState(current.id());
+            for (CelestialAsset asset : state) {
                 if (asset.isManageable()) {
                     targets.add(new StationTransferTarget(asset.assetId, asset.displayName(), current));
                 }
@@ -943,7 +943,7 @@ public final class AssetManagementSystem {
                 return;
             CelestialObject body = state.assetManagementBody;
             if (body == null) return;
-            CelestialBodyAssetState assetState = CelestialAssetStore.getState(body.id());
+            List<CelestialAsset> assetState = CelestialAssetStore.getState(body.id());
             int contentScrollSize = Math.max(mainContentHeight, computeContentHeight(assetState));
             mainScrollData.setScrollSize(contentScrollSize);
             mainScrollContent.removeAll();
@@ -2322,9 +2322,9 @@ public final class AssetManagementSystem {
             return new ModalBounds(left, top, left + width, top + height);
         }
 
-        private int computeContentHeight(CelestialBodyAssetState assetState) {
-            List<CelestialAsset> construction = getConstructionAssets(assetState.assets());
-            List<CelestialAsset> deployed = getOperationalAssets(assetState.assets());
+        private int computeContentHeight(@UnknownNullability List<CelestialAsset> assetState) {
+            List<CelestialAsset> construction = getConstructionAssets(assetState);
+            List<CelestialAsset> deployed = getOperationalAssets(assetState);
             int y = 0;
             if (!construction.isEmpty()) {
                 y += 16;
@@ -2337,9 +2337,9 @@ public final class AssetManagementSystem {
             return y;
         }
 
-        private void populateContent(ParentWidget<?> content, int contentWidth, CelestialBodyAssetState assetState) {
-            List<CelestialAsset> construction = getConstructionAssets(assetState.assets());
-            List<CelestialAsset> deployed = getOperationalAssets(assetState.assets());
+        private void populateContent(ParentWidget<?> content, int contentWidth, List<CelestialAsset> assetState) {
+            List<CelestialAsset> construction = getConstructionAssets(assetState);
+            List<CelestialAsset> deployed = getOperationalAssets(assetState);
             int y = 0;
             if (!construction.isEmpty()) {
                 content.child(createSectionText("Construction").pos(4, y));

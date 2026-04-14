@@ -32,7 +32,6 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostDebugAddItemPacket;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
@@ -571,8 +570,8 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private CelestialAsset.ID resolveSupplyDebugAssetId() {
         CelestialObject focused = map.getFocusedBody();
         if (focused == null) return null;
-        CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());
-        for (CelestialAsset asset : state.assets()) {
+        List<CelestialAsset> state = CelestialAssetStore.getState(focused.id());
+        for (CelestialAsset asset : state) {
             if (asset.status() != CelestialAsset.Status.OPERATIONAL) continue;
             if (asset.kind == CelestialAsset.Kind.AUTOMATED_OUTPOST
                 || asset.kind == CelestialAsset.Kind.AUTOMATED_STATION) {
