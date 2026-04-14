@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 
@@ -33,7 +34,7 @@ public final class CelestialAssetStore {
     public static CelestialManagedAsset createAssetInConstruction(CelestialObjectId celestialObjectId,
         String displayName, CelestialAsset.Kind kind, CelestialAsset.Location location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
-        List<CelestialAssetRequirement> required = defaultRequirements(kind);
+        Map<ItemStack, Long> required = defaultRequirements(kind);
         CelestialManagedAsset asset = new CelestialManagedAsset(
             CelestialAsset.ID.create(),
             celestialObjectId,
@@ -42,7 +43,7 @@ public final class CelestialAssetStore {
             location,
             CelestialAsset.Status.CONSTRUCTION_SITE,
             required,
-            Collections.emptyList());
+            Collections.emptyMap());
         state.assets.add(asset);
         return asset;
     }
@@ -57,8 +58,8 @@ public final class CelestialAssetStore {
             kind,
             location,
             CelestialAsset.Status.OPERATIONAL,
-            Collections.emptyList(),
-            Collections.emptyList());
+            Collections.emptyMap(),
+            Collections.emptyMap());
         state.assets.add(asset);
         return asset;
     }
@@ -131,7 +132,7 @@ public final class CelestialAssetStore {
                     continue;
                 }
 
-                List<CelestialAssetRequirement> inventory = mergeIntoConstructionInventory(
+                Map<ItemStack, Long> inventory = mergeIntoConstructionInventory(
                     asset.constructionInventory(),
                     stack,
                     amount);
@@ -229,8 +230,8 @@ public final class CelestialAssetStore {
         }
     }
 
-    public static List<CelestialAssetRequirement> previewRequirements(CelestialAsset.Kind kind) {
-        return Collections.unmodifiableList(new ArrayList<>(defaultRequirements(kind)));
+    public static Map<ItemStack, Long> previewRequirements(CelestialAsset.Kind kind) {
+        return Collections.unmodifiableMap(new LinkedHashMap<>(defaultRequirements(kind)));
     }
 
     private static CelestialManagedAsset toOperationalAsset(CelestialManagedAsset asset) {
@@ -246,45 +247,33 @@ public final class CelestialAssetStore {
     }
 
     private static boolean isConstructionSatisfied(CelestialManagedAsset asset) {
-        for (CelestialAssetRequirement required : asset.requiredResources()) {
-            long available = 0;
-            for (CelestialAssetRequirement stored : asset.constructionInventory()) {
-                if (required.matches(stored.stack())) {
-                    available += stored.amount();
-                }
-            }
-            if (available < required.amount()) {
+        for (Map.Entry<ItemStack, Long> required : asset.requiredResources().entrySet()) {
+            long available = asset.constructionInventory().getOrDefault(required.getKey(), 0L);
+            if (available < required.getValue()) {
                 return false;
             }
         }
         return true;
     }
 
-    private static List<CelestialAssetRequirement> mergeIntoConstructionInventory(
-        List<CelestialAssetRequirement> constructionInventory, ItemStack stack, long amount) {
-        List<CelestialAssetRequirement> merged = new ArrayList<>(constructionInventory);
-        for (int i = 0; i < merged.size(); i++) {
-            CelestialAssetRequirement entry = merged.get(i);
-            if (entry.matches(stack)) {
-                merged.set(i, entry.withAmount(entry.amount() + amount));
-                return merged;
-            }
-        }
-        merged.add(new CelestialAssetRequirement(stack, amount));
+    private static Map<ItemStack, Long> mergeIntoConstructionInventory(
+        Map<ItemStack, Long> constructionInventory, ItemStack stack, long amount) {
+        Map<ItemStack, Long> merged = new LinkedHashMap<>(constructionInventory);
+        merged.merge(stack, amount, Long::sum);
         return merged;
     }
 
-    private static List<CelestialAssetRequirement> defaultRequirements(CelestialAsset.Kind kind) {
-        List<CelestialAssetRequirement> required = new ArrayList<>();
+    private static Map<ItemStack, Long> defaultRequirements(CelestialAsset.Kind kind) {
+        Map<ItemStack, Long> required = new LinkedHashMap<>();
         switch (kind) {
             case STATION -> {}
             case AUTOMATED_STATION -> {
-                required.add(new CelestialAssetRequirement(new net.minecraft.item.ItemStack(Blocks.stone), 64L));
-                required.add(new CelestialAssetRequirement(new net.minecraft.item.ItemStack(Blocks.dirt), 64L));
+                required.put(new net.minecraft.item.ItemStack(Blocks.stone), 64L);
+                required.put(new net.minecraft.item.ItemStack(Blocks.dirt), 64L);
             }
             case AUTOMATED_OUTPOST -> {
-                required.add(new CelestialAssetRequirement(new net.minecraft.item.ItemStack(Blocks.stone), 64L));
-                required.add(new CelestialAssetRequirement(new net.minecraft.item.ItemStack(Blocks.dirt), 64L));
+                required.put(new net.minecraft.item.ItemStack(Blocks.stone), 64L);
+                required.put(new net.minecraft.item.ItemStack(Blocks.dirt), 64L);
             }
         }
         return required;

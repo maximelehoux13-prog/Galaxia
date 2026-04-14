@@ -13,9 +13,9 @@ public class ModulePower extends AutomatedOutpostModule {
     public static final OutpostModuleKind KIND = OutpostModuleKind.BIG_HAMMER;
 
     // spotless:off
-    public final static Map<ItemStack, Integer> constructionCost = new HashMap<ItemStack, Integer>() {{
-        put(new ItemStack(Items.redstone), 8);
-        put(new ItemStack(Items.gold_ingot), 64);
+    public final static Map<ItemStack, Long> constructionCost = new HashMap<ItemStack, Long>() {{
+        put(new ItemStack(Items.redstone), 8L);
+        put(new ItemStack(Items.gold_ingot), 64L);
     }};
     // spotless:on
 
@@ -31,7 +31,7 @@ public class ModulePower extends AutomatedOutpostModule {
     }
 
     @Override
-    public Map<ItemStack, Integer> getConstructionCost() {
+    public Map<ItemStack, Long> getConstructionCost() {
         return constructionCost;
     }
 

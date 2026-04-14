@@ -40,7 +40,6 @@ import com.gtnewhorizons.galaxia.outpost.module.ModuleHammer;
 import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
 import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetRequirement;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
@@ -485,25 +484,26 @@ public final class OutpostPersistenceManager {
         return state;
     }
 
-    private static Map<String, Long> encodeRequirements(List<CelestialAssetRequirement> requirements) {
+    private static Map<String, Long> encodeRequirements(Map<ItemStack, Long> requirements) {
         Map<String, Long> encoded = new LinkedHashMap<>();
         if (requirements == null) return encoded;
-        for (CelestialAssetRequirement requirement : requirements) {
-            if (requirement == null || requirement.stack() == null) continue;
-            ItemStackWrapper key = ItemStackWrapper.of(requirement.stack());
+        for (Map.Entry<ItemStack, Long> entry : requirements.entrySet()) {
+            ItemStack stack = entry.getKey();
+            if (stack == null) continue;
+            ItemStackWrapper key = ItemStackWrapper.of(stack);
             if (key == null) continue;
-            encoded.put(key.toKey(), requirement.amount());
+            encoded.put(key.toKey(), entry.getValue());
         }
         return encoded;
     }
 
-    private static List<CelestialAssetRequirement> decodeRequirements(Map<String, Long> encoded) {
-        List<CelestialAssetRequirement> requirements = new ArrayList<>();
+    private static Map<ItemStack, Long> decodeRequirements(Map<String, Long> encoded) {
+        Map<ItemStack, Long> requirements = new LinkedHashMap<>();
         if (encoded == null || encoded.isEmpty()) return requirements;
         for (Map.Entry<String, Long> entry : encoded.entrySet()) {
             ItemStackWrapper key = ItemStackWrapper.fromKey(entry.getKey());
             if (key == null) continue;
-            requirements.add(new CelestialAssetRequirement(key.toStack(1), entry.getValue()));
+            requirements.put(key.toStack(1), entry.getValue());
         }
         return requirements;
     }

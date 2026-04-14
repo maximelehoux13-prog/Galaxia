@@ -56,7 +56,6 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetRequirement;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
@@ -81,7 +80,7 @@ record ModalBounds(int left, int top, int right, int bottom) {}
 
 @Desugar
 record PendingAssetCreation(CelestialObjectId celestialObjectId, String displayName, CelestialAsset.Kind kind,
-    CelestialAsset.Location location, List<CelestialAssetRequirement> requiredResources) {}
+    CelestialAsset.Location location, Map<ItemStack, Long> requiredResources) {}
 
 @Desugar
 record PendingAssetRename(CelestialManagedAsset asset) {}
@@ -139,7 +138,7 @@ public final class AssetManagementSystem {
 
         boolean hasStoredConstructionResources(CelestialManagedAsset asset) {
             if (asset == null) return false;
-            for (CelestialAssetRequirement entry : asset.constructionInventory()) if (entry.amount() > 0) return true;
+            for (Long amount : asset.constructionInventory().values()) if (amount > 0) return true;
             return false;
         }
 
@@ -163,16 +162,14 @@ public final class AssetManagementSystem {
             if (asset.requiredResources()
                 .isEmpty()) return "Empty";
             StringBuilder sb = new StringBuilder();
-            for (CelestialAssetRequirement required : asset.requiredResources()) {
-                long storedAmount = 0;
-                for (CelestialAssetRequirement stored : asset.constructionInventory())
-                    if (required.matches(stored.stack())) storedAmount += stored.amount();
+            for (Map.Entry<ItemStack, Long> required : asset.requiredResources().entrySet()) {
+                long storedAmount = asset.constructionInventory().getOrDefault(required.getKey(), 0L);
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(storedAmount)
                     .append('/')
-                    .append(required.amount())
+                    .append(required.getValue())
                     .append(' ')
-                    .append(required.displayName());
+                    .append(required.getKey().getDisplayName());
             }
             return sb.toString();
         }
@@ -214,14 +211,14 @@ public final class AssetManagementSystem {
             };
         }
 
-        private String buildStoredInventorySummary(List<CelestialAssetRequirement> storedResources) {
+        private String buildStoredInventorySummary(Map<ItemStack, Long> storedResources) {
             if (storedResources.isEmpty()) return "Empty";
             StringBuilder sb = new StringBuilder();
-            for (CelestialAssetRequirement stored : storedResources) {
+            for (Map.Entry<ItemStack, Long> stored : storedResources.entrySet()) {
                 if (sb.length() > 0) sb.append(", ");
-                sb.append(stored.amount())
+                sb.append(stored.getValue())
                     .append(' ')
-                    .append(stored.displayName());
+                    .append(stored.getKey().getDisplayName());
             }
             return sb.toString();
         }
@@ -1004,10 +1001,10 @@ public final class AssetManagementSystem {
             modal.child(createBodyText(creation.displayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(36, 28));
             modal.child(createSectionText("Required resources").pos(12, 52));
             int resourceY = 68;
-            for (CelestialAssetRequirement requirement : creation.requiredResources()) {
+            for (Map.Entry<ItemStack, Long> requirement : creation.requiredResources().entrySet()) {
                 modal.child(
                     createBodyText(
-                        "- " + requirement.amount() + " " + requirement.displayName(),
+                        "- " + requirement.getValue() + " " + requirement.getKey().getDisplayName(),
                         EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(16, resourceY));
                 resourceY += 12;
             }
@@ -2272,7 +2269,7 @@ public final class AssetManagementSystem {
             var data = OutpostModuleKind.forKind(kind);
             StringBuilder sb = new StringBuilder("Cost: ");
             boolean first = true;
-            for (Map.Entry<ItemStack, Integer> entry : data.getConstructionCost()
+            for (Map.Entry<ItemStack, Long> entry : data.getConstructionCost()
                 .entrySet()) {
                 ItemStack stack = entry.getKey();
                 if (!first) sb.append(", ");

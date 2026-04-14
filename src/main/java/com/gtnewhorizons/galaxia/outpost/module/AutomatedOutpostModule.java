@@ -3,6 +3,7 @@ package com.gtnewhorizons.galaxia.outpost.module;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
@@ -12,6 +13,13 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
  */
 public abstract class AutomatedOutpostModule {
 
+    // spotless:off
+    public final static Map<ItemStack, Long> defaultConstructionCost = new HashMap<ItemStack, Long>() {{
+        put(new ItemStack(Items.diamond), 8L);
+        put(new ItemStack(Items.gold_ingot), 64L);
+    }};
+
+    // spotless:on
     public enum Status {
         IN_CONSTRUCTION,
         OPERATIONAL,
@@ -25,7 +33,7 @@ public abstract class AutomatedOutpostModule {
     private int ticks = 0;
     private final long powerDrawEuPerTick;
     private Status status;
-    private Map<ItemStack, Integer> constructionResources;
+    private Map<ItemStack, Long> constructionResources;
 
     public AutomatedOutpostModule(long baseEnergyCapacity, long powerDrawEuPerTick, int cooldownTicks) {
         this.cooldownTicks = cooldownTicks;
@@ -55,7 +63,7 @@ public abstract class AutomatedOutpostModule {
 
     public void setConstructionProgress(float progress) {}
 
-    public Map<ItemStack, Integer> getConsumedResources() {
+    public Map<ItemStack, Long> getConsumedResources() {
         return constructionResources;
     }
 
@@ -64,20 +72,19 @@ public abstract class AutomatedOutpostModule {
     }
 
     public float getConstructionProgress() {
-        Map<ItemStack, Integer> cost = getConstructionCost();
+        Map<ItemStack, Long> cost = getConstructionCost();
 
         if (cost.isEmpty() || status != Status.IN_CONSTRUCTION) {
             return 1.0f;
         }
 
-        int totalRequired = 0;
-        int totalCollected = 0;
+        long totalRequired = 0;
+        long totalCollected = 0;
 
-        for (Map.Entry<ItemStack, Integer> entry : cost.entrySet()) {
+        for (Map.Entry<ItemStack, Long> entry : cost.entrySet()) {
             ItemStack requiredItem = entry.getKey();
-            int requiredAmount = entry.getValue();
-
-            int collectedAmount = constructionResources.getOrDefault(requiredItem, 0);
+            long requiredAmount = entry.getValue();
+            long collectedAmount = constructionResources.getOrDefault(requiredItem, 0L);
 
             totalRequired += requiredAmount;
             totalCollected += Math.min(collectedAmount, requiredAmount);
@@ -86,7 +93,9 @@ public abstract class AutomatedOutpostModule {
         return (float) totalCollected / totalRequired;
     }
 
-    public abstract Map<ItemStack, Integer> getConstructionCost();
+    public Map<ItemStack, Long> getConstructionCost() {
+        return defaultConstructionCost;
+    }
 
     public abstract OutpostModuleKind getKind();
 
