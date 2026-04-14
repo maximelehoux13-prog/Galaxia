@@ -119,16 +119,17 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             ItemStackWrapper resource = ItemStackWrapper.fromKey(packet.resourceKey);
             if (packet.removeEntry) {
                 state.logisticsConfig.reset(resource);
+                return OutpostDeltaPacket.logisticsConfigRemoved(packet.assetId, packet.resourceKey);
             } else {
-                state.logisticsConfig.set(
-                    resource,
-                    new LogisticsResourceConfig(
-                        packet.minReserve,
-                        packet.orderSize,
-                        packet.isImportEnabled,
-                        packet.isSupplyEnabled));
+                LogisticsResourceConfig config = new LogisticsResourceConfig(
+                    packet.minReserve,
+                    packet.orderSize,
+                    packet.isImportEnabled,
+                    packet.isSupplyEnabled);
+                state.logisticsConfig.set(resource, config);
+                return OutpostDeltaPacket.logisticsConfigUpdated(packet.assetId, packet.resourceKey, 
+                    config.minReserve(), config.orderSize(), config.isImportEnabled(), config.isSupplyEnabled());
             }
-            return new OutpostFullSyncPacket(state);
         }
     }
 }

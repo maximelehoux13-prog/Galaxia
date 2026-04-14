@@ -17,6 +17,7 @@ import com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostDebugAddItemPacket;
+import com.gtnewhorizons.galaxia.outpost.network.OutpostDeltaPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostFullSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryRemovePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleUpdatePacket;
@@ -117,6 +118,7 @@ public final class Galaxia {
                 id++, Side.SERVER);
         GALAXIA_NETWORK.registerMessage(OutpostModuleUpdatePacket.Handler.class, OutpostModuleUpdatePacket.class, id++,
                 Side.SERVER);
+        GALAXIA_NETWORK.registerMessage(OutpostDeltaPacket.Handler.class, OutpostDeltaPacket.class, id++, Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(LogisticsTasksSyncPacket.Handler.class, LogisticsTasksSyncPacket.class, id++,
                 Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(LogisticsSignalsSyncPacket.Handler.class, LogisticsSignalsSyncPacket.class,

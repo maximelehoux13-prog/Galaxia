@@ -80,4 +80,13 @@ public final class AutomatedOutpostInventory {
     public boolean isEmpty() {
         return amounts.isEmpty();
     }
+
+    /** Sets the exact amount for a resource (used by client-side delta updates). */
+    public void setAmount(ItemStackWrapper item, long amount) {
+        if (amount <= 0) {
+            amounts.remove(item);
+        } else {
+            amounts.put(item, amount);
+        }
+    }
 }

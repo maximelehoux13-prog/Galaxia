@@ -163,7 +163,12 @@ public final class OutpostModuleUpdatePacket implements IMessage {
                 case 0 -> handleAction(packet, state, module);
                 case 1 -> handleConfig(packet, state, module);
             }
-            return new OutpostFullSyncPacket(state);
+
+            // Return delta packet instead of full sync
+            if (packet.type == 0 && packet.getAction() == Action.DESTROY) {
+                return OutpostDeltaPacket.moduleRemoved(packet.assetId, packet.moduleIndex);
+            }
+            return OutpostDeltaPacket.moduleUpdated(packet.assetId, packet.moduleIndex, module);
         }
 
         private void handleAction(OutpostModuleUpdatePacket packet, AutomatedOutpost state, AutomatedOutpostModule module) {
