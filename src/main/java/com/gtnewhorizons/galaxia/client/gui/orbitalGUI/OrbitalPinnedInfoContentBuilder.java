@@ -140,11 +140,7 @@ public final class OrbitalPinnedInfoContentBuilder {
     }
 
     private boolean isLandable(CelestialObject body) {
-        return switch (body.objectClass()) {
-            case PLANET, MOON, ASTEROID -> body.properties()
-                .visitable();
-            default -> false;
-        };
+        return body.isLandable();
     }
 
     private String formatSurfaceType(CelestialObject body) {

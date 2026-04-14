@@ -90,6 +90,14 @@ public record CelestialObject(CelestialObjectId id, String name, String nameKey,
         return name();
     }
 
+   public boolean isLandable() {
+        return switch (this.objectClass()) {
+            case PLANET, MOON, ASTEROID -> this.properties()
+                .visitable();
+            default -> false;
+        };
+    }
+
     public static final class Builder {
 
         private CelestialObjectId id;
