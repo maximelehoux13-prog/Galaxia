@@ -554,8 +554,8 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         if (supplyDebugTargetAssetId != null) {
             CelestialAsset pinned = CelestialAssetStore.findAsset(supplyDebugTargetAssetId);
             if (pinned != null && pinned.status() == CelestialAsset.Status.OPERATIONAL
-                && (pinned.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST
-                    || pinned.kind() == CelestialAsset.Kind.AUTOMATED_STATION)) {
+                && (pinned.kind == CelestialAsset.Kind.AUTOMATED_OUTPOST
+                    || pinned.kind == CelestialAsset.Kind.AUTOMATED_STATION)) {
                 return pinned;
             }
             supplyDebugTargetAssetId = null;
@@ -574,9 +574,9 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());
         for (CelestialAsset asset : state.assets()) {
             if (asset.status() != CelestialAsset.Status.OPERATIONAL) continue;
-            if (asset.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST
-                || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION) {
-                return asset.assetId();
+            if (asset.kind == CelestialAsset.Kind.AUTOMATED_OUTPOST
+                || asset.kind == CelestialAsset.Kind.AUTOMATED_STATION) {
+                return asset.assetId;
             }
         }
         return null;
@@ -603,8 +603,8 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         amount = Math.min(amount, Integer.MAX_VALUE);
         ItemStackWrapper resource = ItemStackWrapper.of(selectedStack);
         if (resource == null) return;
-        Galaxia.LOG.info("[Supply Debug] Adding {} x {} to {}", amount, resource, asset.assetId());
-        Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostDebugAddItemPacket(asset.assetId(), resource, amount));
+        Galaxia.LOG.info("[Supply Debug] Adding {} x {} to {}", amount, resource, asset.assetId);
+        Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostDebugAddItemPacket(asset.assetId, resource, amount));
     }
 
     private void drawInlineButton(int x, int y, int width, int height, String label, boolean enabled) {

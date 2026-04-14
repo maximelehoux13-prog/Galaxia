@@ -161,7 +161,7 @@ public final class OutpostPersistenceManager {
         for (CelestialAsset asset : CelestialAssetStore.allAssets()) {
             AssetJson json = encodeAsset(asset);
             AutomatedOutpost outpost = OutpostDataStore.get()
-                .getByAssetId(asset.assetId());
+                .getByAssetId(asset.assetId);
             if (outpost != null) {
                 json.outpost = encodeOutpostState(outpost);
             }
@@ -252,13 +252,13 @@ public final class OutpostPersistenceManager {
 
     private AssetJson encodeAsset(CelestialAsset asset) {
         AssetJson json = new AssetJson();
-        json.assetId = asset.assetId();
-        json.celestialObjectId = asset.celestialObjectId()
+        json.assetId = asset.assetId;
+        json.celestialObjectId = asset.celestialObjectId
             .toString();
         json.displayName = asset.displayName();
-        json.kind = asset.kind()
+        json.kind = asset.kind
             .name();
-        json.location = asset.location()
+        json.location = asset.location
             .name();
         json.status = asset.status()
             .name();
@@ -360,7 +360,7 @@ public final class OutpostPersistenceManager {
     private AutomatedOutpost decodeOutpostState(CelestialAsset asset, OutpostStateJson json) {
         if (asset == null || json == null || json.teamId == null || json.systemId == null) return null;
         CelestialObjectId bodyId = json.celestialBodyId != null ? CelestialObjectId.valueOf(json.celestialBodyId)
-            : asset.celestialObjectId();
+            : asset.celestialObjectId;
         CelestialObjectId anchorBodyId = json.planetaryAnchorBodyId != null
             ? CelestialObjectId.valueOf(json.planetaryAnchorBodyId)
             : GalaxiaCelestialAPI
@@ -371,7 +371,7 @@ public final class OutpostPersistenceManager {
                 .id();
 
         AutomatedOutpost state = new AutomatedOutpost(
-            asset.assetId(),
+            asset.assetId,
             UUID.fromString(json.teamId),
             bodyId,
             CelestialObjectId.valueOf(json.systemId),

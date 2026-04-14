@@ -98,11 +98,11 @@ public final class OutpostBuildModulePacket implements IMessage {
                         .getName());
                 return null;
             }
-            if (kind == OutpostModuleKind.MINER && asset.kind() != CelestialAsset.Kind.AUTOMATED_OUTPOST) {
+            if (kind == OutpostModuleKind.MINER && asset.kind != CelestialAsset.Kind.AUTOMATED_OUTPOST) {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: rejected MINER on {} ({}) from player {}",
                     packet.assetId,
-                    asset.kind(),
+                    asset.kind,
                     player.getGameProfile()
                         .getName());
                 return null;

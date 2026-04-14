@@ -142,12 +142,12 @@ public final class AssetManagementSystem {
         }
 
         boolean isManageableStationAsset(CelestialAsset asset) {
-            if (asset == null || asset.status() != CelestialAsset.Status.OPERATIONAL) return false;
-            return asset.kind() == CelestialAsset.Kind.STATION || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION
-                || asset.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST;
+            if (asset == null) return false;
+            return asset.isManageble();
         }
 
         String formatAssetDisplayName(CelestialAsset asset) {
+            // TODO: Localize
             return switch (asset.status()) {
                 case CONSTRUCTION_SITE -> asset.displayName() + " (In construction)";
                 case DECONSTRUCTION -> asset.displayName() + " (Deconstruction)";
@@ -185,17 +185,15 @@ public final class AssetManagementSystem {
         private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
             CelestialBodyAssetState state = CelestialAssetStore.getState(current.id());
             for (CelestialAsset asset : state.assets()) {
-                if (asset.status() == CelestialAsset.Status.OPERATIONAL
-                    && asset.location() == CelestialAsset.Location.ORBIT
-                    && (asset.kind() == CelestialAsset.Kind.STATION
-                        || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION)) {
-                    targets.add(new StationTransferTarget(asset.assetId(), asset.displayName(), current));
+                if (asset.isManageble()){
+                    targets.add(new StationTransferTarget(asset.assetId, asset.displayName(), current));
                 }
             }
             for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) collectTargets(child, targets);
         }
 
         String formatAssetKind(CelestialAsset.Kind kind) {
+            // TODO: Localize
             return switch (kind) {
                 case STATION -> "Station";
                 case AUTOMATED_STATION -> "Automated Station";
@@ -204,6 +202,7 @@ public final class AssetManagementSystem {
         }
 
         String formatAssetLocation(CelestialAsset.Location location) {
+            // TODO: Localize
             return switch (location) {
                 case ORBIT -> "Orbit";
                 case SURFACE -> "Surface";
@@ -211,6 +210,7 @@ public final class AssetManagementSystem {
         }
 
         private String buildStoredInventorySummary(Map<ItemStack, Long> storedResources) {
+            // TODO: Localize
             if (storedResources.isEmpty()) return "Empty";
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<ItemStack, Long> stored : storedResources.entrySet()) {
@@ -268,6 +268,7 @@ public final class AssetManagementSystem {
                 buildDefaultAssetDisplayName(body, CelestialAsset.Kind.STATION),
                 CelestialAsset.Kind.STATION,
                 getDefaultAssetLocation(CelestialAsset.Kind.STATION));
+            // TODO: Localize
             callbacks.showActionStatus("Station created");
         }
 
@@ -299,6 +300,7 @@ public final class AssetManagementSystem {
                     state.pendingAssetCreation.kind(),
                     state.pendingAssetCreation.location());
                 callbacks
+                    // TODO: Localize
                     .showActionStatus(assetSupport.formatAssetKind(state.pendingAssetCreation.kind()) + " created");
             } else {
                 CelestialAssetStore.createAssetInConstruction(
@@ -307,6 +309,7 @@ public final class AssetManagementSystem {
                     state.pendingAssetCreation.kind(),
                     state.pendingAssetCreation.location());
                 callbacks.showActionStatus(
+                    // TODO: Localize
                     assetSupport.formatAssetKind(state.pendingAssetCreation.kind()) + " construction planned");
             }
             state.pendingAssetCreation = null;
@@ -345,8 +348,8 @@ public final class AssetManagementSystem {
                 return;
             }
             CelestialAssetStore.destroyAsset(
-                state.pendingAssetDestruction.asset()
-                    .assetId());
+                state.pendingAssetDestruction.asset().assetId);
+            // TODO: Localize
             callbacks.showActionStatus("Asset destroyed");
             state.pendingAssetDestruction = null;
         }
@@ -373,7 +376,8 @@ public final class AssetManagementSystem {
             if (state.pendingConstructionCancellation == null) return;
             CelestialAssetStore.startDeconstruction(
                 state.pendingConstructionCancellation.asset()
-                    .assetId());
+                    .assetId);
+            // TODO: Localize
             callbacks.showActionStatus("Construction site converted to deconstruction");
             state.pendingConstructionCancellation = null;
         }
@@ -402,6 +406,7 @@ public final class AssetManagementSystem {
             String renamed = callbacks.getRenameInput()
                 .trim();
             if (renamed.isEmpty()) {
+                // TODO: Localize
                 callbacks.showActionStatus("Name cannot be empty");
                 return;
             }
@@ -413,12 +418,14 @@ public final class AssetManagementSystem {
             }
             if (CelestialAssetStore.renameAsset(
                 state.pendingAssetRename.asset()
-                    .assetId(),
+                    .assetId,
                 renamed)) {
+                // TODO: Localize
                 callbacks.showActionStatus("Asset renamed");
                 closePendingAssetRename(state);
                 return;
             }
+            // TODO: Localize
             callbacks.showActionStatus("Rename failed");
         }
 
@@ -707,7 +714,7 @@ public final class AssetManagementSystem {
                 boolean present = OutpostDataStore.get()
                     .getByAssetId(
                         state.pendingAssetManagement.asset()
-                            .assetId())
+                            .assetId)
                     != null;
                 if (present && !lastOutpostStatePresent) {
                     markStructureDirty();
@@ -716,7 +723,7 @@ public final class AssetManagementSystem {
                     AutomatedOutpost outpost = OutpostDataStore.get()
                         .getByAssetId(
                             state.pendingAssetManagement.asset()
-                                .assetId());
+                                .assetId);
                     if (outpost != null && outpost.getSyncRevision() != lastOutpostSyncRevision) {
                         int newRevision = outpost.getSyncRevision();
                         if (hasFocusedModalTextField()) {
@@ -771,7 +778,7 @@ public final class AssetManagementSystem {
                     }
                     // Refresh the modal if the correct outpost is currently open
                     if (state.pendingAssetManagement != null && state.pendingAssetManagement.asset()
-                        .assetId()
+                        .assetId
                         .equals(targetId)) {
                         markStructureDirty();
                     }
@@ -830,7 +837,7 @@ public final class AssetManagementSystem {
                 AutomatedOutpost outpost = OutpostDataStore.get()
                     .getByAssetId(
                         state.pendingAssetManagement.asset()
-                            .assetId());
+                            .assetId);
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
@@ -856,7 +863,7 @@ public final class AssetManagementSystem {
                 AutomatedOutpost outpost = OutpostDataStore.get()
                     .getByAssetId(
                         state.pendingAssetManagement.asset()
-                            .assetId());
+                            .assetId);
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
@@ -1188,20 +1195,23 @@ public final class AssetManagementSystem {
             if (state.pendingAssetManagement == null) return;
             CelestialAsset asset = state.pendingAssetManagement.asset();
 
-            if (asset.kind() != CelestialAsset.Kind.AUTOMATED_OUTPOST) {
+            if (asset.kind != CelestialAsset.Kind.AUTOMATED_OUTPOST) {
                 ModalBounds bounds = createCenteredModalBounds(360, 150);
                 updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
                 ParentWidget<?> modal = createModalRoot(bounds);
                 modal.child(
-                    createAssetIconWidget(asset.kind(), 1.0f).pos(12, 10)
+                    createAssetIconWidget(asset.kind, 1.0f).pos(12, 10)
                         .size(18, 18));
+                // TODO: Localize
                 modal.child(createTitleText("Manage Station").pos(36, 10));
                 modal.child(
                     createBodyText(callbacks.formatAssetDisplayName(asset), EnumColors.MAP_COLOR_TEXT_BODY.getColor())
                         .pos(36, 28));
                 modal.child(
+                    // TODO: Localize
                     createBodyText("This panel is not implemented yet.", EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
                         .pos(14, 62));
+                // TODO: Localize
                 modal.child(
                     createFooterButton("Close", true, callbacks::closePendingAssetManagement)
                         .pos(bounds.right() - bounds.left() - 18 - 110, 8)
@@ -1211,13 +1221,14 @@ public final class AssetManagementSystem {
             }
 
             AutomatedOutpost outpost = OutpostDataStore.get()
-                .getByAssetId(asset.assetId());
+                .getByAssetId(asset.assetId);
             ModalBounds bounds = createCenteredModalBounds(MODAL_MAX_WIDTH, MODAL_MAX_HEIGHT);
             updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
             ParentWidget<?> modal = createModalRoot(bounds);
 
             if (outpost == null) {
-                Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostRequestSyncPacket(asset.assetId()));
+                Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostRequestSyncPacket(asset.assetId));
+                // TODO: Localize
                 modal.child(createTitleText("Manage Outpost").pos(12, 10));
                 modal.child(createBodyText("Loading data...", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(12, 50));
             } else {
@@ -1430,8 +1441,9 @@ public final class AssetManagementSystem {
             }).pos(pickerWidth - 12 - 78, 8)
                 .size(78, FOOTER_BUTTON_HEIGHT));
 
+            // TODO: Localize
             boolean isAutomatedOutpost = state.pendingAssetManagement.asset()
-                .kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST;
+                .kind == CelestialAsset.Kind.AUTOMATED_OUTPOST;
             VerticalScrollData scrollData = new VerticalScrollData();
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(scrollX, scrollY)
                 .widthRelOffset(1f, -(scrollX * 2))
@@ -2364,7 +2376,7 @@ public final class AssetManagementSystem {
                         (context, x, y, width, height) -> Gui
                             .drawRect(x, y, x + width, y + height, EnumColors.MAP_COLOR_ROW_BG.getColor())));
             row.child(
-                createAssetIconWidget(asset.kind(), 1.0f).pos(10, 9)
+                createAssetIconWidget(asset.kind, 1.0f).pos(10, 9)
                     .size(16, 16));
             boolean deconstruction = asset.status() == CelestialAsset.Status.DECONSTRUCTION;
             int actionButtonsWidth = ICON_BUTTON_SIZE;
@@ -2372,6 +2384,7 @@ public final class AssetManagementSystem {
             row.child(createNameButton(asset, textWidth).pos(32, 4));
             row.child(
                 createBodyText(
+                    // TODO: Localize
                     (deconstruction ? "Stored: " : "Inventory: ") + callbacks.buildConstructionInventorySummary(asset),
                     EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(32, 18)
                         .width(textWidth));
@@ -2379,6 +2392,7 @@ public final class AssetManagementSystem {
                 createGlyphButton(
                     deconstruction ? AssetManagerButtonGlyph.SEND : AssetManagerButtonGlyph.CANCEL,
                     deconstruction ? "Send To..." : "Cancel Build",
+                    // TODO: Localize
                     true,
                     () -> handleConstructionAction(asset)).pos(rowWidth - 34, 9));
             return row;
@@ -2392,7 +2406,7 @@ public final class AssetManagementSystem {
                         (context, x, y, width, height) -> Gui
                             .drawRect(x, y, x + width, y + height, EnumColors.MAP_COLOR_ROW_BG.getColor())));
             row.child(
-                createAssetIconWidget(asset.kind(), 1.0f).pos(10, 9)
+                createAssetIconWidget(asset.kind, 1.0f).pos(10, 9)
                     .size(16, 16));
             boolean manageable = callbacks.isManageableStationAsset(asset);
             int actionButtonsWidth = manageable ? (ICON_BUTTON_SIZE * 2 + 4) : ICON_BUTTON_SIZE;
@@ -2401,8 +2415,8 @@ public final class AssetManagementSystem {
             row.child(
                 createBodyText(
                     trimToWidth(
-                        callbacks.formatAssetKind(asset.kind()) + " | "
-                            + callbacks.formatAssetLocation(asset.location()),
+                        callbacks.formatAssetKind(asset.kind) + " | "
+                            + callbacks.formatAssetLocation(asset.location),
                         textWidth),
                     EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(32, 16)
                         .width(textWidth));
@@ -2411,6 +2425,7 @@ public final class AssetManagementSystem {
                 row.child(
                     createGlyphButton(
                         AssetManagerButtonGlyph.MANAGE,
+                        // TODO: Localize
                         "Manage",
                         true,
                         () -> callbacks.openPendingAssetManagement(asset)).pos(buttonX - 28, 9));
@@ -2418,6 +2433,7 @@ public final class AssetManagementSystem {
             row.child(
                 createGlyphButton(
                     AssetManagerButtonGlyph.DESTROY,
+                    // TODO: Localize
                     "Destroy",
                     true,
                     () -> callbacks.openPendingAssetDestruction(asset)).pos(buttonX, 9));
@@ -2825,7 +2841,7 @@ public final class AssetManagementSystem {
                 return;
             }
             if (callbacks.isCreativeBuildModeEnabled()) {
-                CelestialAssetStore.cancelConstruction(asset.assetId());
+                CelestialAssetStore.cancelConstruction(asset.assetId);
                 callbacks.showActionStatus("Construction canceled");
                 return;
             }
@@ -2833,7 +2849,7 @@ public final class AssetManagementSystem {
                 callbacks.openPendingConstructionCancellation(asset);
                 return;
             }
-            CelestialAssetStore.cancelConstruction(asset.assetId());
+            CelestialAssetStore.cancelConstruction(asset.assetId);
             callbacks.showActionStatus("Construction canceled");
         }
 

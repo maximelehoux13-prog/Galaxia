@@ -57,7 +57,7 @@ public class CelestialMarkerBase {
             List<CelestialMarker> markers = new ArrayList<>();
             for (CelestialAsset asset : context.assetState()
                 .assets()) {
-                ResourceLocation texture = CelestialAssetIcons.get(asset.kind());
+                ResourceLocation texture = CelestialAssetIcons.get(asset.kind);
                 if (texture == null) continue;
                 float alpha = switch (asset.status()) {
                     case OPERATIONAL -> 1.0f;
@@ -69,7 +69,7 @@ public class CelestialMarkerBase {
                 if (alpha <= 0.0f) continue;
                 markers.add(
                     new CelestialMarker(
-                        "asset:" + asset.kind()
+                        "asset:" + asset.kind
                             .name()
                             .toLowerCase(),
                         texture,

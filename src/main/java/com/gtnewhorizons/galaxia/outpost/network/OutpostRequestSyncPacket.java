@@ -55,10 +55,10 @@ public final class OutpostRequestSyncPacket implements IMessage {
                 if (asset != null && asset.status() == CelestialAsset.Status.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
-                    CelestialObjectId bodyId = asset.celestialObjectId();
+                    CelestialObjectId bodyId = asset.celestialObjectId;
                     CelestialObjectId systemId = resolveSystemId(bodyId);
                     CelestialObjectId anchorBodyId = resolvePlanetaryAnchorId(bodyId);
-                    state = new AutomatedOutpost(asset.assetId(), teamId, bodyId, systemId, anchorBodyId);
+                    state = new AutomatedOutpost(asset.assetId, teamId, bodyId, systemId, anchorBodyId);
                     OutpostDataStore.get()
                         .put(state);
                     Galaxia.LOG.info(
