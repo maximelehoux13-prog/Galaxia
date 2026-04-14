@@ -75,7 +75,7 @@ public final class LogisticsTasksSyncPacket implements IMessage {
             writeString(buf, e.taskId);
             writeString(buf, e.resourceKey);
             buf.writeLong(e.amount);
-            writeString(buf, e.transportKind);
+            writeString(buf, String.valueOf(e.transportKind));
             writeString(buf, String.valueOf(e.fromBodyId));
             writeString(buf, String.valueOf(e.toBodyId));
             buf.writeDouble(e.departureOrbitalTime);
@@ -91,7 +91,7 @@ public final class LogisticsTasksSyncPacket implements IMessage {
             String taskId = readString(buf);
             String resourceKey = readString(buf);
             long amount = buf.readLong();
-            String transportKind = readString(buf);
+            LogisticsTask.TransportType transportKind = LogisticsTask.TransportType.valueOf(readString(buf));
             CelestialObjectId fromBodyId = CelestialObjectId.valueOf(readString(buf));
             CelestialObjectId toBodyId = CelestialObjectId.valueOf(readString(buf));
             double departureOrbitalTime = buf.readDouble();
@@ -139,9 +139,9 @@ public final class LogisticsTasksSyncPacket implements IMessage {
     }
 
     @Desugar
-    private record TaskEntry(String taskId, String resourceKey, long amount, String transportKind,
-        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
-        double tofOrbitalSeconds) {
+    private record TaskEntry(String taskId, String resourceKey, long amount, LogisticsTask.TransportType transportKind,
+                             CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
+                             double tofOrbitalSeconds) {
 
     }
 

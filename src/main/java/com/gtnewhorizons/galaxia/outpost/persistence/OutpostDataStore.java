@@ -11,6 +11,7 @@ import java.util.UUID;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
@@ -228,7 +229,7 @@ public final class OutpostDataStore {
      * @param tofOrbitalSeconds    time of flight in orbital simulation units
      */
     @Desugar
-    public record ClientLogisticsTask(String taskId, ItemStackWrapper resource, long amount, String transportKind,
-        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
-        double tofOrbitalSeconds) {}
+    public record ClientLogisticsTask(String taskId, ItemStackWrapper resource, long amount, LogisticsTask.TransportType transportKind,
+                                      CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
+                                      double tofOrbitalSeconds) {}
 }

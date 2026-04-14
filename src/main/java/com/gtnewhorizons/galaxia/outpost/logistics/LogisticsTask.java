@@ -45,7 +45,7 @@ public record LogisticsTask(
      * The transport module type that created this task.
      * Used to distinguish HAMMER tasks from BIG_HAMMER tasks in logging/UI.
      */
-    String transportKind,
+    TransportType transportKind,
     /** Celestial body id of the departure outpost (for arc rendering). Empty = unknown. */
     CelestialObjectId fromBodyId,
     /** Celestial body id of the destination outpost (for arc rendering). Empty = unknown. */
@@ -61,9 +61,15 @@ public record LogisticsTask(
      */
     double tofOrbitalSeconds) {
 
+    public enum TransportType {
+        HAMMER,
+        BIG_HAMMER,
+    }
+
+
     /** Creates a new task with a freshly generated task id. */
     public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
-        ItemStackWrapper resourceId, long amount, int deliveryTicks, String transportKind) {
+        ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind) {
         String taskId = makeId();
         return new LogisticsTask(
             taskId,
@@ -81,7 +87,7 @@ public record LogisticsTask(
 
     /** Creates a new task with trajectory metadata for arc rendering. */
     public static LogisticsTask createWithTrajectory(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
-        ItemStackWrapper resourceId, long amount, int deliveryTicks, String transportKind, CelestialObjectId fromBodyId,
+        ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind, CelestialObjectId fromBodyId,
         CelestialObjectId toBodyId, double departureOrbitalTime, double tofOrbitalSeconds) {
         return new LogisticsTask(
             makeId(),

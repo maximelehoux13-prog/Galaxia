@@ -5,6 +5,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.util.ResourceLocation;
@@ -2075,9 +2076,10 @@ public class OrbitalView {
                 base.trajectoryPointCount());
         }
 
-        private String formatTransportKindLabel(String transportKind) {
-            if (transportKind == null || transportKind.isEmpty()) return "Logistics";
-            return transportKind.replace('_', ' ');
+        private String formatTransportKindLabel(LogisticsTask.TransportType transportKind) {
+            // TOOD: here
+            if (transportKind == null) return "Logistics";
+            return transportKind.toString();
         }
 
         private void dispatchSimulatedTransfer() {

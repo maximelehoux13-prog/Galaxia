@@ -191,7 +191,7 @@ public final class OutpostPersistenceManager {
                             resource,
                             tj.amount,
                             tj.remainingTicks,
-                            tj.transportKind,
+                            LogisticsTask.TransportType.valueOf(tj.transportKind),
                             CelestialObjectId.valueOf(tj.fromBodyId),
                             CelestialObjectId.valueOf(tj.toBodyId),
                             tj.departureOrbitalTime,
@@ -215,7 +215,7 @@ public final class OutpostPersistenceManager {
                 .toKey();
             tj.amount = task.amount();
             tj.remainingTicks = task.remainingTicks();
-            tj.transportKind = task.transportKind();
+            tj.transportKind = String.valueOf(task.transportKind());
             tj.fromBodyId = String.valueOf(task.fromBodyId());
             tj.toBodyId = String.valueOf(task.toBodyId());
             tj.departureOrbitalTime = task.departureOrbitalTime();
