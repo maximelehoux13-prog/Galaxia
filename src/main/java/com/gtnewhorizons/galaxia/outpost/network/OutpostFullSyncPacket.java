@@ -10,17 +10,16 @@ import java.util.UUID;
 import net.minecraft.client.Minecraft;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
-import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
+import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.outpost.module.ModuleBigHammer;
+import com.gtnewhorizons.galaxia.outpost.module.ModuleHammer;
+import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
+import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -64,28 +63,29 @@ public final class OutpostFullSyncPacket implements IMessage {
             boolean planetaryHandling = false;
             String routePriority = OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF.name();
             boolean minerCopySettings = false;
-            if (m.getData() instanceof MinerModuleData minerData) {
-                minerBlacklist = minerData.blacklistedItemKeys();
-                minerCopySettings = minerData.copySettingsToOtherMiners();
-            } else if (m.getData() instanceof HammerModuleData hd) {
-                AllowShootingConfig cfg = hd.effectiveShooting();
+            if (m instanceof ModuleMiner minerData) {
+                minerBlacklist = minerData.blacklistedItemKeys;
+                minerCopySettings = minerData.getCopySettingsToOtherMiners();
+            } else if (m instanceof ModuleHammer hd) {
+                AllowShootingConfig cfg = hd.getConfig();
                 allowShootingMode = cfg.mode()
                     .name();
                 allowShootingThreshold = cfg.threshold();
-                routePriority = hd.effectiveRoutePriority()
+                routePriority = hd.getRoutePriority()
                     .name();
-            } else if (m.getData() instanceof BigHammerModuleData bd) {
-                AllowShootingConfig cfg = bd.effectiveShooting();
+            } else if (m instanceof ModuleBigHammer bh) {
+                AllowShootingConfig cfg = bh.getConfig();
                 allowShootingMode = cfg.mode()
                     .name();
                 allowShootingThreshold = cfg.threshold();
-                planetaryHandling = bd.planetaryTransferHandling();
-                routePriority = bd.effectiveRoutePriority()
+                planetaryHandling = bh.getPlanetaryHandling();
+                routePriority = bh.getRoutePriority()
                     .name();
             }
             modules.add(
                 new ModuleSyncData(
-                    m.getData().moduleKind().name(),
+                    m.getKind()
+                        .name(),
                     m.getStatus()
                         .name(),
                     m.getConstructionProgress(),
@@ -243,10 +243,8 @@ public final class OutpostFullSyncPacket implements IMessage {
                     // keyed by (assetId, moduleIndex, moduleKind). That way this clear+rebuild remains safe.
                     state.clearModules();
                     for (ModuleSyncData md : packet.modules) {
-                        OutpostModuleData data = createModuleData(md);
-                        AutomatedOutpostModule m = new AutomatedOutpostModule(data);
+                        AutomatedOutpostModule m = createModuleData(md);
                         m.setStatus(AutomatedOutpostModule.Status.valueOf(md.status));
-                        m.setConstructionProgress(md.progress);
                         state.addModule(m);
                     }
 
@@ -289,16 +287,17 @@ public final class OutpostFullSyncPacket implements IMessage {
     private static record LogisticsConfigSyncData(int minReserve, int orderSize, boolean isImportEnabled,
         boolean isSupplyEnabled) {}
 
-    private static com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData createModuleData(ModuleSyncData syncData) {
+    private static AutomatedOutpostModule createModuleData(ModuleSyncData syncData) {
         OutpostModuleKind kind = OutpostModuleKind.valueOf(syncData.kind());
         return switch (kind) {
-            case HAMMER -> new HammerModuleData(parseAllowShooting(syncData), parseRoutePriority(syncData));
-            case BIG_HAMMER -> new BigHammerModuleData(
+            case HAMMER -> new ModuleHammer(parseAllowShooting(syncData), parseRoutePriority(syncData));
+            case BIG_HAMMER -> new ModuleBigHammer(
                 syncData.planetaryHandling(),
                 parseAllowShooting(syncData),
                 parseRoutePriority(syncData));
-            case MINER -> new MinerModuleData(syncData.minerBlacklist(), syncData.minerCopySettings());
-            case POWER -> new PowerModuleData();
+            case MINER -> new ModuleMiner(syncData.minerBlacklist())
+                .withCopySettingsToOtherMiners(syncData.minerCopySettings());
+            case POWER -> new ModulePower();
         };
     }
 

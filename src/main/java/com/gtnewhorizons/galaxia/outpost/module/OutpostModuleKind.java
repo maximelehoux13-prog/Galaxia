@@ -2,9 +2,6 @@ package com.gtnewhorizons.galaxia.outpost.module;
 
 import net.minecraft.util.StatCollector;
 
-/**
- * Simple tag for module types. Actual data is in {@link com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData}.
- */
 public enum OutpostModuleKind {
 
     HAMMER,
@@ -13,6 +10,17 @@ public enum OutpostModuleKind {
     POWER;
 
     public String getDisplayName() {
-        return StatCollector.translateToLocal("galaxia.outpost.module." + this.name().toLowerCase());
+        return StatCollector.translateToLocal(
+            "galaxia.outpost.module." + this.name()
+                .toLowerCase());
+    }
+
+    public static AutomatedOutpostModule forKind(OutpostModuleKind kind) {
+        return switch (kind) {
+            case HAMMER -> ModuleHammer.getDefault();
+            case BIG_HAMMER -> ModuleBigHammer.getDefault();
+            case MINER -> ModuleMiner.getDefault();
+            case POWER -> ModulePower.getDefault();
+        };
     }
 }

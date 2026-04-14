@@ -110,7 +110,7 @@ public final class OutpostDataStore {
                 old.planetaryAnchorBodyId);
             migrated.setEnergyStored(old.getEnergyStored());
             // Transfer modules.
-            for (com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule m : old.modules()) {
+            for (com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule m : old.modules()) {
                 migrated.addModule(m);
             }
             // Transfer inventory contents.

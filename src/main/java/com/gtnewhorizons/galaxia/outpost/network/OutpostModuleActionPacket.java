@@ -2,8 +2,8 @@ package com.gtnewhorizons.galaxia.outpost.network;
 
 import java.util.List;
 
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
+import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;

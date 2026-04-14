@@ -89,6 +89,10 @@ public final class GalaxiaCelestialAPI {
         return findByDimension(dim).flatMap(body -> findAncestorOfClass(root(), body, CelestialObjectClass.STAR));
     }
 
+    public static Optional<CelestialObject> findCelestialAnchor(DimensionEnum dim) {
+        return findByDimension(dim).flatMap(body -> findAncestorOfClass(root(), body, CelestialObjectClass.STAR));
+    }
+
     public static Optional<CelestialObject> getPrimaryStar() {
         return findFirstByClass(root(), CelestialObjectClass.STAR);
     }

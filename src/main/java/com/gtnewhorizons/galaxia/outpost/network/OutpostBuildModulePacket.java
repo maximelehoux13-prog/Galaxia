@@ -3,14 +3,13 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
+import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.outpost.module.ModuleBigHammer;
+import com.gtnewhorizons.galaxia.outpost.module.ModuleHammer;
+import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
+import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
-import com.gtnewhorizons.galaxia.outpost.module.BigHammerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.HammerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.MinerModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleData;
-import com.gtnewhorizons.galaxia.outpost.module.PowerModuleData;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -110,16 +109,15 @@ public final class OutpostBuildModulePacket implements IMessage {
                 return null;
             }
 
-            OutpostModuleData data = createModuleData(kind);
-            if (data == null) {
+            AutomatedOutpostModule module = createModule(kind);
+            if (module == null) {
                 Galaxia.LOG.warn(
-                    "[Outpost] BuildModule: no module data for kind {} (player {})",
+                    "[Outpost] BuildModule: no module for kind {} (player {})",
                     kind,
                     player.getGameProfile()
                         .getName());
                 return null;
             }
-            AutomatedOutpostModule module = new AutomatedOutpostModule(data);
             if (packet.instantBuild && player.capabilities.isCreativeMode) {
                 module.completeConstructionInstantly();
             }
@@ -136,19 +134,13 @@ public final class OutpostBuildModulePacket implements IMessage {
             return new OutpostFullSyncPacket(state);
         }
 
-        private OutpostModuleData createModuleData(OutpostModuleKind kind) {
-            switch (kind) {
-                case HAMMER:
-                    return HammerModuleData.getDefault();
-                case BIG_HAMMER:
-                    return BigHammerModuleData.getDefault();
-                case MINER:
-                    return new MinerModuleData();
-                case POWER:
-                    return new PowerModuleData();
-                default:
-                    return null;
-            }
+        private AutomatedOutpostModule createModule(OutpostModuleKind kind) {
+            return switch (kind) {
+                case HAMMER -> ModuleHammer.getDefault();
+                case BIG_HAMMER -> ModuleBigHammer.getDefault();
+                case MINER -> ModuleMiner.getDefault();
+                case POWER -> ModulePower.getDefault();
+            };
         }
     }
 

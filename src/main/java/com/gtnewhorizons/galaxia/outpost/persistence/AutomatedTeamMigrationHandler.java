@@ -3,6 +3,7 @@ package com.gtnewhorizons.galaxia.outpost.persistence;
 import java.util.UUID;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
+
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 /**

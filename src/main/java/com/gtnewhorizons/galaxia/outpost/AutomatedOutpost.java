@@ -1,11 +1,12 @@
 package com.gtnewhorizons.galaxia.outpost;
 
-import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
+import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 
 /**
  * Complete runtime state for a single automated outpost.
@@ -57,7 +58,7 @@ public final class AutomatedOutpost {
     public static final long PASSIVE_GENERATION = 512L;
 
     public AutomatedOutpost(String assetId, UUID teamId, String celestialBodyId, String systemId,
-                            String planetaryAnchorBodyId) {
+        String planetaryAnchorBodyId) {
         this.assetId = assetId;
         this.teamId = teamId;
         this.celestialBodyId = celestialBodyId;
@@ -92,13 +93,13 @@ public final class AutomatedOutpost {
 
     /** Returns {@code true} if at least one module of the given kind is installed. */
     public boolean hasModule(OutpostModuleKind kind) {
-        for (AutomatedOutpostModule m : modules) if (m.getData().moduleKind() == kind) return true;
+        for (AutomatedOutpostModule m : modules) if (m.getKind() == kind) return true;
         return false;
     }
 
     public boolean hasOperationalModule(OutpostModuleKind kind) {
         for (AutomatedOutpostModule m : modules) {
-            if (m.getData().moduleKind() == kind && m.isOperational()) return true;
+            if (m.getKind() == kind && m.isOperational()) return true;
         }
         return false;
     }
@@ -107,13 +108,13 @@ public final class AutomatedOutpost {
      * Returns the first module of the given kind, or {@code null} if not installed.
      */
     public AutomatedOutpostModule firstModule(OutpostModuleKind kind) {
-        for (AutomatedOutpostModule m : modules) if (m.getData().moduleKind() == kind) return m;
+        for (AutomatedOutpostModule m : modules) if (m.getKind() == kind) return m;
         return null;
     }
 
     public AutomatedOutpostModule firstOperationalModule(OutpostModuleKind kind) {
         for (AutomatedOutpostModule m : modules) {
-            if (m.getData().moduleKind() == kind && m.isOperational()) return m;
+            if (m.getKind() == kind && m.isOperational()) return m;
         }
         return null;
     }
