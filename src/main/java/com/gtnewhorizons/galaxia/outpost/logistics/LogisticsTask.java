@@ -26,52 +26,62 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
  * render the in-flight arc on the starmap. They may be empty/zero for legacy tasks or
  * same-body instant transfers.
  */
-@Desugar
-public record LogisticsTask(
-    /** Unique task id (UUID string). */
-    ID taskId,
-    /** Asset id of the outpost sending the resources. */
-    CelestialAsset.ID fromAssetId,
-    /** Asset id of the outpost receiving the resources. */
-    CelestialAsset.ID toAssetId,
-    /** What is being transported. */
-    ItemStackWrapper resourceId,
-    /** Number of resource units in this shipment. */
-    long amount,
-    /**
-     * Ticks until delivery. Decremented once per server tick.
-     * When it reaches zero the resources are added to {@code toAssetId}'s buffer.
-     */
-    int remainingTicks,
-    /**
-     * The transport module type that created this task.
-     * Used to distinguish HAMMER tasks from BIG_HAMMER tasks in logging/UI.
-     */
-    TransportType transportKind,
-    /** Celestial body id of the departure outpost (for arc rendering). Empty = unknown. */
-    CelestialObjectId fromBodyId,
-    /** Celestial body id of the destination outpost (for arc rendering). Empty = unknown. */
-    CelestialObjectId toBodyId,
-    /**
-     * Orbital departure time (in orbital simulation units = world ticks × 2.1).
-     * Used to anchor the trajectory arc on the client starmap.
-     */
-    double departureOrbitalTime, /**
-                                  * Lambert time-of-flight in orbital simulation units.
-                                  * Convert to real seconds via {@code tofOrbitalSeconds / 42.0}.
-                                  */
-    double tofOrbitalSeconds) {
+
+public class LogisticsTask {
 
     public enum TransportType {
         HAMMER,
         BIG_HAMMER,
     }
 
+    /** Unique task id (UUID string). */
+    public final ID taskId;
+    /**
+     * Ticks until delivery. Decremented once per server tick.
+     * When it reaches zero the resources are added to {@code toAssetId}'s buffer.
+     */
+    private int remainingTicks;
+    public final Data data;
+
+    private LogisticsTask(ID id, Data data, int duration) {
+        this.taskId = id;
+        this.remainingTicks = duration;
+        this.data = data;
+    }
+
+    @Desugar
+    public record Data(
+        /** Asset id of the outpost sending the resources. */
+        CelestialAsset.ID fromAssetId,
+        /** Asset id of the outpost receiving the resources. */
+        CelestialAsset.ID toAssetId,
+        /** What is being transported. */
+        ItemStackWrapper resourceId,
+        /** Number of resource units in this shipment. */
+        long amount,
+        /**
+         * The transport module type that created this task.
+         * Used to distinguish HAMMER tasks from BIG_HAMMER tasks in logging/UI.
+         */
+        TransportType transportKind,
+        /** Celestial body id of the departure outpost (for arc rendering). Empty = unknown. */
+        CelestialObjectId fromBodyId,
+        /** Celestial body id of the destination outpost (for arc rendering). Empty = unknown. */
+        CelestialObjectId toBodyId,
+        /**
+         * Orbital departure time (in orbital simulation units = world ticks × 2.1).
+         * Used to anchor the trajectory arc on the client starmap.
+         */
+        double departureOrbitalTime, /**
+                                      * Lambert time-of-flight in orbital simulation units.
+                                      * Convert to real seconds via {@code tofOrbitalSeconds / 42.0}.
+                                      */
+        double tofOrbitalSeconds) {}
+
     /** Creates a new task with a freshly generated task id. */
     public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
         ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind) {
-        return new LogisticsTask(
-            ID.create(),
+        return createWithTrajectory(
             fromAssetId,
             toAssetId,
             resourceId,
@@ -80,8 +90,8 @@ public record LogisticsTask(
             transportKind,
             CelestialObjectId.INVALID,
             CelestialObjectId.INVALID,
-            0.0,
-            0.0);
+            0,
+            0);
     }
 
     /** Creates a new task with trajectory metadata for arc rendering. */
@@ -89,7 +99,7 @@ public record LogisticsTask(
         ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind,
         CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
         double tofOrbitalSeconds) {
-        return new LogisticsTask(
+        return createWithTrajectory(
             ID.create(),
             fromAssetId,
             toAssetId,
@@ -103,24 +113,37 @@ public record LogisticsTask(
             tofOrbitalSeconds);
     }
 
+    public static LogisticsTask createWithTrajectory(ID id, CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
+        ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind,
+        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
+        double tofOrbitalSeconds) {
+        return new LogisticsTask(
+            id,
+            new Data(
+                fromAssetId,
+                toAssetId,
+                resourceId,
+                amount,
+                transportKind,
+                fromBodyId,
+                toBodyId,
+                departureOrbitalTime,
+                tofOrbitalSeconds),
+            deliveryTicks);
+    }
+
     /** Returns a copy of this task with {@code remainingTicks} decremented by one. */
     public LogisticsTask tick() {
-        return new LogisticsTask(
-            taskId,
-            fromAssetId,
-            toAssetId,
-            resourceId,
-            amount,
-            remainingTicks - 1,
-            transportKind,
-            fromBodyId,
-            toBodyId,
-            departureOrbitalTime,
-            tofOrbitalSeconds);
+        this.remainingTicks -= 1;
+        return this;
     }
 
     public boolean isArrived() {
-        return remainingTicks <= 0;
+        return this.remainingTicks <= 0;
+    }
+
+    public int getRemainingTicks() {
+        return this.remainingTicks;
     }
 
     @Desugar

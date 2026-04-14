@@ -41,30 +41,27 @@ public final class LogisticsTasksSyncPacket implements IMessage {
     public LogisticsTasksSyncPacket(List<LogisticsTask> activeTasks) {
         this.tasks = new ArrayList<>(activeTasks.size());
         for (LogisticsTask t : activeTasks) {
-            if (t.resourceId() == null) continue;
-
-            CelestialObjectId fromBodyId = t.fromBodyId();
-            CelestialObjectId toBodyId = t.toBodyId();
+            if (t.data.resourceId() == null) continue;
 
             // Resolve empty body IDs from the outpost store (same-body instant tasks)
             AutomatedOutpost from = OutpostDataStore.get()
-                .getByAssetId(t.fromAssetId());
-            fromBodyId = from.celestialBodyId;
+                .getByAssetId(t.data.fromAssetId());
+            CelestialObjectId fromBodyId = from.celestialBodyId;
             AutomatedOutpost to = OutpostDataStore.get()
-                .getByAssetId(t.toAssetId());
-            toBodyId = to.celestialBodyId;
+                .getByAssetId(t.data.toAssetId());
+            CelestialObjectId toBodyId = to.celestialBodyId;
 
             tasks.add(
                 new TaskEntry(
-                    t.taskId(),
-                    t.resourceId()
+                    t.taskId,
+                    t.data.resourceId()
                         .toKey(),
-                    t.amount(),
-                    t.transportKind(),
+                    t.data.amount(),
+                    t.data.transportKind(),
                     fromBodyId,
                     toBodyId,
-                    t.departureOrbitalTime(),
-                    t.tofOrbitalSeconds()));
+                    t.data.departureOrbitalTime(),
+                    t.data.tofOrbitalSeconds()));
         }
     }
 

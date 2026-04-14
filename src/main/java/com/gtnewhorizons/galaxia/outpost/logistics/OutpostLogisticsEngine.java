@@ -95,8 +95,8 @@ public final class OutpostLogisticsEngine {
     private void tickTasks() {
         for (int i = activeTasks.size() - 1; i >= 0; i--) {
             LogisticsTask current = activeTasks.get(i);
-            if (CelestialAssetStore.findAsset(current.fromAssetId()) == null
-                || CelestialAssetStore.findAsset(current.toAssetId()) == null) {
+            if (CelestialAssetStore.findAsset(current.data.fromAssetId()) == null
+                || CelestialAssetStore.findAsset(current.data.toAssetId()) == null) {
                 activeTasks.remove(i);
                 continue;
             }
@@ -113,21 +113,21 @@ public final class OutpostLogisticsEngine {
 
     private void deliverTask(LogisticsTask task) {
         AutomatedOutpost dest = OutpostDataStore.get()
-            .getByAssetId(task.toAssetId());
+            .getByAssetId(task.data.toAssetId());
         if (dest == null) {
             Galaxia.LOG.warn(
                 "[Logistics] Task {} arrived but destination outpost {} not found; resources lost.",
-                task.taskId(),
-                task.toAssetId());
+                task.taskId,
+                task.data.toAssetId());
             return;
         }
-        dest.inventory.add(task.resourceId(), task.amount());
+        dest.inventory.add(task.data.resourceId(), task.data.amount());
         Galaxia.LOG.debug(
             "[Logistics] Task {} delivered {} x {} to {}",
-            task.taskId(),
-            task.amount(),
-            task.resourceId(),
-            task.toAssetId());
+            task.taskId,
+            task.data.amount(),
+            task.data.resourceId(),
+            task.data.toAssetId());
     }
 
     // -------------------------------------------------------------------------
@@ -354,7 +354,7 @@ public final class OutpostLogisticsEngine {
             requester.assetId,
             String.format("%.2f", route.departureDv()),
             route.tofTicks(),
-            task.taskId());
+            task.taskId);
         return true;
     }
 
@@ -441,7 +441,7 @@ public final class OutpostLogisticsEngine {
             requester.assetId,
             String.format("%.2f", route.departureDv()),
             route.tofTicks(),
-            task.taskId());
+            task.taskId);
         return true;
     }
 
@@ -462,9 +462,9 @@ public final class OutpostLogisticsEngine {
     private long getInboundInTransitAmount(CelestialAsset.ID toAssetId, ItemStackWrapper resource) {
         long total = 0L;
         for (LogisticsTask task : activeTasks) {
-            if (!toAssetId.equals(task.toAssetId())) continue;
-            if (!resource.equals(task.resourceId())) continue;
-            total += task.amount();
+            if (!toAssetId.equals(task.data.toAssetId())) continue;
+            if (!resource.equals(task.data.resourceId())) continue;
+            total += task.data.amount();
         }
         return total;
     }

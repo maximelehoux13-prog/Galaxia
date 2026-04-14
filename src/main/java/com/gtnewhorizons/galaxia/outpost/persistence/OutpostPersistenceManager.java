@@ -182,7 +182,7 @@ public final class OutpostPersistenceManager {
                 ItemStackWrapper resource = ItemStackWrapper.fromKey(tj.resourceId);
                 if (resource != null) {
                     tasks.add(
-                        new LogisticsTask(
+                        LogisticsTask.createWithTrajectory(
                             LogisticsTask.ID.from(tj.taskId),
                             CelestialAsset.ID.from(tj.fromAssetId),
                             CelestialAsset.ID.from(tj.toAssetId),
@@ -206,18 +206,18 @@ public final class OutpostPersistenceManager {
         for (LogisticsTask task : OutpostLogisticsEngine.get()
             .activeTasksInternal()) {
             TaskJson tj = new TaskJson();
-            tj.taskId = String.valueOf(task.taskId());
-            tj.fromAssetId = String.valueOf(task.fromAssetId());
-            tj.toAssetId = String.valueOf(task.toAssetId());
-            tj.resourceId = task.resourceId()
+            tj.taskId = String.valueOf(task.taskId);
+            tj.fromAssetId = String.valueOf(task.data.fromAssetId());
+            tj.toAssetId = String.valueOf(task.data.toAssetId());
+            tj.resourceId = task.data.resourceId()
                 .toKey();
-            tj.amount = task.amount();
-            tj.remainingTicks = task.remainingTicks();
-            tj.transportKind = String.valueOf(task.transportKind());
-            tj.fromBodyId = String.valueOf(task.fromBodyId());
-            tj.toBodyId = String.valueOf(task.toBodyId());
-            tj.departureOrbitalTime = task.departureOrbitalTime();
-            tj.tofOrbitalSeconds = task.tofOrbitalSeconds();
+            tj.amount = task.data.amount();
+            tj.remainingTicks = task.getRemainingTicks();
+            tj.transportKind = String.valueOf(task.data.transportKind());
+            tj.fromBodyId = String.valueOf(task.data.fromBodyId());
+            tj.toBodyId = String.valueOf(task.data.toBodyId());
+            tj.departureOrbitalTime = task.data.departureOrbitalTime();
+            tj.tofOrbitalSeconds = task.data.tofOrbitalSeconds();
             list.add(tj);
         }
         writeJson(file, list);

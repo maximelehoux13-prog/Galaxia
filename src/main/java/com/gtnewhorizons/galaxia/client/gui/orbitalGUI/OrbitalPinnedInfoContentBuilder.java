@@ -30,6 +30,7 @@ public final class OrbitalPinnedInfoContentBuilder {
 
     List<PinnedInfoRow> buildRows(CelestialObject body) {
         List<PinnedInfoRow> rows = new ArrayList<>();
+        // TODO: Localize
         rows.add(new PinnedInfoRow("Name", body.displayName()));
         rows.add(new PinnedInfoRow("Type", formatObjectClass(body.objectClass())));
         rows.add(new PinnedInfoRow("Landable", isLandable(body) ? "Yes" : "No"));
