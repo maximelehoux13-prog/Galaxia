@@ -21,6 +21,8 @@ public final class OutpostModuleActionPacket implements IMessage {
     private int moduleIndex;
     private String action;
 
+    public OutpostModuleActionPacket() {}
+
     public OutpostModuleActionPacket(CelestialAsset.ID assetId, int moduleIndex, String action) {
         this.assetId = assetId;
         this.moduleIndex = moduleIndex;

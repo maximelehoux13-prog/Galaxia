@@ -38,6 +38,8 @@ public final class OutpostBuildModulePacket implements IMessage {
     private String moduleKind;
     private boolean instantBuild;
 
+    public OutpostBuildModulePacket() {}
+
     public OutpostBuildModulePacket(CelestialAsset.ID assetId, OutpostModuleKind kind, boolean instantBuild) {
         this.assetId = assetId;
         this.moduleKind = kind.name();

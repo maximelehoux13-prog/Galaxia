@@ -17,6 +17,8 @@ public final class OutpostInventoryRemovePacket implements IMessage {
     private CelestialAsset.ID assetId;
     private String resourceKey;
 
+    public OutpostInventoryRemovePacket() {}
+
     public OutpostInventoryRemovePacket(CelestialAsset.ID assetId, ItemStackWrapper resource) {
         this.assetId = assetId;
         this.resourceKey = resource.toKey();

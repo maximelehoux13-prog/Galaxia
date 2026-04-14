@@ -22,6 +22,8 @@ public final class OutpostModuleConfigPacket implements IMessage {
     private String action;
     private String payload;
 
+    public OutpostModuleConfigPacket() {}
+
     public OutpostModuleConfigPacket(CelestialAsset.ID assetId, int moduleIndex, String action, String payload) {
         this.assetId = assetId;
         this.moduleIndex = moduleIndex;

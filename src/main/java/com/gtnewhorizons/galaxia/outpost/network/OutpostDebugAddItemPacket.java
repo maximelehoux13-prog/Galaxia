@@ -26,6 +26,8 @@ public final class OutpostDebugAddItemPacket implements IMessage {
     private String resourceKey;
     private long amount;
 
+    public OutpostDebugAddItemPacket() {}
+
     public OutpostDebugAddItemPacket(CelestialAsset.ID assetId, ItemStackWrapper resource, long amount) {
         this.assetId = assetId;
         this.resourceKey = resource.toKey();
