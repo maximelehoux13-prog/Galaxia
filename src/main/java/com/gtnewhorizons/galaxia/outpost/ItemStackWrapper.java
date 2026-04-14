@@ -12,6 +12,8 @@ import cpw.mods.fml.common.registry.GameRegistry;
 /**
  * NBT-aware wrapper for ItemStack to be used as a key in HashMaps.
  */
+/// TODO: I think this is useless, but I don't know.
+/// Probably just creating new ItemStacks would be enough to have clean keys
 @Desugar
 public record ItemStackWrapper(Item item, int meta, NBTTagCompound nbt) {
 

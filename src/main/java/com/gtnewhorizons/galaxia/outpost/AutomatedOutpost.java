@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -59,14 +60,14 @@ public final class AutomatedOutpost {
     public static final long MAX_ENERGY = 1_000_000L;
     public static final long PASSIVE_GENERATION = 512L;
 
-    public AutomatedOutpost(CelestialAsset.ID assetId, UUID teamId, CelestialObjectId celestialBodyId,
-        CelestialObjectId systemId, CelestialObjectId planetaryAnchorBodyId) {
+    public AutomatedOutpost(CelestialAsset.ID assetId, UUID teamId, CelestialObjectId celestialBodyId) {
         this.assetId = assetId;
         this.teamId = teamId;
         this.celestialBodyId = celestialBodyId;
-        this.systemId = systemId;
-        // TODO: get this automatically
-        this.planetaryAnchorBodyId = planetaryAnchorBodyId != null ? planetaryAnchorBodyId : celestialBodyId;
+        this.systemId = GalaxiaCelestialAPI.findStar(celestialBodyId)
+            .id();
+        this.planetaryAnchorBodyId = GalaxiaCelestialAPI.findPlanetaryAnchor(celestialBodyId)
+            .id();
         this.modules = new ArrayList<>();
         this.inventory = new AutomatedOutpostInventory();
         this.logisticsConfig = new LogisticsConfiguration();

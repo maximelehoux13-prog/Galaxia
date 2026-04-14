@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.outpost.logistics;
 
+import java.util.UUID;
+
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -27,7 +29,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 @Desugar
 public record LogisticsTask(
     /** Unique task id (UUID string). */
-    String taskId,
+    ID taskId,
     /** Asset id of the outpost sending the resources. */
     CelestialAsset.ID fromAssetId,
     /** Asset id of the outpost receiving the resources. */
@@ -68,9 +70,8 @@ public record LogisticsTask(
     /** Creates a new task with a freshly generated task id. */
     public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
         ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind) {
-        String taskId = makeId();
         return new LogisticsTask(
-            taskId,
+            ID.create(),
             fromAssetId,
             toAssetId,
             resourceId,
@@ -89,7 +90,7 @@ public record LogisticsTask(
         CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
         double tofOrbitalSeconds) {
         return new LogisticsTask(
-            makeId(),
+            ID.create(),
             fromAssetId,
             toAssetId,
             resourceId,
@@ -100,12 +101,6 @@ public record LogisticsTask(
             toBodyId,
             departureOrbitalTime,
             tofOrbitalSeconds);
-    }
-
-    private static String makeId() {
-        return "task_" + java.util.UUID.randomUUID()
-            .toString()
-            .replace("-", "");
     }
 
     /** Returns a copy of this task with {@code remainingTicks} decremented by one. */
@@ -126,5 +121,32 @@ public record LogisticsTask(
 
     public boolean isArrived() {
         return remainingTicks <= 0;
+    }
+
+    @Desugar
+    public record ID(UUID id) {
+
+        public static ID create() {
+            return new ID(UUID.randomUUID());
+        }
+
+        public static ID from(String value) {
+            if (value == null) return null;
+            return new ID(UUID.fromString(value));
+        }
+
+        public static ID from(UUID value) {
+            return value == null ? null : new ID(value);
+        }
+
+        public static ID from(ID id) {
+            if (id == null) return null;
+            return new ID(id.id());
+        }
+
+        @Override
+        public String toString() {
+            return id.toString();
+        }
     }
 }

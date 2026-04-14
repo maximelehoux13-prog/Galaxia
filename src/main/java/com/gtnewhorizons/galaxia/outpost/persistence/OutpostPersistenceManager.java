@@ -183,7 +183,7 @@ public final class OutpostPersistenceManager {
                 if (resource != null) {
                     tasks.add(
                         new LogisticsTask(
-                            tj.taskId,
+                            LogisticsTask.ID.from(tj.taskId),
                             CelestialAsset.ID.from(tj.fromAssetId),
                             CelestialAsset.ID.from(tj.toAssetId),
                             resource,
@@ -206,7 +206,7 @@ public final class OutpostPersistenceManager {
         for (LogisticsTask task : OutpostLogisticsEngine.get()
             .activeTasksInternal()) {
             TaskJson tj = new TaskJson();
-            tj.taskId = task.taskId();
+            tj.taskId = String.valueOf(task.taskId());
             tj.fromAssetId = String.valueOf(task.fromAssetId());
             tj.toAssetId = String.valueOf(task.toAssetId());
             tj.resourceId = task.resourceId()
@@ -360,19 +360,10 @@ public final class OutpostPersistenceManager {
             : asset.celestialObjectId;
         CelestialObjectId anchorBodyId = json.planetaryAnchorBodyId != null
             ? CelestialObjectId.valueOf(json.planetaryAnchorBodyId)
-            : GalaxiaCelestialAPI
-                .findPlanetaryAnchor(
-                    GalaxiaCelestialAPI.getPrimaryRoot(),
-                    GalaxiaCelestialAPI.findBodyById(bodyId)
-                        .get())
+            : GalaxiaCelestialAPI.findPlanetaryAnchor(bodyId)
                 .id();
 
-        AutomatedOutpost state = new AutomatedOutpost(
-            asset.assetId,
-            UUID.fromString(json.teamId),
-            bodyId,
-            CelestialObjectId.valueOf(json.systemId),
-            anchorBodyId);
+        AutomatedOutpost state = new AutomatedOutpost(asset.assetId, UUID.fromString(json.teamId), bodyId);
         state.setEnergyStored(json.energyStored);
 
         if (json.modules != null) {

@@ -4,13 +4,11 @@ import java.util.UUID;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
-import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -56,9 +54,7 @@ public final class OutpostRequestSyncPacket implements IMessage {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
                     CelestialObjectId bodyId = asset.celestialObjectId;
-                    CelestialObjectId systemId = resolveSystemId(bodyId);
-                    CelestialObjectId anchorBodyId = resolvePlanetaryAnchorId(bodyId);
-                    state = new AutomatedOutpost(asset.assetId, teamId, bodyId, systemId, anchorBodyId);
+                    state = new AutomatedOutpost(asset.assetId, teamId, bodyId);
                     OutpostDataStore.get()
                         .put(state);
                     Galaxia.LOG.info(
@@ -73,34 +69,6 @@ public final class OutpostRequestSyncPacket implements IMessage {
             }
             return null;
         }
-    }
-
-    /**
-     * Resolves the stellar system id (host star body id) for a given celestial body id.
-     * Falls back to {@code bodyId} itself if the tree or host star cannot be found.
-     */
-    static CelestialObjectId resolveSystemId(CelestialObjectId bodyId) {
-        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
-        if (root == null || bodyId == null) return bodyId;
-        CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
-        if (body == null) return bodyId;
-        CelestialObject star = GalaxiaCelestialAPI.findStar(root, body);
-        return star != null ? star.id() : bodyId;
-    }
-
-    /**
-     * Resolves the planetary anchor body id for a given celestial body id.
-     * For planets/gas giants: returns bodyId itself.
-     * For moons/stations: returns the nearest planet ancestor's id.
-     * Falls back to {@code bodyId} if resolution fails.
-     */
-    static CelestialObjectId resolvePlanetaryAnchorId(CelestialObjectId bodyId) {
-        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
-        if (root == null || bodyId == null) return bodyId;
-        CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
-        if (body == null) return bodyId;
-        CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(root, body);
-        return anchor != null ? anchor.id() : bodyId;
     }
 
     private static void writeString(ByteBuf buf, String s) {

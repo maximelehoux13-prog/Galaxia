@@ -228,12 +228,7 @@ public final class OutpostFullSyncPacket implements IMessage {
                     AutomatedOutpost state = OutpostDataStore.get()
                         .getByAssetId(packet.assetId);
                     if (state == null) {
-                        state = new AutomatedOutpost(
-                            packet.assetId,
-                            packet.teamId,
-                            packet.celestialBodyId,
-                            packet.systemId,
-                            packet.planetaryAnchorBodyId);
+                        state = new AutomatedOutpost(packet.assetId, packet.teamId, packet.celestialBodyId);
                         OutpostDataStore.get()
                             .put(state);
                     }

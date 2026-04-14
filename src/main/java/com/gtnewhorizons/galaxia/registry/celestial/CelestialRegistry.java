@@ -20,6 +20,7 @@ import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 
 /*
  * TODO: Figure out if there is a need to merge this with SolarSystemRegistry, and if so, how to do it
+ * TODO: Make registration happen in 2 steps: calling ores() definitions right now must wait after GT registration
  */
 public final class CelestialRegistry {
 

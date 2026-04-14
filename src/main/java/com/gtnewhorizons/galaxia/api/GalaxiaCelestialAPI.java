@@ -152,6 +152,16 @@ public final class GalaxiaCelestialAPI {
         return null;
     }
 
+    public static CelestialObject findStar(CelestialObjectId targetId) {
+        CelestialObject root = getPrimaryRoot();
+        return findStar(root, targetId);
+    }
+
+    public static CelestialObject findStar(CelestialObject root, CelestialObjectId targetId) {
+        if (root == null || targetId == null) return null;
+        return findStar(root, targetId);
+    }
+
     public static CelestialObject findStar(CelestialObject root, CelestialObject target) {
         if (root == null || target == null) return null;
         return findStarRec(root, target, null);
@@ -166,6 +176,17 @@ public final class GalaxiaCelestialAPI {
             if (found != null) return found;
         }
         return null;
+    }
+
+    public static CelestialObject findPlanetaryAnchor(CelestialObjectId targetId) {
+        CelestialObject root = getPrimaryRoot();
+        return findPlanetaryAnchor(root, targetId);
+    }
+
+    public static CelestialObject findPlanetaryAnchor(CelestialObject root, CelestialObjectId targetId) {
+        if (root == null || targetId == null) return null;
+        CelestialObject target = get(targetId).orElse(null);
+        return findPlanetaryAnchor(root, target);
     }
 
     public static CelestialObject findPlanetaryAnchor(CelestialObject root, CelestialObject target) {

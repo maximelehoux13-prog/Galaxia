@@ -72,7 +72,7 @@ public final class LogisticsTasksSyncPacket implements IMessage {
     public void toBytes(ByteBuf buf) {
         buf.writeInt(tasks.size());
         for (TaskEntry e : tasks) {
-            writeString(buf, e.taskId);
+            writeString(buf, String.valueOf(e.taskId));
             writeString(buf, e.resourceKey);
             buf.writeLong(e.amount);
             writeString(buf, String.valueOf(e.transportKind));
@@ -88,7 +88,7 @@ public final class LogisticsTasksSyncPacket implements IMessage {
         int count = buf.readInt();
         tasks = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            String taskId = readString(buf);
+            LogisticsTask.ID taskId = LogisticsTask.ID.from(readString(buf));
             String resourceKey = readString(buf);
             long amount = buf.readLong();
             LogisticsTask.TransportType transportKind = LogisticsTask.TransportType.valueOf(readString(buf));
@@ -139,9 +139,9 @@ public final class LogisticsTasksSyncPacket implements IMessage {
     }
 
     @Desugar
-    private record TaskEntry(String taskId, String resourceKey, long amount, LogisticsTask.TransportType transportKind,
-        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
-        double tofOrbitalSeconds) {
+    private record TaskEntry(LogisticsTask.ID taskId, String resourceKey, long amount,
+        LogisticsTask.TransportType transportKind, CelestialObjectId fromBodyId, CelestialObjectId toBodyId,
+        double departureOrbitalTime, double tofOrbitalSeconds) {
 
     }
 

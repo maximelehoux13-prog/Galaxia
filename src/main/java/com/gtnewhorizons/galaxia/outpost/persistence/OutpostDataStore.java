@@ -105,12 +105,7 @@ public final class OutpostDataStore {
         // Re-create states with the new team id and rebuild indexes.
         Map<CelestialAsset.ID, AutomatedOutpost> newMap = new LinkedHashMap<>();
         for (AutomatedOutpost old : teamMap.values()) {
-            AutomatedOutpost migrated = new AutomatedOutpost(
-                old.assetId,
-                newTeamId,
-                old.celestialBodyId,
-                old.systemId,
-                old.planetaryAnchorBodyId);
+            AutomatedOutpost migrated = new AutomatedOutpost(old.assetId, newTeamId, old.celestialBodyId);
             migrated.setEnergyStored(old.getEnergyStored());
             // Transfer modules.
             for (com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule m : old.modules()) {
@@ -229,7 +224,7 @@ public final class OutpostDataStore {
      * @param tofOrbitalSeconds    time of flight in orbital simulation units
      */
     @Desugar
-    public record ClientLogisticsTask(String taskId, ItemStackWrapper resource, long amount,
+    public record ClientLogisticsTask(LogisticsTask.ID taskId, ItemStackWrapper resource, long amount,
         LogisticsTask.TransportType transportKind, CelestialObjectId fromBodyId, CelestialObjectId toBodyId,
         double departureOrbitalTime, double tofOrbitalSeconds) {}
 }
