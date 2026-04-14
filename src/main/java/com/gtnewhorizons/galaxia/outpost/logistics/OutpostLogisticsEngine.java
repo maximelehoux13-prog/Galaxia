@@ -257,11 +257,11 @@ public final class OutpostLogisticsEngine {
      */
     private static boolean sharesPlanetaryAnchor(CelestialObject root, String bodyIdA, String bodyIdB) {
         if (root == null || bodyIdA == null || bodyIdB == null) return false;
-        CelestialObject a = OrbitalTransferPlanner.findBodyById(root, bodyIdA);
-        CelestialObject b = OrbitalTransferPlanner.findBodyById(root, bodyIdB);
+        CelestialObject a = GalaxiaCelestialAPI.findBodyById(root, bodyIdA);
+        CelestialObject b = GalaxiaCelestialAPI.findBodyById(root, bodyIdB);
         if (a == null || b == null) return false;
-        CelestialObject anchorA = OrbitalTransferPlanner.findPlanetaryAnchor(root, a);
-        CelestialObject anchorB = OrbitalTransferPlanner.findPlanetaryAnchor(root, b);
+        CelestialObject anchorA = GalaxiaCelestialAPI.findPlanetaryAnchor(root, a);
+        CelestialObject anchorB = GalaxiaCelestialAPI.findPlanetaryAnchor(root, b);
         return anchorA != null && anchorA == anchorB;
     }
 
@@ -299,9 +299,9 @@ public final class OutpostLogisticsEngine {
         }
 
         // Cross-body: compute trajectory
-        CelestialObject srcBody = OrbitalTransferPlanner.findBodyById(root, supplier.celestialBodyId);
-        CelestialObject dstBody = OrbitalTransferPlanner.findBodyById(root, requester.celestialBodyId);
-        CelestialObject attractor = srcBody != null ? OrbitalTransferPlanner.findPlanetaryAnchor(root, srcBody) : null;
+        CelestialObject srcBody = GalaxiaCelestialAPI.findBodyById(root, supplier.celestialBodyId);
+        CelestialObject dstBody = GalaxiaCelestialAPI.findBodyById(root, requester.celestialBodyId);
+        CelestialObject attractor = srcBody != null ? GalaxiaCelestialAPI.findPlanetaryAnchor(root, srcBody) : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && attractor != null)
             ? OrbitalTransferPlanner
@@ -382,9 +382,9 @@ public final class OutpostLogisticsEngine {
         }
 
         // Cross-body: Lambert route (attractor = host star)
-        CelestialObject srcBody = OrbitalTransferPlanner.findBodyById(root, supplier.celestialBodyId);
-        CelestialObject dstBody = OrbitalTransferPlanner.findBodyById(root, requester.celestialBodyId);
-        CelestialObject star = srcBody != null ? OrbitalTransferPlanner.findHostStar(root, srcBody) : null;
+        CelestialObject srcBody = GalaxiaCelestialAPI.findBodyById(root, supplier.celestialBodyId);
+        CelestialObject dstBody = GalaxiaCelestialAPI.findBodyById(root, requester.celestialBodyId);
+        CelestialObject star = srcBody != null ? GalaxiaCelestialAPI.findStar(root, srcBody) : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && star != null)
             ? OrbitalTransferPlanner

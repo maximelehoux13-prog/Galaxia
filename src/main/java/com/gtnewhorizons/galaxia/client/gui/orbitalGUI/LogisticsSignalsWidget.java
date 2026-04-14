@@ -23,6 +23,7 @@ import com.cleanroommc.modularui.widget.ScrollWidget;
 import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
@@ -237,7 +238,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
     private String buildScopeLabel(ViewScope scope, CelestialObject viewRoot) {
         if (scope == ViewScope.GALACTIC) return "Logistics Signals \u2014 Galaxy";
         if (scope == ViewScope.SYSTEM) return "Logistics Signals \u2014 " + viewRoot.name() + " system";
-        CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+        CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(galaxyRoot, viewRoot);
         return "Logistics Signals \u2014 " + (anchor != null ? anchor.name() : viewRoot.name());
     }
 
@@ -320,7 +321,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
                 return viewRoot.id()
                     .equals(outpost.systemId);
             case PLANETARY: {
-                CelestialObject viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+                CelestialObject viewAnchor = GalaxiaCelestialAPI.findPlanetaryAnchor(galaxyRoot, viewRoot);
                 String viewAnchorId = viewAnchor != null ? viewAnchor.id()
                     .getId()
                     : viewRoot.id()
@@ -338,16 +339,16 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             case GALACTIC:
                 return true;
             case SYSTEM: {
-                CelestialObject body = OrbitalTransferPlanner.findBodyById(galaxyRoot, bodyId);
+                CelestialObject body = GalaxiaCelestialAPI.findBodyById(galaxyRoot, bodyId);
                 if (body == null) return false;
-                CelestialObject star = OrbitalTransferPlanner.findHostStar(galaxyRoot, body);
+                CelestialObject star = GalaxiaCelestialAPI.findStar(galaxyRoot, body);
                 return star != null && star == viewRoot;
             }
             case PLANETARY: {
-                CelestialObject body = OrbitalTransferPlanner.findBodyById(galaxyRoot, bodyId);
+                CelestialObject body = GalaxiaCelestialAPI.findBodyById(galaxyRoot, bodyId);
                 if (body == null) return false;
-                CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, body);
-                CelestialObject viewAnchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+                CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(galaxyRoot, body);
+                CelestialObject viewAnchor = GalaxiaCelestialAPI.findPlanetaryAnchor(galaxyRoot, viewRoot);
                 return anchor != null && anchor == viewAnchor;
             }
             default:
@@ -365,7 +366,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
                             .getId());
                 break;
             case PLANETARY: {
-                CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(galaxyRoot, viewRoot);
+                CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(galaxyRoot, viewRoot);
                 String anchorId = anchor != null ? anchor.id()
                     .getId()
                     : viewRoot.id()

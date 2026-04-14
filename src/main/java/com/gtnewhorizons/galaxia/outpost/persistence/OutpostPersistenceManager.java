@@ -567,9 +567,9 @@ public final class OutpostPersistenceManager {
     private static String resolvePlanetaryAnchorId(String bodyId) {
         CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         if (root == null || bodyId == null) return bodyId;
-        CelestialObject body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
         if (body == null) return bodyId;
-        CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(root, body);
+        CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(root, body);
         return anchor != null ? anchor.id()
             .getId() : bodyId;
     }

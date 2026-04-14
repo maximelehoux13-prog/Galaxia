@@ -84,9 +84,9 @@ public final class OutpostRequestSyncPacket implements IMessage {
     static String resolveSystemId(String bodyId) {
         CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         if (root == null || bodyId == null) return bodyId;
-        CelestialObject body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
         if (body == null) return bodyId;
-        CelestialObject star = OrbitalTransferPlanner.findHostStar(root, body);
+        CelestialObject star = GalaxiaCelestialAPI.findStar(root, body);
         return star != null ? star.id()
             .getId() : bodyId;
     }
@@ -100,9 +100,9 @@ public final class OutpostRequestSyncPacket implements IMessage {
     static String resolvePlanetaryAnchorId(String bodyId) {
         CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
         if (root == null || bodyId == null) return bodyId;
-        CelestialObject body = OrbitalTransferPlanner.findBodyById(root, bodyId);
+        CelestialObject body = GalaxiaCelestialAPI.findBodyById(root, bodyId);
         if (body == null) return bodyId;
-        CelestialObject anchor = OrbitalTransferPlanner.findPlanetaryAnchor(root, body);
+        CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(root, body);
         return anchor != null ? anchor.id()
             .getId() : bodyId;
     }

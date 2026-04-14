@@ -221,7 +221,7 @@ public final class InterplanetaryTransferSystem {
     // -----------------------------------------------------------------------
 
     private static CelestialObject findHostStar(CelestialObject root, CelestialObject target) {
-        return OrbitalTransferPlanner.findHostStar(root, target);
+        return GalaxiaCelestialAPI.findStar(root, target);
     }
 
     public static LambertStressReport runLambertStress(CelestialObject root, CelestialObject star, double globalTime,

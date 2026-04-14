@@ -182,7 +182,7 @@ public final class AssetManagementSystem {
         List<StationTransferTarget> getTransferTargetsInSystem(CelestialObject root, CelestialObject body) {
             List<StationTransferTarget> targets = new ArrayList<>();
             if (body == null) return targets;
-            CelestialObject hostStar = OrbitalTransferPlanner.findHostStar(root, body);
+            CelestialObject hostStar = GalaxiaCelestialAPI.findStar(root, body);
             if (hostStar == null) return targets;
             collectTargets(hostStar, targets);
             return targets;

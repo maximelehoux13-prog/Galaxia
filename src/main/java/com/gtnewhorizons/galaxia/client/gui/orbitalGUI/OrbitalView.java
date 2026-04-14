@@ -2038,8 +2038,8 @@ public class OrbitalView {
 
         private InterplanetaryTransferJob buildRenderedLogisticsTransfer(OutpostDataStore.ClientLogisticsTask task) {
             if (task == null || task.resource() == null) return null;
-            CelestialObject sourceBody = OrbitalTransferPlanner.findBodyById(root, task.fromBodyId());
-            CelestialObject destinationBody = OrbitalTransferPlanner.findBodyById(root, task.toBodyId());
+            CelestialObject sourceBody = GalaxiaCelestialAPI.findBodyById(root, task.fromBodyId());
+            CelestialObject destinationBody = GalaxiaCelestialAPI.findBodyById(root, task.toBodyId());
             if (sourceBody == null || destinationBody == null) return null;
 
             String itemName = task.resource()

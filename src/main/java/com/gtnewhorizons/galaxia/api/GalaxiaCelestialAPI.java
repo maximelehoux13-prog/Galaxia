@@ -139,4 +139,53 @@ public final class GalaxiaCelestialAPI {
         }
         return Optional.empty();
     }
+
+    public static CelestialObject findBodyById(CelestialObject root, String id) {
+        if (root == null || id == null) return null;
+        return findBodyByIdRec(root, id);
+    }
+
+    private static CelestialObject findBodyByIdRec(CelestialObject current, String id) {
+        for (CelestialObject child : getChildren(current)) {
+            CelestialObject found = findBodyByIdRec(child, id);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    public static CelestialObject findStar(CelestialObject root, CelestialObject target) {
+        if (root == null || target == null) return null;
+        return findStarRec(root, target, null);
+    }
+
+    private static CelestialObject findStarRec(CelestialObject current, CelestialObject target,
+        CelestialObject currentStar) {
+        CelestialObject nextStar = current.objectClass() == CelestialObjectClass.STAR ? current : currentStar;
+        if (current == target) return nextStar;
+        for (CelestialObject child : getChildren(current)) {
+            CelestialObject found = findStarRec(child, target, nextStar);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    public static CelestialObject findPlanetaryAnchor(CelestialObject root, CelestialObject target) {
+        if (root == null || target == null) return target;
+        CelestialObject anchor = findPlanetaryAnchorRec(root, target, null);
+        return anchor != null ? anchor : target;
+    }
+
+    private static CelestialObject findPlanetaryAnchorRec(CelestialObject current, CelestialObject target,
+        CelestialObject currentPlanet) {
+        CelestialObjectClass cls = current.objectClass();
+        CelestialObject nextPlanet = (cls == CelestialObjectClass.PLANET || cls == CelestialObjectClass.GAS_GIANT)
+            ? current
+            : currentPlanet;
+        if (current == target) return nextPlanet != null ? nextPlanet : current;
+        for (CelestialObject child : getChildren(current)) {
+            CelestialObject found = findPlanetaryAnchorRec(child, target, nextPlanet);
+            if (found != null) return found;
+        }
+        return null;
+    }
 }
