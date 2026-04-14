@@ -3,7 +3,6 @@ package com.gtnewhorizons.galaxia.registry.orbital;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
 public final class OrbitalMechanics {
 
@@ -156,7 +155,7 @@ public final class OrbitalMechanics {
 
     public static boolean usesAbsolutePosition(CelestialObject parent, CelestialObject child) {
         return parent != null && child != null
-            && parent.objectClass() == CelestialObjectClass.GALAXY
+            && parent.objectClass() == CelestialObject.Class.GALAXY
             && child.absolutePosition() != null;
     }
 

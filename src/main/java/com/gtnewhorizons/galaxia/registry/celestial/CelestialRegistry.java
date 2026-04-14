@@ -44,7 +44,7 @@ public final class CelestialRegistry {
 
         register(
             CelestialObjectId.NOVA_CAELUM,
-            builder -> builder.objectClass(CelestialObjectClass.GALAXY)
+            builder -> builder.objectClass(CelestialObject.Class.GALAXY)
                 .properties(
                     b -> b.withGravity(5.4e8, 0.0)
                         .visitable(false)
@@ -55,7 +55,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.VAEL,
             builder -> builder.parent(CelestialObjectId.NOVA_CAELUM)
-                .objectClass(CelestialObjectClass.STAR)
+                .objectClass(CelestialObject.Class.STAR)
                 .absolutePosition(0.0, 0.0)
                 .texture(EnumTextures.ICON_EGORA.get())
                 .spriteSize(1.0)
@@ -69,7 +69,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.ILIA,
             builder -> builder.parent(CelestialObjectId.NOVA_CAELUM)
-                .objectClass(CelestialObjectClass.STAR)
+                .objectClass(CelestialObject.Class.STAR)
                 .absolutePosition(5800.0, -2600.0)
                 .texture(EnumTextures.ICON_EGORA.get())
                 .spriteSize(0.92)
@@ -83,7 +83,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.PROXIMA_CENTAURI,
             builder -> builder.parent(CelestialObjectId.NOVA_CAELUM)
-                .objectClass(CelestialObjectClass.STAR)
+                .objectClass(CelestialObject.Class.STAR)
                 .absolutePosition(-4900.0, 3400.0)
                 .texture(EnumTextures.ICON_EGORA.get())
                 .spriteSize(0.88)
@@ -96,7 +96,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.ROMULUS,
             builder -> builder.parent(CelestialObjectId.ILIA)
-                .objectClass(CelestialObjectClass.PLANET)
+                .objectClass(CelestialObject.Class.PLANET)
                 .circularOrbit(0.296 * earthRadiusToAU, 0.00031, seededPhase("ilia_romulus"))
                 .texture(EnumTextures.EGORA.get())
                 .spriteSize(0.24)
@@ -115,7 +115,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.REMUS,
             builder -> builder.parent(CelestialObjectId.ILIA)
-                .objectClass(CelestialObjectClass.PLANET)
+                .objectClass(CelestialObject.Class.PLANET)
                 .circularOrbit(0.726 * earthRadiusToAU, 0.00018, seededPhase("ilia_remus"))
                 .texture(EnumTextures.EGORA.get())
                 .spriteSize(0.19)
@@ -133,7 +133,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.EGORA,
             builder -> builder.parent(CelestialObjectId.VAEL)
-                .objectClass(CelestialObjectClass.PLANET)
+                .objectClass(CelestialObject.Class.PLANET)
                 .circularOrbit(0.92 * earthRadiusToAU, 0.00022, seededPhase("egora"))
                 .texture(EnumTextures.EGORA.get())
                 .spriteSize(0.18)
@@ -157,7 +157,7 @@ public final class CelestialRegistry {
         register(
             DimensionEnum.PANSPIRA,
             builder -> builder.parent(CelestialObjectId.VAEL)
-                .objectClass(CelestialObjectClass.PLANET)
+                .objectClass(CelestialObject.Class.PLANET)
                 .circularOrbit(0.60 * earthRadiusToAU, 0.00057, seededPhase("panspira"))
                 .texture(EnumTextures.EGORA.get())
                 .spriteSize(0.75)
@@ -175,7 +175,7 @@ public final class CelestialRegistry {
         register(
             DimensionEnum.HEMATERIA,
             builder -> builder.parent(CelestialObjectId.VAEL)
-                .objectClass(CelestialObjectClass.PLANET)
+                .objectClass(CelestialObject.Class.PLANET)
                 .circularOrbit(1.52 * earthRadiusToAU, 0.00011, seededPhase("hemateria"))
                 .texture(EnumTextures.HEMATERIA.get())
                 .spriteSize(0.825)
@@ -198,7 +198,7 @@ public final class CelestialRegistry {
         register(
             DimensionEnum.THEIA,
             builder -> builder.parent(CelestialObjectId.HEMATERIA)
-                .objectClass(CelestialObjectClass.MOON)
+                .objectClass(CelestialObject.Class.MOON)
                 .circularOrbit(0.27 * earthRadiusToAU, 0.00145, seededPhase("theia"))
                 .texture(EnumTextures.EGORA.get())
                 .spriteSize(0.06)
@@ -216,7 +216,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.FROZEN_BELT,
             builder -> builder.parent(CelestialObjectId.VAEL)
-                .objectClass(CelestialObjectClass.ASTEROID_BELT)
+                .objectClass(CelestialObject.Class.ASTEROID_BELT)
                 .circularOrbit(2.30 * earthRadiusToAU, 0.00005, seededPhase("frozen_belt"))
                 .texture(EnumTextures.ICON_EGORA.get())
                 .spriteSize(0.60)
@@ -234,7 +234,7 @@ public final class CelestialRegistry {
         register(
             CelestialObjectId.AMBERGRIS_FRAGMENT,
             builder -> builder.parent(CelestialObjectId.FROZEN_BELT)
-                .objectClass(CelestialObjectClass.ASTEROID)
+                .objectClass(CelestialObject.Class.ASTEROID)
                 .circularOrbit(0.18 * earthRadiusToAU, 0.00091, seededPhase("ambergris_fragment"))
                 .texture(EnumTextures.ICON_EGORA.get())
                 .spriteSize(0.05)
@@ -252,7 +252,7 @@ public final class CelestialRegistry {
         register(
             DimensionEnum.VITRIS_SPACE,
             builder -> builder.parent(CelestialObjectId.HEMATERIA)
-                .objectClass(CelestialObjectClass.STATION)
+                .objectClass(CelestialObject.Class.STATION)
                 .circularOrbit(0.04 * earthRadiusToAU, 0.00260, seededPhase("vitris_space"))
                 .texture(EnumTextures.ICON_EGORA.get())
                 .spriteSize(0.08)

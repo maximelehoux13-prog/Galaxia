@@ -25,7 +25,6 @@ import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
 public final class OrbitalPinnedInfoContentBuilder {
 
@@ -35,7 +34,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         rows.add(new PinnedInfoRow("Type", formatObjectClass(body.objectClass())));
         rows.add(new PinnedInfoRow("Landable", isLandable(body) ? "Yes" : "No"));
         rows.add(new PinnedInfoRow("Dangers", buildDangerSummary(body)));
-        if (body.objectClass() != CelestialObjectClass.STAR && body.objectClass() != CelestialObjectClass.GALAXY) {
+        if (body.objectClass() != CelestialObject.Class.STAR && body.objectClass() != CelestialObject.Class.GALAXY) {
             rows.add(new PinnedInfoRow("Surface", formatSurfaceType(body)));
             if (body.properties()
                 .ores()
@@ -132,7 +131,7 @@ public final class OrbitalPinnedInfoContentBuilder {
         return dangers.isEmpty() ? "None" : String.join(", ", dangers);
     }
 
-    private String formatObjectClass(CelestialObjectClass objectClass) {
+    private String formatObjectClass(CelestialObject.Class objectClass) {
         String raw = objectClass.name()
             .toLowerCase()
             .replace('_', ' ');

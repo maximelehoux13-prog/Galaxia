@@ -33,7 +33,6 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostDebugAddItemPacket;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
 @Desugar
 record VisibleEntry(CelestialObject body, int depth, boolean hasChildren) {}
@@ -344,7 +343,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     }
 
     private void handleMapSelection(CelestialObject body) {
-        if (body.objectClass() == CelestialObjectClass.STAR) {
+        if (body.objectClass() == CelestialObject.Class.STAR) {
             currentSystem = body;
             if (activeLayer == root) {
                 activeLayer = body;

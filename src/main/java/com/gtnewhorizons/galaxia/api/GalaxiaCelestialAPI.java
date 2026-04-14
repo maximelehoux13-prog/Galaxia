@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialHierarchy;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialRegistry;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
@@ -86,24 +85,24 @@ public final class GalaxiaCelestialAPI {
     }
 
     public static Optional<CelestialObject> findCurrentStar(DimensionEnum dim) {
-        return findByDimension(dim).flatMap(body -> findAncestorOfClass(root(), body, CelestialObjectClass.STAR));
+        return findByDimension(dim).flatMap(body -> findAncestorOfClass(root(), body, CelestialObject.Class.STAR));
     }
 
     public static Optional<CelestialObject> findCelestialAnchor(DimensionEnum dim) {
-        return findByDimension(dim).flatMap(body -> findAncestorOfClass(root(), body, CelestialObjectClass.STAR));
+        return findByDimension(dim).flatMap(body -> findAncestorOfClass(root(), body, CelestialObject.Class.STAR));
     }
 
     public static Optional<CelestialObject> getPrimaryStar() {
-        return findFirstByClass(root(), CelestialObjectClass.STAR);
+        return findFirstByClass(root(), CelestialObject.Class.STAR);
     }
 
     private static Optional<CelestialObject> findAncestorOfClass(CelestialObject current, CelestialObject target,
-        CelestialObjectClass objectClass) {
+        CelestialObject.Class objectClass) {
         return findAncestorOfClass(current, target, objectClass, new ArrayList<>());
     }
 
     private static Optional<CelestialObject> findAncestorOfClass(CelestialObject current, CelestialObject target,
-        CelestialObjectClass objectClass, List<CelestialObject> ancestors) {
+        CelestialObject.Class objectClass, List<CelestialObject> ancestors) {
         if (current == target) {
             for (int i = ancestors.size() - 1; i >= 0; i--) {
                 CelestialObject ancestor = ancestors.get(i);
@@ -127,7 +126,7 @@ public final class GalaxiaCelestialAPI {
     }
 
     private static Optional<CelestialObject> findFirstByClass(CelestialObject current,
-        CelestialObjectClass objectClass) {
+        CelestialObject.Class objectClass) {
         if (current.objectClass() == objectClass) {
             return Optional.of(current);
         }
@@ -160,7 +159,7 @@ public final class GalaxiaCelestialAPI {
 
     private static CelestialObject findStarRec(CelestialObject current, CelestialObject target,
         CelestialObject currentStar) {
-        CelestialObject nextStar = current.objectClass() == CelestialObjectClass.STAR ? current : currentStar;
+        CelestialObject nextStar = current.objectClass() == CelestialObject.Class.STAR ? current : currentStar;
         if (current == target) return nextStar;
         for (CelestialObject child : getChildren(current)) {
             CelestialObject found = findStarRec(child, target, nextStar);
@@ -177,8 +176,8 @@ public final class GalaxiaCelestialAPI {
 
     private static CelestialObject findPlanetaryAnchorRec(CelestialObject current, CelestialObject target,
         CelestialObject currentPlanet) {
-        CelestialObjectClass cls = current.objectClass();
-        CelestialObject nextPlanet = (cls == CelestialObjectClass.PLANET || cls == CelestialObjectClass.GAS_GIANT)
+        CelestialObject.Class cls = current.objectClass();
+        CelestialObject nextPlanet = (cls == CelestialObject.Class.PLANET || cls == CelestialObject.Class.GAS_GIANT)
             ? current
             : currentPlanet;
         if (current == target) return nextPlanet != null ? nextPlanet : current;

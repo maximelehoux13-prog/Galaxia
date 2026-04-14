@@ -30,7 +30,6 @@ import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
@@ -746,7 +745,7 @@ public class OrbitalView {
                             transferSimulatorState.close();
                             return;
                         }
-                        if (viewRoot.objectClass() != CelestialObjectClass.STAR) {
+                        if (viewRoot.objectClass() != CelestialObject.Class.STAR) {
                             showActionStatus("Open a star system first");
                             transferSimulatorState.cancelPick();
                             return;
@@ -760,7 +759,7 @@ public class OrbitalView {
 
                     @Override
                     public CelestialObject getCurrentSystemBody() {
-                        return viewRoot.objectClass() == CelestialObjectClass.STAR ? viewRoot : null;
+                        return viewRoot.objectClass() == CelestialObject.Class.STAR ? viewRoot : null;
                     }
 
                     @Override
@@ -998,9 +997,9 @@ public class OrbitalView {
             assetActionController.closeAssetManagement(assetUiState);
             transferSimulatorState.resetSelection();
             CelestialObject anchorBody = null;
-            if (this.viewRoot == root && targetLayer.objectClass() == CelestialObjectClass.STAR)
+            if (this.viewRoot == root && targetLayer.objectClass() == CelestialObject.Class.STAR)
                 anchorBody = targetLayer;
-            else if (this.viewRoot.objectClass() == CelestialObjectClass.STAR && targetLayer == root)
+            else if (this.viewRoot.objectClass() == CelestialObject.Class.STAR && targetLayer == root)
                 anchorBody = this.viewRoot;
             if (anchorBody != null) {
                 double transitionTargetZoom = targetLayer == root ? getSystemDepartureZoom(anchorBody)
@@ -1200,7 +1199,7 @@ public class OrbitalView {
                     }
                     if (clickedBody != null) {
                         boolean opensSystemFromGalaxy = viewRoot == root
-                            && clickedBody.objectClass() == CelestialObjectClass.STAR
+                            && clickedBody.objectClass() == CelestialObject.Class.STAR
                             && bodySelectionListener != null;
                         if (!opensSystemFromGalaxy) focusOn(clickedBody);
                         if (bodySelectionListener != null) bodySelectionListener.onBodySelected(clickedBody);
@@ -1411,7 +1410,7 @@ public class OrbitalView {
             float systemSize = (float) body.spriteSize();
             float galaxySize = GALAXY_MAP_STAR_SPRITE_SIZE;
             if (body == transitionState.pendingAnchor() && transitionState.hasPending()
-                && body.objectClass() == CelestialObjectClass.STAR) {
+                && body.objectClass() == CelestialObject.Class.STAR) {
                 if (transitionState.pendingTarget() == root) {
                     float progress = getTransitionProgress(
                         viewState.zoomLevel,
@@ -1421,7 +1420,7 @@ public class OrbitalView {
                 }
                 return galaxySize;
             }
-            if (body == transitionState.activeAnchor() && body.objectClass() == CelestialObjectClass.STAR
+            if (body == transitionState.activeAnchor() && body.objectClass() == CelestialObject.Class.STAR
                 && (transitionState.phase() == OrbitalLayerTransitionState.Phase.SYSTEM_PRE_CUT
                     || transitionState.phase() == OrbitalLayerTransitionState.Phase.GALAXY_POST_CUT)) {
                 float progress = getTransitionProgress(
@@ -1433,9 +1432,9 @@ public class OrbitalView {
                     transitionState.activeTargetSpriteSize(),
                     progress);
             }
-            if (viewRoot == root && body.objectClass() == CelestialObjectClass.STAR) {
+            if (viewRoot == root && body.objectClass() == CelestialObject.Class.STAR) {
                 CelestialObject parent = findParent(root, body);
-                if (parent != null && parent.objectClass() == CelestialObjectClass.GALAXY) return galaxySize;
+                if (parent != null && parent.objectClass() == CelestialObject.Class.GALAXY) return galaxySize;
             }
             return systemSize;
         }
@@ -1456,7 +1455,7 @@ public class OrbitalView {
         }
 
         private ResourceLocation getRenderTexture(CelestialObject body) {
-            if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) return null;
+            if (body == null || body.objectClass() == CelestialObject.Class.GALAXY) return null;
             ResourceLocation texture = body.texture();
             if (isMapBodyIcon(texture)) return texture;
             return EnumTextures.ICON_EGORA.get();
@@ -1528,7 +1527,7 @@ public class OrbitalView {
         }
 
         private double calculateOverviewExtent(CelestialObject body) {
-            if (body.objectClass() == CelestialObjectClass.GALAXY) {
+            if (body.objectClass() == CelestialObject.Class.GALAXY) {
                 double maxDistance = 0.0;
                 for (CelestialObject child : GalaxiaCelestialAPI.getChildren(body)) {
                     double[] pos = getAbsoluteWorldPos(child);
@@ -1546,7 +1545,8 @@ public class OrbitalView {
         }
 
         private boolean shouldUseIsometricOverview(CelestialObject body) {
-            return body.objectClass() != CelestialObjectClass.GALAXY && body.objectClass() != CelestialObjectClass.STAR;
+            return body.objectClass() != CelestialObject.Class.GALAXY
+                && body.objectClass() != CelestialObject.Class.STAR;
         }
 
         private double calculateFocusedOrbitExtent(CelestialObject body) {
@@ -1601,7 +1601,7 @@ public class OrbitalView {
             if (anchorPos == null) return Double.MAX_VALUE;
             double nearestDistance = Double.MAX_VALUE;
             for (CelestialObject child : GalaxiaCelestialAPI.getChildren(anchorStar)) {
-                if (child == anchorStar || child.objectClass() != CelestialObjectClass.STAR) continue;
+                if (child == anchorStar || child.objectClass() != CelestialObject.Class.STAR) continue;
                 double[] childPos = getAbsoluteWorldPos(child);
                 if (childPos == null) continue;
                 nearestDistance = Math
@@ -1834,19 +1834,19 @@ public class OrbitalView {
             sceneFrame = sceneFrameBuilder.buildInto(sceneFrame, viewRoot, globalTime, labelAlpha);
             syncRenderedLogisticsTransfers();
             if (transferSimulatorState.isOpen() && !transferSimulatorState.isWaitingForPick()
-                && viewRoot.objectClass() == CelestialObjectClass.STAR) {
+                && viewRoot.objectClass() == CelestialObject.Class.STAR) {
                 InterplanetaryTransferSystem.updatePreview(transferSimulatorState, root, globalTime);
             }
             if (!transfersHidden) {
                 transferRenderer.drawTransferPaths(
                     transferState,
                     globalTime,
-                    viewRoot.objectClass() == CelestialObjectClass.STAR
+                    viewRoot.objectClass() == CelestialObject.Class.STAR
                         ? (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 2.5)
                         : 0f);
                 transferRenderer.drawPreviewTrajectory(
                     transferSimulatorState,
-                    viewRoot.objectClass() == CelestialObjectClass.STAR
+                    viewRoot.objectClass() == CelestialObject.Class.STAR
                         ? (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 2.5)
                         : 0f);
             }
@@ -1860,7 +1860,7 @@ public class OrbitalView {
                 transferRenderer.drawTransferDots(
                     transferState,
                     globalTime,
-                    viewRoot.objectClass() == CelestialObjectClass.STAR
+                    viewRoot.objectClass() == CelestialObject.Class.STAR
                         ? (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 2.5)
                         : 0f);
             }
@@ -1876,7 +1876,7 @@ public class OrbitalView {
             int localMouseX = getContext().getMouseX();
             int localMouseY = getContext().getMouseY();
             if (transfersHidden || dragging
-                || viewRoot.objectClass() != CelestialObjectClass.STAR
+                || viewRoot.objectClass() != CelestialObject.Class.STAR
                 || viewState.isometricProgress > 0.95
                 || assetUiState.isAssetManagementOpen()
                 || contextMenuState.isOpen()) {
@@ -1888,11 +1888,11 @@ public class OrbitalView {
                     localMouseY);
             }
             hoveredBody = dragging ? null : findBodyAtLocal(localMouseX, localMouseY);
-            if (hoveredBody != null && hoveredBody.objectClass() == CelestialObjectClass.GALAXY) hoveredBody = null;
+            if (hoveredBody != null && hoveredBody.objectClass() == CelestialObject.Class.GALAXY) hoveredBody = null;
             if (hoveredBody != null && isVisibleInCurrentLayer(hoveredBody)) {
                 if (hoveredBody != focusedBody) sceneRenderer.drawHoverHighlight(hoveredBody, sceneFrame);
             }
-            if (focusedBody != null && focusedBody.objectClass() != CelestialObjectClass.GALAXY
+            if (focusedBody != null && focusedBody.objectClass() != CelestialObject.Class.GALAXY
                 && isVisibleInCurrentLayer(focusedBody)) sceneRenderer.drawSelectionHighlight(focusedBody, sceneFrame);
             if (debugOverlayEnabled) sceneRenderer.drawDebugOverlay(sceneFrame, getArea().height);
             super.drawBackground(context, widgetTheme);
@@ -1946,7 +1946,7 @@ public class OrbitalView {
         }
 
         private InterplanetaryTransferJob findTransferAtLocal(int mouseX, int mouseY) {
-            if (viewRoot.objectClass() != CelestialObjectClass.STAR || viewState.isometricProgress > 0.95
+            if (viewRoot.objectClass() != CelestialObject.Class.STAR || viewState.isometricProgress > 0.95
                 || assetUiState.isAssetManagementOpen()
                 || contextMenuState.isOpen()
                 || transferSimulatorState.isWaitingForPick()) return null;
@@ -1969,13 +1969,13 @@ public class OrbitalView {
 
         private boolean handleTransferSimulatorPick(CelestialObject clickedBody) {
             if (!transferSimulatorState.isWaitingForPick()) return false;
-            if (viewRoot.objectClass() != CelestialObjectClass.STAR) {
+            if (viewRoot.objectClass() != CelestialObject.Class.STAR) {
                 transferSimulatorState.cancelPick();
                 showActionStatus("Open a star system first");
                 return true;
             }
             if (clickedBody == null || clickedBody == root
-                || clickedBody.objectClass() == CelestialObjectClass.GALAXY
+                || clickedBody.objectClass() == CelestialObject.Class.GALAXY
                 || !isDescendantOrSelf(viewRoot, clickedBody)) {
                 transferSimulatorState.cancelPick();
                 showActionStatus("Pick a body from the current system");
@@ -2112,7 +2112,7 @@ public class OrbitalView {
 
         private void runTransferPlannerStressTest() {
             if (!transferSimulatorState.isOpen()) return;
-            if (viewRoot.objectClass() != CelestialObjectClass.STAR) {
+            if (viewRoot.objectClass() != CelestialObject.Class.STAR) {
                 showActionStatus("Open a star system first");
                 return;
             }
@@ -2166,8 +2166,8 @@ public class OrbitalView {
 
         private void drawViewStatusLabel(CelestialObject viewRoot, int widgetWidth) {
             if (viewRoot == null) return;
-            String title = viewRoot.objectClass() == CelestialObjectClass.GALAXY ? viewRoot.displayName()
-                : viewRoot.objectClass() == CelestialObjectClass.STAR ? viewRoot.displayName() + " System" : null;
+            String title = viewRoot.objectClass() == CelestialObject.Class.GALAXY ? viewRoot.displayName()
+                : viewRoot.objectClass() == CelestialObject.Class.STAR ? viewRoot.displayName() + " System" : null;
             if (title == null) return;
 
             String speedText = paused ? StatCollector.translateToLocal("galaxia.gui.orbital.paused")
@@ -2190,7 +2190,7 @@ public class OrbitalView {
         }
 
         private void openContextMenu(CelestialObject body, int localMouseX, int localMouseY) {
-            if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) {
+            if (body == null || body.objectClass() == CelestialObject.Class.GALAXY) {
                 closeContextMenu();
                 return;
             }
@@ -2205,7 +2205,7 @@ public class OrbitalView {
             if (viewState.isometricProgress > 0.01 || body == viewRoot || body == focusedBody) return true;
             if (!shouldUseOverlapDeclutter(body)) return true;
             CelestialObject parent = findParent(root, body);
-            if (parent == null || parent.objectClass() == CelestialObjectClass.GALAXY) return true;
+            if (parent == null || parent.objectClass() == CelestialObject.Class.GALAXY) return true;
             if (OrbitalWorldStateCache.usesAbsolutePosition(parent, body)) return true;
             float separation = (float) (body.orbitalParams()
                 .perigee() * getScale());
@@ -2295,9 +2295,9 @@ public class OrbitalView {
         }
 
         private CelestialObject getPinnedInfoBody() {
-            if (hoveredBody != null && hoveredBody.objectClass() != CelestialObjectClass.GALAXY
+            if (hoveredBody != null && hoveredBody.objectClass() != CelestialObject.Class.GALAXY
                 && isVisibleInCurrentLayer(hoveredBody)) return hoveredBody;
-            if (focusedBody != null && focusedBody.objectClass() != CelestialObjectClass.GALAXY
+            if (focusedBody != null && focusedBody.objectClass() != CelestialObject.Class.GALAXY
                 && isVisibleInCurrentLayer(focusedBody)) return focusedBody;
             return null;
         }

@@ -17,7 +17,6 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
 @Desugar
 record ContextMenuAction(String label, boolean enabled, OrbitalContextMenuWidget.ContextMenuActionType actionType) {}
@@ -219,7 +218,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
     }
 
     private ContextMenuLayout getLayout(CelestialObject body, int menuX, int menuY, int widgetWidth, int widgetHeight) {
-        if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) return null;
+        if (body == null || body.objectClass() == CelestialObject.Class.GALAXY) return null;
 
         List<ContextMenuAction> actions = buildActions(body);
         Minecraft mc = Minecraft.getMinecraft();

@@ -59,7 +59,6 @@ import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -258,7 +257,7 @@ public final class AssetManagementSystem {
         }
 
         void openAssetManagement(OrbitalAssetUiState state, CelestialObject body) {
-            if (body == null || body.objectClass() == CelestialObjectClass.GALAXY) return;
+            if (body == null || body.objectClass() == CelestialObject.Class.GALAXY) return;
             state.openAssetManagement(body);
             closePendingAssetRename(state);
         }

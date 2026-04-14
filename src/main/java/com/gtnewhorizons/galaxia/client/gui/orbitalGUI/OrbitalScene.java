@@ -17,7 +17,6 @@ import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
 
@@ -366,7 +365,7 @@ public class OrbitalScene {
                 .addResolvedBody(body, parent, worldX, worldY, 0f, 0f, 0f, 0f, false, false, 0f, 0);
             callbacks.fillResolvedBodyDrawState(state, body, parent, worldX, worldY, labelAlpha);
             if (state.body()
-                .objectClass() != CelestialObjectClass.GALAXY && state.bodyAlpha() > 0.01f
+                .objectClass() != CelestialObject.Class.GALAXY && state.bodyAlpha() > 0.01f
                 && state.renderBody()) {
                 registerHitboxes(frame, state);
                 registerMarkers(frame, state);
@@ -452,7 +451,7 @@ public class OrbitalScene {
         void drawBodies(OrbitalSceneFrame frame, CelestialObject viewRoot) {
             for (ResolvedBodyDrawState state : frame.resolvedBodies) {
                 if (state.body()
-                    .objectClass() == CelestialObjectClass.GALAXY || state.bodyAlpha() <= 0.01f
+                    .objectClass() == CelestialObject.Class.GALAXY || state.bodyAlpha() <= 0.01f
                     || !state.renderBody()) continue;
                 ResourceLocation texture = callbacks.getRenderTexture(state.body());
                 if (texture != null && callbacks.getDisplaySpriteSize(state.body()) > 0.0001f) {
@@ -475,9 +474,9 @@ public class OrbitalScene {
             for (ResolvedBodyDrawState state : frame.resolvedBodies) {
                 if (state.parent() == null || state.bodyAlpha() <= 0.01f || !state.renderBody()) continue;
                 if (state.body()
-                    .objectClass() == CelestialObjectClass.GALAXY
+                    .objectClass() == CelestialObject.Class.GALAXY
                     || state.body()
-                        .objectClass() == CelestialObjectClass.STAR) {
+                        .objectClass() == CelestialObject.Class.STAR) {
                     continue;
                 }
                 double soiRadius = OrbitalMechanics.getSphereOfInfluenceRadius(state.parent(), state.body());
@@ -562,8 +561,8 @@ public class OrbitalScene {
 
         void drawViewTitleBanner(CelestialObject viewRoot, int widgetWidth) {
             if (viewRoot == null) return;
-            String title = viewRoot.objectClass() == CelestialObjectClass.GALAXY ? viewRoot.displayName()
-                : viewRoot.objectClass() == CelestialObjectClass.STAR ? viewRoot.displayName() + " System" : null;
+            String title = viewRoot.objectClass() == CelestialObject.Class.GALAXY ? viewRoot.displayName()
+                : viewRoot.objectClass() == CelestialObject.Class.STAR ? viewRoot.displayName() + " System" : null;
             if (title == null) return;
             Minecraft mc = Minecraft.getMinecraft();
             int textWidth = mc.fontRenderer.getStringWidth(title);
@@ -806,7 +805,7 @@ public class OrbitalScene {
             return (color & 0x00FFFFFF) | (a << 24);
         }
 
-        private int getFallbackBodyColor(CelestialObjectClass objectClass) {
+        private int getFallbackBodyColor(CelestialObject.Class objectClass) {
             return switch (objectClass) {
                 case GALAXY -> EnumColors.MAP_COLOR_BODY_GALAXY.getColor();
                 case BLACK_HOLE -> EnumColors.MAP_COLOR_BODY_BLACK_HOLE.getColor();

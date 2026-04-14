@@ -32,7 +32,6 @@ import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 /**
@@ -307,9 +306,9 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
     }
 
     private ViewScope scopeFor(CelestialObject viewRoot) {
-        if (viewRoot == null || viewRoot == galaxyRoot || viewRoot.objectClass() == CelestialObjectClass.GALAXY)
+        if (viewRoot == null || viewRoot == galaxyRoot || viewRoot.objectClass() == CelestialObject.Class.GALAXY)
             return ViewScope.GALACTIC;
-        if (viewRoot.objectClass() == CelestialObjectClass.STAR) return ViewScope.SYSTEM;
+        if (viewRoot.objectClass() == CelestialObject.Class.STAR) return ViewScope.SYSTEM;
         return ViewScope.PLANETARY;
     }
 

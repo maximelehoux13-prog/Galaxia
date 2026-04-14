@@ -15,14 +15,27 @@ import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
 
 @Desugar
 public record CelestialObject(CelestialObjectId id, String name, String nameKey, CelestialObjectId parentId,
-    DimensionEnum dimensionEnum, CelestialObjectClass objectClass, OrbitalParams orbitalParams,
+    DimensionEnum dimensionEnum, Class objectClass, OrbitalParams orbitalParams,
     OrbitalMechanics.AbsolutePosition absolutePosition, ResourceLocation texture, double spriteSize,
     CelestialBodyProperties properties) {
+
+    public enum Class {
+        GALAXY,
+        STAR,
+        GAS_GIANT,
+        PLANET,
+        MOON,
+        ASTEROID,
+        ASTEROID_BELT,
+        STATION,
+        BLACK_HOLE,
+        COMET
+    }
 
     public CelestialObject {
         if (id == null) throw new IllegalStateException("Celestial object id is required");
         if (name == null || name.isEmpty()) throw new IllegalStateException("Celestial object name is required");
-        objectClass = objectClass == null ? CelestialObjectClass.PLANET : objectClass;
+        objectClass = objectClass == null ? Class.PLANET : objectClass;
         orbitalParams = orbitalParams == null ? OrbitalParams.circular(0.0, 0.0) : orbitalParams;
         texture = texture;
         spriteSize = spriteSize;
@@ -84,7 +97,7 @@ public record CelestialObject(CelestialObjectId id, String name, String nameKey,
         private String nameKey;
         private CelestialObjectId parentId;
         private DimensionEnum dimensionEnum;
-        private CelestialObjectClass objectClass = CelestialObjectClass.PLANET;
+        private Class objectClass = Class.PLANET;
         private OrbitalParams orbitalParams = OrbitalParams.circular(0.0, 0.0);
         private OrbitalMechanics.AbsolutePosition absolutePosition;
         private ResourceLocation texture;
@@ -150,8 +163,8 @@ public record CelestialObject(CelestialObjectId id, String name, String nameKey,
             return this;
         }
 
-        public Builder objectClass(CelestialObjectClass value) {
-            this.objectClass = value == null ? CelestialObjectClass.PLANET : value;
+        public Builder objectClass(Class value) {
+            this.objectClass = value == null ? Class.PLANET : value;
             return this;
         }
 

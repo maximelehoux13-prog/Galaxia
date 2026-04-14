@@ -24,7 +24,6 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.LambertTransfer;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 
@@ -226,7 +225,7 @@ public final class InterplanetaryTransferSystem {
     public static LambertStressReport runLambertStress(CelestialObject root, CelestialObject star, double globalTime,
         int simulations, double maxDvLimit) {
         int requested = Math.max(0, simulations);
-        if (requested == 0 || root == null || star == null || star.objectClass() != CelestialObjectClass.STAR) {
+        if (requested == 0 || root == null || star == null || star.objectClass() != CelestialObject.Class.STAR) {
             return new LambertStressReport(requested, 0, 0, 0, 0.0, 0.0, 0.0);
         }
 
@@ -277,8 +276,8 @@ public final class InterplanetaryTransferSystem {
 
     private static void collectStressPlanets(CelestialObject current, List<CelestialObject> out) {
         if (current == null || out == null) return;
-        CelestialObjectClass objectClass = current.objectClass();
-        if (objectClass == CelestialObjectClass.PLANET || objectClass == CelestialObjectClass.GAS_GIANT) {
+        CelestialObject.Class objectClass = current.objectClass();
+        if (objectClass == CelestialObject.Class.PLANET || objectClass == CelestialObject.Class.GAS_GIANT) {
             out.add(current);
         }
         for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {

@@ -3,7 +3,6 @@ package com.gtnewhorizons.galaxia.registry.orbital;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
 /**
  * Shared (non-client) utilities for interplanetary trajectory planning.
@@ -87,7 +86,7 @@ public final class OrbitalTransferPlanner {
     }
 
     /**
-     * Finds the nearest {@link CelestialObjectClass#STAR} ancestor of {@code target}.
+     * Finds the nearest {@link CelestialObject.Class#STAR} ancestor of {@code target}.
      * Returns {@code null} if no star is found above the target.
      */
     public static CelestialObject findHostStar(CelestialObject root, CelestialObject target) {
@@ -97,7 +96,7 @@ public final class OrbitalTransferPlanner {
 
     private static CelestialObject findHostStarRec(CelestialObject current, CelestialObject target,
         CelestialObject currentStar) {
-        CelestialObject nextStar = current.objectClass() == CelestialObjectClass.STAR ? current : currentStar;
+        CelestialObject nextStar = current.objectClass() == CelestialObject.Class.STAR ? current : currentStar;
         if (current == target) return nextStar;
         for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
             CelestialObject found = findHostStarRec(child, target, nextStar);
@@ -122,8 +121,8 @@ public final class OrbitalTransferPlanner {
 
     private static CelestialObject findPlanetaryAnchorRec(CelestialObject current, CelestialObject target,
         CelestialObject currentPlanet) {
-        CelestialObjectClass cls = current.objectClass();
-        CelestialObject nextPlanet = (cls == CelestialObjectClass.PLANET || cls == CelestialObjectClass.GAS_GIANT)
+        CelestialObject.Class cls = current.objectClass();
+        CelestialObject nextPlanet = (cls == CelestialObject.Class.PLANET || cls == CelestialObject.Class.GAS_GIANT)
             ? current
             : currentPlanet;
         if (current == target) return nextPlanet != null ? nextPlanet : current;
