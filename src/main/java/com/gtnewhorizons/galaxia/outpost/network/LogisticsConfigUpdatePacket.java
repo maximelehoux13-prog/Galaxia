@@ -59,8 +59,8 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, String.valueOf(assetId));
-        writeString(buf, resourceKey);
+        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeString(buf, resourceKey);
         buf.writeInt(minReserve);
         buf.writeInt(orderSize);
         buf.writeBoolean(isImportEnabled);
@@ -70,8 +70,8 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
-        resourceKey = readString(buf);
+        assetId = PacketUtil.readAssetId(buf);
+        resourceKey = PacketUtil.readString(buf);
         minReserve = buf.readInt();
         orderSize = buf.readInt();
         isImportEnabled = buf.readBoolean();
@@ -130,13 +130,5 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             }
             return new OutpostFullSyncPacket(state);
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

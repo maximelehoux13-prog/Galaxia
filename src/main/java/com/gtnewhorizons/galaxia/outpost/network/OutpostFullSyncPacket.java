@@ -125,39 +125,39 @@ public final class OutpostFullSyncPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, String.valueOf(assetId));
+        PacketUtil.writeAssetId(buf, assetId);
         buf.writeLong(teamId.getMostSignificantBits());
         buf.writeLong(teamId.getLeastSignificantBits());
-        writeString(buf, String.valueOf(celestialBodyId));
-        writeString(buf, String.valueOf(systemId));
-        writeString(buf, String.valueOf(planetaryAnchorBodyId));
+        PacketUtil.writeCelestialObjectId(buf, celestialBodyId);
+        PacketUtil.writeCelestialObjectId(buf, systemId);
+        PacketUtil.writeCelestialObjectId(buf, planetaryAnchorBodyId);
         buf.writeLong(energyStored);
 
         buf.writeInt(modules.size());
         for (ModuleSyncData m : modules) {
-            writeString(buf, m.kind);
-            writeString(buf, m.status);
+            PacketUtil.writeEnum(buf, OutpostModuleKind.valueOf(m.kind));
+            PacketUtil.writeEnum(buf, AutomatedOutpostModule.Status.valueOf(m.status));
             buf.writeFloat(m.progress);
             buf.writeInt(m.minerBlacklist.size());
             for (String key : m.minerBlacklist) {
-                writeString(buf, key);
+                PacketUtil.writeString(buf, key);
             }
-            writeString(buf, m.allowShootingMode);
+            PacketUtil.writeEnum(buf, AllowShootingConfig.Mode.valueOf(m.allowShootingMode));
             buf.writeDouble(m.allowShootingThreshold);
             buf.writeBoolean(m.planetaryHandling);
-            writeString(buf, m.routePriority);
+            PacketUtil.writeEnum(buf, OrbitalTransferPlanner.RoutePriority.valueOf(m.routePriority));
             buf.writeBoolean(m.minerCopySettings);
         }
 
         buf.writeInt(inventory.size());
         for (Map.Entry<String, Long> e : inventory.entrySet()) {
-            writeString(buf, e.getKey());
+            PacketUtil.writeString(buf, e.getKey());
             buf.writeLong(e.getValue());
         }
 
         buf.writeInt(logisticsConfig.size());
         for (Map.Entry<String, LogisticsConfigSyncData> e : logisticsConfig.entrySet()) {
-            writeString(buf, e.getKey());
+            PacketUtil.writeString(buf, e.getKey());
             buf.writeInt(e.getValue().minReserve);
             buf.writeInt(e.getValue().orderSize);
             buf.writeBoolean(e.getValue().isImportEnabled);
@@ -167,53 +167,53 @@ public final class OutpostFullSyncPacket implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
+        assetId = PacketUtil.readAssetId(buf);
         teamId = new UUID(buf.readLong(), buf.readLong());
-        celestialBodyId = CelestialObjectId.valueOf(readString(buf));
-        systemId = CelestialObjectId.valueOf(readString(buf));
-        planetaryAnchorBodyId = CelestialObjectId.valueOf(readString(buf));
+        celestialBodyId = PacketUtil.readCelestialObjectId(buf);
+        systemId = PacketUtil.readCelestialObjectId(buf);
+        planetaryAnchorBodyId = PacketUtil.readCelestialObjectId(buf);
         energyStored = buf.readLong();
 
         int moduleCount = buf.readInt();
         modules = new ArrayList<>(moduleCount);
         for (int i = 0; i < moduleCount; i++) {
-            String kind = readString(buf);
-            String status = readString(buf);
+            OutpostModuleKind kind = PacketUtil.readEnum(buf, OutpostModuleKind.class);
+            AutomatedOutpostModule.Status status = PacketUtil.readEnum(buf, AutomatedOutpostModule.Status.class);
             float progress = buf.readFloat();
             int blacklistCount = buf.readInt();
             List<String> minerBlacklist = new ArrayList<>(blacklistCount);
             for (int j = 0; j < blacklistCount; j++) {
-                minerBlacklist.add(readString(buf));
+                minerBlacklist.add(PacketUtil.readString(buf));
             }
-            String allowShootingMode = readString(buf);
+            AllowShootingConfig.Mode allowShootingMode = PacketUtil.readEnum(buf, AllowShootingConfig.Mode.class);
             double allowShootingThreshold = buf.readDouble();
             boolean planetaryHandling = buf.readBoolean();
-            String routePriority = readString(buf);
+            OrbitalTransferPlanner.RoutePriority routePriority = PacketUtil.readEnum(buf, OrbitalTransferPlanner.RoutePriority.class);
             boolean minerCopySettings = buf.readBoolean();
             modules.add(
                 new ModuleSyncData(
-                    kind,
-                    status,
+                    kind.name(),
+                    status.name(),
                     progress,
                     minerBlacklist,
-                    allowShootingMode,
+                    allowShootingMode.name(),
                     allowShootingThreshold,
                     planetaryHandling,
-                    routePriority,
+                    routePriority.name(),
                     minerCopySettings));
         }
 
         int invCount = buf.readInt();
         inventory = new LinkedHashMap<>(invCount);
         for (int i = 0; i < invCount; i++) {
-            inventory.put(readString(buf), buf.readLong());
+            inventory.put(PacketUtil.readString(buf), buf.readLong());
         }
 
         int logCount = buf.readInt();
         logisticsConfig = new LinkedHashMap<>(logCount);
         for (int i = 0; i < logCount; i++) {
             logisticsConfig.put(
-                readString(buf),
+                PacketUtil.readString(buf),
                 new LogisticsConfigSyncData(buf.readInt(), buf.readInt(), buf.readBoolean(), buf.readBoolean()));
         }
     }
@@ -313,13 +313,5 @@ public final class OutpostFullSyncPacket implements IMessage {
         } catch (IllegalArgumentException | NullPointerException e) {
             return OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

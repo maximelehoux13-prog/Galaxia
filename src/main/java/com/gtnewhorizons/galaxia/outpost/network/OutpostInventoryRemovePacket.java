@@ -26,14 +26,14 @@ public final class OutpostInventoryRemovePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, String.valueOf(assetId));
-        writeString(buf, resourceKey);
+        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeString(buf, resourceKey);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
-        resourceKey = readString(buf);
+        assetId = PacketUtil.readAssetId(buf);
+        resourceKey = PacketUtil.readString(buf);
     }
 
     public static final class Handler implements IMessageHandler<OutpostInventoryRemovePacket, IMessage> {
@@ -56,13 +56,5 @@ public final class OutpostInventoryRemovePacket implements IMessage {
             }
             return new OutpostFullSyncPacket(state);
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

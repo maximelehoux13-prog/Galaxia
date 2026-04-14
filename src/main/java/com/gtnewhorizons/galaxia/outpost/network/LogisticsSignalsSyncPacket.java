@@ -107,11 +107,11 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
     private static void writeAggMap(ByteBuf buf, @UnknownNullability Map<CelestialObjectId, Map<String, Long>> map) {
         buf.writeInt(map.size());
         for (Map.Entry<CelestialObjectId, Map<String, Long>> outer : map.entrySet()) {
-            writeString(buf, String.valueOf(outer.getKey()));
+            PacketUtil.writeCelestialObjectId(buf, outer.getKey());
             Map<String, Long> inner = outer.getValue();
             buf.writeInt(inner.size());
             for (Map.Entry<String, Long> e : inner.entrySet()) {
-                writeString(buf, e.getKey());
+                PacketUtil.writeString(buf, e.getKey());
                 buf.writeLong(e.getValue());
             }
         }
@@ -121,24 +121,16 @@ public final class LogisticsSignalsSyncPacket implements IMessage {
         int outerCount = buf.readInt();
         Map<CelestialObjectId, Map<String, Long>> map = new LinkedHashMap<>(outerCount);
         for (int i = 0; i < outerCount; i++) {
-            CelestialObjectId outerKey = CelestialObjectId.valueOf(readString(buf));
+            CelestialObjectId outerKey = PacketUtil.readCelestialObjectId(buf);
             int innerCount = buf.readInt();
             Map<String, Long> inner = new LinkedHashMap<>(innerCount);
             for (int j = 0; j < innerCount; j++) {
-                String resourceKey = readString(buf);
+                String resourceKey = PacketUtil.readString(buf);
                 long net = buf.readLong();
                 inner.put(resourceKey, net);
             }
             map.put(outerKey, inner);
         }
         return map;
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

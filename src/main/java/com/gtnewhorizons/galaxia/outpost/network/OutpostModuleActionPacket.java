@@ -19,28 +19,35 @@ public final class OutpostModuleActionPacket implements IMessage {
 
     private CelestialAsset.ID assetId;
     private int moduleIndex;
-    private String action;
+    private Action action;
 
     public OutpostModuleActionPacket() {}
 
-    public OutpostModuleActionPacket(CelestialAsset.ID assetId, int moduleIndex, String action) {
+    public OutpostModuleActionPacket(CelestialAsset.ID assetId, int moduleIndex, Action action) {
         this.assetId = assetId;
         this.moduleIndex = moduleIndex;
         this.action = action;
     }
 
+    public enum Action {
+        ENABLE,
+        DISABLE,
+        DESTROY,
+        CONFIGURE
+    }
+
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, String.valueOf(assetId));
+        PacketUtil.writeAssetId(buf, assetId);
         buf.writeInt(moduleIndex);
-        writeString(buf, action);
+        PacketUtil.writeEnum(buf, action);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
+        assetId = PacketUtil.readAssetId(buf);
         moduleIndex = buf.readInt();
-        action = readString(buf);
+        action = PacketUtil.readEnum(buf, Action.class);
     }
 
     public static final class Handler implements IMessageHandler<OutpostModuleActionPacket, IMessage> {
@@ -57,32 +64,21 @@ public final class OutpostModuleActionPacket implements IMessage {
             AutomatedOutpostModule module = modules.get(packet.moduleIndex);
 
             switch (packet.action) {
-                case "ENABLE":
-                    // If it was disabled, set it to OPERATIONAL.
-                    // If it was IN_CONSTRUCTION, maybe it should stay that way?
-                    // User said "Toggle module status" for DISABLE/ENABLE.
+                case ENABLE:
                     if (module.getLegacyStatus() == AutomatedOutpostModule.Status.DISABLED) {
                         module.setLegacyStatus(AutomatedOutpostModule.Status.OPERATIONAL);
                     }
                     break;
-                case "DISABLE":
+                case DISABLE:
                     module.setLegacyStatus(AutomatedOutpostModule.Status.DISABLED);
                     break;
-                case "DESTROY":
+                case DESTROY:
                     state.removeModule(packet.moduleIndex);
                     break;
-                case "CONFIGURE":
+                case CONFIGURE:
                     return null;
             }
             return new OutpostFullSyncPacket(state);
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

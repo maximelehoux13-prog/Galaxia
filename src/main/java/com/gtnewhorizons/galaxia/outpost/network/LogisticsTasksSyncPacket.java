@@ -69,12 +69,12 @@ public final class LogisticsTasksSyncPacket implements IMessage {
     public void toBytes(ByteBuf buf) {
         buf.writeInt(tasks.size());
         for (TaskEntry e : tasks) {
-            writeString(buf, String.valueOf(e.taskId));
-            writeString(buf, e.resourceKey);
+            PacketUtil.writeString(buf, e.taskId.toString());
+            PacketUtil.writeString(buf, e.resourceKey);
             buf.writeLong(e.amount);
-            writeString(buf, String.valueOf(e.transportKind));
-            writeString(buf, String.valueOf(e.fromBodyId));
-            writeString(buf, String.valueOf(e.toBodyId));
+            PacketUtil.writeEnum(buf, e.transportKind);
+            PacketUtil.writeCelestialObjectId(buf, e.fromBodyId);
+            PacketUtil.writeCelestialObjectId(buf, e.toBodyId);
             buf.writeDouble(e.departureOrbitalTime);
             buf.writeDouble(e.tofOrbitalSeconds);
         }
@@ -85,12 +85,12 @@ public final class LogisticsTasksSyncPacket implements IMessage {
         int count = buf.readInt();
         tasks = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            LogisticsTask.ID taskId = LogisticsTask.ID.from(readString(buf));
-            String resourceKey = readString(buf);
+            LogisticsTask.ID taskId = LogisticsTask.ID.from(PacketUtil.readString(buf));
+            String resourceKey = PacketUtil.readString(buf);
             long amount = buf.readLong();
-            LogisticsTask.TransportType transportKind = LogisticsTask.TransportType.valueOf(readString(buf));
-            CelestialObjectId fromBodyId = CelestialObjectId.valueOf(readString(buf));
-            CelestialObjectId toBodyId = CelestialObjectId.valueOf(readString(buf));
+            LogisticsTask.TransportType transportKind = PacketUtil.readEnum(buf, LogisticsTask.TransportType.class);
+            CelestialObjectId fromBodyId = PacketUtil.readCelestialObjectId(buf);
+            CelestialObjectId toBodyId = PacketUtil.readCelestialObjectId(buf);
             double departureOrbitalTime = buf.readDouble();
             double tofOrbitalSeconds = buf.readDouble();
             tasks.add(
@@ -140,13 +140,5 @@ public final class LogisticsTasksSyncPacket implements IMessage {
         LogisticsTask.TransportType transportKind, CelestialObjectId fromBodyId, CelestialObjectId toBodyId,
         double departureOrbitalTime, double tofOrbitalSeconds) {
 
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

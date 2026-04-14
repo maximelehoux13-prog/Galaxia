@@ -19,32 +19,42 @@ public final class OutpostModuleConfigPacket implements IMessage {
 
     private CelestialAsset.ID assetId;
     private int moduleIndex;
-    private String action;
+    private ConfigAction action;
     private String payload;
 
     public OutpostModuleConfigPacket() {}
 
-    public OutpostModuleConfigPacket(CelestialAsset.ID assetId, int moduleIndex, String action, String payload) {
+    public OutpostModuleConfigPacket(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, String payload) {
         this.assetId = assetId;
         this.moduleIndex = moduleIndex;
         this.action = action;
         this.payload = payload == null ? "" : payload;
     }
 
+    public enum ConfigAction {
+        ADD_MINER_BLACKLIST,
+        REMOVE_MINER_BLACKLIST,
+        SET_MINER_COPY_SETTINGS,
+        SET_ALLOW_SHOOTING_MODE,
+        SET_ALLOW_SHOOTING_THRESHOLD,
+        SET_PLANETARY_HANDLING,
+        SET_ROUTE_PRIORITY
+    }
+
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, String.valueOf(assetId));
+        PacketUtil.writeAssetId(buf, assetId);
         buf.writeInt(moduleIndex);
-        writeString(buf, action);
-        writeString(buf, payload);
+        PacketUtil.writeEnum(buf, action);
+        PacketUtil.writeString(buf, payload);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
+        assetId = PacketUtil.readAssetId(buf);
         moduleIndex = buf.readInt();
-        action = readString(buf);
-        payload = readString(buf);
+        action = PacketUtil.readEnum(buf, ConfigAction.class);
+        payload = PacketUtil.readString(buf);
     }
 
     public static final class Handler implements IMessageHandler<OutpostModuleConfigPacket, IMessage> {
@@ -60,28 +70,28 @@ public final class OutpostModuleConfigPacket implements IMessage {
                 .get(packet.moduleIndex);
 
             switch (packet.action) {
-                case "ADD_MINER_BLACKLIST" -> {
+                case ADD_MINER_BLACKLIST -> {
                     if (!(module instanceof ModuleMiner miner)) return null;
                     ((ModuleMiner) module).withAddedBlacklist(packet.payload);
                     if (((ModuleMiner) module).getCopySettingsToOtherMiners()) {
                         copyMinerSettingsToOtherMiners(state, packet.moduleIndex, (ModuleMiner) module);
                     }
                 }
-                case "REMOVE_MINER_BLACKLIST" -> {
+                case REMOVE_MINER_BLACKLIST -> {
                     if (!(module instanceof ModuleMiner miner)) return null;
                     ((ModuleMiner) module).withRemovedBlacklist(packet.payload);
                     if (((ModuleMiner) module).getCopySettingsToOtherMiners()) {
                         copyMinerSettingsToOtherMiners(state, packet.moduleIndex, (ModuleMiner) module);
                     }
                 }
-                case "SET_MINER_COPY_SETTINGS" -> {
+                case SET_MINER_COPY_SETTINGS -> {
                     if (!(module instanceof ModuleMiner miner)) return null;
                     ((ModuleMiner) module).withCopySettingsToOtherMiners(Boolean.parseBoolean(packet.payload));
                     if (((ModuleMiner) module).getCopySettingsToOtherMiners()) {
                         copyMinerSettingsToOtherMiners(state, packet.moduleIndex, (ModuleMiner) module);
                     }
                 }
-                case "SET_ALLOW_SHOOTING_MODE" -> {
+                case SET_ALLOW_SHOOTING_MODE -> {
                     AllowShootingConfig.Mode mode;
                     try {
                         mode = AllowShootingConfig.Mode.valueOf(packet.payload);
@@ -100,7 +110,7 @@ public final class OutpostModuleConfigPacket implements IMessage {
                         return null;
                     }
                 }
-                case "SET_ALLOW_SHOOTING_THRESHOLD" -> {
+                case SET_ALLOW_SHOOTING_THRESHOLD -> {
                     double threshold;
                     try {
                         threshold = Double.parseDouble(packet.payload);
@@ -119,11 +129,11 @@ public final class OutpostModuleConfigPacket implements IMessage {
                         return null;
                     }
                 }
-                case "SET_PLANETARY_HANDLING" -> {
+                case SET_PLANETARY_HANDLING -> {
                     if (!(module instanceof ModuleBigHammer bh)) return null;
                     bh.setPlanetaryHandling(Boolean.parseBoolean(packet.payload));
                 }
-                case "SET_ROUTE_PRIORITY" -> {
+                case SET_ROUTE_PRIORITY -> {
                     OrbitalTransferPlanner.RoutePriority priority;
                     try {
                         priority = OrbitalTransferPlanner.RoutePriority.valueOf(packet.payload);
@@ -144,14 +154,6 @@ public final class OutpostModuleConfigPacket implements IMessage {
             }
             return new OutpostFullSyncPacket(state);
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 
     private static void copyMinerSettingsToOtherMiners(AutomatedOutpost state, int sourceModuleIndex,

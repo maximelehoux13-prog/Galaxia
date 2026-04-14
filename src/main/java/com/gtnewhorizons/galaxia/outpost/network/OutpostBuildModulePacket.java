@@ -47,15 +47,15 @@ public final class OutpostBuildModulePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, String.valueOf(assetId));
-        writeString(buf, moduleKind);
+        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeEnum(buf, OutpostModuleKind.valueOf(moduleKind));
         buf.writeBoolean(instantBuild);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
-        moduleKind = readString(buf);
+        assetId = PacketUtil.readAssetId(buf);
+        moduleKind = PacketUtil.readEnum(buf, OutpostModuleKind.class).name();
         instantBuild = buf.readBoolean();
     }
 
@@ -141,13 +141,5 @@ public final class OutpostBuildModulePacket implements IMessage {
                 case POWER -> ModulePower.getDefault();
             };
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

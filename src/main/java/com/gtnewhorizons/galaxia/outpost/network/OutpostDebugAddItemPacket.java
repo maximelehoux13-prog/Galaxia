@@ -36,15 +36,15 @@ public final class OutpostDebugAddItemPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, String.valueOf(assetId));
-        writeString(buf, resourceKey);
+        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeString(buf, resourceKey);
         buf.writeLong(amount);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
-        resourceKey = readString(buf);
+        assetId = PacketUtil.readAssetId(buf);
+        resourceKey = PacketUtil.readString(buf);
         amount = buf.readLong();
     }
 
@@ -90,13 +90,5 @@ public final class OutpostDebugAddItemPacket implements IMessage {
                 playerName);
             return new OutpostFullSyncPacket(state);
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }

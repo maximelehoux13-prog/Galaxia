@@ -32,12 +32,12 @@ public final class OutpostRequestSyncPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        writeString(buf, assetId.toString());
+        PacketUtil.writeAssetId(buf, assetId);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        assetId = CelestialAsset.ID.from(readString(buf));
+        assetId = PacketUtil.readAssetId(buf);
     }
 
     public static final class Handler implements IMessageHandler<OutpostRequestSyncPacket, IMessage> {
@@ -69,13 +69,5 @@ public final class OutpostRequestSyncPacket implements IMessage {
             }
             return null;
         }
-    }
-
-    private static void writeString(ByteBuf buf, String s) {
-        PacketUtil.writeString(buf, s);
-    }
-
-    private static String readString(ByteBuf buf) {
-        return PacketUtil.readString(buf);
     }
 }
