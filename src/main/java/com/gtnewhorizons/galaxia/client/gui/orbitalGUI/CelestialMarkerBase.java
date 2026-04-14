@@ -12,7 +12,6 @@ import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 
 public class CelestialMarkerBase {
@@ -56,7 +55,7 @@ public class CelestialMarkerBase {
                 return Collections.emptyList();
             }
             List<CelestialMarker> markers = new ArrayList<>();
-            for (CelestialManagedAsset asset : context.assetState()
+            for (CelestialAsset asset : context.assetState()
                 .assets()) {
                 ResourceLocation texture = CelestialAssetIcons.get(asset.kind());
                 if (texture == null) continue;

@@ -54,8 +54,8 @@ public record ItemStackWrapper(Item item, int meta, NBTTagCompound nbt) {
         }
     }
 
-    public ItemStack toStack(int amount) {
-        ItemStack stack = new ItemStack(item, amount, meta);
+    public ItemStack toStack(long amount) {
+        ItemStack stack = new ItemStack(item, (int) amount, meta);
         if (nbt != null) {
             stack.setTagCompound((NBTTagCompound) nbt.copy());
         }

@@ -33,7 +33,6 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostDebugAddItemPacket;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
@@ -538,7 +537,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     }
 
     private String resolveSupplyDebugTargetLabel() {
-        CelestialManagedAsset asset = resolveSupplyDebugAsset();
+        CelestialAsset asset = resolveSupplyDebugAsset();
         if (asset == null) {
             CelestialObject focused = map.getFocusedBody();
             if (focused == null) return "No body selected";
@@ -551,9 +550,9 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
      * Finds the first operational AUTOMATED_OUTPOST or AUTOMATED_STATION asset
      * on the currently focused body.
      */
-    private CelestialManagedAsset resolveSupplyDebugAsset() {
+    private CelestialAsset resolveSupplyDebugAsset() {
         if (supplyDebugTargetAssetId != null) {
-            CelestialManagedAsset pinned = CelestialAssetStore.findAsset(supplyDebugTargetAssetId);
+            CelestialAsset pinned = CelestialAssetStore.findAsset(supplyDebugTargetAssetId);
             if (pinned != null && pinned.status() == CelestialAsset.Status.OPERATIONAL
                 && (pinned.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST
                     || pinned.kind() == CelestialAsset.Kind.AUTOMATED_STATION)) {
@@ -573,7 +572,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         CelestialObject focused = map.getFocusedBody();
         if (focused == null) return null;
         CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());
-        for (CelestialManagedAsset asset : state.assets()) {
+        for (CelestialAsset asset : state.assets()) {
             if (asset.status() != CelestialAsset.Status.OPERATIONAL) continue;
             if (asset.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST
                 || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION) {
@@ -587,7 +586,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         long now = System.currentTimeMillis();
         if (now - lastSupplyDebugClickMs < 200L) return;
         lastSupplyDebugClickMs = now;
-        CelestialManagedAsset asset = resolveSupplyDebugAsset();
+        CelestialAsset asset = resolveSupplyDebugAsset();
         if (asset == null) return;
         String amountText = supplyDebugAmountField == null ? "64"
             : supplyDebugAmountField.getText()

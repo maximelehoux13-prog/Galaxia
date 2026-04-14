@@ -10,7 +10,6 @@ import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
@@ -52,7 +51,7 @@ public final class OutpostRequestSyncPacket implements IMessage {
                 .getByAssetId(packet.assetId);
             if (state == null) {
                 // Lazily create state the first time a client opens the management UI
-                CelestialManagedAsset asset = CelestialAssetStore.findAsset(packet.assetId);
+                CelestialAsset asset = CelestialAssetStore.findAsset(packet.assetId);
                 if (asset != null && asset.status() == CelestialAsset.Status.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);

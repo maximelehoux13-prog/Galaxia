@@ -41,7 +41,6 @@ import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
 import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
@@ -139,9 +138,9 @@ public final class OutpostPersistenceManager {
             List<AssetJson> list = gson.fromJson(reader, listType);
             if (list == null) return;
 
-            List<CelestialManagedAsset> assets = new ArrayList<>();
+            List<CelestialAsset> assets = new ArrayList<>();
             for (AssetJson json : list) {
-                CelestialManagedAsset asset = decodeAsset(json);
+                CelestialAsset asset = decodeAsset(json);
                 if (asset == null) continue;
                 assets.add(asset);
 
@@ -159,7 +158,7 @@ public final class OutpostPersistenceManager {
 
     private void saveAssets(File file) {
         List<AssetJson> list = new ArrayList<>();
-        for (CelestialManagedAsset asset : CelestialAssetStore.allAssets()) {
+        for (CelestialAsset asset : CelestialAssetStore.allAssets()) {
             AssetJson json = encodeAsset(asset);
             AutomatedOutpost outpost = OutpostDataStore.get()
                 .getByAssetId(asset.assetId());
@@ -251,7 +250,7 @@ public final class OutpostPersistenceManager {
         }
     }
 
-    private AssetJson encodeAsset(CelestialManagedAsset asset) {
+    private AssetJson encodeAsset(CelestialAsset asset) {
         AssetJson json = new AssetJson();
         json.assetId = asset.assetId();
         json.celestialObjectId = asset.celestialObjectId()
@@ -268,7 +267,7 @@ public final class OutpostPersistenceManager {
         return json;
     }
 
-    private CelestialManagedAsset decodeAsset(AssetJson json) {
+    private CelestialAsset decodeAsset(AssetJson json) {
         if (json == null || json.assetId == null
             || json.celestialObjectId == null
             || json.kind == null
@@ -278,7 +277,7 @@ public final class OutpostPersistenceManager {
         }
         CelestialObjectId objectId = CelestialObjectId.fromString(json.celestialObjectId);
         if (objectId == null) return null;
-        return new CelestialManagedAsset(
+        return new CelestialAsset(
             json.assetId,
             objectId,
             json.displayName == null ? json.assetId.toString() : json.displayName,
@@ -321,7 +320,7 @@ public final class OutpostPersistenceManager {
             }
             mj.data = moduleData;
             mj.consumedResources = new LinkedHashMap<>();
-            for (Map.Entry<ItemStack, Integer> e : m.getConsumedResources()
+            for (Map.Entry<ItemStack, Long> e : m.getConsumedResources()
                 .entrySet()) {
                 mj.consumedResources.put(
                     ItemStackWrapper.of(e.getKey())
@@ -358,7 +357,7 @@ public final class OutpostPersistenceManager {
         return out;
     }
 
-    private AutomatedOutpost decodeOutpostState(CelestialManagedAsset asset, OutpostStateJson json) {
+    private AutomatedOutpost decodeOutpostState(CelestialAsset asset, OutpostStateJson json) {
         if (asset == null || json == null || json.teamId == null || json.systemId == null) return null;
         CelestialObjectId bodyId = json.celestialBodyId != null ? CelestialObjectId.valueOf(json.celestialBodyId)
             : asset.celestialObjectId();
@@ -440,7 +439,7 @@ public final class OutpostPersistenceManager {
                 module.energyBuffer = mj.energyBuffer;
                 module.clearConsumedResources();
                 if (mj.consumedResources != null) {
-                    for (Map.Entry<String, Integer> e : mj.consumedResources.entrySet()) {
+                    for (Map.Entry<String, Long> e : mj.consumedResources.entrySet()) {
                         ItemStackWrapper key = ItemStackWrapper.fromKey(e.getKey());
                         if (key != null) {
                             module.getConsumedResources()
@@ -541,7 +540,7 @@ public final class OutpostPersistenceManager {
         int cooldownTicks;
         long energyBuffer;
         JsonElement data;
-        Map<String, Integer> consumedResources;
+        Map<String, Long> consumedResources;
     }
 
     static final class LogisticsConfigJson {

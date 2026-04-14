@@ -13,7 +13,6 @@ import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -90,7 +89,7 @@ public final class OutpostBuildModulePacket implements IMessage {
                 return null;
             }
 
-            CelestialManagedAsset asset = CelestialAssetStore.findAsset(packet.assetId);
+            CelestialAsset asset = CelestialAssetStore.findAsset(packet.assetId);
             if (asset == null) {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: missing asset {} for player {}",

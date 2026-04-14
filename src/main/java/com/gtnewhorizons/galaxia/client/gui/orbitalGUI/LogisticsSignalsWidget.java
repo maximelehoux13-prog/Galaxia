@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.item.ItemStack;
@@ -30,7 +31,6 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
@@ -473,7 +473,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             for (AutomatedOutpost outpost : OutpostDataStore.get()
                 .allOutposts()) {
                 if (!isOutpostInScope(outpost, scope, viewRoot)) continue;
-                CelestialManagedAsset asset = CelestialAssetStore.findAsset(outpost.assetId);
+                CelestialAsset asset = CelestialAssetStore.findAsset(outpost.assetId);
                 if (asset == null) continue;
                 long stock = outpost.inventory.getAmount(item);
                 LogisticsResourceConfig cfg = outpost.logisticsConfig.get(item);

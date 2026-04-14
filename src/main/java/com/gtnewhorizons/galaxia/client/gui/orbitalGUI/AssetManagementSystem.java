@@ -58,7 +58,6 @@ import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
@@ -83,19 +82,19 @@ record PendingAssetCreation(CelestialObjectId celestialObjectId, String displayN
     CelestialAsset.Location location, Map<ItemStack, Long> requiredResources) {}
 
 @Desugar
-record PendingAssetRename(CelestialManagedAsset asset) {}
+record PendingAssetRename(CelestialAsset asset) {}
 
 @Desugar
-record PendingAssetDestruction(CelestialManagedAsset asset, boolean armed) {}
+record PendingAssetDestruction(CelestialAsset asset, boolean armed) {}
 
 @Desugar
-record PendingAssetManagement(CelestialManagedAsset asset) {}
+record PendingAssetManagement(CelestialAsset asset) {}
 
 @Desugar
-record PendingConstructionCancellation(CelestialManagedAsset asset) {}
+record PendingConstructionCancellation(CelestialAsset asset) {}
 
 @Desugar
-record PendingResourceTransfer(CelestialManagedAsset asset, List<StationTransferTarget> targets) {}
+record PendingResourceTransfer(CelestialAsset asset, List<StationTransferTarget> targets) {}
 
 @Desugar
 record StationTransferTarget(CelestialAsset.ID assetId, String displayName, CelestialObject hostBody) {}
@@ -136,19 +135,19 @@ public final class AssetManagementSystem {
 
     public static final class OrbitalAssetSupport {
 
-        boolean hasStoredConstructionResources(CelestialManagedAsset asset) {
+        boolean hasStoredConstructionResources(CelestialAsset asset) {
             if (asset == null) return false;
             for (Long amount : asset.constructionInventory().values()) if (amount > 0) return true;
             return false;
         }
 
-        boolean isManageableStationAsset(CelestialManagedAsset asset) {
+        boolean isManageableStationAsset(CelestialAsset asset) {
             if (asset == null || asset.status() != CelestialAsset.Status.OPERATIONAL) return false;
             return asset.kind() == CelestialAsset.Kind.STATION || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION
                 || asset.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST;
         }
 
-        String formatAssetDisplayName(CelestialManagedAsset asset) {
+        String formatAssetDisplayName(CelestialAsset asset) {
             return switch (asset.status()) {
                 case CONSTRUCTION_SITE -> asset.displayName() + " (In construction)";
                 case DECONSTRUCTION -> asset.displayName() + " (Deconstruction)";
@@ -156,7 +155,7 @@ public final class AssetManagementSystem {
             };
         }
 
-        String buildConstructionInventorySummary(CelestialManagedAsset asset) {
+        String buildConstructionInventorySummary(CelestialAsset asset) {
             if (asset.status() == CelestialAsset.Status.DECONSTRUCTION)
                 return buildStoredInventorySummary(asset.constructionInventory());
             if (asset.requiredResources()
@@ -185,7 +184,7 @@ public final class AssetManagementSystem {
 
         private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
             CelestialBodyAssetState state = CelestialAssetStore.getState(current.id());
-            for (CelestialManagedAsset asset : state.assets()) {
+            for (CelestialAsset asset : state.assets()) {
                 if (asset.status() == CelestialAsset.Status.OPERATIONAL
                     && asset.location() == CelestialAsset.Location.ORBIT
                     && (asset.kind() == CelestialAsset.Kind.STATION
@@ -239,7 +238,7 @@ public final class AssetManagementSystem {
 
             String getRenameInput();
 
-            void createResourceTransfer(CelestialObject sourceBody, CelestialManagedAsset sourceAsset,
+            void createResourceTransfer(CelestialObject sourceBody, CelestialAsset sourceAsset,
                 StationTransferTarget target);
         }
 
@@ -317,7 +316,7 @@ public final class AssetManagementSystem {
             state.pendingAssetCreation = null;
         }
 
-        void openPendingAssetRename(OrbitalAssetUiState state, CelestialManagedAsset asset) {
+        void openPendingAssetRename(OrbitalAssetUiState state, CelestialAsset asset) {
             if (asset == null) return;
             state.pendingAssetRename = new PendingAssetRename(asset);
             callbacks.beginRenameInput(asset.displayName());
@@ -328,7 +327,7 @@ public final class AssetManagementSystem {
             callbacks.endRenameInput();
         }
 
-        void openPendingAssetDestruction(OrbitalAssetUiState state, CelestialManagedAsset asset) {
+        void openPendingAssetDestruction(OrbitalAssetUiState state, CelestialAsset asset) {
             if (asset == null) return;
             state.pendingAssetDestruction = new PendingAssetDestruction(asset, false);
         }
@@ -352,7 +351,7 @@ public final class AssetManagementSystem {
             state.pendingAssetDestruction = null;
         }
 
-        void openPendingAssetManagement(OrbitalAssetUiState state, CelestialManagedAsset asset) {
+        void openPendingAssetManagement(OrbitalAssetUiState state, CelestialAsset asset) {
             if (asset == null || !assetSupport.isManageableStationAsset(asset)) return;
             state.pendingAssetManagement = new PendingAssetManagement(asset);
         }
@@ -361,7 +360,7 @@ public final class AssetManagementSystem {
             state.pendingAssetManagement = null;
         }
 
-        void openPendingConstructionCancellation(OrbitalAssetUiState state, CelestialManagedAsset asset) {
+        void openPendingConstructionCancellation(OrbitalAssetUiState state, CelestialAsset asset) {
             if (asset == null) return;
             state.pendingConstructionCancellation = new PendingConstructionCancellation(asset);
         }
@@ -379,7 +378,7 @@ public final class AssetManagementSystem {
             state.pendingConstructionCancellation = null;
         }
 
-        void openPendingResourceTransfer(OrbitalAssetUiState state, CelestialObject root, CelestialManagedAsset asset) {
+        void openPendingResourceTransfer(OrbitalAssetUiState state, CelestialObject root, CelestialAsset asset) {
             if (asset == null) return;
             state.pendingResourceTransfer = new PendingResourceTransfer(
                 asset,
@@ -542,13 +541,13 @@ public final class AssetManagementSystem {
 
             boolean canCreateAutomatedOutpost(CelestialObject body);
 
-            boolean hasStoredConstructionResources(CelestialManagedAsset asset);
+            boolean hasStoredConstructionResources(CelestialAsset asset);
 
-            boolean isManageableStationAsset(CelestialManagedAsset asset);
+            boolean isManageableStationAsset(CelestialAsset asset);
 
-            String formatAssetDisplayName(CelestialManagedAsset asset);
+            String formatAssetDisplayName(CelestialAsset asset);
 
-            String buildConstructionInventorySummary(CelestialManagedAsset asset);
+            String buildConstructionInventorySummary(CelestialAsset asset);
 
             String formatAssetKind(CelestialAsset.Kind kind);
 
@@ -562,15 +561,15 @@ public final class AssetManagementSystem {
 
             void triggerAssetCreation(CelestialObject body, CelestialAsset.Kind kind, boolean openManagementFirst);
 
-            void openPendingAssetRename(CelestialManagedAsset asset);
+            void openPendingAssetRename(CelestialAsset asset);
 
-            void openPendingConstructionCancellation(CelestialManagedAsset asset);
+            void openPendingConstructionCancellation(CelestialAsset asset);
 
-            void openPendingResourceTransfer(CelestialManagedAsset asset);
+            void openPendingResourceTransfer(CelestialAsset asset);
 
-            void openPendingAssetManagement(CelestialManagedAsset asset);
+            void openPendingAssetManagement(CelestialAsset asset);
 
-            void openPendingAssetDestruction(CelestialManagedAsset asset);
+            void openPendingAssetDestruction(CelestialAsset asset);
 
             void confirmPendingAssetCreation();
 
@@ -1187,7 +1186,7 @@ public final class AssetManagementSystem {
 
         private void buildPendingAssetManagementModal() {
             if (state.pendingAssetManagement == null) return;
-            CelestialManagedAsset asset = state.pendingAssetManagement.asset();
+            CelestialAsset asset = state.pendingAssetManagement.asset();
 
             if (asset.kind() != CelestialAsset.Kind.AUTOMATED_OUTPOST) {
                 ModalBounds bounds = createCenteredModalBounds(360, 150);
@@ -2317,8 +2316,8 @@ public final class AssetManagementSystem {
         }
 
         private int computeContentHeight(CelestialBodyAssetState assetState) {
-            List<CelestialManagedAsset> construction = getConstructionAssets(assetState.assets());
-            List<CelestialManagedAsset> deployed = getOperationalAssets(assetState.assets());
+            List<CelestialAsset> construction = getConstructionAssets(assetState.assets());
+            List<CelestialAsset> deployed = getOperationalAssets(assetState.assets());
             int y = 0;
             if (!construction.isEmpty()) {
                 y += 16;
@@ -2332,13 +2331,13 @@ public final class AssetManagementSystem {
         }
 
         private void populateContent(ParentWidget<?> content, int contentWidth, CelestialBodyAssetState assetState) {
-            List<CelestialManagedAsset> construction = getConstructionAssets(assetState.assets());
-            List<CelestialManagedAsset> deployed = getOperationalAssets(assetState.assets());
+            List<CelestialAsset> construction = getConstructionAssets(assetState.assets());
+            List<CelestialAsset> deployed = getOperationalAssets(assetState.assets());
             int y = 0;
             if (!construction.isEmpty()) {
                 content.child(createSectionText("Construction").pos(4, y));
                 y += 16;
-                for (CelestialManagedAsset a : construction) {
+                for (CelestialAsset a : construction) {
                     content.child(createConstructionRow(a, contentWidth - 8).pos(4, y));
                     y += ROW_HEIGHT + ROW_SPACING;
                 }
@@ -2351,13 +2350,13 @@ public final class AssetManagementSystem {
                     .child(createBodyText("No deployed assets", EnumColors.MAP_COLOR_TEXT_MUTED.getColor()).pos(8, y));
                 return;
             }
-            for (CelestialManagedAsset a : deployed) {
+            for (CelestialAsset a : deployed) {
                 content.child(createAssetRow(a, contentWidth - 8).pos(4, y));
                 y += ROW_HEIGHT + ROW_SPACING;
             }
         }
 
-        private ParentWidget<?> createConstructionRow(CelestialManagedAsset asset, int rowWidth) {
+        private ParentWidget<?> createConstructionRow(CelestialAsset asset, int rowWidth) {
             ParentWidget<?> row = new PassiveRow().widthRelOffset(1f, -8)
                 .height(ROW_HEIGHT)
                 .background(
@@ -2385,7 +2384,7 @@ public final class AssetManagementSystem {
             return row;
         }
 
-        private ParentWidget<?> createAssetRow(CelestialManagedAsset asset, int rowWidth) {
+        private ParentWidget<?> createAssetRow(CelestialAsset asset, int rowWidth) {
             ParentWidget<?> row = new PassiveRow().widthRelOffset(1f, -8)
                 .height(ROW_HEIGHT)
                 .background(
@@ -2425,7 +2424,7 @@ public final class AssetManagementSystem {
             return row;
         }
 
-        private ButtonWidget<?> createNameButton(CelestialManagedAsset asset, int width) {
+        private ButtonWidget<?> createNameButton(CelestialAsset asset, int width) {
             String text = trimToWidth(callbacks.formatAssetDisplayName(asset), Math.max(8, width));
             return new ScrollAwareButtonWidget().size(Math.max(8, width), 12)
                 .background(IDrawable.EMPTY)
@@ -2803,24 +2802,24 @@ public final class AssetManagementSystem {
             });
         }
 
-        private List<CelestialManagedAsset> getConstructionAssets(List<CelestialManagedAsset> assets) {
-            List<CelestialManagedAsset> matching = new ArrayList<>();
-            for (CelestialManagedAsset asset : assets) {
+        private List<CelestialAsset> getConstructionAssets(List<CelestialAsset> assets) {
+            List<CelestialAsset> matching = new ArrayList<>();
+            for (CelestialAsset asset : assets) {
                 if (asset.status() == CelestialAsset.Status.CONSTRUCTION_SITE
                     || asset.status() == CelestialAsset.Status.DECONSTRUCTION) matching.add(asset);
             }
             return matching;
         }
 
-        private List<CelestialManagedAsset> getOperationalAssets(List<CelestialManagedAsset> assets) {
-            List<CelestialManagedAsset> matching = new ArrayList<>();
-            for (CelestialManagedAsset asset : assets) {
+        private List<CelestialAsset> getOperationalAssets(List<CelestialAsset> assets) {
+            List<CelestialAsset> matching = new ArrayList<>();
+            for (CelestialAsset asset : assets) {
                 if (asset.status() == CelestialAsset.Status.OPERATIONAL) matching.add(asset);
             }
             return matching;
         }
 
-        private void handleConstructionAction(CelestialManagedAsset asset) {
+        private void handleConstructionAction(CelestialAsset asset) {
             if (asset.status() == CelestialAsset.Status.DECONSTRUCTION) {
                 callbacks.openPendingResourceTransfer(asset);
                 return;

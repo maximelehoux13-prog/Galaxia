@@ -29,7 +29,6 @@ import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
@@ -445,7 +444,7 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public void createResourceTransfer(CelestialObject sourceBody, CelestialManagedAsset sourceAsset,
+                    public void createResourceTransfer(CelestialObject sourceBody, CelestialAsset sourceAsset,
                         StationTransferTarget target) {
                         OrbitalMapWidget.this.createResourceTransfer(sourceBody, sourceAsset, target);
                     }
@@ -497,22 +496,22 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public boolean hasStoredConstructionResources(CelestialManagedAsset asset) {
+                    public boolean hasStoredConstructionResources(CelestialAsset asset) {
                         return assetSupport.hasStoredConstructionResources(asset);
                     }
 
                     @Override
-                    public boolean isManageableStationAsset(CelestialManagedAsset asset) {
+                    public boolean isManageableStationAsset(CelestialAsset asset) {
                         return assetSupport.isManageableStationAsset(asset);
                     }
 
                     @Override
-                    public String formatAssetDisplayName(CelestialManagedAsset asset) {
+                    public String formatAssetDisplayName(CelestialAsset asset) {
                         return assetSupport.formatAssetDisplayName(asset);
                     }
 
                     @Override
-                    public String buildConstructionInventorySummary(CelestialManagedAsset asset) {
+                    public String buildConstructionInventorySummary(CelestialAsset asset) {
                         return assetSupport.buildConstructionInventorySummary(asset);
                     }
 
@@ -546,31 +545,31 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public void openPendingAssetRename(CelestialManagedAsset asset) {
+                    public void openPendingAssetRename(CelestialAsset asset) {
                         assetActionController.openPendingAssetRename(assetUiState, asset);
                         assetManagementWidget.markStructureDirty();
                     }
 
                     @Override
-                    public void openPendingConstructionCancellation(CelestialManagedAsset asset) {
+                    public void openPendingConstructionCancellation(CelestialAsset asset) {
                         assetActionController.openPendingConstructionCancellation(assetUiState, asset);
                         assetManagementWidget.markStructureDirty();
                     }
 
                     @Override
-                    public void openPendingResourceTransfer(CelestialManagedAsset asset) {
+                    public void openPendingResourceTransfer(CelestialAsset asset) {
                         assetActionController.openPendingResourceTransfer(assetUiState, root, asset);
                         assetManagementWidget.markStructureDirty();
                     }
 
                     @Override
-                    public void openPendingAssetManagement(CelestialManagedAsset asset) {
+                    public void openPendingAssetManagement(CelestialAsset asset) {
                         assetActionController.openPendingAssetManagement(assetUiState, asset);
                         assetManagementWidget.markStructureDirty();
                     }
 
                     @Override
-                    public void openPendingAssetDestruction(CelestialManagedAsset asset) {
+                    public void openPendingAssetDestruction(CelestialAsset asset) {
                         assetActionController.openPendingAssetDestruction(assetUiState, asset);
                         assetManagementWidget.markStructureDirty();
                     }
@@ -1987,7 +1986,7 @@ public class OrbitalView {
             return true;
         }
 
-        private void createResourceTransfer(CelestialObject sourceBody, CelestialManagedAsset sourceAsset,
+        private void createResourceTransfer(CelestialObject sourceBody, CelestialAsset sourceAsset,
             StationTransferTarget target) {
             if (sourceBody == null || sourceAsset == null || target == null || target.hostBody() == null) {
                 showActionStatus("Transfer failed");
