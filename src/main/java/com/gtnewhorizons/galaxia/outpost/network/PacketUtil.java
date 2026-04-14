@@ -3,10 +3,10 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-import io.netty.buffer.ByteBuf;
-
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+
+import io.netty.buffer.ByteBuf;
 
 /** Shared serialization helpers for outpost network packets. */
 final class PacketUtil {

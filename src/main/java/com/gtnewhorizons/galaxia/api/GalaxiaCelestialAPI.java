@@ -159,7 +159,8 @@ public final class GalaxiaCelestialAPI {
 
     public static CelestialObject findStar(CelestialObject root, CelestialObjectId targetId) {
         if (root == null || targetId == null) return null;
-        return findStar(root, targetId);
+        CelestialObject target = get(targetId).orElse(null);
+        return findStar(root, target);
     }
 
     public static CelestialObject findStar(CelestialObject root, CelestialObject target) {

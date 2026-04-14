@@ -45,4 +45,8 @@ public final class LogisticsConfiguration {
         configs.clear();
         configs.putAll(snapshot);
     }
+
+    public void clear() {
+        configs.clear();
+    }
 }

@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.outpost.network;
 
+import java.util.function.Function;
+
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
@@ -15,8 +17,6 @@ import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
-
-import java.util.function.Function;
 
 public final class OutpostModuleUpdatePacket implements IMessage {
 
@@ -49,25 +49,29 @@ public final class OutpostModuleUpdatePacket implements IMessage {
         return pkt;
     }
 
-    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, String payload) {
+    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action,
+        String payload) {
         OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
         pkt.stringPayload = payload == null ? "" : payload;
         return pkt;
     }
 
-    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, boolean payload) {
+    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action,
+        boolean payload) {
         OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
         pkt.bytePayload = (byte) (payload ? 1 : 0);
         return pkt;
     }
 
-    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, double payload) {
+    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action,
+        double payload) {
         OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
         pkt.doublePayload = payload;
         return pkt;
     }
 
-    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, Enum<?> payload) {
+    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action,
+        Enum<?> payload) {
         OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
         pkt.bytePayload = (byte) payload.ordinal();
         return pkt;
@@ -151,7 +155,8 @@ public final class OutpostModuleUpdatePacket implements IMessage {
 
         @Override
         public IMessage onMessage(OutpostModuleUpdatePacket packet, MessageContext ctx) {
-            AutomatedOutpost state = OutpostDataStore.get().getByAssetId(packet.assetId);
+            AutomatedOutpost state = OutpostDataStore.get()
+                .getByAssetId(packet.assetId);
             if (state == null) return null;
 
             var modules = state.modules();
@@ -164,14 +169,15 @@ public final class OutpostModuleUpdatePacket implements IMessage {
                 case 1 -> handleConfig(packet, state, module);
             }
 
-            // Return delta packet instead of full sync
+            // Return sync packet instead of full sync
             if (packet.type == 0 && packet.getAction() == Action.DESTROY) {
-                return OutpostDeltaPacket.moduleRemoved(packet.assetId, packet.moduleIndex);
+                return OutpostSyncPacket.moduleRemoved(packet.assetId, packet.moduleIndex);
             }
-            return OutpostDeltaPacket.moduleUpdated(packet.assetId, packet.moduleIndex, module);
+            return OutpostSyncPacket.moduleUpdated(packet.assetId, packet.moduleIndex, module);
         }
 
-        private void handleAction(OutpostModuleUpdatePacket packet, AutomatedOutpost state, AutomatedOutpostModule module) {
+        private void handleAction(OutpostModuleUpdatePacket packet, AutomatedOutpost state,
+            AutomatedOutpostModule module) {
             switch (packet.getAction()) {
                 case ENABLE -> {
                     if (module.status() == Buildable.Status.DISABLED) {
@@ -183,32 +189,57 @@ public final class OutpostModuleUpdatePacket implements IMessage {
             }
         }
 
-        private void handleConfig(OutpostModuleUpdatePacket packet, AutomatedOutpost state, AutomatedOutpostModule module) {
+        private void handleConfig(OutpostModuleUpdatePacket packet, AutomatedOutpost state,
+            AutomatedOutpostModule module) {
             switch (packet.getConfigAction()) {
-                case ADD_MINER_BLACKLIST -> handleMinerBlacklist(module, packet.getStringPayload(), true, state, packet.moduleIndex);
-                case REMOVE_MINER_BLACKLIST -> handleMinerBlacklist(module, packet.getStringPayload(), false, state, packet.moduleIndex);
-                case SET_MINER_COPY_SETTINGS -> handleMinerCopySettings(module, packet.getBooleanPayload(), state, packet.moduleIndex);
+                case ADD_MINER_BLACKLIST -> handleMinerBlacklist(
+                    module,
+                    packet.getStringPayload(),
+                    true,
+                    state,
+                    packet.moduleIndex);
+                case REMOVE_MINER_BLACKLIST -> handleMinerBlacklist(
+                    module,
+                    packet.getStringPayload(),
+                    false,
+                    state,
+                    packet.moduleIndex);
+                case SET_MINER_COPY_SETTINGS -> handleMinerCopySettings(
+                    module,
+                    packet.getBooleanPayload(),
+                    state,
+                    packet.moduleIndex);
                 case SET_ALLOW_SHOOTING_MODE -> handleHammerConfig(module, h -> {
                     AllowShootingConfig.Mode mode = packet.getEnumPayload(AllowShootingConfig.Mode.class);
-                    return new AllowShootingConfig(mode, h.getConfig().threshold());
+                    return new AllowShootingConfig(
+                        mode,
+                        h.getConfig()
+                            .threshold());
                 });
-                case SET_ALLOW_SHOOTING_THRESHOLD -> handleHammerConfig(module, h -> {
-                    return new AllowShootingConfig(h.getConfig().mode(), packet.getDoublePayload());
-                });
+                case SET_ALLOW_SHOOTING_THRESHOLD -> handleHammerConfig(
+                    module,
+                    h -> {
+                        return new AllowShootingConfig(
+                            h.getConfig()
+                                .mode(),
+                            packet.getDoublePayload());
+                    });
                 case SET_PLANETARY_HANDLING -> {
                     if (module instanceof ModuleBigHammer hammer) {
                         hammer.setPlanetaryHandling(packet.getBooleanPayload());
                     }
                 }
                 case SET_ROUTE_PRIORITY -> handleHammerConfig(module, h -> {
-                    OrbitalTransferPlanner.RoutePriority priority = packet.getEnumPayload(OrbitalTransferPlanner.RoutePriority.class);
+                    OrbitalTransferPlanner.RoutePriority priority = packet
+                        .getEnumPayload(OrbitalTransferPlanner.RoutePriority.class);
                     h.setPriority(priority);
                     return h.getConfig();
                 });
             }
         }
 
-        private void handleMinerBlacklist(AutomatedOutpostModule module, String payload, boolean add, AutomatedOutpost state, int moduleIndex) {
+        private void handleMinerBlacklist(AutomatedOutpostModule module, String payload, boolean add,
+            AutomatedOutpost state, int moduleIndex) {
             if (!(module instanceof ModuleMiner miner)) return;
             if (add) {
                 miner.withAddedBlacklist(payload);
@@ -220,7 +251,8 @@ public final class OutpostModuleUpdatePacket implements IMessage {
             }
         }
 
-        private void handleMinerCopySettings(AutomatedOutpostModule module, boolean payload, AutomatedOutpost state, int moduleIndex) {
+        private void handleMinerCopySettings(AutomatedOutpostModule module, boolean payload, AutomatedOutpost state,
+            int moduleIndex) {
             if (!(module instanceof ModuleMiner miner)) return;
             miner.withCopySettingsToOtherMiners(payload);
             if (payload) {
@@ -228,7 +260,8 @@ public final class OutpostModuleUpdatePacket implements IMessage {
             }
         }
 
-        private void handleHammerConfig(AutomatedOutpostModule module, Function<IHammer, AllowShootingConfig> configUpdater) {
+        private void handleHammerConfig(AutomatedOutpostModule module,
+            Function<IHammer, AllowShootingConfig> configUpdater) {
             if (!(module instanceof IHammer hammer)) return;
             AllowShootingConfig newConfig = configUpdater.apply(hammer);
             if (newConfig != null) {
@@ -237,10 +270,13 @@ public final class OutpostModuleUpdatePacket implements IMessage {
         }
     }
 
-    private static void copyMinerSettingsToOtherMiners(AutomatedOutpost state, int sourceModuleIndex, ModuleMiner sourceMiner) {
-        for (int i = 0; i < state.modules().size(); i++) {
+    private static void copyMinerSettingsToOtherMiners(AutomatedOutpost state, int sourceModuleIndex,
+        ModuleMiner sourceMiner) {
+        for (int i = 0; i < state.modules()
+            .size(); i++) {
             if (i == sourceModuleIndex) continue;
-            AutomatedOutpostModule other = state.modules().get(i);
+            AutomatedOutpostModule other = state.modules()
+                .get(i);
             if (!(other instanceof ModuleMiner miner)) continue;
             miner.withCopySettingsToOtherMiners(sourceMiner.getCopySettingsToOtherMiners());
             miner.blacklistedItemKeys.clear();

@@ -88,7 +88,7 @@ public final class OutpostDebugAddItemPacket implements IMessage {
                 resource,
                 packet.assetId,
                 playerName);
-            return OutpostDeltaPacket.inventoryAdded(packet.assetId, packet.resourceKey, clampedAmount);
+            return OutpostSyncPacket.inventoryAdded(packet.assetId, packet.resourceKey, clampedAmount);
         }
     }
 }

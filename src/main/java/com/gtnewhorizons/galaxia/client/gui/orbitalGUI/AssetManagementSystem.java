@@ -1362,17 +1362,20 @@ public final class AssetManagementSystem {
                         .size(configureWidth, 20));
                 }
                 row.child(createDisableButton(isDisabled ? "Enable" : "Disable", operational, () -> {
-                    OutpostModuleUpdatePacket.Action action = isDisabled ? OutpostModuleUpdatePacket.Action.ENABLE : OutpostModuleUpdatePacket.Action.DISABLE;
+                    OutpostModuleUpdatePacket.Action action = isDisabled ? OutpostModuleUpdatePacket.Action.ENABLE
+                        : OutpostModuleUpdatePacket.Action.DISABLE;
                     state.armedModuleDestroyIndex = -1;
-                    Galaxia.GALAXIA_NETWORK.sendToServer(OutpostModuleUpdatePacket.action(outpost.assetId, index, action));
+                    Galaxia.GALAXIA_NETWORK
+                        .sendToServer(OutpostModuleUpdatePacket.action(outpost.assetId, index, action));
                 }).pos(disableX, 12)
                     .size(disableWidth, 20));
                 boolean armedDestroy = state.armedModuleDestroyIndex == index;
                 row.child(createTwoStageDestructiveButton("Destroy", armedDestroy, true, () -> {
                     if (state.armedModuleDestroyIndex == index) {
                         state.armedModuleDestroyIndex = -1;
-                        Galaxia.GALAXIA_NETWORK
-                            .sendToServer(OutpostModuleUpdatePacket.action(outpost.assetId, index, OutpostModuleUpdatePacket.Action.DESTROY));
+                        Galaxia.GALAXIA_NETWORK.sendToServer(
+                            OutpostModuleUpdatePacket
+                                .action(outpost.assetId, index, OutpostModuleUpdatePacket.Action.DESTROY));
                     } else {
                         state.armedModuleDestroyIndex = index;
                         markStructureDirty();
@@ -1850,7 +1853,11 @@ public final class AssetManagementSystem {
                     ModuleBigHammer bh = (ModuleBigHammer) hammer;
                     bh.setPlanetaryHandling(!planetaryHandling);
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_PLANETARY_HANDLING, !planetaryHandling));
+                        OutpostModuleUpdatePacket.config(
+                            outpost.assetId,
+                            modIdx,
+                            OutpostModuleUpdatePacket.ConfigAction.SET_PLANETARY_HANDLING,
+                            !planetaryHandling));
                     markStructureDirty();
                 }).pos(296, 52)
                     .size(34, 18));
@@ -2037,7 +2044,11 @@ public final class AssetManagementSystem {
             AllowShootingConfig newCfg = new AllowShootingConfig(newMode, threshold);
             module.setConfig(newCfg);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_MODE, newMode));
+                OutpostModuleUpdatePacket.config(
+                    outpost.assetId,
+                    modIdx,
+                    OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_MODE,
+                    newMode));
         }
 
         private void applyShootingThresholdUpdate(IHammer module, AutomatedOutpost outpost, int modIdx,
@@ -2046,7 +2057,11 @@ public final class AssetManagementSystem {
             AllowShootingConfig newCfg = new AllowShootingConfig(mode, newThreshold);
             module.setConfig(newCfg);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_THRESHOLD, newThreshold));
+                OutpostModuleUpdatePacket.config(
+                    outpost.assetId,
+                    modIdx,
+                    OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_THRESHOLD,
+                    newThreshold));
         }
 
         private double getCurrentShootingThreshold(IHammer module, boolean isBigHammer) {
@@ -2060,7 +2075,11 @@ public final class AssetManagementSystem {
             if (module == null || priority == null) return;
             module.setPriority(priority);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ROUTE_PRIORITY, priority));
+                OutpostModuleUpdatePacket.config(
+                    outpost.assetId,
+                    modIdx,
+                    OutpostModuleUpdatePacket.ConfigAction.SET_ROUTE_PRIORITY,
+                    priority));
         }
 
         private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpost outpost,
@@ -2079,7 +2098,11 @@ public final class AssetManagementSystem {
                 createFooterButton(miner.getCopySettingsToOtherMiners() ? "Copy: ON" : "Copy Settings", true, () -> {
                     miner.withCopySettingsToOtherMiners(!miner.getCopySettingsToOtherMiners());
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        OutpostModuleUpdatePacket.config(outpost.assetId, state.configuringModuleIndex, OutpostModuleUpdatePacket.ConfigAction.SET_MINER_COPY_SETTINGS, miner.getCopySettingsToOtherMiners()));
+                        OutpostModuleUpdatePacket.config(
+                            outpost.assetId,
+                            state.configuringModuleIndex,
+                            OutpostModuleUpdatePacket.ConfigAction.SET_MINER_COPY_SETTINGS,
+                            miner.getCopySettingsToOtherMiners()));
                     markStructureDirty();
                 }).pos(82, 32)
                     .size(100, 20)
@@ -2137,7 +2160,8 @@ public final class AssetManagementSystem {
                         OutpostModuleUpdatePacket.config(
                             outpost.assetId,
                             state.configuringModuleIndex,
-                            blacklisted ? OutpostModuleUpdatePacket.ConfigAction.REMOVE_MINER_BLACKLIST : OutpostModuleUpdatePacket.ConfigAction.ADD_MINER_BLACKLIST,
+                            blacklisted ? OutpostModuleUpdatePacket.ConfigAction.REMOVE_MINER_BLACKLIST
+                                : OutpostModuleUpdatePacket.ConfigAction.ADD_MINER_BLACKLIST,
                             option.key()));
                     markStructureDirty();
                 }).pos(434, 4)

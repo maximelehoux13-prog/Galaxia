@@ -89,4 +89,8 @@ public final class AutomatedOutpostInventory {
             amounts.put(item, amount);
         }
     }
+
+    public void clear() {
+       amounts.clear();
+    }
 }

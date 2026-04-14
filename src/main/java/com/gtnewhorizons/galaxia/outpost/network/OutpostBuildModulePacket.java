@@ -119,9 +119,10 @@ public final class OutpostBuildModulePacket implements IMessage {
                 player.getGameProfile()
                     .getName());
 
-            // Send a delta packet back so the requesting client sees the new module immediately.
-            int moduleIndex = state.modules().size() - 1;
-            return OutpostDeltaPacket.moduleAdded(packet.assetId, moduleIndex, module);
+            // Send a sync packet back so the requesting client sees the new module immediately.
+            int moduleIndex = state.modules()
+                .size() - 1;
+            return OutpostSyncPacket.moduleAdded(packet.assetId, moduleIndex, module);
         }
 
         private AutomatedOutpostModule createModule(OutpostModuleKind kind) {

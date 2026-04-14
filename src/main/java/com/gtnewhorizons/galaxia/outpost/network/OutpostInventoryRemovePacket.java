@@ -53,7 +53,7 @@ public final class OutpostInventoryRemovePacket implements IMessage {
             long amount = state.inventory.getAmount(resource);
             if (amount > 0) {
                 state.inventory.add(resource, -amount);
-                return OutpostDeltaPacket.inventoryRemoved(packet.assetId, packet.resourceKey, amount);
+                return OutpostSyncPacket.inventoryRemoved(packet.assetId, packet.resourceKey, amount);
             }
             return null;
         }

@@ -65,7 +65,7 @@ public final class OutpostRequestSyncPacket implements IMessage {
                 }
             }
             if (state != null) {
-                return new OutpostFullSyncPacket(state);
+                return OutpostSyncPacket.fullSync(state);
             }
             return null;
         }

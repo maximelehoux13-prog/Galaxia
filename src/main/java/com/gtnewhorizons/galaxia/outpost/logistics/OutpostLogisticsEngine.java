@@ -17,7 +17,7 @@ import com.gtnewhorizons.galaxia.outpost.module.ModuleHammer;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
-import com.gtnewhorizons.galaxia.outpost.network.OutpostFullSyncPacket;
+import com.gtnewhorizons.galaxia.outpost.network.OutpostSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -479,7 +479,7 @@ public final class OutpostLogisticsEngine {
         syncCooldownTicks = 20;
         for (AutomatedOutpost outpost : OutpostDataStore.get()
             .allOutposts()) {
-            Galaxia.GALAXIA_NETWORK.sendToAll(new OutpostFullSyncPacket(outpost));
+            Galaxia.GALAXIA_NETWORK.sendToAll(OutpostSyncPacket.fullSync(outpost));
         }
         Galaxia.GALAXIA_NETWORK.sendToAll(new LogisticsTasksSyncPacket(activeTasks));
         Galaxia.GALAXIA_NETWORK.sendToAll(new LogisticsSignalsSyncPacket(LogisticsSignalStore.get()));

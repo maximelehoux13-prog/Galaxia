@@ -17,11 +17,10 @@ import com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostDebugAddItemPacket;
-import com.gtnewhorizons.galaxia.outpost.network.OutpostDeltaPacket;
-import com.gtnewhorizons.galaxia.outpost.network.OutpostFullSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryRemovePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
+import com.gtnewhorizons.galaxia.outpost.network.OutpostSyncPacket;
 import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
 
 import cpw.mods.fml.common.Mod;
@@ -108,8 +107,7 @@ public final class Galaxia {
                 id++, Side.SERVER);
         GALAXIA_NETWORK.registerMessage(OutpostDebugAddItemPacket.Handler.class, OutpostDebugAddItemPacket.class, id++,
                 Side.SERVER);
-        GALAXIA_NETWORK.registerMessage(OutpostFullSyncPacket.Handler.class, OutpostFullSyncPacket.class, id++,
-                Side.CLIENT);
+        GALAXIA_NETWORK.registerMessage(OutpostSyncPacket.Handler.class, OutpostSyncPacket.class, id++, Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(OutpostRequestSyncPacket.Handler.class, OutpostRequestSyncPacket.class, id++,
                 Side.SERVER);
         GALAXIA_NETWORK.registerMessage(OutpostBuildModulePacket.Handler.class, OutpostBuildModulePacket.class, id++,
@@ -118,7 +116,6 @@ public final class Galaxia {
                 id++, Side.SERVER);
         GALAXIA_NETWORK.registerMessage(OutpostModuleUpdatePacket.Handler.class, OutpostModuleUpdatePacket.class, id++,
                 Side.SERVER);
-        GALAXIA_NETWORK.registerMessage(OutpostDeltaPacket.Handler.class, OutpostDeltaPacket.class, id++, Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(LogisticsTasksSyncPacket.Handler.class, LogisticsTasksSyncPacket.class, id++,
                 Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(LogisticsSignalsSyncPacket.Handler.class, LogisticsSignalsSyncPacket.class,

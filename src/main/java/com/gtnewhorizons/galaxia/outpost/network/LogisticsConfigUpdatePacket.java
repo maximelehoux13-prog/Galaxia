@@ -119,7 +119,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             ItemStackWrapper resource = ItemStackWrapper.fromKey(packet.resourceKey);
             if (packet.removeEntry) {
                 state.logisticsConfig.reset(resource);
-                return OutpostDeltaPacket.logisticsConfigRemoved(packet.assetId, packet.resourceKey);
+                return OutpostSyncPacket.logisticsConfigRemoved(packet.assetId, packet.resourceKey);
             } else {
                 LogisticsResourceConfig config = new LogisticsResourceConfig(
                     packet.minReserve,
@@ -127,8 +127,13 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
                     packet.isImportEnabled,
                     packet.isSupplyEnabled);
                 state.logisticsConfig.set(resource, config);
-                return OutpostDeltaPacket.logisticsConfigUpdated(packet.assetId, packet.resourceKey, 
-                    config.minReserve(), config.orderSize(), config.isImportEnabled(), config.isSupplyEnabled());
+                return OutpostSyncPacket.logisticsConfigUpdated(
+                    packet.assetId,
+                    packet.resourceKey,
+                    config.minReserve(),
+                    config.orderSize(),
+                    config.isImportEnabled(),
+                    config.isSupplyEnabled());
             }
         }
     }
