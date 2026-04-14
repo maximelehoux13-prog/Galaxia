@@ -52,8 +52,7 @@ import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsConfigUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryRemovePacket;
-import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleActionPacket;
-import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
+import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -1363,9 +1362,9 @@ public final class AssetManagementSystem {
                         .size(configureWidth, 20));
                 }
                 row.child(createDisableButton(isDisabled ? "Enable" : "Disable", operational, () -> {
-                    OutpostModuleActionPacket.Action action = isDisabled ? OutpostModuleActionPacket.Action.ENABLE : OutpostModuleActionPacket.Action.DISABLE;
+                    OutpostModuleUpdatePacket.Action action = isDisabled ? OutpostModuleUpdatePacket.Action.ENABLE : OutpostModuleUpdatePacket.Action.DISABLE;
                     state.armedModuleDestroyIndex = -1;
-                    Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, action));
+                    Galaxia.GALAXIA_NETWORK.sendToServer(OutpostModuleUpdatePacket.action(outpost.assetId, index, action));
                 }).pos(disableX, 12)
                     .size(disableWidth, 20));
                 boolean armedDestroy = state.armedModuleDestroyIndex == index;
@@ -1373,7 +1372,7 @@ public final class AssetManagementSystem {
                     if (state.armedModuleDestroyIndex == index) {
                         state.armedModuleDestroyIndex = -1;
                         Galaxia.GALAXIA_NETWORK
-                            .sendToServer(new OutpostModuleActionPacket(outpost.assetId, index, OutpostModuleActionPacket.Action.DESTROY));
+                            .sendToServer(OutpostModuleUpdatePacket.action(outpost.assetId, index, OutpostModuleUpdatePacket.Action.DESTROY));
                     } else {
                         state.armedModuleDestroyIndex = index;
                         markStructureDirty();
@@ -1851,10 +1850,10 @@ public final class AssetManagementSystem {
                     ModuleBigHammer bh = (ModuleBigHammer) hammer;
                     bh.setPlanetaryHandling(!planetaryHandling);
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        new OutpostModuleConfigPacket(
+                        OutpostModuleUpdatePacket.config(
                             outpost.assetId,
                             modIdx,
-                            OutpostModuleConfigPacket.ConfigAction.SET_PLANETARY_HANDLING,
+                            OutpostModuleUpdatePacket.ConfigAction.SET_PLANETARY_HANDLING,
                             String.valueOf(!planetaryHandling)));
                     markStructureDirty();
                 }).pos(296, 52)
@@ -2042,7 +2041,7 @@ public final class AssetManagementSystem {
             AllowShootingConfig newCfg = new AllowShootingConfig(newMode, threshold);
             module.setConfig(newCfg);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                new OutpostModuleConfigPacket(outpost.assetId, modIdx, OutpostModuleConfigPacket.ConfigAction.SET_ALLOW_SHOOTING_MODE, newMode.name()));
+                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_MODE, newMode.name()));
         }
 
         private void applyShootingThresholdUpdate(IHammer module, AutomatedOutpost outpost, int modIdx,
@@ -2051,10 +2050,10 @@ public final class AssetManagementSystem {
             AllowShootingConfig newCfg = new AllowShootingConfig(mode, newThreshold);
             module.setConfig(newCfg);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                new OutpostModuleConfigPacket(
+                OutpostModuleUpdatePacket.config(
                     outpost.assetId,
                     modIdx,
-                    OutpostModuleConfigPacket.ConfigAction.SET_ALLOW_SHOOTING_THRESHOLD,
+                    OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_THRESHOLD,
                     Double.toString(newThreshold)));
         }
 
@@ -2069,7 +2068,7 @@ public final class AssetManagementSystem {
             if (module == null || priority == null) return;
             module.setPriority(priority);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                new OutpostModuleConfigPacket(outpost.assetId, modIdx, OutpostModuleConfigPacket.ConfigAction.SET_ROUTE_PRIORITY, priority.name()));
+                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ROUTE_PRIORITY, priority.name()));
         }
 
         private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpost outpost,
@@ -2088,10 +2087,10 @@ public final class AssetManagementSystem {
                 createFooterButton(miner.getCopySettingsToOtherMiners() ? "Copy: ON" : "Copy Settings", true, () -> {
                     miner.withCopySettingsToOtherMiners(!miner.getCopySettingsToOtherMiners());
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        new OutpostModuleConfigPacket(
+                        OutpostModuleUpdatePacket.config(
                             outpost.assetId,
                             state.configuringModuleIndex,
-                            OutpostModuleConfigPacket.ConfigAction.SET_MINER_COPY_SETTINGS,
+                            OutpostModuleUpdatePacket.ConfigAction.SET_MINER_COPY_SETTINGS,
                             Boolean.toString(miner.getCopySettingsToOtherMiners())));
                     markStructureDirty();
                 }).pos(82, 32)
@@ -2147,10 +2146,10 @@ public final class AssetManagementSystem {
                         miner.withAddedBlacklist(option.key());
                     }
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        new OutpostModuleConfigPacket(
+                        OutpostModuleUpdatePacket.config(
                             outpost.assetId,
                             state.configuringModuleIndex,
-                            blacklisted ? OutpostModuleConfigPacket.ConfigAction.REMOVE_MINER_BLACKLIST : OutpostModuleConfigPacket.ConfigAction.ADD_MINER_BLACKLIST,
+                            blacklisted ? OutpostModuleUpdatePacket.ConfigAction.REMOVE_MINER_BLACKLIST : OutpostModuleUpdatePacket.ConfigAction.ADD_MINER_BLACKLIST,
                             option.key()));
                     markStructureDirty();
                 }).pos(434, 4)
