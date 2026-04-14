@@ -72,7 +72,30 @@ public interface Buildable {
         return true;
     }
 
+    default void updateConstruction() {
+        float constructionProgress = getConstructionProgress();
+        if (constructionProgress >= 1.0f) {
+            completeConstruction();
+        }
+    }
+
     default void completeConstruction() {
         updateStatus(Status.OPERATIONAL);
+    }
+
+    default boolean isOperational() {
+        return status() == Status.OPERATIONAL;
+    }
+
+    default boolean isDisabled() {
+        return status() == Status.DISABLED;
+    }
+
+    default boolean isInConstruction() {
+        return status() == Status.IN_CONSTRUCTION || status() == Status.CONSTRUCTION_SITE;
+    }
+
+    default boolean isManageable() {
+        return status() != Status.OPERATIONAL;
     }
 }

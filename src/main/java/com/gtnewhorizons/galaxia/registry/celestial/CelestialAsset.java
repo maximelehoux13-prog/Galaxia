@@ -32,6 +32,7 @@ public final class CelestialAsset implements Buildable {
             : Collections.unmodifiableMap(new LinkedHashMap<>(constructionInventory));
 
         this.assetId = assetId;
+        this.status = status;
         this.celestialObjectId = celestialObjectId;
         this.displayName = displayName;
         this.kind = kind;
@@ -46,10 +47,6 @@ public final class CelestialAsset implements Buildable {
 
     public Map<ItemStack, Long> constructionInventory() {
         return constructionInventory;
-    }
-
-    public boolean isManageable() {
-        return this.status() != CelestialAsset.Status.OPERATIONAL;
     }
 
     @Override
@@ -105,34 +102,6 @@ public final class CelestialAsset implements Buildable {
             constructionInventory);
     }
 
-    @Override
-    public String toString() {
-        return "CelestialAsset[" + "assetId="
-            + assetId
-            + ", "
-            + "celestialObjectId="
-            + celestialObjectId
-            + ", "
-            + "displayName="
-            + displayName
-            + ", "
-            + "kind="
-            + kind
-            + ", "
-            + "location="
-            + location
-            + ", "
-            + "status="
-            + status
-            + ", "
-            + "requiredResources="
-            + requiredResources
-            + ", "
-            + "constructionInventory="
-            + constructionInventory
-            + ']';
-    }
-
     public enum Kind {
         STATION,
         AUTOMATED_STATION,
@@ -165,6 +134,7 @@ public final class CelestialAsset implements Buildable {
             return new ID(id.id());
         }
 
+        @Override
         public String toString() {
             return id.toString();
         }

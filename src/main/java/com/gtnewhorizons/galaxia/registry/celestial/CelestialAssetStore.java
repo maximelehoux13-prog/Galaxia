@@ -100,7 +100,7 @@ public final class CelestialAssetStore {
                 if (!asset.assetId.equals(assetId) || (asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE)) {
                     continue;
                 }
-                asset.updateStatus(CelestialAsset.Status.OPERATIONAL);
+                asset.completeConstruction();
                 return true;
             }
         }
@@ -125,7 +125,7 @@ public final class CelestialAssetStore {
                     amount);
 
                 asset.setConstructionInventory(inventory);
-                if (isConstructionSatisfied(asset)) {
+                if (asset.isConstructionSatisfied()) {
                     asset.updateStatus(CelestialAsset.Status.OPERATIONAL);
                 }
                 return true;
@@ -203,18 +203,6 @@ public final class CelestialAssetStore {
 
     public static Map<ItemStack, Long> previewRequirements(CelestialAsset.Kind kind) {
         return Collections.unmodifiableMap(new LinkedHashMap<>(defaultRequirements(kind)));
-    }
-
-    private static boolean isConstructionSatisfied(CelestialAsset asset) {
-        for (Map.Entry<ItemStack, Long> required : asset.requiredResources()
-            .entrySet()) {
-            long available = asset.constructionInventory()
-                .getOrDefault(required.getKey(), 0L);
-            if (available < required.getValue()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static Map<ItemStack, Long> mergeIntoConstructionInventory(Map<ItemStack, Long> constructionInventory,

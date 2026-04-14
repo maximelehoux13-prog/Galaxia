@@ -58,14 +58,6 @@ public abstract class AutomatedOutpostModule implements Buildable {
         this.status = status;
     }
 
-    public boolean isOperational() {
-        return status == AutomatedOutpostModule.Status.OPERATIONAL;
-    }
-
-    public boolean isDisabled() {
-        return status == AutomatedOutpostModule.Status.DISABLED;
-    }
-
     public void setConstructionProgress(float progress) {}
 
     public Map<ItemStack, Long> getConsumedResources() {
@@ -74,28 +66,6 @@ public abstract class AutomatedOutpostModule implements Buildable {
 
     public void clearConsumedResources() {
         this.constructionResources.clear();
-    }
-
-    public float getConstructionProgress() {
-        Map<ItemStack, Long> cost = getConstructionCost();
-
-        if (cost.isEmpty() || status != AutomatedOutpostModule.Status.IN_CONSTRUCTION) {
-            return 1.0f;
-        }
-
-        long totalRequired = 0;
-        long totalCollected = 0;
-
-        for (Map.Entry<ItemStack, Long> entry : cost.entrySet()) {
-            ItemStack requiredItem = entry.getKey();
-            long requiredAmount = entry.getValue();
-            long collectedAmount = constructionResources.getOrDefault(requiredItem, 0L);
-
-            totalRequired += requiredAmount;
-            totalCollected += Math.min(collectedAmount, requiredAmount);
-        }
-
-        return (float) totalCollected / totalRequired;
     }
 
     public Map<ItemStack, Long> getConstructionCost() {
@@ -114,15 +84,16 @@ public abstract class AutomatedOutpostModule implements Buildable {
 
     public abstract OutpostModuleKind getKind();
 
-    public void completeConstructionInstantly() {
+    @Override
+    public void completeConstruction() {
+        updateStatus(Status.OPERATIONAL);
         constructionResources.clear();
-        status = AutomatedOutpostModule.Status.OPERATIONAL;
         energyBuffer = baseEnergyCapacity;
     }
 
     public void tick(AutomatedOutpost outpost) {
         if (status == AutomatedOutpostModule.Status.IN_CONSTRUCTION) {
-            updateConstruction(outpost);
+            updateConstruction();
         } else if (status == AutomatedOutpostModule.Status.OPERATIONAL) {
             updateOperational(outpost);
         }
@@ -131,13 +102,6 @@ public abstract class AutomatedOutpostModule implements Buildable {
     public long getDisplayedPowerEuPerTick() {
         if (status != AutomatedOutpostModule.Status.OPERATIONAL) return 0L;
         return powerDrawEuPerTick;
-    }
-
-    private void updateConstruction(AutomatedOutpost outpost) {
-        float constructionProgress = getConstructionProgress();
-        if (constructionProgress >= 1.0f) {
-            completeConstructionInstantly();
-        }
     }
 
     private void updateOperational(AutomatedOutpost outpost) {

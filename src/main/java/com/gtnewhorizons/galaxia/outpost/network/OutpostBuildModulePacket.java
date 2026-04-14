@@ -118,7 +118,7 @@ public final class OutpostBuildModulePacket implements IMessage {
                 return null;
             }
             if (packet.instantBuild && player.capabilities.isCreativeMode) {
-                module.completeConstructionInstantly();
+                module.completeConstruction();
             }
             state.addModule(module);
 
