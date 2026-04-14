@@ -8,7 +8,7 @@ import com.github.bsideup.jabel.Desugar;
 
 @Desugar
 public record CelestialManagedAsset(String assetId, CelestialObjectId celestialObjectId, String displayName,
-    CelestialAssetKind kind, CelestialAssetLocation location, CelestialAssetStatus status,
+    CelestialAsset.Kind kind, CelestialAsset.Location location, CelestialAsset.Status status,
     List<CelestialAssetRequirement> requiredResources, List<CelestialAssetRequirement> constructionInventory) {
 
     public CelestialManagedAsset {

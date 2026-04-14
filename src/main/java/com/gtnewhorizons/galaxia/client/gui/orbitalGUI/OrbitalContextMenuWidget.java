@@ -15,7 +15,7 @@ import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumColors;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 
@@ -55,7 +55,7 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
 
         void createBaseStation(CelestialObject body);
 
-        void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind, boolean openManagementFirst);
+        void triggerAssetCreation(CelestialObject body, CelestialAsset.Kind kind, boolean openManagementFirst);
 
         void closeContextMenu();
     }
@@ -210,9 +210,9 @@ public final class OrbitalContextMenuWidget extends ParentWidget<OrbitalContextM
             case MANAGE_ASSETS -> callbacks.openAssetManagement(body);
             case CREATE_STATION -> callbacks.createBaseStation(body);
             case OPEN_AUTOMATED_STATION_CONFIRM -> callbacks
-                .triggerAssetCreation(body, CelestialAssetKind.AUTOMATED_STATION, true);
+                .triggerAssetCreation(body, CelestialAsset.Kind.AUTOMATED_STATION, true);
             case OPEN_AUTOMATED_OUTPOST_CONFIRM -> callbacks
-                .triggerAssetCreation(body, CelestialAssetKind.AUTOMATED_OUTPOST, true);
+                .triggerAssetCreation(body, CelestialAsset.Kind.AUTOMATED_OUTPOST, true);
             case MESSAGE -> {}
         }
         callbacks.closeContextMenu();

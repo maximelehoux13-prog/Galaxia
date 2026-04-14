@@ -2,17 +2,16 @@ package com.gtnewhorizons.galaxia.outpost.network;
 
 import java.util.UUID;
 
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
-import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -53,7 +52,7 @@ public final class OutpostRequestSyncPacket implements IMessage {
             if (state == null) {
                 // Lazily create state the first time a client opens the management UI
                 CelestialManagedAsset asset = CelestialAssetStore.findAsset(packet.assetId);
-                if (asset != null && asset.status() == CelestialAssetStatus.OPERATIONAL) {
+                if (asset != null && asset.status() == CelestialAsset.Status.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
                     String bodyId = asset.celestialObjectId()

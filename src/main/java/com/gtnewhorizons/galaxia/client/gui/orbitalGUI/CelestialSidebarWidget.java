@@ -30,8 +30,7 @@ import com.gtnewhorizons.galaxia.client.gui.mui.SafePhantomItemSlot;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostDebugAddItemPacket;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
@@ -555,9 +554,9 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private CelestialManagedAsset resolveSupplyDebugAsset() {
         if (supplyDebugTargetAssetId != null) {
             CelestialManagedAsset pinned = CelestialAssetStore.findAsset(supplyDebugTargetAssetId);
-            if (pinned != null && pinned.status() == CelestialAssetStatus.OPERATIONAL
-                && (pinned.kind() == CelestialAssetKind.AUTOMATED_OUTPOST
-                    || pinned.kind() == CelestialAssetKind.AUTOMATED_STATION)) {
+            if (pinned != null && pinned.status() == CelestialAsset.Status.OPERATIONAL
+                && (pinned.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST
+                    || pinned.kind() == CelestialAsset.Kind.AUTOMATED_STATION)) {
                 return pinned;
             }
             supplyDebugTargetAssetId = null;
@@ -575,9 +574,9 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         if (focused == null) return null;
         CelestialBodyAssetState state = CelestialAssetStore.getStateIfPresent(focused.id());
         for (CelestialManagedAsset asset : state.assets()) {
-            if (asset.status() != CelestialAssetStatus.OPERATIONAL) continue;
-            if (asset.kind() == CelestialAssetKind.AUTOMATED_OUTPOST
-                || asset.kind() == CelestialAssetKind.AUTOMATED_STATION) {
+            if (asset.status() != CelestialAsset.Status.OPERATIONAL) continue;
+            if (asset.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST
+                || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION) {
                 return asset.assetId();
             }
         }

@@ -5,6 +5,7 @@ import net.minecraft.item.ItemStack;
 import com.github.bsideup.jabel.Desugar;
 
 @Desugar
+@Deprecated
 public record CelestialAssetRequirement(ItemStack stack, long amount) {
 
     public CelestialAssetRequirement {

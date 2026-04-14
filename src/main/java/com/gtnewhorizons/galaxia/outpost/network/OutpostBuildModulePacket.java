@@ -11,7 +11,7 @@ import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
 import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 
@@ -99,7 +99,7 @@ public final class OutpostBuildModulePacket implements IMessage {
                         .getName());
                 return null;
             }
-            if (kind == OutpostModuleKind.MINER && asset.kind() != CelestialAssetKind.AUTOMATED_OUTPOST) {
+            if (kind == OutpostModuleKind.MINER && asset.kind() != CelestialAsset.Kind.AUTOMATED_OUTPOST) {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: rejected MINER on {} ({}) from player {}",
                     packet.assetId,

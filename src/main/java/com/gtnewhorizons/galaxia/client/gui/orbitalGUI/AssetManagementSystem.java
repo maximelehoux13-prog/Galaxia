@@ -55,10 +55,8 @@ import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleActionPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleConfigPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetRequirement;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
@@ -82,8 +80,8 @@ record ButtonRect(int left, int top, int right, int bottom) {
 record ModalBounds(int left, int top, int right, int bottom) {}
 
 @Desugar
-record PendingAssetCreation(CelestialObjectId celestialObjectId, String displayName, CelestialAssetKind kind,
-    CelestialAssetLocation location, List<CelestialAssetRequirement> requiredResources) {}
+record PendingAssetCreation(CelestialObjectId celestialObjectId, String displayName, CelestialAsset.Kind kind,
+    CelestialAsset.Location location, List<CelestialAssetRequirement> requiredResources) {}
 
 @Desugar
 record PendingAssetRename(CelestialManagedAsset asset) {}
@@ -146,9 +144,9 @@ public final class AssetManagementSystem {
         }
 
         boolean isManageableStationAsset(CelestialManagedAsset asset) {
-            if (asset == null || asset.status() != CelestialAssetStatus.OPERATIONAL) return false;
-            return asset.kind() == CelestialAssetKind.STATION || asset.kind() == CelestialAssetKind.AUTOMATED_STATION
-                || asset.kind() == CelestialAssetKind.AUTOMATED_OUTPOST;
+            if (asset == null || asset.status() != CelestialAsset.Status.OPERATIONAL) return false;
+            return asset.kind() == CelestialAsset.Kind.STATION || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION
+                || asset.kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST;
         }
 
         String formatAssetDisplayName(CelestialManagedAsset asset) {
@@ -160,7 +158,7 @@ public final class AssetManagementSystem {
         }
 
         String buildConstructionInventorySummary(CelestialManagedAsset asset) {
-            if (asset.status() == CelestialAssetStatus.DECONSTRUCTION)
+            if (asset.status() == CelestialAsset.Status.DECONSTRUCTION)
                 return buildStoredInventorySummary(asset.constructionInventory());
             if (asset.requiredResources()
                 .isEmpty()) return "Empty";
@@ -191,17 +189,17 @@ public final class AssetManagementSystem {
         private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
             CelestialBodyAssetState state = CelestialAssetStore.getState(current.id());
             for (CelestialManagedAsset asset : state.assets()) {
-                if (asset.status() == CelestialAssetStatus.OPERATIONAL
-                    && asset.location() == CelestialAssetLocation.ORBIT
-                    && (asset.kind() == CelestialAssetKind.STATION
-                        || asset.kind() == CelestialAssetKind.AUTOMATED_STATION)) {
+                if (asset.status() == CelestialAsset.Status.OPERATIONAL
+                    && asset.location() == CelestialAsset.Location.ORBIT
+                    && (asset.kind() == CelestialAsset.Kind.STATION
+                        || asset.kind() == CelestialAsset.Kind.AUTOMATED_STATION)) {
                     targets.add(new StationTransferTarget(asset.assetId(), asset.displayName(), current));
                 }
             }
             for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) collectTargets(child, targets);
         }
 
-        String formatAssetKind(CelestialAssetKind kind) {
+        String formatAssetKind(CelestialAsset.Kind kind) {
             return switch (kind) {
                 case STATION -> "Station";
                 case AUTOMATED_STATION -> "Automated Station";
@@ -209,7 +207,7 @@ public final class AssetManagementSystem {
             };
         }
 
-        String formatAssetLocation(CelestialAssetLocation location) {
+        String formatAssetLocation(CelestialAsset.Location location) {
             return switch (location) {
                 case ORBIT -> "Orbit";
                 case SURFACE -> "Surface";
@@ -271,17 +269,17 @@ public final class AssetManagementSystem {
             if (body == null) return;
             CelestialAssetStore.createOperationalAsset(
                 body.id(),
-                buildDefaultAssetDisplayName(body, CelestialAssetKind.STATION),
-                CelestialAssetKind.STATION,
-                getDefaultAssetLocation(CelestialAssetKind.STATION));
+                buildDefaultAssetDisplayName(body, CelestialAsset.Kind.STATION),
+                CelestialAsset.Kind.STATION,
+                getDefaultAssetLocation(CelestialAsset.Kind.STATION));
             callbacks.showActionStatus("Station created");
         }
 
-        void triggerAssetCreation(OrbitalAssetUiState state, CelestialObject body, CelestialAssetKind kind,
+        void triggerAssetCreation(OrbitalAssetUiState state, CelestialObject body, CelestialAsset.Kind kind,
             boolean openManagementFirst) {
             if (body == null) return;
             if (openManagementFirst) openAssetManagement(state, body);
-            CelestialAssetLocation location = getDefaultAssetLocation(kind);
+            CelestialAsset.Location location = getDefaultAssetLocation(kind);
             String displayName = buildDefaultAssetDisplayName(body, kind);
             if (callbacks.isCreativeBuildModeEnabled()) {
                 CelestialAssetStore.createOperationalAsset(body.id(), displayName, kind, location);
@@ -452,13 +450,13 @@ public final class AssetManagementSystem {
             if (state.pendingAssetCreation != null) dismissPendingAssetCreation(state);
         }
 
-        private String buildDefaultAssetDisplayName(CelestialObject body, CelestialAssetKind kind) {
+        private String buildDefaultAssetDisplayName(CelestialObject body, CelestialAsset.Kind kind) {
             return body.displayName() + " " + assetSupport.formatAssetKind(kind);
         }
 
-        private CelestialAssetLocation getDefaultAssetLocation(CelestialAssetKind kind) {
-            return kind == CelestialAssetKind.AUTOMATED_OUTPOST ? CelestialAssetLocation.SURFACE
-                : CelestialAssetLocation.ORBIT;
+        private CelestialAsset.Location getDefaultAssetLocation(CelestialAsset.Kind kind) {
+            return kind == CelestialAsset.Kind.AUTOMATED_OUTPOST ? CelestialAsset.Location.SURFACE
+                : CelestialAsset.Location.ORBIT;
         }
     }
 
@@ -555,17 +553,17 @@ public final class AssetManagementSystem {
 
             String buildConstructionInventorySummary(CelestialManagedAsset asset);
 
-            String formatAssetKind(CelestialAssetKind kind);
+            String formatAssetKind(CelestialAsset.Kind kind);
 
-            String formatAssetLocation(CelestialAssetLocation location);
+            String formatAssetLocation(CelestialAsset.Location location);
 
-            void drawAssetIcon(CelestialAssetKind kind, int x, int y, int size, float alpha);
+            void drawAssetIcon(CelestialAsset.Kind kind, int x, int y, int size, float alpha);
 
             void closeAssetManagement();
 
             void createBaseStation(CelestialObject body);
 
-            void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind, boolean openManagementFirst);
+            void triggerAssetCreation(CelestialObject body, CelestialAsset.Kind kind, boolean openManagementFirst);
 
             void openPendingAssetRename(CelestialManagedAsset asset);
 
@@ -902,23 +900,23 @@ public final class AssetManagementSystem {
                     .pos(modalWidth - 28, 6));
             modal.child(
                 createAssetKindButton(
-                    CelestialAssetKind.STATION,
+                    CelestialAsset.Kind.STATION,
                     "Create Station",
                     callbacks.canCreateBaseStation(body),
                     () -> callbacks.createBaseStation(body)).pos(14, 30));
             modal.child(
                 createAssetKindButton(
-                    CelestialAssetKind.AUTOMATED_STATION,
+                    CelestialAsset.Kind.AUTOMATED_STATION,
                     "Create Automated Station",
                     callbacks.canCreateAutomatedStation(body),
-                    () -> callbacks.triggerAssetCreation(body, CelestialAssetKind.AUTOMATED_STATION, false))
+                    () -> callbacks.triggerAssetCreation(body, CelestialAsset.Kind.AUTOMATED_STATION, false))
                         .pos(42, 30));
             modal.child(
                 createAssetKindButton(
-                    CelestialAssetKind.AUTOMATED_OUTPOST,
+                    CelestialAsset.Kind.AUTOMATED_OUTPOST,
                     "Create Automated Outpost",
                     callbacks.canCreateAutomatedOutpost(body),
-                    () -> callbacks.triggerAssetCreation(body, CelestialAssetKind.AUTOMATED_OUTPOST, false))
+                    () -> callbacks.triggerAssetCreation(body, CelestialAsset.Kind.AUTOMATED_OUTPOST, false))
                         .pos(70, 30));
             if (!callbacks.isGT5AutomationAvailable()) {
                 modal.child(
@@ -1172,7 +1170,7 @@ public final class AssetManagementSystem {
                                 .pos(14, currentTop)
                                 .size(bounds.right() - bounds.left() - 28, 36));
                 modal.child(
-                    createAssetIconWidget(CelestialAssetKind.STATION, 1.0f).pos(24, currentTop + 9)
+                    createAssetIconWidget(CelestialAsset.Kind.STATION, 1.0f).pos(24, currentTop + 9)
                         .size(16, 16));
                 modal.child(
                     createBodyText(target.displayName(), EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
@@ -1194,7 +1192,7 @@ public final class AssetManagementSystem {
             if (state.pendingAssetManagement == null) return;
             CelestialManagedAsset asset = state.pendingAssetManagement.asset();
 
-            if (asset.kind() != CelestialAssetKind.AUTOMATED_OUTPOST) {
+            if (asset.kind() != CelestialAsset.Kind.AUTOMATED_OUTPOST) {
                 ModalBounds bounds = createCenteredModalBounds(360, 150);
                 updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
                 ParentWidget<?> modal = createModalRoot(bounds);
@@ -1437,7 +1435,7 @@ public final class AssetManagementSystem {
                 .size(78, FOOTER_BUTTON_HEIGHT));
 
             boolean isAutomatedOutpost = state.pendingAssetManagement.asset()
-                .kind() == CelestialAssetKind.AUTOMATED_OUTPOST;
+                .kind() == CelestialAsset.Kind.AUTOMATED_OUTPOST;
             VerticalScrollData scrollData = new VerticalScrollData();
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(scrollX, scrollY)
                 .widthRelOffset(1f, -(scrollX * 2))
@@ -2372,7 +2370,7 @@ public final class AssetManagementSystem {
             row.child(
                 createAssetIconWidget(asset.kind(), 1.0f).pos(10, 9)
                     .size(16, 16));
-            boolean deconstruction = asset.status() == CelestialAssetStatus.DECONSTRUCTION;
+            boolean deconstruction = asset.status() == CelestialAsset.Status.DECONSTRUCTION;
             int actionButtonsWidth = ICON_BUTTON_SIZE;
             int textWidth = rowWidth - 32 - actionButtonsWidth - 16;
             row.child(createNameButton(asset, textWidth).pos(32, 4));
@@ -2533,7 +2531,7 @@ public final class AssetManagementSystem {
                 .shadow(true);
         }
 
-        private ButtonWidget<?> createAssetKindButton(CelestialAssetKind kind, String tooltip, boolean enabled,
+        private ButtonWidget<?> createAssetKindButton(CelestialAsset.Kind kind, String tooltip, boolean enabled,
             Runnable action) {
             return createIconButton(kind, AssetManagerButtonGlyph.NONE, tooltip, enabled, action);
         }
@@ -2543,7 +2541,7 @@ public final class AssetManagementSystem {
             return createIconButton(null, glyph, tooltip, enabled, action);
         }
 
-        private ButtonWidget<?> createIconButton(CelestialAssetKind iconKind, AssetManagerButtonGlyph glyph,
+        private ButtonWidget<?> createIconButton(CelestialAsset.Kind iconKind, AssetManagerButtonGlyph glyph,
             String tooltip, boolean enabled, Runnable action) {
             ButtonWidget<?> button = new ScrollAwareButtonWidget().size(ICON_BUTTON_SIZE, ICON_BUTTON_SIZE)
                 .background(createButtonBackground(enabled, false))
@@ -2743,13 +2741,13 @@ public final class AssetManagementSystem {
             });
         }
 
-        private IDrawable createAssetIconDrawable(CelestialAssetKind kind, float alpha) {
+        private IDrawable createAssetIconDrawable(CelestialAsset.Kind kind, float alpha) {
             return drawable(
                 (context, x, y, width, height) -> callbacks
                     .drawAssetIcon(kind, x + (width - 14) / 2, y + (height - 14) / 2, 14, alpha));
         }
 
-        private Widget<?> createAssetIconWidget(CelestialAssetKind kind, float alpha) {
+        private Widget<?> createAssetIconWidget(CelestialAsset.Kind kind, float alpha) {
             return createAssetIconDrawable(kind, alpha).asWidget();
         }
 
@@ -2811,8 +2809,8 @@ public final class AssetManagementSystem {
         private List<CelestialManagedAsset> getConstructionAssets(List<CelestialManagedAsset> assets) {
             List<CelestialManagedAsset> matching = new ArrayList<>();
             for (CelestialManagedAsset asset : assets) {
-                if (asset.status() == CelestialAssetStatus.CONSTRUCTION_SITE
-                    || asset.status() == CelestialAssetStatus.DECONSTRUCTION) matching.add(asset);
+                if (asset.status() == CelestialAsset.Status.CONSTRUCTION_SITE
+                    || asset.status() == CelestialAsset.Status.DECONSTRUCTION) matching.add(asset);
             }
             return matching;
         }
@@ -2820,13 +2818,13 @@ public final class AssetManagementSystem {
         private List<CelestialManagedAsset> getOperationalAssets(List<CelestialManagedAsset> assets) {
             List<CelestialManagedAsset> matching = new ArrayList<>();
             for (CelestialManagedAsset asset : assets) {
-                if (asset.status() == CelestialAssetStatus.OPERATIONAL) matching.add(asset);
+                if (asset.status() == CelestialAsset.Status.OPERATIONAL) matching.add(asset);
             }
             return matching;
         }
 
         private void handleConstructionAction(CelestialManagedAsset asset) {
-            if (asset.status() == CelestialAssetStatus.DECONSTRUCTION) {
+            if (asset.status() == CelestialAsset.Status.DECONSTRUCTION) {
                 callbacks.openPendingResourceTransfer(asset);
                 return;
             }

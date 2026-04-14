@@ -32,7 +32,7 @@ public final class CelestialAssetStore {
     }
 
     public static CelestialManagedAsset createAssetInConstruction(CelestialObjectId celestialObjectId,
-        String displayName, CelestialAssetKind kind, CelestialAssetLocation location) {
+        String displayName, CelestialAsset.Kind kind, CelestialAsset.Location location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         String assetId = "asset_" + UUID.randomUUID()
             .toString()
@@ -45,7 +45,7 @@ public final class CelestialAssetStore {
             displayName,
             kind,
             location,
-            CelestialAssetStatus.CONSTRUCTION_SITE,
+            CelestialAsset.Status.CONSTRUCTION_SITE,
             required,
             Collections.emptyList());
         state.assets.add(asset);
@@ -53,7 +53,7 @@ public final class CelestialAssetStore {
     }
 
     public static CelestialManagedAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAssetKind kind, CelestialAssetLocation location) {
+        CelestialAsset.Kind kind, CelestialAsset.Location location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         CelestialManagedAsset asset = new CelestialManagedAsset(
             "asset_" + UUID.randomUUID()
@@ -64,7 +64,7 @@ public final class CelestialAssetStore {
             displayName,
             kind,
             location,
-            CelestialAssetStatus.OPERATIONAL,
+            CelestialAsset.Status.OPERATIONAL,
             Collections.emptyList(),
             Collections.emptyList());
         state.assets.add(asset);
@@ -76,7 +76,7 @@ public final class CelestialAssetStore {
             for (int i = 0; i < state.assets.size(); i++) {
                 CelestialManagedAsset asset = state.assets.get(i);
                 if (asset.assetId()
-                    .equals(assetId) && asset.status() == CelestialAssetStatus.CONSTRUCTION_SITE) {
+                    .equals(assetId) && asset.status() == CelestialAsset.Status.CONSTRUCTION_SITE) {
                     state.assets.remove(i);
                     cleanupLogisticsForAsset(assetId);
                     return true;
@@ -91,7 +91,7 @@ public final class CelestialAssetStore {
             for (int i = 0; i < state.assets.size(); i++) {
                 CelestialManagedAsset asset = state.assets.get(i);
                 if (!asset.assetId()
-                    .equals(assetId) || asset.status() != CelestialAssetStatus.CONSTRUCTION_SITE) {
+                    .equals(assetId) || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
                     continue;
                 }
                 state.assets.set(
@@ -102,7 +102,7 @@ public final class CelestialAssetStore {
                         asset.displayName(),
                         asset.kind(),
                         asset.location(),
-                        CelestialAssetStatus.DECONSTRUCTION,
+                        CelestialAsset.Status.DECONSTRUCTION,
                         asset.requiredResources(),
                         asset.constructionInventory()));
                 return true;
@@ -116,7 +116,7 @@ public final class CelestialAssetStore {
             for (int i = 0; i < state.assets.size(); i++) {
                 CelestialManagedAsset asset = state.assets.get(i);
                 if (!asset.assetId()
-                    .equals(assetId) || asset.status() != CelestialAssetStatus.CONSTRUCTION_SITE) {
+                    .equals(assetId) || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
                     continue;
                 }
                 state.assets.set(i, toOperationalAsset(asset));
@@ -135,7 +135,7 @@ public final class CelestialAssetStore {
             for (int i = 0; i < state.assets.size(); i++) {
                 CelestialManagedAsset asset = state.assets.get(i);
                 if (!asset.assetId()
-                    .equals(assetId) || asset.status() != CelestialAssetStatus.CONSTRUCTION_SITE) {
+                    .equals(assetId) || asset.status() != CelestialAsset.Status.CONSTRUCTION_SITE) {
                     continue;
                 }
 
@@ -237,7 +237,7 @@ public final class CelestialAssetStore {
         }
     }
 
-    public static List<CelestialAssetRequirement> previewRequirements(CelestialAssetKind kind) {
+    public static List<CelestialAssetRequirement> previewRequirements(CelestialAsset.Kind kind) {
         return Collections.unmodifiableList(new ArrayList<>(defaultRequirements(kind)));
     }
 
@@ -248,7 +248,7 @@ public final class CelestialAssetStore {
             asset.displayName(),
             asset.kind(),
             asset.location(),
-            CelestialAssetStatus.OPERATIONAL,
+            CelestialAsset.Status.OPERATIONAL,
             asset.requiredResources(),
             asset.constructionInventory());
     }
@@ -282,7 +282,7 @@ public final class CelestialAssetStore {
         return merged;
     }
 
-    private static List<CelestialAssetRequirement> defaultRequirements(CelestialAssetKind kind) {
+    private static List<CelestialAssetRequirement> defaultRequirements(CelestialAsset.Kind kind) {
         List<CelestialAssetRequirement> required = new ArrayList<>();
         switch (kind) {
             case STATION -> {}

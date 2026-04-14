@@ -39,10 +39,8 @@ import com.gtnewhorizons.galaxia.outpost.module.ModuleBigHammer;
 import com.gtnewhorizons.galaxia.outpost.module.ModuleHammer;
 import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
 import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetRequirement;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStatus;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
@@ -286,9 +284,9 @@ public final class OutpostPersistenceManager {
             json.assetId,
             objectId,
             json.displayName == null ? json.assetId : json.displayName,
-            CelestialAssetKind.valueOf(json.kind),
-            CelestialAssetLocation.valueOf(json.location),
-            CelestialAssetStatus.valueOf(json.status),
+            CelestialAsset.Kind.valueOf(json.kind),
+            CelestialAsset.Location.valueOf(json.location),
+            CelestialAsset.Status.valueOf(json.status),
             decodeRequirements(json.requiredResources),
             decodeRequirements(json.constructionInventory));
     }

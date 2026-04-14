@@ -33,7 +33,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
-import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 /**
  * Map overlay that shows aggregated logistics signals for the current map scope.

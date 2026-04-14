@@ -27,8 +27,7 @@ import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetLocation;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
@@ -517,17 +516,17 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public String formatAssetKind(CelestialAssetKind kind) {
+                    public String formatAssetKind(CelestialAsset.Kind kind) {
                         return assetSupport.formatAssetKind(kind);
                     }
 
                     @Override
-                    public String formatAssetLocation(CelestialAssetLocation location) {
+                    public String formatAssetLocation(CelestialAsset.Location location) {
                         return assetSupport.formatAssetLocation(location);
                     }
 
                     @Override
-                    public void drawAssetIcon(CelestialAssetKind kind, int x, int y, int size, float alpha) {
+                    public void drawAssetIcon(CelestialAsset.Kind kind, int x, int y, int size, float alpha) {
                         OrbitalMapWidget.this.drawAssetIcon(kind, x, y, size, alpha);
                     }
 
@@ -538,7 +537,7 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind,
+                    public void triggerAssetCreation(CelestialObject body, CelestialAsset.Kind kind,
                         boolean openManagementFirst) {
                         assetActionController.triggerAssetCreation(assetUiState, body, kind, openManagementFirst);
                         assetManagementWidget.markStructureDirty();
@@ -818,7 +817,7 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public ResourceLocation getAssetIconTexture(CelestialAssetKind kind) {
+                    public ResourceLocation getAssetIconTexture(CelestialAsset.Kind kind) {
                         return OrbitalMapWidget.this.getAssetIconTexture(kind);
                     }
                 });
@@ -892,7 +891,7 @@ public class OrbitalView {
                     }
 
                     @Override
-                    public void triggerAssetCreation(CelestialObject body, CelestialAssetKind kind,
+                    public void triggerAssetCreation(CelestialObject body, CelestialAsset.Kind kind,
                         boolean openManagementFirst) {
                         assetActionController.triggerAssetCreation(assetUiState, body, kind, openManagementFirst);
                         assetManagementWidget.markStructureDirty();
@@ -2151,7 +2150,7 @@ public class OrbitalView {
                     + "ms");
         }
 
-        private void drawAssetIcon(CelestialAssetKind kind, int x, int y, int size, float alpha) {
+        private void drawAssetIcon(CelestialAsset.Kind kind, int x, int y, int size, float alpha) {
             sceneRenderer.drawAssetIcon(kind, x, y, size, alpha);
         }
 
@@ -2242,7 +2241,7 @@ public class OrbitalView {
                 .height(layout.bottom() - layout.top());
         }
 
-        private ResourceLocation getAssetIconTexture(CelestialAssetKind kind) {
+        private ResourceLocation getAssetIconTexture(CelestialAsset.Kind kind) {
             return CelestialMarkerBase.CelestialAssetIcons.get(kind);
         }
 

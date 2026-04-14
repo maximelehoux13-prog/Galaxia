@@ -14,7 +14,7 @@ import org.lwjgl.opengl.GL11;
 import com.cleanroommc.modularui.utils.GlStateManager;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
@@ -436,7 +436,7 @@ public class OrbitalScene {
 
             float getSelectionBoxRadius(ScreenBodyBounds bounds);
 
-            ResourceLocation getAssetIconTexture(CelestialAssetKind kind);
+            ResourceLocation getAssetIconTexture(CelestialAsset.Kind kind);
         }
 
         private static final float MAP_LABEL_SCALE = 0.82f;
@@ -590,7 +590,7 @@ public class OrbitalScene {
             drawCenteredBannerString(title, centerX, top + 7, EnumColors.MAP_COLOR_TITLE_BANNER_TEXT.getColor());
         }
 
-        void drawAssetIcon(CelestialAssetKind kind, int x, int y, int size, float alpha) {
+        void drawAssetIcon(CelestialAsset.Kind kind, int x, int y, int size, float alpha) {
             ResourceLocation texture = callbacks.getAssetIconTexture(kind);
             if (texture != null) drawUiSprite(texture, x, y, size, alpha);
         }

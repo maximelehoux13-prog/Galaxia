@@ -27,7 +27,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectClass;
 import com.gtnewhorizons.galaxia.registry.orbital.LambertTransfer;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
-import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 // ---------------------------------------------------------------------------
 // Package-level records

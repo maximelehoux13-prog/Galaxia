@@ -10,7 +10,7 @@ import net.minecraft.util.ResourceLocation;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetKind;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialBodyAssetState;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialManagedAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
@@ -84,7 +84,7 @@ public class CelestialMarkerBase {
 
         private CelestialAssetIcons() {}
 
-        public static ResourceLocation get(CelestialAssetKind kind) {
+        public static ResourceLocation get(CelestialAsset.Kind kind) {
             return switch (kind) {
                 case STATION -> EnumTextures.ICON_STATION.get();
                 case AUTOMATED_STATION -> EnumTextures.ICON_STATION_AUTOMATED.get();
