@@ -140,8 +140,8 @@ public final class LogisticsTasksSyncPacket implements IMessage {
 
     @Desugar
     private record TaskEntry(String taskId, String resourceKey, long amount, LogisticsTask.TransportType transportKind,
-                             CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
-                             double tofOrbitalSeconds) {
+        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
+        double tofOrbitalSeconds) {
 
     }
 

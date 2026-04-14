@@ -88,7 +88,7 @@ public final class OutpostFullSyncPacket implements IMessage {
                 new ModuleSyncData(
                     m.getKind()
                         .name(),
-                    m.getStatus()
+                    m.status()
                         .name(),
                     m.getConstructionProgress(),
                     minerBlacklist,
@@ -246,7 +246,7 @@ public final class OutpostFullSyncPacket implements IMessage {
                     state.clearModules();
                     for (ModuleSyncData md : packet.modules) {
                         AutomatedOutpostModule m = createModuleData(md);
-                        m.setStatus(AutomatedOutpostModule.Status.valueOf(md.status));
+                        m.setLegacyStatus(AutomatedOutpostModule.Status.valueOf(md.status));
                         state.addModule(m);
                     }
 

@@ -61,12 +61,12 @@ public final class OutpostModuleActionPacket implements IMessage {
                     // If it was disabled, set it to OPERATIONAL.
                     // If it was IN_CONSTRUCTION, maybe it should stay that way?
                     // User said "Toggle module status" for DISABLE/ENABLE.
-                    if (module.getStatus() == AutomatedOutpostModule.Status.DISABLED) {
-                        module.setStatus(AutomatedOutpostModule.Status.OPERATIONAL);
+                    if (module.getLegacyStatus() == AutomatedOutpostModule.Status.DISABLED) {
+                        module.setLegacyStatus(AutomatedOutpostModule.Status.OPERATIONAL);
                     }
                     break;
                 case "DISABLE":
-                    module.setStatus(AutomatedOutpostModule.Status.DISABLED);
+                    module.setLegacyStatus(AutomatedOutpostModule.Status.DISABLED);
                     break;
                 case "DESTROY":
                     state.removeModule(packet.moduleIndex);

@@ -296,8 +296,13 @@ public final class OutpostLogisticsEngine {
         if (supplier.celestialBodyId.equals(requester.celestialBodyId)) {
             if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
             hammer.fire();
-            LogisticsTask task = LogisticsTask
-                .create(supplier.assetId, requester.assetId, resource, sendAmount, 1, LogisticsTask.TransportType.HAMMER);
+            LogisticsTask task = LogisticsTask.create(
+                supplier.assetId,
+                requester.assetId,
+                resource,
+                sendAmount,
+                1,
+                LogisticsTask.TransportType.HAMMER);
             activeTasks.add(task);
             return true;
         }
@@ -379,8 +384,13 @@ public final class OutpostLogisticsEngine {
         if (supplier.celestialBodyId.equals(requester.celestialBodyId)) {
             if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
             bigHammer.fire();
-            LogisticsTask task = LogisticsTask
-                .create(supplier.assetId, requester.assetId, resource, sendAmount, 1, LogisticsTask.TransportType.BIG_HAMMER);
+            LogisticsTask task = LogisticsTask.create(
+                supplier.assetId,
+                requester.assetId,
+                resource,
+                sendAmount,
+                1,
+                LogisticsTask.TransportType.BIG_HAMMER);
             activeTasks.add(task);
             return true;
         }

@@ -54,18 +54,16 @@ public record LogisticsTask(
      * Orbital departure time (in orbital simulation units = world ticks × 2.1).
      * Used to anchor the trajectory arc on the client starmap.
      */
-    double departureOrbitalTime,
-    /**
-     * Lambert time-of-flight in orbital simulation units.
-     * Convert to real seconds via {@code tofOrbitalSeconds / 42.0}.
-     */
+    double departureOrbitalTime, /**
+                                  * Lambert time-of-flight in orbital simulation units.
+                                  * Convert to real seconds via {@code tofOrbitalSeconds / 42.0}.
+                                  */
     double tofOrbitalSeconds) {
 
     public enum TransportType {
         HAMMER,
         BIG_HAMMER,
     }
-
 
     /** Creates a new task with a freshly generated task id. */
     public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
@@ -87,8 +85,9 @@ public record LogisticsTask(
 
     /** Creates a new task with trajectory metadata for arc rendering. */
     public static LogisticsTask createWithTrajectory(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
-        ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind, CelestialObjectId fromBodyId,
-        CelestialObjectId toBodyId, double departureOrbitalTime, double tofOrbitalSeconds) {
+        ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind,
+        CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
+        double tofOrbitalSeconds) {
         return new LogisticsTask(
             makeId(),
             fromAssetId,

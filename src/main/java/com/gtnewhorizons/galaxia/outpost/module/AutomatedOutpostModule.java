@@ -7,25 +7,20 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 
 /**
  * A single module instance installed in an {@link AutomatedOutpost}.
  */
-public abstract class AutomatedOutpostModule {
+public abstract class AutomatedOutpostModule implements Buildable {
 
     // spotless:off
-    public final static Map<ItemStack, Long> defaultConstructionCost = new HashMap<ItemStack, Long>() {{
+    public final static Map<ItemStack, Long> defaultConstructionCost = new HashMap<>() {{
         put(new ItemStack(Items.diamond), 8L);
         put(new ItemStack(Items.gold_ingot), 64L);
     }};
 
     // spotless:on
-    public enum Status {
-        IN_CONSTRUCTION,
-        OPERATIONAL,
-        DISABLED
-    }
-
     public long energyBuffer;
     public final long baseEnergyCapacity;
     public int cooldownTicks;
@@ -38,27 +33,37 @@ public abstract class AutomatedOutpostModule {
     public AutomatedOutpostModule(long baseEnergyCapacity, long powerDrawEuPerTick, int cooldownTicks) {
         this.cooldownTicks = cooldownTicks;
         this.constructionResources = new HashMap<>();
-        this.status = Status.IN_CONSTRUCTION;
+        this.status = AutomatedOutpostModule.Status.IN_CONSTRUCTION;
         this.energyBuffer = 0L;
 
         this.baseEnergyCapacity = baseEnergyCapacity;
         this.powerDrawEuPerTick = powerDrawEuPerTick;
     }
 
-    public Status getStatus() {
+    @Override
+    public Status status() {
         return status;
     }
 
+    @Override
+    public void updateStatus(Buildable.Status status) {
+        this.status = status;
+    }
+
+    public Status getLegacyStatus() {
+        return status;
+    }
+
+    public void setLegacyStatus(Status status) {
+        this.status = status;
+    }
+
     public boolean isOperational() {
-        return status == Status.OPERATIONAL;
+        return status == AutomatedOutpostModule.Status.OPERATIONAL;
     }
 
     public boolean isDisabled() {
-        return status == Status.DISABLED;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
+        return status == AutomatedOutpostModule.Status.DISABLED;
     }
 
     public void setConstructionProgress(float progress) {}
@@ -74,7 +79,7 @@ public abstract class AutomatedOutpostModule {
     public float getConstructionProgress() {
         Map<ItemStack, Long> cost = getConstructionCost();
 
-        if (cost.isEmpty() || status != Status.IN_CONSTRUCTION) {
+        if (cost.isEmpty() || status != AutomatedOutpostModule.Status.IN_CONSTRUCTION) {
             return 1.0f;
         }
 
@@ -97,24 +102,34 @@ public abstract class AutomatedOutpostModule {
         return defaultConstructionCost;
     }
 
+    @Override
+    public Map<ItemStack, Long> getRequiredResources() {
+        return getConstructionCost();
+    }
+
+    @Override
+    public Map<ItemStack, Long> getConstructionInventory() {
+        return constructionResources;
+    }
+
     public abstract OutpostModuleKind getKind();
 
     public void completeConstructionInstantly() {
         constructionResources.clear();
-        status = Status.OPERATIONAL;
+        status = AutomatedOutpostModule.Status.OPERATIONAL;
         energyBuffer = baseEnergyCapacity;
     }
 
     public void tick(AutomatedOutpost outpost) {
-        if (status == Status.IN_CONSTRUCTION) {
+        if (status == AutomatedOutpostModule.Status.IN_CONSTRUCTION) {
             updateConstruction(outpost);
-        } else if (status == Status.OPERATIONAL) {
+        } else if (status == AutomatedOutpostModule.Status.OPERATIONAL) {
             updateOperational(outpost);
         }
     }
 
     public long getDisplayedPowerEuPerTick() {
-        if (status != Status.OPERATIONAL) return 0L;
+        if (status != AutomatedOutpostModule.Status.OPERATIONAL) return 0L;
         return powerDrawEuPerTick;
     }
 

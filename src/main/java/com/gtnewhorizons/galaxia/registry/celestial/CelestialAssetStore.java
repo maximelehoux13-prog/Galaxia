@@ -30,8 +30,8 @@ public final class CelestialAssetStore {
         return state.snapshot();
     }
 
-    public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId,
-                                                                                 String displayName, CelestialAsset.Kind kind, CelestialAsset.Location location) {
+    public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,
+        CelestialAsset.Kind kind, CelestialAsset.Location location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         Map<ItemStack, Long> required = defaultRequirements(kind);
         CelestialAsset asset = new CelestialAsset(
@@ -48,7 +48,7 @@ public final class CelestialAssetStore {
     }
 
     public static CelestialAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
-                                                                              CelestialAsset.Kind kind, CelestialAsset.Location location) {
+        CelestialAsset.Kind kind, CelestialAsset.Location location) {
         MutableBodyState state = STATE_BY_BODY.computeIfAbsent(celestialObjectId, MutableBodyState::new);
         CelestialAsset asset = new CelestialAsset(
             CelestialAsset.ID.create(),
@@ -70,7 +70,8 @@ public final class CelestialAssetStore {
                 if (asset.assetId.equals(assetId) && asset.status() == CelestialAsset.Status.CONSTRUCTION_SITE) {
                     // TODO: this feels like duplication
                     state.assets.remove(i);
-                    OutpostDataStore.get().remove(assetId);
+                    OutpostDataStore.get()
+                        .remove(assetId);
                     return true;
                 }
             }
@@ -145,11 +146,11 @@ public final class CelestialAssetStore {
     public static boolean destroyAsset(CelestialAsset.ID assetId) {
         for (MutableBodyState state : STATE_BY_BODY.values()) {
             for (int i = 0; i < state.assets.size(); i++) {
-                if (state.assets.get(i).assetId
-                    .equals(assetId)) {
+                if (state.assets.get(i).assetId.equals(assetId)) {
                     // TODO: this feels like duplicated logic
                     state.assets.remove(i);
-                    OutpostDataStore.get().remove(assetId);
+                    OutpostDataStore.get()
+                        .remove(assetId);
                     return true;
                 }
             }
@@ -205,8 +206,10 @@ public final class CelestialAssetStore {
     }
 
     private static boolean isConstructionSatisfied(CelestialAsset asset) {
-        for (Map.Entry<ItemStack, Long> required : asset.requiredResources().entrySet()) {
-            long available = asset.constructionInventory().getOrDefault(required.getKey(), 0L);
+        for (Map.Entry<ItemStack, Long> required : asset.requiredResources()
+            .entrySet()) {
+            long available = asset.constructionInventory()
+                .getOrDefault(required.getKey(), 0L);
             if (available < required.getValue()) {
                 return false;
             }
@@ -214,13 +217,14 @@ public final class CelestialAssetStore {
         return true;
     }
 
-    private static Map<ItemStack, Long> mergeIntoConstructionInventory(
-        Map<ItemStack, Long> constructionInventory, ItemStack stack, long amount) {
+    private static Map<ItemStack, Long> mergeIntoConstructionInventory(Map<ItemStack, Long> constructionInventory,
+        ItemStack stack, long amount) {
         Map<ItemStack, Long> merged = new LinkedHashMap<>(constructionInventory);
         merged.merge(stack, amount, Long::sum);
         return merged;
     }
 
+    // TODO: Find a better way to save this
     private static Map<ItemStack, Long> defaultRequirements(CelestialAsset.Kind kind) {
         Map<ItemStack, Long> required = new LinkedHashMap<>();
         switch (kind) {

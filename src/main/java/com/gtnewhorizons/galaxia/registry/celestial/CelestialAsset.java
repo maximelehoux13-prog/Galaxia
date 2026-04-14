@@ -6,21 +6,26 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.github.bsideup.jabel.Desugar;
 import net.minecraft.item.ItemStack;
 
-public final class CelestialAsset {
+import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
+
+public final class CelestialAsset implements Buildable {
+
     public final ID assetId;
     public final CelestialObjectId celestialObjectId;
     public final Kind kind;
     public final Location location;
 
+    private Status status;
     private Map<ItemStack, Long> requiredResources;
     private Map<ItemStack, Long> constructionInventory;
-    private Status status;
     private String displayName;
 
-    public CelestialAsset(ID assetId, CelestialObjectId celestialObjectId, String displayName, Kind kind, Location location, Status status, Map<ItemStack, Long> requiredResources, Map<ItemStack, Long> constructionInventory) {
+    public CelestialAsset(ID assetId, CelestialObjectId celestialObjectId, String displayName, Kind kind,
+        Location location, Status status, Map<ItemStack, Long> requiredResources,
+        Map<ItemStack, Long> constructionInventory) {
         requiredResources = requiredResources == null ? Collections.emptyMap()
             : Collections.unmodifiableMap(new LinkedHashMap<>(requiredResources));
         constructionInventory = constructionInventory == null ? Collections.emptyMap()
@@ -31,7 +36,6 @@ public final class CelestialAsset {
         this.displayName = displayName;
         this.kind = kind;
         this.location = location;
-        this.status = status;
         this.requiredResources = requiredResources;
         this.constructionInventory = constructionInventory;
     }
@@ -44,18 +48,16 @@ public final class CelestialAsset {
         return constructionInventory;
     }
 
-    public boolean isManageble() {
+    public boolean isManageable() {
         return this.status() != CelestialAsset.Status.OPERATIONAL;
     }
 
+    @Override
     public Map<ItemStack, Long> getRequiredResources() {
         return requiredResources;
     }
 
-    public void setRequiredResources(Map<ItemStack, Long> requiredResources) {
-        this.requiredResources = requiredResources;
-    }
-
+    @Override
     public Map<ItemStack, Long> getConstructionInventory() {
         return constructionInventory;
     }
@@ -64,10 +66,12 @@ public final class CelestialAsset {
         this.constructionInventory = constructionInventory;
     }
 
+    @Override
     public Status status() {
         return status;
     }
 
+    @Override
     public void updateStatus(Status status) {
         this.status = status;
     }
@@ -90,22 +94,44 @@ public final class CelestialAsset {
 
     @Override
     public int hashCode() {
-        return Objects.hash(assetId, celestialObjectId, displayName, kind, location, status, requiredResources, constructionInventory);
+        return Objects.hash(
+            assetId,
+            celestialObjectId,
+            displayName,
+            kind,
+            location,
+            status,
+            requiredResources,
+            constructionInventory);
     }
 
     @Override
     public String toString() {
-        return "CelestialAsset[" +
-            "assetId=" + assetId + ", " +
-            "celestialObjectId=" + celestialObjectId + ", " +
-            "displayName=" + displayName + ", " +
-            "kind=" + kind + ", " +
-            "location=" + location + ", " +
-            "status=" + status + ", " +
-            "requiredResources=" + requiredResources + ", " +
-            "constructionInventory=" + constructionInventory + ']';
+        return "CelestialAsset[" + "assetId="
+            + assetId
+            + ", "
+            + "celestialObjectId="
+            + celestialObjectId
+            + ", "
+            + "displayName="
+            + displayName
+            + ", "
+            + "kind="
+            + kind
+            + ", "
+            + "location="
+            + location
+            + ", "
+            + "status="
+            + status
+            + ", "
+            + "requiredResources="
+            + requiredResources
+            + ", "
+            + "constructionInventory="
+            + constructionInventory
+            + ']';
     }
-
 
     public enum Kind {
         STATION,
@@ -142,13 +168,5 @@ public final class CelestialAsset {
         public String toString() {
             return id.toString();
         }
-    }
-
-    public enum Status {
-        CONSTRUCTION_SITE,
-        DECONSTRUCTION,
-        OPERATIONAL,
-        DISABLED,
-        DESTROYED
     }
 }

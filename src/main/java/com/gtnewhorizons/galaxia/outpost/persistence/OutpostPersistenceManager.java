@@ -253,13 +253,10 @@ public final class OutpostPersistenceManager {
     private AssetJson encodeAsset(CelestialAsset asset) {
         AssetJson json = new AssetJson();
         json.assetId = asset.assetId;
-        json.celestialObjectId = asset.celestialObjectId
-            .toString();
+        json.celestialObjectId = asset.celestialObjectId.toString();
         json.displayName = asset.displayName();
-        json.kind = asset.kind
-            .name();
-        json.location = asset.location
-            .name();
+        json.kind = asset.kind.name();
+        json.location = asset.location.name();
         json.status = asset.status()
             .name();
         json.requiredResources = encodeRequirements(asset.requiredResources());
@@ -300,7 +297,7 @@ public final class OutpostPersistenceManager {
             ModuleJson mj = new ModuleJson();
             mj.kind = m.getKind()
                 .name();
-            mj.status = m.getStatus()
+            mj.status = m.status()
                 .name();
             mj.constructionProgress = m.getConstructionProgress();
             mj.cooldownTicks = m.cooldownTicks;
@@ -432,7 +429,7 @@ public final class OutpostPersistenceManager {
                     }
                 }
                 if (mj.status != null) {
-                    module.setStatus(AutomatedOutpostModule.Status.valueOf(mj.status));
+                    module.setLegacyStatus(AutomatedOutpostModule.Status.valueOf(mj.status));
                 }
                 module.setConstructionProgress(mj.constructionProgress);
                 module.cooldownTicks = mj.cooldownTicks;

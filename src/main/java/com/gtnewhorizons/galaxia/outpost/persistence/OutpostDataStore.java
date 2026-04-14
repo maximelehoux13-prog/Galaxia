@@ -229,7 +229,7 @@ public final class OutpostDataStore {
      * @param tofOrbitalSeconds    time of flight in orbital simulation units
      */
     @Desugar
-    public record ClientLogisticsTask(String taskId, ItemStackWrapper resource, long amount, LogisticsTask.TransportType transportKind,
-                                      CelestialObjectId fromBodyId, CelestialObjectId toBodyId, double departureOrbitalTime,
-                                      double tofOrbitalSeconds) {}
+    public record ClientLogisticsTask(String taskId, ItemStackWrapper resource, long amount,
+        LogisticsTask.TransportType transportKind, CelestialObjectId fromBodyId, CelestialObjectId toBodyId,
+        double departureOrbitalTime, double tofOrbitalSeconds) {}
 }

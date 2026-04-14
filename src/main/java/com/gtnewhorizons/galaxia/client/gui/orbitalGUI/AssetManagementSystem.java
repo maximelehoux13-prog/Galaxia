@@ -137,13 +137,14 @@ public final class AssetManagementSystem {
 
         boolean hasStoredConstructionResources(CelestialAsset asset) {
             if (asset == null) return false;
-            for (Long amount : asset.constructionInventory().values()) if (amount > 0) return true;
+            for (Long amount : asset.constructionInventory()
+                .values()) if (amount > 0) return true;
             return false;
         }
 
         boolean isManageableStationAsset(CelestialAsset asset) {
             if (asset == null) return false;
-            return asset.isManageble();
+            return asset.isManageable();
         }
 
         String formatAssetDisplayName(CelestialAsset asset) {
@@ -161,14 +162,18 @@ public final class AssetManagementSystem {
             if (asset.requiredResources()
                 .isEmpty()) return "Empty";
             StringBuilder sb = new StringBuilder();
-            for (Map.Entry<ItemStack, Long> required : asset.requiredResources().entrySet()) {
-                long storedAmount = asset.constructionInventory().getOrDefault(required.getKey(), 0L);
+            for (Map.Entry<ItemStack, Long> required : asset.requiredResources()
+                .entrySet()) {
+                long storedAmount = asset.constructionInventory()
+                    .getOrDefault(required.getKey(), 0L);
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(storedAmount)
                     .append('/')
                     .append(required.getValue())
                     .append(' ')
-                    .append(required.getKey().getDisplayName());
+                    .append(
+                        required.getKey()
+                            .getDisplayName());
             }
             return sb.toString();
         }
@@ -185,7 +190,7 @@ public final class AssetManagementSystem {
         private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
             CelestialBodyAssetState state = CelestialAssetStore.getState(current.id());
             for (CelestialAsset asset : state.assets()) {
-                if (asset.isManageble()){
+                if (asset.isManageable()) {
                     targets.add(new StationTransferTarget(asset.assetId, asset.displayName(), current));
                 }
             }
@@ -217,7 +222,9 @@ public final class AssetManagementSystem {
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(stored.getValue())
                     .append(' ')
-                    .append(stored.getKey().getDisplayName());
+                    .append(
+                        stored.getKey()
+                            .getDisplayName());
             }
             return sb.toString();
         }
@@ -347,8 +354,7 @@ public final class AssetManagementSystem {
                     true);
                 return;
             }
-            CelestialAssetStore.destroyAsset(
-                state.pendingAssetDestruction.asset().assetId);
+            CelestialAssetStore.destroyAsset(state.pendingAssetDestruction.asset().assetId);
             // TODO: Localize
             callbacks.showActionStatus("Asset destroyed");
             state.pendingAssetDestruction = null;
@@ -374,9 +380,7 @@ public final class AssetManagementSystem {
 
         void confirmPendingConstructionCancellation(OrbitalAssetUiState state) {
             if (state.pendingConstructionCancellation == null) return;
-            CelestialAssetStore.startDeconstruction(
-                state.pendingConstructionCancellation.asset()
-                    .assetId);
+            CelestialAssetStore.startDeconstruction(state.pendingConstructionCancellation.asset().assetId);
             // TODO: Localize
             callbacks.showActionStatus("Construction site converted to deconstruction");
             state.pendingConstructionCancellation = null;
@@ -416,10 +420,7 @@ public final class AssetManagementSystem {
                 closePendingAssetRename(state);
                 return;
             }
-            if (CelestialAssetStore.renameAsset(
-                state.pendingAssetRename.asset()
-                    .assetId,
-                renamed)) {
+            if (CelestialAssetStore.renameAsset(state.pendingAssetRename.asset().assetId, renamed)) {
                 // TODO: Localize
                 callbacks.showActionStatus("Asset renamed");
                 closePendingAssetRename(state);
@@ -712,18 +713,13 @@ public final class AssetManagementSystem {
             // Handle asynchronous data arrival for automated outposts
             if (state.pendingAssetManagement != null) {
                 boolean present = OutpostDataStore.get()
-                    .getByAssetId(
-                        state.pendingAssetManagement.asset()
-                            .assetId)
-                    != null;
+                    .getByAssetId(state.pendingAssetManagement.asset().assetId) != null;
                 if (present && !lastOutpostStatePresent) {
                     markStructureDirty();
                 }
                 if (present) {
                     AutomatedOutpost outpost = OutpostDataStore.get()
-                        .getByAssetId(
-                            state.pendingAssetManagement.asset()
-                                .assetId);
+                        .getByAssetId(state.pendingAssetManagement.asset().assetId);
                     if (outpost != null && outpost.getSyncRevision() != lastOutpostSyncRevision) {
                         int newRevision = outpost.getSyncRevision();
                         if (hasFocusedModalTextField()) {
@@ -777,9 +773,8 @@ public final class AssetManagementSystem {
                             outpost.assetId);
                     }
                     // Refresh the modal if the correct outpost is currently open
-                    if (state.pendingAssetManagement != null && state.pendingAssetManagement.asset()
-                        .assetId
-                        .equals(targetId)) {
+                    if (state.pendingAssetManagement != null
+                        && state.pendingAssetManagement.asset().assetId.equals(targetId)) {
                         markStructureDirty();
                     }
                 }
@@ -835,9 +830,7 @@ public final class AssetManagementSystem {
                 state.buildModuleScrollPosition = scroll;
             } else if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
                 AutomatedOutpost outpost = OutpostDataStore.get()
-                    .getByAssetId(
-                        state.pendingAssetManagement.asset()
-                            .assetId);
+                    .getByAssetId(state.pendingAssetManagement.asset().assetId);
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
@@ -861,9 +854,7 @@ public final class AssetManagementSystem {
             if (state.selectingModuleBuild) return state.buildModuleScrollPosition;
             if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
                 AutomatedOutpost outpost = OutpostDataStore.get()
-                    .getByAssetId(
-                        state.pendingAssetManagement.asset()
-                            .assetId);
+                    .getByAssetId(state.pendingAssetManagement.asset().assetId);
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
@@ -1007,10 +998,14 @@ public final class AssetManagementSystem {
             modal.child(createBodyText(creation.displayName(), EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(36, 28));
             modal.child(createSectionText("Required resources").pos(12, 52));
             int resourceY = 68;
-            for (Map.Entry<ItemStack, Long> requirement : creation.requiredResources().entrySet()) {
+            for (Map.Entry<ItemStack, Long> requirement : creation.requiredResources()
+                .entrySet()) {
                 modal.child(
                     createBodyText(
-                        "- " + requirement.getValue() + " " + requirement.getKey().getDisplayName(),
+                        "- " + requirement.getValue()
+                            + " "
+                            + requirement.getKey()
+                                .getDisplayName(),
                         EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(16, resourceY));
                 resourceY += 12;
             }
@@ -1338,8 +1333,8 @@ public final class AssetManagementSystem {
                     || m.getKind() == OutpostModuleKind.BIG_HAMMER;
                 boolean isConfigurable = isHammer || m.getKind() == OutpostModuleKind.MINER
                     || m.getKind() == OutpostModuleKind.POWER;
-                boolean operational = m.getStatus() != AutomatedOutpostModule.Status.IN_CONSTRUCTION;
-                boolean isDisabled = m.getStatus() == AutomatedOutpostModule.Status.DISABLED;
+                boolean operational = m.status() != AutomatedOutpostModule.Status.IN_CONSTRUCTION;
+                boolean isDisabled = m.status() == AutomatedOutpostModule.Status.DISABLED;
 
                 if (!operational) {
                     row.child(
@@ -1442,8 +1437,8 @@ public final class AssetManagementSystem {
                 .size(78, FOOTER_BUTTON_HEIGHT));
 
             // TODO: Localize
-            boolean isAutomatedOutpost = state.pendingAssetManagement.asset()
-                .kind == CelestialAsset.Kind.AUTOMATED_OUTPOST;
+            boolean isAutomatedOutpost = state.pendingAssetManagement.asset().kind
+                == CelestialAsset.Kind.AUTOMATED_OUTPOST;
             VerticalScrollData scrollData = new VerticalScrollData();
             ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(scrollX, scrollY)
                 .widthRelOffset(1f, -(scrollX * 2))
@@ -2415,8 +2410,7 @@ public final class AssetManagementSystem {
             row.child(
                 createBodyText(
                     trimToWidth(
-                        callbacks.formatAssetKind(asset.kind) + " | "
-                            + callbacks.formatAssetLocation(asset.location),
+                        callbacks.formatAssetKind(asset.kind) + " | " + callbacks.formatAssetLocation(asset.location),
                         textWidth),
                     EnumColors.MAP_COLOR_TEXT_BODY.getColor()).pos(32, 16)
                         .width(textWidth));

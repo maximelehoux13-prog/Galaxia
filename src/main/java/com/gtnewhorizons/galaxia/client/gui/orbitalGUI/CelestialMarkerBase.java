@@ -64,13 +64,13 @@ public class CelestialMarkerBase {
                     case CONSTRUCTION_SITE -> 0.85f;
                     case DECONSTRUCTION -> 0.65f;
                     case DISABLED -> 0.45f;
+                    case IN_CONSTRUCTION -> 0.0F;
                     case DESTROYED -> 0.0f;
                 };
                 if (alpha <= 0.0f) continue;
                 markers.add(
                     new CelestialMarker(
-                        "asset:" + asset.kind
-                            .name()
+                        "asset:" + asset.kind.name()
                             .toLowerCase(),
                         texture,
                         alpha));
