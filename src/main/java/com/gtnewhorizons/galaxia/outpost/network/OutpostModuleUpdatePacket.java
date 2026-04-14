@@ -3,11 +3,12 @@ package com.gtnewhorizons.galaxia.outpost.network;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.outpost.module.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.outpost.module.IHammer;
 import com.gtnewhorizons.galaxia.outpost.module.ModuleBigHammer;
-import com.gtnewhorizons.galaxia.outpost.module.ModuleHammer;
 import com.gtnewhorizons.galaxia.outpost.module.ModuleMiner;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -15,13 +16,18 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 
+import java.util.function.Function;
+
 public final class OutpostModuleUpdatePacket implements IMessage {
 
     private CelestialAsset.ID assetId;
     private int moduleIndex;
-    private UpdateType type;
-    private int action; // Action ordinal for ACTION type, ConfigAction ordinal for CONFIG type
-    private String payload;
+    private int type;
+    private int action;
+
+    private String stringPayload;
+    private byte bytePayload;
+    private double doublePayload;
 
     public OutpostModuleUpdatePacket() {}
 
@@ -29,24 +35,42 @@ public final class OutpostModuleUpdatePacket implements IMessage {
         OutpostModuleUpdatePacket pkt = new OutpostModuleUpdatePacket();
         pkt.assetId = assetId;
         pkt.moduleIndex = moduleIndex;
-        pkt.type = UpdateType.ACTION;
+        pkt.type = 0; // ACTION
+        pkt.action = action.ordinal();
+        return pkt;
+    }
+
+    private static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action) {
+        OutpostModuleUpdatePacket pkt = new OutpostModuleUpdatePacket();
+        pkt.assetId = assetId;
+        pkt.moduleIndex = moduleIndex;
+        pkt.type = 1; // CONFIG
         pkt.action = action.ordinal();
         return pkt;
     }
 
     public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, String payload) {
-        OutpostModuleUpdatePacket pkt = new OutpostModuleUpdatePacket();
-        pkt.assetId = assetId;
-        pkt.moduleIndex = moduleIndex;
-        pkt.type = UpdateType.CONFIG;
-        pkt.action = action.ordinal();
-        pkt.payload = payload == null ? "" : payload;
+        OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
+        pkt.stringPayload = payload == null ? "" : payload;
         return pkt;
     }
 
-    public enum UpdateType {
-        ACTION,
-        CONFIG
+    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, boolean payload) {
+        OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
+        pkt.bytePayload = (byte) (payload ? 1 : 0);
+        return pkt;
+    }
+
+    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, double payload) {
+        OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
+        pkt.doublePayload = payload;
+        return pkt;
+    }
+
+    public static OutpostModuleUpdatePacket config(CelestialAsset.ID assetId, int moduleIndex, ConfigAction action, Enum<?> payload) {
+        OutpostModuleUpdatePacket pkt = config(assetId, moduleIndex, action);
+        pkt.bytePayload = (byte) payload.ordinal();
+        return pkt;
     }
 
     public enum Action {
@@ -69,34 +93,65 @@ public final class OutpostModuleUpdatePacket implements IMessage {
     public void toBytes(ByteBuf buf) {
         PacketUtil.writeAssetId(buf, assetId);
         buf.writeInt(moduleIndex);
-        PacketUtil.writeEnum(buf, type);
+        buf.writeByte(type);
         buf.writeByte(action);
-        PacketUtil.writeString(buf, payload);
+
+        if (type == 1) { // CONFIG
+            switch (ConfigAction.values()[action]) {
+                case ADD_MINER_BLACKLIST, REMOVE_MINER_BLACKLIST -> PacketUtil.writeString(buf, stringPayload);
+                case SET_MINER_COPY_SETTINGS, SET_PLANETARY_HANDLING -> buf.writeByte(bytePayload);
+                case SET_ALLOW_SHOOTING_MODE, SET_ROUTE_PRIORITY -> buf.writeByte(bytePayload);
+                case SET_ALLOW_SHOOTING_THRESHOLD -> buf.writeDouble(doublePayload);
+            }
+        }
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
         assetId = PacketUtil.readAssetId(buf);
         moduleIndex = buf.readInt();
-        type = PacketUtil.readEnum(buf, UpdateType.class);
+        type = buf.readUnsignedByte();
         action = buf.readUnsignedByte();
-        payload = PacketUtil.readString(buf);
+
+        if (type == 1) { // CONFIG
+            switch (ConfigAction.values()[action]) {
+                case ADD_MINER_BLACKLIST, REMOVE_MINER_BLACKLIST -> stringPayload = PacketUtil.readString(buf);
+                case SET_MINER_COPY_SETTINGS, SET_PLANETARY_HANDLING -> bytePayload = buf.readByte();
+                case SET_ALLOW_SHOOTING_MODE, SET_ROUTE_PRIORITY -> bytePayload = buf.readByte();
+                case SET_ALLOW_SHOOTING_THRESHOLD -> doublePayload = buf.readDouble();
+            }
+        }
     }
 
     public Action getAction() {
-        return type == UpdateType.ACTION ? Action.values()[action] : null;
+        return type == 0 ? Action.values()[action] : null;
     }
 
     public ConfigAction getConfigAction() {
-        return type == UpdateType.CONFIG ? ConfigAction.values()[action] : null;
+        return type == 1 ? ConfigAction.values()[action] : null;
+    }
+
+    public String getStringPayload() {
+        return stringPayload;
+    }
+
+    public boolean getBooleanPayload() {
+        return bytePayload != 0;
+    }
+
+    public double getDoublePayload() {
+        return doublePayload;
+    }
+
+    public <T extends Enum<T>> T getEnumPayload(Class<T> enumClass) {
+        return enumClass.getEnumConstants()[bytePayload];
     }
 
     public static final class Handler implements IMessageHandler<OutpostModuleUpdatePacket, IMessage> {
 
         @Override
         public IMessage onMessage(OutpostModuleUpdatePacket packet, MessageContext ctx) {
-            AutomatedOutpost state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
+            AutomatedOutpost state = OutpostDataStore.get().getByAssetId(packet.assetId);
             if (state == null) return null;
 
             var modules = state.modules();
@@ -105,99 +160,75 @@ public final class OutpostModuleUpdatePacket implements IMessage {
             AutomatedOutpostModule module = modules.get(packet.moduleIndex);
 
             switch (packet.type) {
-                case ACTION -> {
-                    Action a = packet.getAction();
-                    switch (a) {
-                        case ENABLE -> {
-                            if (module.getLegacyStatus() == AutomatedOutpostModule.Status.DISABLED) {
-                                module.setLegacyStatus(AutomatedOutpostModule.Status.OPERATIONAL);
-                            }
-                        }
-                        case DISABLE -> module.setLegacyStatus(AutomatedOutpostModule.Status.DISABLED);
-                        case DESTROY -> state.removeModule(packet.moduleIndex);
-                    }
-                }
-                case CONFIG -> {
-                    ConfigAction cfg = packet.getConfigAction();
-                    switch (cfg) {
-                        case ADD_MINER_BLACKLIST -> {
-                            if (!(module instanceof ModuleMiner miner)) return null;
-                            ((ModuleMiner) module).withAddedBlacklist(packet.payload);
-                            if (((ModuleMiner) module).getCopySettingsToOtherMiners()) {
-                                copyMinerSettingsToOtherMiners(state, packet.moduleIndex, (ModuleMiner) module);
-                            }
-                        }
-                        case REMOVE_MINER_BLACKLIST -> {
-                            if (!(module instanceof ModuleMiner miner)) return null;
-                            ((ModuleMiner) module).withRemovedBlacklist(packet.payload);
-                            if (((ModuleMiner) module).getCopySettingsToOtherMiners()) {
-                                copyMinerSettingsToOtherMiners(state, packet.moduleIndex, (ModuleMiner) module);
-                            }
-                        }
-                        case SET_MINER_COPY_SETTINGS -> {
-                            if (!(module instanceof ModuleMiner miner)) return null;
-                            ((ModuleMiner) module).withCopySettingsToOtherMiners(Boolean.parseBoolean(packet.payload));
-                            if (((ModuleMiner) module).getCopySettingsToOtherMiners()) {
-                                copyMinerSettingsToOtherMiners(state, packet.moduleIndex, (ModuleMiner) module);
-                            }
-                        }
-                        case SET_ALLOW_SHOOTING_MODE -> {
-                            AllowShootingConfig.Mode mode;
-                            try {
-                                mode = AllowShootingConfig.Mode.valueOf(packet.payload);
-                            } catch (IllegalArgumentException e) {
-                                return null;
-                            }
-                            if (module instanceof ModuleHammer hammer) {
-                                double threshold = hammer.getConfig().threshold();
-                                hammer.setConfig(new AllowShootingConfig(mode, threshold));
-                            } else if (module instanceof ModuleBigHammer bh) {
-                                double threshold = bh.getConfig().threshold();
-                                bh.setConfig(new AllowShootingConfig(mode, threshold));
-                            } else {
-                                return null;
-                            }
-                        }
-                        case SET_ALLOW_SHOOTING_THRESHOLD -> {
-                            double threshold;
-                            try {
-                                threshold = Double.parseDouble(packet.payload);
-                            } catch (NumberFormatException e) {
-                                return null;
-                            }
-                            if (module instanceof ModuleHammer hammer) {
-                                AllowShootingConfig.Mode mode = hammer.getConfig().mode();
-                                hammer.setConfig(new AllowShootingConfig(mode, threshold));
-                            } else if (module instanceof ModuleBigHammer bh) {
-                                AllowShootingConfig.Mode mode = bh.getConfig().mode();
-                                bh.setConfig(new AllowShootingConfig(mode, threshold));
-                            } else {
-                                return null;
-                            }
-                        }
-                        case SET_PLANETARY_HANDLING -> {
-                            if (!(module instanceof ModuleBigHammer bh)) return null;
-                            bh.setPlanetaryHandling(Boolean.parseBoolean(packet.payload));
-                        }
-                        case SET_ROUTE_PRIORITY -> {
-                            OrbitalTransferPlanner.RoutePriority priority;
-                            try {
-                                priority = OrbitalTransferPlanner.RoutePriority.valueOf(packet.payload);
-                            } catch (IllegalArgumentException e) {
-                                return null;
-                            }
-                            if (module instanceof ModuleHammer hammer) {
-                                hammer.setPriority(priority);
-                            } else if (module instanceof ModuleBigHammer bh) {
-                                bh.setPriority(priority);
-                            } else {
-                                return null;
-                            }
-                        }
-                    }
-                }
+                case 0 -> handleAction(packet, state, module);
+                case 1 -> handleConfig(packet, state, module);
             }
             return new OutpostFullSyncPacket(state);
+        }
+
+        private void handleAction(OutpostModuleUpdatePacket packet, AutomatedOutpost state, AutomatedOutpostModule module) {
+            switch (packet.getAction()) {
+                case ENABLE -> {
+                    if (module.status() == Buildable.Status.DISABLED) {
+                        module.updateStatus(Buildable.Status.OPERATIONAL);
+                    }
+                }
+                case DISABLE -> module.updateStatus(Buildable.Status.DISABLED);
+                case DESTROY -> state.removeModule(packet.moduleIndex);
+            }
+        }
+
+        private void handleConfig(OutpostModuleUpdatePacket packet, AutomatedOutpost state, AutomatedOutpostModule module) {
+            switch (packet.getConfigAction()) {
+                case ADD_MINER_BLACKLIST -> handleMinerBlacklist(module, packet.getStringPayload(), true, state, packet.moduleIndex);
+                case REMOVE_MINER_BLACKLIST -> handleMinerBlacklist(module, packet.getStringPayload(), false, state, packet.moduleIndex);
+                case SET_MINER_COPY_SETTINGS -> handleMinerCopySettings(module, packet.getBooleanPayload(), state, packet.moduleIndex);
+                case SET_ALLOW_SHOOTING_MODE -> handleHammerConfig(module, h -> {
+                    AllowShootingConfig.Mode mode = packet.getEnumPayload(AllowShootingConfig.Mode.class);
+                    return new AllowShootingConfig(mode, h.getConfig().threshold());
+                });
+                case SET_ALLOW_SHOOTING_THRESHOLD -> handleHammerConfig(module, h -> {
+                    return new AllowShootingConfig(h.getConfig().mode(), packet.getDoublePayload());
+                });
+                case SET_PLANETARY_HANDLING -> {
+                    if (module instanceof ModuleBigHammer hammer) {
+                        hammer.setPlanetaryHandling(packet.getBooleanPayload());
+                    }
+                }
+                case SET_ROUTE_PRIORITY -> handleHammerConfig(module, h -> {
+                    OrbitalTransferPlanner.RoutePriority priority = packet.getEnumPayload(OrbitalTransferPlanner.RoutePriority.class);
+                    h.setPriority(priority);
+                    return h.getConfig();
+                });
+            }
+        }
+
+        private void handleMinerBlacklist(AutomatedOutpostModule module, String payload, boolean add, AutomatedOutpost state, int moduleIndex) {
+            if (!(module instanceof ModuleMiner miner)) return;
+            if (add) {
+                miner.withAddedBlacklist(payload);
+            } else {
+                miner.withRemovedBlacklist(payload);
+            }
+            if (miner.getCopySettingsToOtherMiners()) {
+                copyMinerSettingsToOtherMiners(state, moduleIndex, miner);
+            }
+        }
+
+        private void handleMinerCopySettings(AutomatedOutpostModule module, boolean payload, AutomatedOutpost state, int moduleIndex) {
+            if (!(module instanceof ModuleMiner miner)) return;
+            miner.withCopySettingsToOtherMiners(payload);
+            if (payload) {
+                copyMinerSettingsToOtherMiners(state, moduleIndex, miner);
+            }
+        }
+
+        private void handleHammerConfig(AutomatedOutpostModule module, Function<IHammer, AllowShootingConfig> configUpdater) {
+            if (!(module instanceof IHammer hammer)) return;
+            AllowShootingConfig newConfig = configUpdater.apply(hammer);
+            if (newConfig != null) {
+                hammer.setConfig(newConfig);
+            }
         }
     }
 
@@ -205,10 +236,10 @@ public final class OutpostModuleUpdatePacket implements IMessage {
         for (int i = 0; i < state.modules().size(); i++) {
             if (i == sourceModuleIndex) continue;
             AutomatedOutpostModule other = state.modules().get(i);
-            if (!(other instanceof ModuleMiner)) continue;
-            ((ModuleMiner) other).withCopySettingsToOtherMiners(sourceMiner.getCopySettingsToOtherMiners());
-            ((ModuleMiner) other).blacklistedItemKeys.clear();
-            ((ModuleMiner) other).blacklistedItemKeys.addAll(sourceMiner.blacklistedItemKeys);
+            if (!(other instanceof ModuleMiner miner)) continue;
+            miner.withCopySettingsToOtherMiners(sourceMiner.getCopySettingsToOtherMiners());
+            miner.blacklistedItemKeys.clear();
+            miner.blacklistedItemKeys.addAll(sourceMiner.blacklistedItemKeys);
         }
     }
 }

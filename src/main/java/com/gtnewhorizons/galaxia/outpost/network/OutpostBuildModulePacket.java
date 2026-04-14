@@ -34,28 +34,28 @@ import io.netty.buffer.ByteBuf;
 public final class OutpostBuildModulePacket implements IMessage {
 
     private CelestialAsset.ID assetId;
-    private String moduleKind;
+    private OutpostModuleKind moduleKind;
     private boolean instantBuild;
 
     public OutpostBuildModulePacket() {}
 
     public OutpostBuildModulePacket(CelestialAsset.ID assetId, OutpostModuleKind kind, boolean instantBuild) {
         this.assetId = assetId;
-        this.moduleKind = kind.name();
+        this.moduleKind = kind;
         this.instantBuild = instantBuild;
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
         PacketUtil.writeAssetId(buf, assetId);
-        PacketUtil.writeEnum(buf, OutpostModuleKind.valueOf(moduleKind));
+        PacketUtil.writeEnum(buf, moduleKind);
         buf.writeBoolean(instantBuild);
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
         assetId = PacketUtil.readAssetId(buf);
-        moduleKind = PacketUtil.readEnum(buf, OutpostModuleKind.class).name();
+        moduleKind = PacketUtil.readEnum(buf, OutpostModuleKind.class);
         instantBuild = buf.readBoolean();
     }
 
@@ -77,17 +77,7 @@ public final class OutpostBuildModulePacket implements IMessage {
                 return null;
             }
 
-            OutpostModuleKind kind;
-            try {
-                kind = OutpostModuleKind.valueOf(packet.moduleKind);
-            } catch (IllegalArgumentException e) {
-                Galaxia.LOG.warn(
-                    "[Outpost] BuildModule: unknown module kind '{}' from player {}",
-                    packet.moduleKind,
-                    player.getGameProfile()
-                        .getName());
-                return null;
-            }
+            OutpostModuleKind kind = packet.moduleKind;
 
             CelestialAsset asset = CelestialAssetStore.findAsset(packet.assetId);
             if (asset == null) {

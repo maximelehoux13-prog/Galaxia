@@ -33,7 +33,7 @@ public abstract class AutomatedOutpostModule implements Buildable {
     public AutomatedOutpostModule(long baseEnergyCapacity, long powerDrawEuPerTick, int cooldownTicks) {
         this.cooldownTicks = cooldownTicks;
         this.constructionResources = new HashMap<>();
-        this.status = AutomatedOutpostModule.Status.IN_CONSTRUCTION;
+        this.status = Buildable.Status.IN_CONSTRUCTION;
         this.energyBuffer = 0L;
 
         this.baseEnergyCapacity = baseEnergyCapacity;
@@ -47,14 +47,6 @@ public abstract class AutomatedOutpostModule implements Buildable {
 
     @Override
     public void updateStatus(Buildable.Status status) {
-        this.status = status;
-    }
-
-    public Status getLegacyStatus() {
-        return status;
-    }
-
-    public void setLegacyStatus(Status status) {
         this.status = status;
     }
 
@@ -92,15 +84,15 @@ public abstract class AutomatedOutpostModule implements Buildable {
     }
 
     public void tick(AutomatedOutpost outpost) {
-        if (status == AutomatedOutpostModule.Status.IN_CONSTRUCTION) {
-            updateConstruction();
-        } else if (status == AutomatedOutpostModule.Status.OPERATIONAL) {
+        if (status == Buildable.Status.IN_CONSTRUCTION) {
+            return;
+        } else if (status == Buildable.Status.OPERATIONAL) {
             updateOperational(outpost);
         }
     }
 
     public long getDisplayedPowerEuPerTick() {
-        if (status != AutomatedOutpostModule.Status.OPERATIONAL) return 0L;
+        if (status != Buildable.Status.OPERATIONAL) return 0L;
         return powerDrawEuPerTick;
     }
 

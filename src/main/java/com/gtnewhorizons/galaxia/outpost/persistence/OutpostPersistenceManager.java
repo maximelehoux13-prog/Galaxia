@@ -42,6 +42,7 @@ import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -420,7 +421,7 @@ public final class OutpostPersistenceManager {
                     }
                 }
                 if (mj.status != null) {
-                    module.setLegacyStatus(AutomatedOutpostModule.Status.valueOf(mj.status));
+                    module.updateStatus(Buildable.Status.valueOf(mj.status));
                 }
                 module.setConstructionProgress(mj.constructionProgress);
                 module.cooldownTicks = mj.cooldownTicks;

@@ -60,36 +60,30 @@ public final class OutpostFullSyncPacket implements IMessage {
         this.modules = new ArrayList<>();
         for (AutomatedOutpostModule m : state.modules()) {
             List<String> minerBlacklist = Collections.emptyList();
-            String allowShootingMode = AllowShootingConfig.Mode.ALWAYS.name();
+            AllowShootingConfig.Mode allowShootingMode = AllowShootingConfig.Mode.ALWAYS;
             double allowShootingThreshold = 0.0;
             boolean planetaryHandling = false;
-            String routePriority = OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF.name();
+            OrbitalTransferPlanner.RoutePriority routePriority = OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
             boolean minerCopySettings = false;
             if (m instanceof ModuleMiner minerData) {
                 minerBlacklist = minerData.blacklistedItemKeys;
                 minerCopySettings = minerData.getCopySettingsToOtherMiners();
             } else if (m instanceof ModuleHammer hd) {
                 AllowShootingConfig cfg = hd.getConfig();
-                allowShootingMode = cfg.mode()
-                    .name();
+                allowShootingMode = cfg.mode();
                 allowShootingThreshold = cfg.threshold();
-                routePriority = hd.getRoutePriority()
-                    .name();
+                routePriority = hd.getRoutePriority();
             } else if (m instanceof ModuleBigHammer bh) {
                 AllowShootingConfig cfg = bh.getConfig();
-                allowShootingMode = cfg.mode()
-                    .name();
+                allowShootingMode = cfg.mode();
                 allowShootingThreshold = cfg.threshold();
                 planetaryHandling = bh.getPlanetaryHandling();
-                routePriority = bh.getRoutePriority()
-                    .name();
+                routePriority = bh.getRoutePriority();
             }
             modules.add(
                 new ModuleSyncData(
-                    m.getKind()
-                        .name(),
-                    m.status()
-                        .name(),
+                    m.getKind(),
+                    m.status(),
                     m.getConstructionProgress(),
                     minerBlacklist,
                     allowShootingMode,
@@ -135,18 +129,18 @@ public final class OutpostFullSyncPacket implements IMessage {
 
         buf.writeInt(modules.size());
         for (ModuleSyncData m : modules) {
-            PacketUtil.writeEnum(buf, OutpostModuleKind.valueOf(m.kind));
-            PacketUtil.writeEnum(buf, AutomatedOutpostModule.Status.valueOf(m.status));
-            buf.writeFloat(m.progress);
-            buf.writeInt(m.minerBlacklist.size());
-            for (String key : m.minerBlacklist) {
+            PacketUtil.writeEnum(buf, m.kind());
+            PacketUtil.writeEnum(buf, m.status());
+            buf.writeFloat(m.progress());
+            buf.writeInt(m.minerBlacklist().size());
+            for (String key : m.minerBlacklist()) {
                 PacketUtil.writeString(buf, key);
             }
-            PacketUtil.writeEnum(buf, AllowShootingConfig.Mode.valueOf(m.allowShootingMode));
-            buf.writeDouble(m.allowShootingThreshold);
-            buf.writeBoolean(m.planetaryHandling);
-            PacketUtil.writeEnum(buf, OrbitalTransferPlanner.RoutePriority.valueOf(m.routePriority));
-            buf.writeBoolean(m.minerCopySettings);
+            PacketUtil.writeEnum(buf, m.allowShootingMode());
+            buf.writeDouble(m.allowShootingThreshold());
+            buf.writeBoolean(m.planetaryHandling());
+            PacketUtil.writeEnum(buf, m.routePriority());
+            buf.writeBoolean(m.minerCopySettings());
         }
 
         buf.writeInt(inventory.size());
@@ -192,14 +186,14 @@ public final class OutpostFullSyncPacket implements IMessage {
             boolean minerCopySettings = buf.readBoolean();
             modules.add(
                 new ModuleSyncData(
-                    kind.name(),
-                    status.name(),
+                    kind,
+                    status,
                     progress,
                     minerBlacklist,
-                    allowShootingMode.name(),
+                    allowShootingMode,
                     allowShootingThreshold,
                     planetaryHandling,
-                    routePriority.name(),
+                    routePriority,
                     minerCopySettings));
         }
 
@@ -241,7 +235,7 @@ public final class OutpostFullSyncPacket implements IMessage {
                     state.clearModules();
                     for (ModuleSyncData md : packet.modules) {
                         AutomatedOutpostModule m = createModuleData(md);
-                        m.setLegacyStatus(AutomatedOutpostModule.Status.valueOf(md.status));
+                        m.updateStatus(md.status());
                         state.addModule(m);
                     }
 
@@ -276,8 +270,8 @@ public final class OutpostFullSyncPacket implements IMessage {
     }
 
     @Desugar
-    private static record ModuleSyncData(String kind, String status, float progress, List<String> minerBlacklist,
-        String allowShootingMode, double allowShootingThreshold, boolean planetaryHandling, String routePriority,
+    private static record ModuleSyncData(OutpostModuleKind kind, AutomatedOutpostModule.Status status, float progress, List<String> minerBlacklist,
+        AllowShootingConfig.Mode allowShootingMode, double allowShootingThreshold, boolean planetaryHandling, OrbitalTransferPlanner.RoutePriority routePriority,
         boolean minerCopySettings) {}
 
     @Desugar
@@ -285,8 +279,7 @@ public final class OutpostFullSyncPacket implements IMessage {
         boolean isSupplyEnabled) {}
 
     private static AutomatedOutpostModule createModuleData(ModuleSyncData syncData) {
-        OutpostModuleKind kind = OutpostModuleKind.valueOf(syncData.kind());
-        return switch (kind) {
+        return switch (syncData.kind()) {
             case HAMMER -> new ModuleHammer(parseAllowShooting(syncData), parseRoutePriority(syncData));
             case BIG_HAMMER -> new ModuleBigHammer(
                 syncData.planetaryHandling(),
@@ -299,19 +292,10 @@ public final class OutpostFullSyncPacket implements IMessage {
     }
 
     private static AllowShootingConfig parseAllowShooting(ModuleSyncData d) {
-        try {
-            AllowShootingConfig.Mode mode = AllowShootingConfig.Mode.valueOf(d.allowShootingMode());
-            return new AllowShootingConfig(mode, d.allowShootingThreshold());
-        } catch (IllegalArgumentException e) {
-            return AllowShootingConfig.ALWAYS;
-        }
+        return new AllowShootingConfig(d.allowShootingMode(), d.allowShootingThreshold());
     }
 
     private static OrbitalTransferPlanner.RoutePriority parseRoutePriority(ModuleSyncData d) {
-        try {
-            return OrbitalTransferPlanner.RoutePriority.valueOf(d.routePriority());
-        } catch (IllegalArgumentException | NullPointerException e) {
-            return OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
-        }
+        return d.routePriority() != null ? d.routePriority() : OrbitalTransferPlanner.RoutePriority.PRIORITIZE_TOF;
     }
 }

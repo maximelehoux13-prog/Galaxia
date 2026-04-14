@@ -1850,11 +1850,7 @@ public final class AssetManagementSystem {
                     ModuleBigHammer bh = (ModuleBigHammer) hammer;
                     bh.setPlanetaryHandling(!planetaryHandling);
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        OutpostModuleUpdatePacket.config(
-                            outpost.assetId,
-                            modIdx,
-                            OutpostModuleUpdatePacket.ConfigAction.SET_PLANETARY_HANDLING,
-                            String.valueOf(!planetaryHandling)));
+                        OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_PLANETARY_HANDLING, !planetaryHandling));
                     markStructureDirty();
                 }).pos(296, 52)
                     .size(34, 18));
@@ -2041,7 +2037,7 @@ public final class AssetManagementSystem {
             AllowShootingConfig newCfg = new AllowShootingConfig(newMode, threshold);
             module.setConfig(newCfg);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_MODE, newMode.name()));
+                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_MODE, newMode));
         }
 
         private void applyShootingThresholdUpdate(IHammer module, AutomatedOutpost outpost, int modIdx,
@@ -2050,11 +2046,7 @@ public final class AssetManagementSystem {
             AllowShootingConfig newCfg = new AllowShootingConfig(mode, newThreshold);
             module.setConfig(newCfg);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                OutpostModuleUpdatePacket.config(
-                    outpost.assetId,
-                    modIdx,
-                    OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_THRESHOLD,
-                    Double.toString(newThreshold)));
+                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ALLOW_SHOOTING_THRESHOLD, newThreshold));
         }
 
         private double getCurrentShootingThreshold(IHammer module, boolean isBigHammer) {
@@ -2068,7 +2060,7 @@ public final class AssetManagementSystem {
             if (module == null || priority == null) return;
             module.setPriority(priority);
             Galaxia.GALAXIA_NETWORK.sendToServer(
-                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ROUTE_PRIORITY, priority.name()));
+                OutpostModuleUpdatePacket.config(outpost.assetId, modIdx, OutpostModuleUpdatePacket.ConfigAction.SET_ROUTE_PRIORITY, priority));
         }
 
         private void buildMinerConfigSubMenu(ParentWidget<?> modal, AutomatedOutpost outpost,
@@ -2087,11 +2079,7 @@ public final class AssetManagementSystem {
                 createFooterButton(miner.getCopySettingsToOtherMiners() ? "Copy: ON" : "Copy Settings", true, () -> {
                     miner.withCopySettingsToOtherMiners(!miner.getCopySettingsToOtherMiners());
                     Galaxia.GALAXIA_NETWORK.sendToServer(
-                        OutpostModuleUpdatePacket.config(
-                            outpost.assetId,
-                            state.configuringModuleIndex,
-                            OutpostModuleUpdatePacket.ConfigAction.SET_MINER_COPY_SETTINGS,
-                            Boolean.toString(miner.getCopySettingsToOtherMiners())));
+                        OutpostModuleUpdatePacket.config(outpost.assetId, state.configuringModuleIndex, OutpostModuleUpdatePacket.ConfigAction.SET_MINER_COPY_SETTINGS, miner.getCopySettingsToOtherMiners()));
                     markStructureDirty();
                 }).pos(82, 32)
                     .size(100, 20)
