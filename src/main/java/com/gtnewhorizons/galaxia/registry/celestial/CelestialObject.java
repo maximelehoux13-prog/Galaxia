@@ -37,8 +37,6 @@ public record CelestialObject(CelestialObjectId id, String name, String nameKey,
         if (name == null || name.isEmpty()) throw new IllegalStateException("Celestial object name is required");
         objectClass = objectClass == null ? Class.PLANET : objectClass;
         orbitalParams = orbitalParams == null ? OrbitalParams.circular(0.0, 0.0) : orbitalParams;
-        texture = texture;
-        spriteSize = spriteSize;
         properties = properties == null ? CelestialBodyProperties.builder()
             .build() : properties;
     }
