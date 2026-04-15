@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.gtnewhorizons.galaxia.core.network.LogisticsSyncPacket;
-import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.registry.outpost.module.AutomatedOutpostModule;
 
 /**

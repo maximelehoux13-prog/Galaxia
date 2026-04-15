@@ -9,12 +9,12 @@ import net.minecraft.client.Minecraft;
 
 import org.jetbrains.annotations.UnknownNullability;
 
+import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsSignal;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsSignalStore;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;

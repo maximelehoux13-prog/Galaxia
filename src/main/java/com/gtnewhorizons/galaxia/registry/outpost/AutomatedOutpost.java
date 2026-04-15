@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.UUID;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.registry.outpost.module.AutomatedOutpostModule;
-import com.gtnewhorizons.galaxia.registry.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.outpost.module.AutomatedOutpostModule;
+import com.gtnewhorizons.galaxia.registry.outpost.module.OutpostModuleKind;
 
 /**
  * Complete runtime state for a single automated outpost.

@@ -26,13 +26,13 @@ import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
 
 public class OrbitalView {
 
@@ -2021,7 +2021,7 @@ public class OrbitalView {
                 && orbitalClockRevision == lastRenderedLogisticsClockRevision) return;
 
             List<InterplanetaryTransferJob> logisticsTransfers = new ArrayList<>();
-            for (OutpostDataStore.ClientLogisticsTask task : OutpostDataStore.get()
+            for (LogisticsTask task : OutpostDataStore.get()
                 .clientTasks()) {
                 InterplanetaryTransferJob transfer = buildRenderedLogisticsTransfer(task);
                 if (transfer != null) logisticsTransfers.add(transfer);
@@ -2035,20 +2035,20 @@ public class OrbitalView {
             lastRenderedLogisticsClockRevision = orbitalClockRevision;
         }
 
-        private InterplanetaryTransferJob buildRenderedLogisticsTransfer(OutpostDataStore.ClientLogisticsTask task) {
-            if (task == null || task.resource() == null) return null;
-            CelestialObject sourceBody = GalaxiaCelestialAPI.findBodyById(root, task.fromBodyId());
-            CelestialObject destinationBody = GalaxiaCelestialAPI.findBodyById(root, task.toBodyId());
+        private InterplanetaryTransferJob buildRenderedLogisticsTransfer(LogisticsTask task) {
+            if (task == null || task.data.resourceId() == null) return null;
+            CelestialObject sourceBody = GalaxiaCelestialAPI.findBodyById(root, task.data.fromBodyId());
+            CelestialObject destinationBody = GalaxiaCelestialAPI.findBodyById(root, task.data.toBodyId());
             if (sourceBody == null || destinationBody == null) return null;
 
-            String itemName = task.resource()
+            String itemName = task.data.resourceId()
                 .toStack(1)
                 .getDisplayName();
-            String summary = task.amount() + " x " + itemName;
-            String transportLabel = formatTransportKindLabel(task.transportKind());
-            double departureDisplayTime = mapServerOrbitalTimeToDisplay(task.departureOrbitalTime());
+            String summary = task.data.amount() + " x " + itemName;
+            String transportLabel = formatTransportKindLabel(task.data.transportKind());
+            double departureDisplayTime = mapServerOrbitalTimeToDisplay(task.data.departureOrbitalTime());
             double arrivalDisplayTime = mapServerOrbitalTimeToDisplay(
-                task.departureOrbitalTime() + task.tofOrbitalSeconds());
+                task.data.departureOrbitalTime() + task.data.tofOrbitalSeconds());
             double displayedTof = Math.max(1e-6, arrivalDisplayTime - departureDisplayTime);
             InterplanetaryTransferJob base = transferSupport.createTransferJob(
                 root,
@@ -2061,7 +2061,7 @@ public class OrbitalView {
             if (base == null) return null;
 
             return new InterplanetaryTransferJob(
-                "logistics:" + task.taskId(),
+                "logistics:" + task.taskId,
                 base.displayName(),
                 base.inventorySummary(),
                 base.rootBody(),
@@ -2161,6 +2161,7 @@ public class OrbitalView {
                 actionStatusMessage = "";
                 return;
             }
+            // TODO: COLOR
             Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(actionStatusMessage, 12, 24, 0xFFD9E0FF);
         }
 

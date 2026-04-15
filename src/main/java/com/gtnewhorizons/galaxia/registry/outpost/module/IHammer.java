@@ -1,7 +1,7 @@
 package com.gtnewhorizons.galaxia.registry.outpost.module;
 
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 
 public interface IHammer {
 

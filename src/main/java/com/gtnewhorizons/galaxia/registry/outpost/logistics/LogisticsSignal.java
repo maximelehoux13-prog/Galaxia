@@ -1,9 +1,9 @@
 package com.gtnewhorizons.galaxia.registry.outpost.logistics;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 
 /**
  * A single logistics signal emitted by an outpost for one resource.

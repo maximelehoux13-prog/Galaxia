@@ -11,15 +11,15 @@ import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemWitherProtect
 import net.minecraftforge.common.MinecraftForge;
 
 import com.gtnewhorizons.galaxia.core.network.ServerTickTaskQueue;
-import com.gtnewhorizons.galaxia.handlers.DimensionEventHandler;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.OutpostLogisticsEngine;
 import com.gtnewhorizons.galaxia.core.persistence.OutpostPersistenceManager;
+import com.gtnewhorizons.galaxia.handlers.DimensionEventHandler;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.PlanetBlocks;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialRegistry;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
 import com.gtnewhorizons.galaxia.registry.effects.GalaxiaEffects;
 import com.gtnewhorizons.galaxia.registry.items.GalaxiaItemList;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.OutpostLogisticsEngine;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.rocket.ModuleRegistry;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.rocket.entities.EntityRocket;
 

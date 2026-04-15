@@ -3,10 +3,10 @@ package com.gtnewhorizons.galaxia.core.network;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.interfaces.WithUUID;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
 
 import io.netty.buffer.ByteBuf;
 

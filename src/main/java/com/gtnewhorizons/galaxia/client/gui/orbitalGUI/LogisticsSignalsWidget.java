@@ -25,14 +25,15 @@ import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.EnumColors;
-import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
-import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
+import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
 
 /**
  * Map overlay that shows aggregated logistics signals for the current map scope.
@@ -386,12 +387,12 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             acc.put(item, new long[] { e.getValue(), 0L });
         }
 
-        for (OutpostDataStore.ClientLogisticsTask task : OutpostDataStore.get()
+        for (LogisticsTask task : OutpostDataStore.get()
             .clientTasks()) {
-            boolean fromInScope = isBodyIdInScope(task.fromBodyId(), scope, viewRoot);
-            boolean toInScope = isBodyIdInScope(task.toBodyId(), scope, viewRoot);
+            boolean fromInScope = isBodyIdInScope(task.data.fromBodyId(), scope, viewRoot);
+            boolean toInScope = isBodyIdInScope(task.data.toBodyId(), scope, viewRoot);
             if (!fromInScope && !toInScope) continue;
-            acc.computeIfAbsent(task.resource(), k -> new long[] { 0L, 0L })[1] += task.amount();
+            acc.computeIfAbsent(task.data.resourceId(), k -> new long[] { 0L, 0L })[1] += task.data.amount();
         }
 
         List<SignalRow> rows = new ArrayList<>(acc.size());
