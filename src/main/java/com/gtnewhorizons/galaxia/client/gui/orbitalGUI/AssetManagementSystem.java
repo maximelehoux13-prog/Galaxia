@@ -51,7 +51,7 @@ import com.gtnewhorizons.galaxia.outpost.module.ModulePower;
 import com.gtnewhorizons.galaxia.outpost.module.OutpostModuleKind;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsConfigUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
-import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryRemovePacket;
+import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostRequestSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
@@ -1571,7 +1571,7 @@ public final class AssetManagementSystem {
                     if (resourceKey.equals(state.armedDumpResourceKey)) {
                         state.armedDumpResourceKey = null;
                         Galaxia.GALAXIA_NETWORK
-                            .sendToServer(new OutpostInventoryRemovePacket(outpost.assetId, entry.getKey()));
+                            .sendToServer(OutpostInventoryUpdatePacket.remove(outpost.assetId, entry.getKey()));
                     } else {
                         state.armedDumpResourceKey = resourceKey;
                         markStructureDirty();

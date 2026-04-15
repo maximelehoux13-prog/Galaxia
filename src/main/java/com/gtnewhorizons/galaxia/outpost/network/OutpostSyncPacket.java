@@ -74,7 +74,7 @@ public final class OutpostSyncPacket implements IMessage {
         for (Map.Entry<ItemStackWrapper, Long> e : state.inventory.snapshot()
             .entrySet()) {
             pkt.fullSyncDeltas.add(
-                inventoryAdded(
+                inventoryUpdate(
                     state.assetId,
                     e.getKey()
                         .toKey(),
@@ -126,21 +126,12 @@ public final class OutpostSyncPacket implements IMessage {
         return pkt;
     }
 
-    public static OutpostSyncPacket inventoryAdded(CelestialAsset.ID assetId, String resourceKey, long amount) {
+    public static OutpostSyncPacket inventoryUpdate(CelestialAsset.ID assetId, String resourceKey, long delta) {
         OutpostSyncPacket pkt = new OutpostSyncPacket();
         pkt.assetId = assetId;
-        pkt.syncType = INVENTORY_ADDED;
+        pkt.syncType = delta > 0 ? INVENTORY_ADDED : INVENTORY_REMOVED;
         pkt.resourceKey = resourceKey;
-        pkt.inventoryDelta = amount;
-        return pkt;
-    }
-
-    public static OutpostSyncPacket inventoryRemoved(CelestialAsset.ID assetId, String resourceKey, long amount) {
-        OutpostSyncPacket pkt = new OutpostSyncPacket();
-        pkt.assetId = assetId;
-        pkt.syncType = INVENTORY_REMOVED;
-        pkt.resourceKey = resourceKey;
-        pkt.inventoryDelta = amount;
+        pkt.inventoryDelta = Math.abs(delta);
         return pkt;
     }
 

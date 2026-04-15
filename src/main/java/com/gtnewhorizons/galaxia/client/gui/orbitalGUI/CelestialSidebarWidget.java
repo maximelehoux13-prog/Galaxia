@@ -29,7 +29,7 @@ import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.client.gui.mui.SafePhantomItemSlot;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.outpost.network.OutpostDebugAddItemPacket;
+import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryUpdatePacket;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
@@ -602,7 +602,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
         ItemStackWrapper resource = ItemStackWrapper.of(selectedStack);
         if (resource == null) return;
         Galaxia.LOG.info("[Supply Debug] Adding {} x {} to {}", amount, resource, asset.assetId);
-        Galaxia.GALAXIA_NETWORK.sendToServer(new OutpostDebugAddItemPacket(asset.assetId, resource, amount));
+        Galaxia.GALAXIA_NETWORK.sendToServer(OutpostInventoryUpdatePacket.add(asset.assetId, resource, amount));
     }
 
     private void drawInlineButton(int x, int y, int width, int height, String label, boolean enabled) {
