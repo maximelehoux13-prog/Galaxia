@@ -8,9 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
-import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsTask;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
@@ -42,7 +40,7 @@ public final class OutpostDataStore {
 
     /**
      * Client-side snapshot of aggregated logistics signals, indexed by system id.
-     * Updated by {@link com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket}.
+     * Updated by {@link com.gtnewhorizons.galaxia.outpost.network.LogisticsSyncPacket}.
      * Always empty on the server; never null.
      * <p>
      * Inner map: resourceKey → net signed amount (positive = surplus, negative = deficit).
@@ -59,10 +57,10 @@ public final class OutpostDataStore {
 
     /**
      * Client-side snapshot of in-flight logistics tasks. Updated by
-     * {@link com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket}.
+     * {@link com.gtnewhorizons.galaxia.outpost.network.LogisticsSyncPacket}.
      * Always empty on the server; never null.
      */
-    private final List<ClientLogisticsTask> clientTasks = new ArrayList<>();
+    private final List<LogisticsTask> clientTasks = new ArrayList<>();
     private int clientTaskRevision = 0;
 
     private OutpostDataStore() {}
@@ -195,14 +193,16 @@ public final class OutpostDataStore {
     // -------------------------------------------------------------------------
 
     /** Replaces the client task list and bumps the revision counter. Client-side only. */
-    public void updateClientTasks(List<ClientLogisticsTask> tasks) {
+    public void updateClientTasks(List<LogisticsTask> tasks) {
         clientTasks.clear();
-        clientTasks.addAll(tasks);
+        tasks.stream()
+            .filter(t -> t.data.resourceId() != null)
+            .forEach(clientTasks::add);
         clientTaskRevision++;
     }
 
     /** Returns an unmodifiable view of the latest client task snapshot. */
-    public List<ClientLogisticsTask> clientTasks() {
+    public List<LogisticsTask> clientTasks() {
         return Collections.unmodifiableList(clientTasks);
     }
 
@@ -210,21 +210,4 @@ public final class OutpostDataStore {
     public int clientTaskRevision() {
         return clientTaskRevision;
     }
-
-    /**
-     * Lightweight descriptor for an in-flight logistics shipment, held client-side.
-     *
-     * @param taskId               stable server task id
-     * @param resource             the item being transported
-     * @param amount               number of units in this shipment
-     * @param transportKind        HAMMER/BIG_HAMMER
-     * @param fromBodyId           celestial body id of the departure outpost
-     * @param toBodyId             celestial body id of the destination outpost
-     * @param departureOrbitalTime departure time in orbital simulation units
-     * @param tofOrbitalSeconds    time of flight in orbital simulation units
-     */
-    @Desugar
-    public record ClientLogisticsTask(LogisticsTask.ID taskId, ItemStackWrapper resource, long amount,
-        LogisticsTask.TransportType transportKind, CelestialObjectId fromBodyId, CelestialObjectId toBodyId,
-        double departureOrbitalTime, double tofOrbitalSeconds) {}
 }
