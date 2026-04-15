@@ -9,7 +9,7 @@ import java.util.Map;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 
-import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 
 public final class CelestialAssetStore {
 

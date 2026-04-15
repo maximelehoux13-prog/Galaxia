@@ -12,8 +12,8 @@ import net.minecraftforge.common.MinecraftForge;
 
 import com.gtnewhorizons.galaxia.core.network.ServerTickTaskQueue;
 import com.gtnewhorizons.galaxia.handlers.DimensionEventHandler;
-import com.gtnewhorizons.galaxia.outpost.logistics.OutpostLogisticsEngine;
-import com.gtnewhorizons.galaxia.outpost.persistence.OutpostPersistenceManager;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.OutpostLogisticsEngine;
+import com.gtnewhorizons.galaxia.core.persistence.OutpostPersistenceManager;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.PlanetBlocks;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialRegistry;
