@@ -24,6 +24,7 @@ import com.cleanroommc.modularui.widgets.slot.ModularSlot;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.client.gui.mui.SafePhantomItemSlot;
@@ -569,7 +570,7 @@ public class CelestialSidebarWidget extends ParentWidget<CelestialSidebarWidget>
     private CelestialAsset.ID resolveSupplyDebugAssetId() {
         CelestialObject focused = map.getFocusedBody();
         if (focused == null) return null;
-        List<CelestialAsset> state = CelestialAssetStore.getState(focused.id());
+        List<CelestialAsset> state = CelestialClient.getState(focused.id());
         for (CelestialAsset asset : state) {
             if (asset.status() != CelestialAsset.Status.OPERATIONAL) continue;
             if (asset.kind == CelestialAsset.Kind.AUTOMATED_OUTPOST

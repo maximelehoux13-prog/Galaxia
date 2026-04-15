@@ -46,6 +46,13 @@ public abstract class CelestialAsset implements Buildable {
                 "galaxia.outpost.module.location." + this.name()
                     .toLowerCase());
         }
+
+        public static Location ofKind(Kind kind) {
+            return switch (kind) {
+                case STATION, AUTOMATED_STATION -> ORBIT;
+                case AUTOMATED_OUTPOST -> SURFACE;
+            };
+        }
     }
 
     public final ID assetId;
@@ -58,35 +65,36 @@ public abstract class CelestialAsset implements Buildable {
     private Map<ItemStack, Long> constructionInventory;
     private String displayName;
 
-    public static CelestialAsset create(CelestialObjectId celestialObjectId, Kind kind, Location location,
-        Status status) {
+    private int syncRevision;
+
+    public static CelestialAsset create(CelestialObjectId celestialObjectId, Kind kind, Status status) {
         return switch (kind) {
-            case STATION -> new Station(ID.create(), celestialObjectId, location, status);
-            case AUTOMATED_STATION -> new AutomatedStation(ID.create(), celestialObjectId, location, status);
-            case AUTOMATED_OUTPOST -> new AutomatedOutpost(ID.create(), celestialObjectId, location, status);
+            case STATION -> new Station(ID.create(), celestialObjectId, status);
+            case AUTOMATED_STATION -> new AutomatedStation(ID.create(), celestialObjectId, status);
+            case AUTOMATED_OUTPOST -> new AutomatedOutpost(ID.create(), celestialObjectId, status);
         };
     }
 
-    public static CelestialAsset create(ID id, CelestialObjectId celestialObjectId, Kind kind, Location location,
-        Status status) {
+    public static CelestialAsset create(ID id, CelestialObjectId celestialObjectId, Kind kind, Status status) {
         return switch (kind) {
-            case STATION -> new Station(id, celestialObjectId, location, status);
-            case AUTOMATED_STATION -> new AutomatedStation(id, celestialObjectId, location, status);
-            case AUTOMATED_OUTPOST -> new AutomatedOutpost(id, celestialObjectId, location, status);
+            case STATION -> new Station(id, celestialObjectId, status);
+            case AUTOMATED_STATION -> new AutomatedStation(id, celestialObjectId, status);
+            case AUTOMATED_OUTPOST -> new AutomatedOutpost(id, celestialObjectId, status);
         };
     }
 
-    protected CelestialAsset(ID assetId, CelestialObjectId celestialObjectId, Kind kind, Location location,
-        Status status, Map<ItemStack, Long> constructionInventory) {
+    protected CelestialAsset(ID assetId, CelestialObjectId celestialObjectId, Kind kind, Status status,
+        Map<ItemStack, Long> constructionInventory) {
 
         this.assetId = assetId;
         this.status = status;
         this.celestialObjectId = celestialObjectId;
         this.displayName = celestialObjectId.displayName() + ":" + kind.getDisplayName();
         this.kind = kind;
-        this.location = location;
+        this.location = Location.ofKind(kind);
         this.requiredResources = defaultRequirements(kind);
         this.constructionInventory = constructionInventory == null ? Collections.emptyMap() : constructionInventory;
+        this.syncRevision = 0;
     }
 
     public Map<ItemStack, Long> requiredResources() {
@@ -134,6 +142,14 @@ public abstract class CelestialAsset implements Buildable {
             if (amount > 0) return true;
         }
         return false;
+    }
+
+    public int getSyncRevision() {
+        return syncRevision;
+    }
+
+    public void bumpSyncRevision() {
+        syncRevision++;
     }
 
     public static Map<ItemStack, Long> defaultRequirements(CelestialAsset.Kind kind) {

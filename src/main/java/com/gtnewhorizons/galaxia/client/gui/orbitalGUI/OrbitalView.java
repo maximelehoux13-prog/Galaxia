@@ -23,10 +23,10 @@ import com.cleanroommc.modularui.widget.Widget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.EnumTextures;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
@@ -2015,14 +2015,12 @@ public class OrbitalView {
         }
 
         private void syncRenderedLogisticsTransfers() {
-            int revision = OutpostDataStore.get()
-                .clientTaskRevision();
+            int revision = CelestialClient.clientTaskRevision();
             if (revision == lastRenderedLogisticsTaskRevision
                 && orbitalClockRevision == lastRenderedLogisticsClockRevision) return;
 
             List<InterplanetaryTransferJob> logisticsTransfers = new ArrayList<>();
-            for (LogisticsTask task : OutpostDataStore.get()
-                .clientTasks()) {
+            for (LogisticsTask task : CelestialClient.clientTasks()) {
                 InterplanetaryTransferJob transfer = buildRenderedLogisticsTransfer(task);
                 if (transfer != null) logisticsTransfers.add(transfer);
             }

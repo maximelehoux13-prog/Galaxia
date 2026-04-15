@@ -46,15 +46,12 @@ public final class AutomatedOutpost extends CelestialAsset {
 
     /** Internal energy storage in EU. Max 1,000,000 EU. */
     private long energyStored;
-    /** Client-side/UI revision bumped when a sync packet rewrites this state. */
-    private int syncRevision;
 
     public static final long MAX_ENERGY = 1_000_000L;
     public static final long PASSIVE_GENERATION = 512L;
 
-    public AutomatedOutpost(CelestialAsset.ID assetId, CelestialObjectId celestialBodyId, Location location,
-        Status status) {
-        super(assetId, celestialBodyId, Kind.AUTOMATED_OUTPOST, location, status, null);
+    public AutomatedOutpost(CelestialAsset.ID assetId, CelestialObjectId celestialBodyId, Status status) {
+        super(assetId, celestialBodyId, Kind.AUTOMATED_OUTPOST, status, null);
         this.systemId = GalaxiaCelestialAPI.findStar(celestialBodyId)
             .id();
         this.planetaryAnchorBodyId = GalaxiaCelestialAPI.findPlanetaryAnchor(celestialBodyId)
@@ -63,7 +60,6 @@ public final class AutomatedOutpost extends CelestialAsset {
         this.inventory = new AutomatedOutpostInventory();
         this.logisticsConfig = new LogisticsConfiguration();
         this.energyStored = 0;
-        this.syncRevision = 0;
     }
 
     /** Returns an unmodifiable view of installed modules. */
@@ -136,14 +132,6 @@ public final class AutomatedOutpost extends CelestialAsset {
         if (energyStored < amount) return false;
         energyStored -= amount;
         return true;
-    }
-
-    public int getSyncRevision() {
-        return syncRevision;
-    }
-
-    public void bumpSyncRevision() {
-        syncRevision++;
     }
 
     /**

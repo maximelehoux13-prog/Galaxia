@@ -5,12 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import net.minecraft.client.Minecraft;
 
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
@@ -47,6 +48,7 @@ public final class OutpostSyncPacket implements IMessage {
     private CelestialObjectId celestialBodyId;
     private CelestialObjectId systemId;
     private CelestialObjectId planetaryAnchorBodyId;
+    private Buildable.Status assetStatus;
     private long energyStored;
 
     // FULL SYNC AS DELTAS
@@ -72,6 +74,7 @@ public final class OutpostSyncPacket implements IMessage {
         pkt.celestialBodyId = state.celestialObjectId;
         pkt.systemId = state.systemId;
         pkt.planetaryAnchorBodyId = state.planetaryAnchorBodyId;
+        pkt.assetStatus = state.status();
         pkt.energyStored = state.getEnergyStored();
 
         pkt.fullSyncDeltas = new ArrayList<>();
@@ -176,6 +179,7 @@ public final class OutpostSyncPacket implements IMessage {
                 PacketUtil.writeCelestialObjectId(buf, celestialBodyId);
                 PacketUtil.writeCelestialObjectId(buf, systemId);
                 PacketUtil.writeCelestialObjectId(buf, planetaryAnchorBodyId);
+                PacketUtil.writeEnum(buf, assetStatus);
                 buf.writeLong(energyStored);
 
                 buf.writeInt(fullSyncDeltas.size());
@@ -200,6 +204,7 @@ public final class OutpostSyncPacket implements IMessage {
                 celestialBodyId = PacketUtil.readCelestialObjectId(buf);
                 systemId = PacketUtil.readCelestialObjectId(buf);
                 planetaryAnchorBodyId = PacketUtil.readCelestialObjectId(buf);
+                PacketUtil.readEnum(buf, Buildable.Status.class);
                 energyStored = buf.readLong();
 
                 int count = buf.readInt();
@@ -359,18 +364,21 @@ public final class OutpostSyncPacket implements IMessage {
             switch (packet.syncType) {
                 case FULL_SYNC -> handleFull(packet);
                 default -> {
-                    AutomatedOutpost state = OutpostDataStore.get()
-                        .getByAssetId(packet.assetId);
-                    if (state != null) handleDelta(state, packet);
+                    if (CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost state) {
+                        handleDelta(state, packet);
+                    }
                 }
             }
         }
 
         private void handleFull(OutpostSyncPacket packet) {
-            AutomatedOutpost state = (AutomatedOutpost) CelestialAssetStore.findAsset(packet.assetId);
+            AutomatedOutpost state = CelestialAssetStore.findAsset(packet.assetId) instanceof AutomatedOutpost o ? o : null;
             if (state == null) {
-                state = (AutomatedOutpost) CelestialAsset.create(packet.celestialBodyId, CelestialAsset.Kind.AUTOMATED_OUTPOST, packet.location, packet.status);
-                CelestialAssetStore.add(packet.teamId, state);
+                CelestialAsset newAsset = CelestialAsset
+                    .create(packet.celestialBodyId, CelestialAsset.Kind.AUTOMATED_OUTPOST, packet.assetStatus);
+                if (!(newAsset instanceof AutomatedOutpost newState)) return;
+                state = newState;
+                CelestialClient.add(newState);
             }
 
             state.setEnergyStored(packet.energyStored);

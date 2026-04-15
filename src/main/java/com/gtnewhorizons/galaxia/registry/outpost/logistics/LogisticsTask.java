@@ -3,7 +3,7 @@ package com.gtnewhorizons.galaxia.registry.outpost.logistics;
 import java.util.UUID;
 
 import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.interfaces.WithUUID;
@@ -85,10 +85,8 @@ public class LogisticsTask {
     public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
         ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind) {
 
-        AutomatedOutpost from = OutpostDataStore.get()
-            .getByAssetId(fromAssetId);
-        AutomatedOutpost to = OutpostDataStore.get()
-            .getByAssetId(toAssetId);
+        AutomatedOutpost from = CelestialClient.getByAssetId(fromAssetId) instanceof AutomatedOutpost o ? o : null;
+        AutomatedOutpost to = CelestialClient.getByAssetId(toAssetId) instanceof AutomatedOutpost o ? o : null;
         // These cases *should* never happen, but you never know :^)
         CelestialObjectId fromBody = from != null ? from.celestialObjectId : CelestialObjectId.INVALID;
         CelestialObjectId toBody = to != null ? to.celestialObjectId : CelestialObjectId.INVALID;

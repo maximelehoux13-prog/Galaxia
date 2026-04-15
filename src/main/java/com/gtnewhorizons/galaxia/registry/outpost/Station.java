@@ -5,7 +5,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 public class Station extends CelestialAsset {
 
-    public Station(ID assetId, CelestialObjectId celestialObjectId, Location location, Status status) {
-        super(assetId, celestialObjectId, Kind.STATION, location, status, null);
+    public Station(ID assetId, CelestialObjectId celestialObjectId, Status status) {
+        super(assetId, celestialObjectId, Kind.STATION, status, null);
     }
 }

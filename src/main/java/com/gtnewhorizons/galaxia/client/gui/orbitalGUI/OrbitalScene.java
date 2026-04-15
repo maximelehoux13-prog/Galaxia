@@ -13,9 +13,9 @@ import org.lwjgl.opengl.GL11;
 
 import com.cleanroommc.modularui.utils.GlStateManager;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
@@ -401,7 +401,7 @@ public class OrbitalScene {
         private void registerMarkers(OrbitalSceneFrame frame, ResolvedBodyDrawState state) {
             CelestialMarkerBase.CelestialMarkerContext context = markerContext.set(
                 state.body(),
-                CelestialAssetStore.getState(
+                CelestialClient.getState(
                     state.body()
                         .id()));
             List<CelestialMarkerBase.CelestialMarker> markers = CelestialMarkerBase.CelestialMarkerRegistry

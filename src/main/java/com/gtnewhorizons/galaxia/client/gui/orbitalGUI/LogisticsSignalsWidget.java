@@ -24,8 +24,8 @@ import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.client.EnumColors;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
@@ -151,11 +151,10 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
     }
 
     private int currentDataRevision(CelestialObject viewRoot) {
+        // TODO Colors
         int r = 0x1A2B3C4D;
-        r = r * 31 + OutpostDataStore.get()
-            .clientSignalRevision();
-        r = r * 31 + OutpostDataStore.get()
-            .clientTaskRevision();
+        r = r * 31 + CelestialClient.clientSignalRevision();
+        r = r * 31 + CelestialClient.clientTaskRevision();
         r = r * 31 + System.identityHashCode(viewRoot);
         return r == 0 ? Integer.MAX_VALUE : r;
     }
@@ -360,10 +359,9 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         Map<String, Long> signalData;
         switch (scope) {
             case SYSTEM:
-                signalData = OutpostDataStore.get()
-                    .clientSignalsForSystem(
-                        viewRoot.id()
-                            .getId());
+                signalData = CelestialClient.clientSignalsForSystem(
+                    viewRoot.id()
+                        .getId());
                 break;
             case PLANETARY: {
                 CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(galaxyRoot, viewRoot);
@@ -371,8 +369,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
                     .getId()
                     : viewRoot.id()
                         .getId();
-                signalData = OutpostDataStore.get()
-                    .clientSignalsForPlanet(anchorId);
+                signalData = CelestialClient.clientSignalsForPlanet(anchorId);
                 break;
             }
             default: // GALACTIC — placeholder, not yet implemented
@@ -387,8 +384,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             acc.put(item, new long[] { e.getValue(), 0L });
         }
 
-        for (LogisticsTask task : OutpostDataStore.get()
-            .clientTasks()) {
+        for (LogisticsTask task : CelestialClient.clientTasks()) {
             boolean fromInScope = isBodyIdInScope(task.data.fromBodyId(), scope, viewRoot);
             boolean toInScope = isBodyIdInScope(task.data.toBodyId(), scope, viewRoot);
             if (!fromInScope && !toInScope) continue;
@@ -470,8 +466,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
 
             tooltipLines.clear();
             tooltipLines.add(fullName);
-            for (AutomatedOutpost outpost : OutpostDataStore.get()
-                .allOutposts()) {
+            for (AutomatedOutpost outpost : CelestialClient.allOutposts()) {
                 if (!isOutpostInScope(outpost, scope, viewRoot)) continue;
                 CelestialAsset asset = CelestialAssetStore.findAsset(outpost.assetId);
                 if (asset == null) continue;

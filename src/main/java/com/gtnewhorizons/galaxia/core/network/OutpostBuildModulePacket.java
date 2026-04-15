@@ -2,8 +2,8 @@ package com.gtnewhorizons.galaxia.core.network;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
@@ -66,8 +66,7 @@ public final class OutpostBuildModulePacket implements IMessage {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player == null) return null;
 
-            AutomatedOutpost state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
             if (state == null) {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: unknown assetId {} from player {}",

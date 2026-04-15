@@ -35,6 +35,7 @@ import com.cleanroommc.modularui.widgets.TextWidget;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.gui.mui.ItemPickerScreen;
 import com.gtnewhorizons.galaxia.compat.GTUtility;
@@ -44,7 +45,6 @@ import com.gtnewhorizons.galaxia.core.network.OutpostBuildModulePacket;
 import com.gtnewhorizons.galaxia.core.network.OutpostInventoryUpdatePacket;
 import com.gtnewhorizons.galaxia.core.network.OutpostModuleUpdatePacket;
 import com.gtnewhorizons.galaxia.core.network.OutpostRequestSyncPacket;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
@@ -175,7 +175,7 @@ public final class AssetManagementSystem {
         List<StationTransferTarget> getTransferTargetsInSystem(CelestialObject root, CelestialObject body) {
             List<StationTransferTarget> targets = new ArrayList<>();
             if (body == null) return targets;
-            for (CelestialAssetStore.TransferTarget t : CelestialAssetStore.getTransferTargetsInSystem(root, body)) {
+            for (CelestialClient.TransferTarget t : CelestialClient.getTransferTargetsInSystem(root, body)) {
                 targets.add(new StationTransferTarget(t.assetId(), t.displayName(), t.hostBody()));
             }
             return targets;
@@ -245,11 +245,11 @@ public final class AssetManagementSystem {
 
         void createBaseStation(CelestialObject body) {
             if (body == null) return;
-            CelestialAssetStore.createOperationalAsset(
+            System.out.println("here 2");
+            CelestialClient.createOperationalAsset(
                 body.id(),
                 buildDefaultAssetDisplayName(body, CelestialAsset.Kind.STATION),
-                CelestialAsset.Kind.STATION,
-                getDefaultAssetLocation(CelestialAsset.Kind.STATION));
+                CelestialAsset.Kind.STATION);
             // TODO: Localize
             callbacks.showActionStatus("Station created");
         }
@@ -261,7 +261,8 @@ public final class AssetManagementSystem {
             CelestialAsset.Location location = getDefaultAssetLocation(kind);
             String displayName = buildDefaultAssetDisplayName(body, kind);
             if (callbacks.isCreativeBuildModeEnabled()) {
-                CelestialAssetStore.createOperationalAsset(body.id(), displayName, kind, location);
+                System.out.println("here 1");
+                CelestialClient.createOperationalAsset(body.id(), displayName, kind);
                 callbacks.showActionStatus(assetSupport.formatAssetKind(kind) + " created");
                 return;
             }
@@ -270,26 +271,24 @@ public final class AssetManagementSystem {
                 displayName,
                 kind,
                 location,
-                CelestialAssetStore.previewRequirements(kind));
+                CelestialAsset.defaultRequirements(kind));
         }
 
         void confirmPendingAssetCreation(OrbitalAssetUiState state) {
             if (state.pendingAssetCreation == null) return;
             if (callbacks.isCreativeBuildModeEnabled()) {
-                CelestialAssetStore.createOperationalAsset(
+                CelestialClient.createOperationalAsset(
                     state.pendingAssetCreation.celestialObjectId(),
                     state.pendingAssetCreation.displayName(),
-                    state.pendingAssetCreation.kind(),
-                    state.pendingAssetCreation.location());
+                    state.pendingAssetCreation.kind());
                 callbacks
                     // TODO: Localize
                     .showActionStatus(assetSupport.formatAssetKind(state.pendingAssetCreation.kind()) + " created");
             } else {
-                CelestialAssetStore.createAssetInConstruction(
+                CelestialClient.createAssetInConstruction(
                     state.pendingAssetCreation.celestialObjectId(),
                     state.pendingAssetCreation.displayName(),
-                    state.pendingAssetCreation.kind(),
-                    state.pendingAssetCreation.location());
+                    state.pendingAssetCreation.kind());
                 callbacks.showActionStatus(
                     // TODO: Localize
                     assetSupport.formatAssetKind(state.pendingAssetCreation.kind()) + " construction planned");
@@ -687,28 +686,28 @@ public final class AssetManagementSystem {
 
             // Handle asynchronous data arrival for automated outposts
             if (state.pendingAssetManagement != null) {
-                boolean present = OutpostDataStore.get()
-                    .getByAssetId(state.pendingAssetManagement.asset().assetId) != null;
+                boolean present = CelestialClient.getByAssetId(state.pendingAssetManagement.asset().assetId) != null;
                 if (present && !lastOutpostStatePresent) {
                     markStructureDirty();
                 }
                 if (present) {
-                    AutomatedOutpost outpost = OutpostDataStore.get()
-                        .getByAssetId(state.pendingAssetManagement.asset().assetId);
-                    if (outpost != null && outpost.getSyncRevision() != lastOutpostSyncRevision) {
-                        int newRevision = outpost.getSyncRevision();
-                        if (hasFocusedModalTextField()) {
-                            deferredOutpostSyncRevision = newRevision;
-                        } else {
-                            lastOutpostSyncRevision = newRevision;
+                    CelestialAsset asset = CelestialClient.getByAssetId(state.pendingAssetManagement.asset().assetId);
+                    if (asset instanceof AutomatedOutpost outpost) {
+                        if (outpost != null && outpost.getSyncRevision() != lastOutpostSyncRevision) {
+                            int newRevision = outpost.getSyncRevision();
+                            if (hasFocusedModalTextField()) {
+                                deferredOutpostSyncRevision = newRevision;
+                            } else {
+                                lastOutpostSyncRevision = newRevision;
+                                deferredOutpostSyncRevision = -1;
+                                markStructureDirty();
+                            }
+                        }
+                        if (deferredOutpostSyncRevision != -1 && !hasFocusedModalTextField()) {
+                            lastOutpostSyncRevision = deferredOutpostSyncRevision;
                             deferredOutpostSyncRevision = -1;
                             markStructureDirty();
                         }
-                    }
-                    if (deferredOutpostSyncRevision != -1 && !hasFocusedModalTextField()) {
-                        lastOutpostSyncRevision = deferredOutpostSyncRevision;
-                        deferredOutpostSyncRevision = -1;
-                        markStructureDirty();
                     }
                 } else {
                     lastOutpostSyncRevision = -1;
@@ -726,8 +725,10 @@ public final class AssetManagementSystem {
             if (ItemPickerScreen.hasPendingPickForOutpost()) {
                 CelestialAsset.ID targetId = ItemPickerScreen.getPendingForOutpostId();
                 ItemStack pickedStack = ItemPickerScreen.pollPendingPickForOutpost();
-                AutomatedOutpost outpost = targetId != null ? OutpostDataStore.get()
-                    .getByAssetId(targetId) : null;
+                AutomatedOutpost outpost = null;
+                if (targetId != null && CelestialClient.getByAssetId(targetId) instanceof AutomatedOutpost o){
+                    outpost = o;
+                }
                 if (pickedStack != null && outpost != null) {
                     ItemStackWrapper wrapper = ItemStackWrapper.of(pickedStack);
                     boolean alreadyTracked = wrapper != null && outpost.logisticsConfig.snapshot()
@@ -804,8 +805,10 @@ public final class AssetManagementSystem {
             if (state.selectingModuleBuild) {
                 state.buildModuleScrollPosition = scroll;
             } else if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
-                AutomatedOutpost outpost = OutpostDataStore.get()
-                    .getByAssetId(state.pendingAssetManagement.asset().assetId);
+                AutomatedOutpost outpost = null;
+                if (CelestialClient.getByAssetId(state.pendingAssetManagement.asset().assetId) instanceof AutomatedOutpost o){
+                    outpost = o;
+                }
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
@@ -828,8 +831,10 @@ public final class AssetManagementSystem {
         private int getCurrentModalScrollPosition() {
             if (state.selectingModuleBuild) return state.buildModuleScrollPosition;
             if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
-                AutomatedOutpost outpost = OutpostDataStore.get()
-                    .getByAssetId(state.pendingAssetManagement.asset().assetId);
+                AutomatedOutpost outpost = null;
+                if (CelestialClient.getByAssetId(state.pendingAssetManagement.asset().assetId) instanceof AutomatedOutpost o){
+                    outpost = o;
+                }
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
                     .size()) {
                     AutomatedOutpostModule module = outpost.modules()
@@ -918,7 +923,7 @@ public final class AssetManagementSystem {
                 return;
             CelestialObject body = state.assetManagementBody;
             if (body == null) return;
-            List<CelestialAsset> assetState = CelestialAssetStore.getState(body.id());
+            List<CelestialAsset> assetState = CelestialClient.getState(body.id());
             int contentScrollSize = Math.max(mainContentHeight, computeContentHeight(assetState));
             mainScrollData.setScrollSize(contentScrollSize);
             mainScrollContent.removeAll();
@@ -1190,8 +1195,10 @@ public final class AssetManagementSystem {
                 return;
             }
 
-            AutomatedOutpost outpost = OutpostDataStore.get()
-                .getByAssetId(asset.assetId);
+            AutomatedOutpost outpost = null;
+            if (asset instanceof AutomatedOutpost o ) {
+                outpost = o;
+            }
             ModalBounds bounds = createCenteredModalBounds(MODAL_MAX_WIDTH, MODAL_MAX_HEIGHT);
             updateModalBounds(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
             ParentWidget<?> modal = createModalRoot(bounds);

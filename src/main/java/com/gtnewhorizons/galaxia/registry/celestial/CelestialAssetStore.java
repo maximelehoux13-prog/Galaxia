@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.registry.celestial;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,22 +11,22 @@ import java.util.UUID;
 
 import net.minecraft.item.ItemStack;
 
-import com.github.bsideup.jabel.Desugar;
-import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 
 public final class CelestialAssetStore {
 
     private static final Map<UUID, Map<CelestialObjectId, Set<CelestialAsset>>> STATE_BY_BODY = new LinkedHashMap<>();
-    private static final Map<CelestialAsset.ID, UUID> TEAM_BY_ID= new LinkedHashMap<>();
+    private static final Map<CelestialAsset.ID, UUID> TEAM_BY_ID = new LinkedHashMap<>();
     private static final Map<CelestialAsset.ID, CelestialAsset> BY_ID = new LinkedHashMap<>();
 
     private CelestialAssetStore() {}
 
     public static void add(UUID teamId, CelestialAsset asset) {
-        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(teamId, Collections.emptyMap())
-            .getOrDefault(asset.celestialObjectId, Collections.emptySet());
+        Map<CelestialObjectId, Set<CelestialAsset>> byBody =
+            STATE_BY_BODY.computeIfAbsent(teamId, k -> new LinkedHashMap<>());
+
+        Set<CelestialAsset> celestialAssets =
+            byBody.computeIfAbsent(asset.celestialObjectId, k -> new HashSet<>());
 
         celestialAssets.add(asset);
         TEAM_BY_ID.put(asset.assetId, teamId);
@@ -36,9 +37,8 @@ public final class CelestialAssetStore {
         return TEAM_BY_ID.get(assetId);
     }
 
-    public static List<CelestialAsset> getState(CelestialObjectId celestialObjectId) {
-        UUID id = new UUID(0, 0); // TODO
-        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
+    public static List<CelestialAsset> getState(UUID teamId, CelestialObjectId celestialObjectId) {
+        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(teamId, Collections.emptyMap())
             .getOrDefault(celestialObjectId, Collections.emptySet());
         return new ArrayList<>(celestialAssets);
     }
@@ -54,35 +54,26 @@ public final class CelestialAssetStore {
                 all.addAll(assets);
             }
         }
-        return Collections.unmodifiableList(all);
+        return all;
     }
 
-    public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind, CelestialAsset.Location location) {
-        UUID id = new UUID(0, 0); // TODO
-        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
-            .getOrDefault(celestialObjectId, Collections.emptySet());
+    public static CelestialAsset createAssetInConstruction(UUID teamId, CelestialObjectId celestialObjectId,
+        String displayName, CelestialAsset.Kind kind) {
 
-        CelestialAsset asset = CelestialAsset
-            .create(celestialObjectId, kind, location, Buildable.Status.CONSTRUCTION_SITE);
+        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.CONSTRUCTION_SITE);
+        asset.setDisplayName(displayName);
 
-        celestialAssets.add(asset);
-        BY_ID.put(asset.assetId, asset);
-
+        add(teamId, asset);
         return asset;
     }
 
-    public static CelestialAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind, CelestialAsset.Location location) {
-        UUID id = new UUID(0, 0); // TODO
-        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
-            .getOrDefault(celestialObjectId, Collections.emptySet());
+    public static CelestialAsset createOperationalAsset(UUID teamId, CelestialObjectId celestialObjectId,
+        String displayName, CelestialAsset.Kind kind) {
 
-        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, location, Buildable.Status.OPERATIONAL);
+        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.OPERATIONAL);
+        asset.setDisplayName(displayName);
 
-        celestialAssets.add(asset);
-        BY_ID.put(asset.assetId, asset);
-
+        add(teamId, asset);
         return asset;
     }
 
@@ -100,8 +91,6 @@ public final class CelestialAssetStore {
             list.remove(asset);
         }
 
-        OutpostDataStore.get()
-            .remove(assetId);
         return true;
     }
 
@@ -178,44 +167,17 @@ public final class CelestialAssetStore {
             if (asset == null || asset.celestialObjectId == null || asset.assetId == null) continue;
 
             UUID id = new UUID(0, 0); // TODO
-            Set<CelestialAsset> list = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
-                .getOrDefault(asset.celestialObjectId, Collections.emptySet());
+
+            Map<CelestialObjectId, Set<CelestialAsset>> byBody =
+                STATE_BY_BODY.computeIfAbsent(id, k -> new LinkedHashMap<>());
+
+            Set<CelestialAsset> list =
+                byBody.computeIfAbsent(asset.celestialObjectId, k -> new HashSet<>());
 
             list.add(asset);
+
             BY_ID.put(asset.assetId, asset);
-        }
-    }
-
-    public static Map<ItemStack, Long> previewRequirements(CelestialAsset.Kind kind) {
-        return CelestialAsset.defaultRequirements(kind);
-    }
-
-    /// This is just used in the UI, I mark it as deprecated since it's just duplicate copied stuff, but I can't be
-    /// bothered to fix the UI
-    @Deprecated
-    @Desugar
-    public record TransferTarget(CelestialAsset.ID assetId, String displayName, CelestialObject hostBody) {}
-
-    public static List<TransferTarget> getTransferTargetsInSystem(CelestialObject root, CelestialObject body) {
-        List<TransferTarget> targets = new ArrayList<>();
-        if (body == null) return targets;
-        CelestialObject hostStar = GalaxiaCelestialAPI.findStar(root, body);
-        if (hostStar == null) return targets;
-        collectTransferTargets(hostStar, targets);
-        return targets;
-    }
-
-    private static void collectTransferTargets(CelestialObject current, List<TransferTarget> targets) {
-        List<CelestialAsset> state = getState(current.id());
-        for (CelestialAsset asset : state) {
-            if (asset.isManageable()) {
-                targets.add(new TransferTarget(asset.assetId, asset.displayName(), current));
-            }
-        }
-        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
-            collectTransferTargets(child, targets);
-        }
-    }
+        }    }
 
     private static Map<ItemStack, Long> mergeIntoConstructionInventory(Map<ItemStack, Long> constructionInventory,
         ItemStack stack, long amount) {

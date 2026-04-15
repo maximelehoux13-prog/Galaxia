@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft;
 
 import org.jetbrains.annotations.UnknownNullability;
 
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsSignal;
@@ -121,9 +121,8 @@ public final class LogisticsSyncPacket implements IMessage {
         public IMessage onMessage(LogisticsSyncPacket packet, MessageContext ctx) {
             Minecraft.getMinecraft()
                 .func_152344_a(() -> {
-                    OutpostDataStore store = OutpostDataStore.get();
-                    store.updateClientTasks(packet.tasks);
-                    store.updateClientSignals(packet.bySystem, packet.byPlanet);
+                    CelestialClient.updateClientTasks(packet.tasks);
+                    CelestialClient.updateClientSignals(packet.bySystem, packet.byPlanet);
                 });
             return null;
         }

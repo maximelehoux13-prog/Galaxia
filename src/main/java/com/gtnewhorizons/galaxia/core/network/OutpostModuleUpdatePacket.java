@@ -2,7 +2,7 @@ package com.gtnewhorizons.galaxia.core.network;
 
 import java.util.function.Function;
 
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
@@ -155,8 +155,7 @@ public final class OutpostModuleUpdatePacket implements IMessage {
 
         @Override
         public IMessage onMessage(OutpostModuleUpdatePacket packet, MessageContext ctx) {
-            AutomatedOutpost state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
             if (state == null) return null;
 
             var modules = state.modules();

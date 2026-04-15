@@ -52,10 +52,12 @@ final class PacketUtil {
         return new LogisticsTask.ID(readId(buf));
     }
 
+    @Deprecated
     static void writeCelestialObjectId(ByteBuf buf, CelestialObjectId id) {
         buf.writeByte(id.ordinal());
     }
 
+    @Deprecated
     static CelestialObjectId readCelestialObjectId(ByteBuf buf) {
         int ordinal = buf.readUnsignedByte();
         CelestialObjectId[] values = CelestialObjectId.values();

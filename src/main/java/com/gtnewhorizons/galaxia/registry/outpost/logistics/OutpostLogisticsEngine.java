@@ -7,10 +7,10 @@ import java.util.Map;
 import net.minecraft.server.MinecraftServer;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.network.LogisticsSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.OutpostSyncPacket;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
@@ -81,8 +81,7 @@ public final class OutpostLogisticsEngine {
     }
 
     private void tickOutposts() {
-        for (AutomatedOutpost outpost : OutpostDataStore.get()
-            .allOutposts()) {
+        for (AutomatedOutpost outpost : CelestialClient.allOutposts()) {
             outpost.tick();
         }
     }
@@ -111,8 +110,7 @@ public final class OutpostLogisticsEngine {
     }
 
     private void deliverTask(LogisticsTask task) {
-        AutomatedOutpost dest = OutpostDataStore.get()
-            .getByAssetId(task.data.toAssetId());
+        AutomatedOutpost dest = CelestialClient.getByAssetId(task.data.toAssetId()) instanceof AutomatedOutpost o ? o : null;
         if (dest == null) {
             Galaxia.LOG.warn(
                 "[Logistics] Task {} arrived but destination outpost {} not found; resources lost.",
@@ -137,8 +135,7 @@ public final class OutpostLogisticsEngine {
         LogisticsSignalStore store = LogisticsSignalStore.get();
         store.clear();
 
-        for (AutomatedOutpost outpost : OutpostDataStore.get()
-            .allOutposts()) {
+        for (AutomatedOutpost outpost : CelestialClient.allOutposts()) {
             emitSignals(outpost, store);
         }
     }
@@ -227,10 +224,8 @@ public final class OutpostLogisticsEngine {
                 if (supply.outpostAssetId()
                     .equals(request.outpostAssetId())) continue;
 
-                AutomatedOutpost supplier = OutpostDataStore.get()
-                    .getByAssetId(supply.outpostAssetId());
-                AutomatedOutpost requester = OutpostDataStore.get()
-                    .getByAssetId(request.outpostAssetId());
+                AutomatedOutpost supplier = CelestialClient.getByAssetId(supply.outpostAssetId()) instanceof AutomatedOutpost o ? o : null;
+                AutomatedOutpost requester = CelestialClient.getByAssetId(request.outpostAssetId()) instanceof AutomatedOutpost o ? o : null;
                 if (supplier == null || requester == null) continue;
 
                 if (sharesPlanetaryAnchor(root, supplier.celestialObjectId, requester.celestialObjectId)) {
@@ -476,8 +471,7 @@ public final class OutpostLogisticsEngine {
         syncCooldownTicks--;
         if (syncCooldownTicks > 0) return;
         syncCooldownTicks = 20;
-        for (AutomatedOutpost outpost : OutpostDataStore.get()
-            .allOutposts()) {
+        for (AutomatedOutpost outpost : CelestialClient.allOutposts()) {
             Galaxia.GALAXIA_NETWORK.sendToAll(OutpostSyncPacket.fullSync(outpost));
         }
         Galaxia.GALAXIA_NETWORK.sendToAll(LogisticsSyncPacket.from(LogisticsSignalStore.get(), activeTasks));

@@ -2,8 +2,8 @@ package com.gtnewhorizons.galaxia.core.network;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
@@ -91,11 +91,13 @@ public final class OutpostInventoryUpdatePacket implements IMessage {
                 return null;
             }
 
-            AutomatedOutpost state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
+AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
             if (state == null) {
                 Galaxia.LOG
-                    .warn("[Logistics] InventoryDelta: unknown assetId {} from player {}", packet.assetId, playerName);
+                    .warn(
+                        "[Logistics] InventoryDelta: unknown assetId {} from player {}",
+                        packet.assetId,
+                        playerName);
                 return null;
             }
 

@@ -96,6 +96,6 @@ public interface Buildable {
     }
 
     default boolean isManageable() {
-        return status() != Status.OPERATIONAL;
+        return status() == Status.OPERATIONAL;
     }
 }

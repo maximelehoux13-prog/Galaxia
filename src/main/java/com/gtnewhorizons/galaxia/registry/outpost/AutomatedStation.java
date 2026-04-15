@@ -5,7 +5,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
 public class AutomatedStation extends CelestialAsset {
 
-    public AutomatedStation(ID assetId, CelestialObjectId celestialObjectId, Location location, Status status) {
-        super(assetId, celestialObjectId, Kind.AUTOMATED_STATION, location, status, null);
+    public AutomatedStation(ID assetId, CelestialObjectId celestialObjectId, Status status) {
+        super(assetId, celestialObjectId, Kind.AUTOMATED_STATION, status, null);
     }
 }

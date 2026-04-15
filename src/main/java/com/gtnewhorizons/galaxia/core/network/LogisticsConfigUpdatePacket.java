@@ -2,8 +2,8 @@ package com.gtnewhorizons.galaxia.core.network;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
+import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
@@ -90,8 +90,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             // for SERVER-bound packets, so direct mutation is safe (same as DestinationSetPacket).
             String playerName = player.getGameProfile()
                 .getName();
-            AutomatedOutpost state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
             if (state == null) {
                 Galaxia.LOG.warn(
                     "[Logistics] LogisticsConfigUpdate: unknown assetId {} from player {}",
