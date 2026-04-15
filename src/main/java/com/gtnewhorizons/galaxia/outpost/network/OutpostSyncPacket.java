@@ -24,8 +24,7 @@ public final class OutpostSyncPacket implements IMessage {
     public static final byte MODULE_ADDED = 1;
     public static final byte MODULE_REMOVED = 2;
     public static final byte MODULE_UPDATED = 3;
-    public static final byte INVENTORY_ADDED = 4;
-    public static final byte INVENTORY_REMOVED = 5;
+    public static final byte INVENTORY_UPDATE = 4;
     public static final byte LOGISTICS_CONFIG_UPDATED = 6;
     public static final byte LOGISTICS_CONFIG_REMOVED = 7;
 
@@ -129,9 +128,9 @@ public final class OutpostSyncPacket implements IMessage {
     public static OutpostSyncPacket inventoryUpdate(CelestialAsset.ID assetId, String resourceKey, long delta) {
         OutpostSyncPacket pkt = new OutpostSyncPacket();
         pkt.assetId = assetId;
-        pkt.syncType = delta > 0 ? INVENTORY_ADDED : INVENTORY_REMOVED;
+        pkt.syncType = INVENTORY_UPDATE;
         pkt.resourceKey = resourceKey;
-        pkt.inventoryDelta = Math.abs(delta);
+        pkt.inventoryDelta = delta;
         return pkt;
     }
 
@@ -216,7 +215,7 @@ public final class OutpostSyncPacket implements IMessage {
             }
             case MODULE_REMOVED -> buf.writeInt(moduleIndex);
 
-            case INVENTORY_ADDED, INVENTORY_REMOVED -> {
+            case INVENTORY_UPDATE -> {
                 PacketUtil.writeString(buf, resourceKey);
                 buf.writeLong(inventoryDelta);
             }
@@ -238,7 +237,7 @@ public final class OutpostSyncPacket implements IMessage {
             }
             case MODULE_REMOVED -> moduleIndex = buf.readInt();
 
-            case INVENTORY_ADDED, INVENTORY_REMOVED -> {
+            case INVENTORY_UPDATE -> {
                 resourceKey = PacketUtil.readString(buf);
                 inventoryDelta = buf.readLong();
             }
@@ -406,16 +405,14 @@ public final class OutpostSyncPacket implements IMessage {
                             packet.moduleData);
                     }
                 }
-                case INVENTORY_ADDED -> {
+                case INVENTORY_UPDATE -> {
                     ItemStackWrapper r = ItemStackWrapper.fromKey(packet.resourceKey);
                     if (r != null) {
-                        state.inventory.setAmount(r, state.inventory.getAmount(r) + packet.inventoryDelta);
-                    }
-                }
-                case INVENTORY_REMOVED -> {
-                    ItemStackWrapper r = ItemStackWrapper.fromKey(packet.resourceKey);
-                    if (r != null) {
-                        state.inventory.setAmount(r, Math.max(0, state.inventory.getAmount(r) - packet.inventoryDelta));
+                        if (packet.inventoryDelta > 0) {
+                            state.inventory.setAmount(r, state.inventory.getAmount(r) + packet.inventoryDelta);
+                        } else {
+                            state.inventory.setAmount(r, Math.max(0, state.inventory.getAmount(r) - Math.abs(packet.inventoryDelta)));
+                        }
                     }
                 }
                 case LOGISTICS_CONFIG_UPDATED -> {
