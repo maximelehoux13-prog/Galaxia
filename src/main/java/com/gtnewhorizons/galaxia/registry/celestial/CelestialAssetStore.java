@@ -5,23 +5,41 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
-import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 
 public final class CelestialAssetStore {
 
-    private static final Map<CelestialObjectId, List<CelestialAsset>> STATE_BY_BODY = new LinkedHashMap<>();
+    private static final Map<UUID, Map<CelestialObjectId, Set<CelestialAsset>>> STATE_BY_BODY = new LinkedHashMap<>();
+    private static final Map<CelestialAsset.ID, UUID> TEAM_BY_ID= new LinkedHashMap<>();
     private static final Map<CelestialAsset.ID, CelestialAsset> BY_ID = new LinkedHashMap<>();
 
     private CelestialAssetStore() {}
 
+    public static void add(UUID teamId, CelestialAsset asset) {
+        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(teamId, Collections.emptyMap())
+            .getOrDefault(asset.celestialObjectId, Collections.emptySet());
+
+        celestialAssets.add(asset);
+        TEAM_BY_ID.put(asset.assetId, teamId);
+        BY_ID.put(asset.assetId, asset);
+    }
+
+    public static UUID getTeamId(CelestialAsset.ID assetId) {
+        return TEAM_BY_ID.get(assetId);
+    }
+
     public static List<CelestialAsset> getState(CelestialObjectId celestialObjectId) {
-        List<CelestialAsset> celestialAssets = STATE_BY_BODY.computeIfAbsent(celestialObjectId, t -> new ArrayList<>());
+        UUID id = new UUID(0, 0); // TODO
+        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
+            .getOrDefault(celestialObjectId, Collections.emptySet());
         return new ArrayList<>(celestialAssets);
     }
 
@@ -31,25 +49,22 @@ public final class CelestialAssetStore {
 
     public static List<CelestialAsset> allAssets() {
         List<CelestialAsset> all = new ArrayList<>();
-        for (List<CelestialAsset> state : STATE_BY_BODY.values()) {
-            all.addAll(state);
+        for (Map<CelestialObjectId, Set<CelestialAsset>> teamAsset : STATE_BY_BODY.values()) {
+            for (Set<CelestialAsset> assets : teamAsset.values()) {
+                all.addAll(assets);
+            }
         }
         return Collections.unmodifiableList(all);
     }
 
     public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,
         CelestialAsset.Kind kind, CelestialAsset.Location location) {
-        List<CelestialAsset> celestialAssets = STATE_BY_BODY.computeIfAbsent(celestialObjectId, t -> new ArrayList<>());
+        UUID id = new UUID(0, 0); // TODO
+        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
+            .getOrDefault(celestialObjectId, Collections.emptySet());
 
-        CelestialAsset asset = new CelestialAsset(
-            CelestialAsset.ID.create(),
-            celestialObjectId,
-            displayName,
-            kind,
-            location,
-            CelestialAsset.Status.CONSTRUCTION_SITE,
-            defaultRequirements(kind),
-            Collections.emptyMap());
+        CelestialAsset asset = CelestialAsset
+            .create(celestialObjectId, kind, location, Buildable.Status.CONSTRUCTION_SITE);
 
         celestialAssets.add(asset);
         BY_ID.put(asset.assetId, asset);
@@ -59,17 +74,11 @@ public final class CelestialAssetStore {
 
     public static CelestialAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
         CelestialAsset.Kind kind, CelestialAsset.Location location) {
-        List<CelestialAsset> celestialAssets = STATE_BY_BODY.computeIfAbsent(celestialObjectId, t -> new ArrayList<>());
+        UUID id = new UUID(0, 0); // TODO
+        Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
+            .getOrDefault(celestialObjectId, Collections.emptySet());
 
-        CelestialAsset asset = new CelestialAsset(
-            CelestialAsset.ID.create(),
-            celestialObjectId,
-            displayName,
-            kind,
-            location,
-            CelestialAsset.Status.OPERATIONAL,
-            Collections.emptyMap(),
-            Collections.emptyMap());
+        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, location, Buildable.Status.OPERATIONAL);
 
         celestialAssets.add(asset);
         BY_ID.put(asset.assetId, asset);
@@ -81,7 +90,12 @@ public final class CelestialAssetStore {
         CelestialAsset asset = BY_ID.remove(assetId);
         if (asset == null) return false;
 
-        List<CelestialAsset> list = STATE_BY_BODY.get(asset.celestialObjectId);
+        UUID id = new UUID(0, 0); // TODO
+        Map<CelestialObjectId, Set<CelestialAsset>> map = STATE_BY_BODY.get(id);
+        if (map == null) {
+            return false;
+        }
+        Set<CelestialAsset> list = map.get(asset.celestialObjectId);
         if (list != null) {
             list.remove(asset);
         }
@@ -163,7 +177,9 @@ public final class CelestialAssetStore {
         for (CelestialAsset asset : assets) {
             if (asset == null || asset.celestialObjectId == null || asset.assetId == null) continue;
 
-            List<CelestialAsset> list = STATE_BY_BODY.computeIfAbsent(asset.celestialObjectId, t -> new ArrayList<>());
+            UUID id = new UUID(0, 0); // TODO
+            Set<CelestialAsset> list = STATE_BY_BODY.getOrDefault(id, Collections.emptyMap())
+                .getOrDefault(asset.celestialObjectId, Collections.emptySet());
 
             list.add(asset);
             BY_ID.put(asset.assetId, asset);
@@ -171,7 +187,7 @@ public final class CelestialAssetStore {
     }
 
     public static Map<ItemStack, Long> previewRequirements(CelestialAsset.Kind kind) {
-        return Collections.unmodifiableMap(new LinkedHashMap<>(defaultRequirements(kind)));
+        return CelestialAsset.defaultRequirements(kind);
     }
 
     /// This is just used in the UI, I mark it as deprecated since it's just duplicate copied stuff, but I can't be
@@ -208,20 +224,4 @@ public final class CelestialAssetStore {
         return merged;
     }
 
-    // TODO: Find a better way to save this
-    private static Map<ItemStack, Long> defaultRequirements(CelestialAsset.Kind kind) {
-        Map<ItemStack, Long> required = new LinkedHashMap<>();
-        switch (kind) {
-            case STATION -> {}
-            case AUTOMATED_STATION -> {
-                required.put(new ItemStack(Blocks.stone), 64L);
-                required.put(new ItemStack(Blocks.dirt), 64L);
-            }
-            case AUTOMATED_OUTPOST -> {
-                required.put(new ItemStack(Blocks.stone), 64L);
-                required.put(new ItemStack(Blocks.dirt), 64L);
-            }
-        }
-        return required;
-    }
 }

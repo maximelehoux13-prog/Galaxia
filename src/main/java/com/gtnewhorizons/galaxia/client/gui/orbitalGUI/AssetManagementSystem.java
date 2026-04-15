@@ -2162,7 +2162,7 @@ public final class AssetManagementSystem {
         }
 
         private List<MinerOreOption> buildMinerOreOptions(AutomatedOutpost outpost, ModuleMiner minerData) {
-            return GalaxiaCelestialAPI.get(outpost.celestialBodyId)
+            return GalaxiaCelestialAPI.get(outpost.celestialObjectId)
                 .map(
                     body -> body.properties()
                         .hasGtOreVeinOres() ? buildGtMinerOreOptions(body, minerData)

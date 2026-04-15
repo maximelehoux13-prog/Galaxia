@@ -90,8 +90,8 @@ public class LogisticsTask {
         AutomatedOutpost to = OutpostDataStore.get()
             .getByAssetId(toAssetId);
         // These cases *should* never happen, but you never know :^)
-        CelestialObjectId fromBody = from != null ? from.celestialBodyId : CelestialObjectId.INVALID;
-        CelestialObjectId toBody = to != null ? to.celestialBodyId : CelestialObjectId.INVALID;
+        CelestialObjectId fromBody = from != null ? from.celestialObjectId : CelestialObjectId.INVALID;
+        CelestialObjectId toBody = to != null ? to.celestialObjectId : CelestialObjectId.INVALID;
 
         return createWithTrajectory(
             fromAssetId,

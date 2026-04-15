@@ -13,7 +13,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
-import com.gtnewhorizons.galaxia.registry.outpost.module.AutomatedOutpostModule;
 
 /**
  * In-memory store for all {@link AutomatedOutpost} instances.
@@ -34,12 +33,6 @@ public final class OutpostDataStore {
 
     private static final OutpostDataStore INSTANCE = new OutpostDataStore();
 
-    /** Primary index: assetId → state. */
-    private final Map<CelestialAsset.ID, AutomatedOutpost> byAssetId = new LinkedHashMap<CelestialAsset.ID, AutomatedOutpost>();
-
-    /** Secondary index: teamId → (assetId → state). */
-    private final Map<UUID, Map<CelestialAsset.ID, AutomatedOutpost>> byTeam = new LinkedHashMap<>();
-
     /**
      * Client-side snapshot of aggregated logistics signals, indexed by system id.
      * Updated by {@link LogisticsSyncPacket}.
@@ -47,12 +40,14 @@ public final class OutpostDataStore {
      * <p>
      * Inner map: resourceKey → net signed amount (positive = surplus, negative = deficit).
      */
+    // TODO: feels like it could be in LogisticsSignalStore
     private final Map<CelestialObjectId, Map<String, Long>> clientSystemSignals = new LinkedHashMap<>();
 
     /**
      * Client-side snapshot of aggregated logistics signals, indexed by planetary anchor body id.
      * Updated alongside {@link #clientSystemSignals}.
      */
+    // TODO: feels like it could be a function on the systemsSignals
     private final Map<CelestialObjectId, Map<String, Long>> clientPlanetSignals = new LinkedHashMap<>();
 
     private int clientSignalRevision = 0;
@@ -77,22 +72,23 @@ public final class OutpostDataStore {
 
     /** Registers a new outpost state in both indexes. */
     public void put(AutomatedOutpost state) {
-        byAssetId.put(state.assetId, state);
-        byTeam.computeIfAbsent(state.teamId, k -> new LinkedHashMap<>())
-            .put(state.assetId, state);
+        // byAssetId.put(state.assetId, state);
+        // byTeam.computeIfAbsent(state.teamId, k -> new LinkedHashMap<>())
+        // .put(state.assetId, state);
     }
 
     /** Removes an outpost from both indexes. Returns the removed state or {@code null}. */
     public AutomatedOutpost remove(CelestialAsset.ID assetId) {
-        AutomatedOutpost removed = byAssetId.remove(assetId);
-        if (removed != null) {
-            Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.get(removed.teamId);
-            if (teamMap != null) {
-                teamMap.remove(assetId);
-                if (teamMap.isEmpty()) byTeam.remove(removed.teamId);
-            }
-        }
-        return removed;
+        // AutomatedOutpost removed = byAssetId.remove(assetId);
+        // if (removed != null) {
+        // Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.get(removed.teamId);
+        // if (teamMap != null) {
+        // teamMap.remove(assetId);
+        // if (teamMap.isEmpty()) byTeam.remove(removed.teamId);
+        // }
+        // }
+        // return removed;
+        return null;
     }
 
     /**
@@ -100,31 +96,32 @@ public final class OutpostDataStore {
      * Used by {@link AutomatedTeamMigrationHandler}.
      */
     public void migrateTeam(UUID oldTeamId, UUID newTeamId) {
-        Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.remove(oldTeamId);
-        if (teamMap == null || teamMap.isEmpty()) return;
-        // Re-create states with the new team id and rebuild indexes.
-        Map<CelestialAsset.ID, AutomatedOutpost> newMap = new LinkedHashMap<>();
-        for (AutomatedOutpost old : teamMap.values()) {
-            AutomatedOutpost migrated = new AutomatedOutpost(old.assetId, newTeamId, old.celestialBodyId);
-            migrated.setEnergyStored(old.getEnergyStored());
-            // Transfer modules.
-            for (AutomatedOutpostModule m : old.modules()) {
-                migrated.addModule(m);
-            }
-            // Transfer inventory contents.
-            migrated.inventory.loadFromSnapshot(old.inventory.snapshot());
-            // Transfer logistics config.
-            migrated.logisticsConfig.loadFromSnapshot(old.logisticsConfig.snapshot());
-            byAssetId.put(migrated.assetId, migrated);
-            newMap.put(migrated.assetId, migrated);
-        }
-        byTeam.put(newTeamId, newMap);
+        // Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.remove(oldTeamId);
+        // if (teamMap == null || teamMap.isEmpty()) return;
+        // // Re-create states with the new team id and rebuild indexes.
+        // Map<CelestialAsset.ID, AutomatedOutpost> newMap = new LinkedHashMap<>();
+        // for (AutomatedOutpost old : teamMap.values()) {
+        // // TODO;
+        // AutomatedOutpost migrated = new AutomatedOutpost(old.assetId, newTeamId, old.celestialBodyId);
+        // migrated.setEnergyStored(old.getEnergyStored());
+        // // Transfer modules.
+        // for (AutomatedOutpostModule m : old.modules()) {
+        // migrated.addModule(m);
+        // }
+        // // Transfer inventory contents.
+        // migrated.inventory.loadFromSnapshot(old.inventory.snapshot());
+        // // Transfer logistics config.
+        // migrated.logisticsConfig.loadFromSnapshot(old.logisticsConfig.snapshot());
+        // byAssetId.put(migrated.assetId, migrated);
+        // newMap.put(migrated.assetId, migrated);
+        // }
+        // byTeam.put(newTeamId, newMap);
     }
 
     /** Clears all stored state (called on world unload). */
     public void clear() {
-        byAssetId.clear();
-        byTeam.clear();
+        // byAssetId.clear();
+        // byTeam.clear();
     }
 
     // -------------------------------------------------------------------------
@@ -133,7 +130,8 @@ public final class OutpostDataStore {
 
     /** Returns the outpost state for the given asset id, or {@code null} if absent. */
     public AutomatedOutpost getByAssetId(CelestialAsset.ID assetId) {
-        return byAssetId.get(assetId);
+        // return byAssetId.get(assetId);
+        return null;
     }
 
     /**
@@ -141,13 +139,15 @@ public final class OutpostDataStore {
      * Returns an empty collection if the team has no outposts.
      */
     public Collection<AutomatedOutpost> getByTeam(UUID teamId) {
-        Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.get(teamId);
-        return teamMap == null ? Collections.emptyList() : Collections.unmodifiableCollection(teamMap.values());
+        // Map<CelestialAsset.ID, AutomatedOutpost> teamMap = byTeam.get(teamId);
+        // return teamMap == null ? Collections.emptyList() : Collections.unmodifiableCollection(teamMap.values());
+        return null;
     }
 
     /** Returns an unmodifiable view of ALL outposts across all teams. */
     public Collection<AutomatedOutpost> allOutposts() {
-        return Collections.unmodifiableCollection(byAssetId.values());
+        // return Collections.unmodifiableCollection(byAssetId.values());
+        return null;
     }
 
     // -------------------------------------------------------------------------

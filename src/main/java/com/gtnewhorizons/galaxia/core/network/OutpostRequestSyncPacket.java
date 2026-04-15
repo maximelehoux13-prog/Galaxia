@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.core.network;
 
 import java.util.UUID;
 
+import com.gtnewhorizon.gtnhlib.GTNHLib;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
@@ -52,11 +53,9 @@ public final class OutpostRequestSyncPacket implements IMessage {
                 CelestialAsset asset = CelestialAssetStore.findAsset(packet.assetId);
                 if (asset != null && asset.status() == CelestialAsset.Status.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+                    // TODO: Query teamId from somewhere
                     UUID teamId = player != null ? player.getUniqueID() : new UUID(0L, 0L);
-                    CelestialObjectId bodyId = asset.celestialObjectId;
-                    state = new AutomatedOutpost(asset.assetId, teamId, bodyId);
-                    OutpostDataStore.get()
-                        .put(state);
+                    CelestialAssetStore.add(teamId, asset);
                     Galaxia.LOG.info(
                         "[Outpost] Auto-created state for outpost {} (player {})",
                         packet.assetId,

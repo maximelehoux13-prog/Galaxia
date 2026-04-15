@@ -154,7 +154,7 @@ public final class OutpostLogisticsEngine {
             if (!resources.contains(r)) resources.add(r);
         }
 
-        CelestialObjectId bodyId = outpost.celestialBodyId;
+        CelestialObjectId bodyId = outpost.celestialObjectId;
         CelestialObjectId systemId = outpost.systemId;
         CelestialObjectId planetaryAnchorBodyId = outpost.planetaryAnchorBodyId;
 
@@ -233,7 +233,7 @@ public final class OutpostLogisticsEngine {
                     .getByAssetId(request.outpostAssetId());
                 if (supplier == null || requester == null) continue;
 
-                if (sharesPlanetaryAnchor(root, supplier.celestialBodyId, requester.celestialBodyId)) {
+                if (sharesPlanetaryAnchor(root, supplier.celestialObjectId, requester.celestialObjectId)) {
                     // Planetary-range pair: HAMMER first; BIG_HAMMER only when toggle is on
                     if (tryDispatchHammer(supplier, requester, request, orbitalTime, root)) break;
                     if (hasPlanetaryTransferHandling(supplier)
@@ -292,7 +292,7 @@ public final class OutpostLogisticsEngine {
         if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
 
         // Same-body: instant transfer, no trajectory needed
-        if (supplier.celestialBodyId.equals(requester.celestialBodyId)) {
+        if (supplier.celestialObjectId.equals(requester.celestialObjectId)) {
             if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
             hammer.fire();
             LogisticsTask task = LogisticsTask.create(
@@ -307,8 +307,8 @@ public final class OutpostLogisticsEngine {
         }
 
         // Cross-body: compute trajectory
-        CelestialObject srcBody = GalaxiaCelestialAPI.findBodyById(root, supplier.celestialBodyId);
-        CelestialObject dstBody = GalaxiaCelestialAPI.findBodyById(root, requester.celestialBodyId);
+        CelestialObject srcBody = GalaxiaCelestialAPI.findBodyById(root, supplier.celestialObjectId);
+        CelestialObject dstBody = GalaxiaCelestialAPI.findBodyById(root, requester.celestialObjectId);
         CelestialObject attractor = srcBody != null ? GalaxiaCelestialAPI.findPlanetaryAnchor(root, srcBody) : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && attractor != null)
@@ -339,8 +339,8 @@ public final class OutpostLogisticsEngine {
             sendAmount,
             route.tofTicks(),
             LogisticsTask.TransportType.HAMMER,
-            supplier.celestialBodyId,
-            requester.celestialBodyId,
+            supplier.celestialObjectId,
+            requester.celestialObjectId,
             orbitalTime,
             route.tofOsu());
         activeTasks.add(task);
@@ -380,7 +380,7 @@ public final class OutpostLogisticsEngine {
         if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
 
         // Same-body: instant transfer
-        if (supplier.celestialBodyId.equals(requester.celestialBodyId)) {
+        if (supplier.celestialObjectId.equals(requester.celestialObjectId)) {
             if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
             bigHammer.fire();
             LogisticsTask task = LogisticsTask.create(
@@ -395,8 +395,8 @@ public final class OutpostLogisticsEngine {
         }
 
         // Cross-body: Lambert route (attractor = host star)
-        CelestialObject srcBody = GalaxiaCelestialAPI.findBodyById(root, supplier.celestialBodyId);
-        CelestialObject dstBody = GalaxiaCelestialAPI.findBodyById(root, requester.celestialBodyId);
+        CelestialObject srcBody = GalaxiaCelestialAPI.findBodyById(root, supplier.celestialObjectId);
+        CelestialObject dstBody = GalaxiaCelestialAPI.findBodyById(root, requester.celestialObjectId);
         CelestialObject star = srcBody != null ? GalaxiaCelestialAPI.findStar(root, srcBody) : null;
 
         OrbitalTransferPlanner.TransferRoute route = (srcBody != null && dstBody != null && star != null)
@@ -426,8 +426,8 @@ public final class OutpostLogisticsEngine {
             sendAmount,
             route.tofTicks(),
             LogisticsTask.TransportType.BIG_HAMMER,
-            supplier.celestialBodyId,
-            requester.celestialBodyId,
+            supplier.celestialObjectId,
+            requester.celestialObjectId,
             orbitalTime,
             route.tofOsu());
         activeTasks.add(task);

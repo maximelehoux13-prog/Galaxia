@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import net.minecraft.client.Minecraft;
 
 import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
@@ -67,8 +68,8 @@ public final class OutpostSyncPacket implements IMessage {
         pkt.assetId = state.assetId;
         pkt.syncType = FULL_SYNC;
 
-        pkt.teamId = state.teamId;
-        pkt.celestialBodyId = state.celestialBodyId;
+        pkt.teamId = CelestialAssetStore.getTeamId(state.assetId);
+        pkt.celestialBodyId = state.celestialObjectId;
         pkt.systemId = state.systemId;
         pkt.planetaryAnchorBodyId = state.planetaryAnchorBodyId;
         pkt.energyStored = state.getEnergyStored();
@@ -366,13 +367,10 @@ public final class OutpostSyncPacket implements IMessage {
         }
 
         private void handleFull(OutpostSyncPacket packet) {
-            AutomatedOutpost state = OutpostDataStore.get()
-                .getByAssetId(packet.assetId);
-
+            AutomatedOutpost state = (AutomatedOutpost) CelestialAssetStore.findAsset(packet.assetId);
             if (state == null) {
-                state = new AutomatedOutpost(packet.assetId, packet.teamId, packet.celestialBodyId);
-                OutpostDataStore.get()
-                    .put(state);
+                state = (AutomatedOutpost) CelestialAsset.create(packet.celestialBodyId, CelestialAsset.Kind.AUTOMATED_OUTPOST, packet.location, packet.status);
+                CelestialAssetStore.add(packet.teamId, state);
             }
 
             state.setEnergyStored(packet.energyStored);

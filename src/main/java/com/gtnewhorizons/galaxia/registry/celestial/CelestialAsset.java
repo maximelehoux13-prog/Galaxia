@@ -6,14 +6,47 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.interfaces.WithUUID;
+import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
+import com.gtnewhorizons.galaxia.registry.outpost.AutomatedStation;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
-public final class CelestialAsset implements Buildable {
+public abstract class CelestialAsset implements Buildable {
+
+    public enum Kind {
+
+        STATION, // Not Implemented yet
+        AUTOMATED_STATION, // Not implemented yet
+        AUTOMATED_OUTPOST,
+
+        ;
+
+        public String getDisplayName() {
+            return StatCollector.translateToLocal(
+                "galaxia.outpost.module.kind." + this.name()
+                    .toLowerCase());
+        }
+    }
+
+    public enum Location {
+
+        ORBIT,
+        SURFACE,
+
+        ;
+
+        public String getDisplayName() {
+            return StatCollector.translateToLocal(
+                "galaxia.outpost.module.location." + this.name()
+                    .toLowerCase());
+        }
+    }
 
     public final ID assetId;
     public final CelestialObjectId celestialObjectId;
@@ -21,26 +54,39 @@ public final class CelestialAsset implements Buildable {
     public final Location location;
 
     private Status status;
-    private Map<ItemStack, Long> requiredResources;
+    private final Map<ItemStack, Long> requiredResources;
     private Map<ItemStack, Long> constructionInventory;
     private String displayName;
 
-    public CelestialAsset(ID assetId, CelestialObjectId celestialObjectId, String displayName, Kind kind,
-        Location location, Status status, Map<ItemStack, Long> requiredResources,
-        Map<ItemStack, Long> constructionInventory) {
-        requiredResources = requiredResources == null ? Collections.emptyMap()
-            : Collections.unmodifiableMap(new LinkedHashMap<>(requiredResources));
-        constructionInventory = constructionInventory == null ? Collections.emptyMap()
-            : Collections.unmodifiableMap(new LinkedHashMap<>(constructionInventory));
+    public static CelestialAsset create(CelestialObjectId celestialObjectId, Kind kind, Location location,
+        Status status) {
+        return switch (kind) {
+            case STATION -> new Station(ID.create(), celestialObjectId, location, status);
+            case AUTOMATED_STATION -> new AutomatedStation(ID.create(), celestialObjectId, location, status);
+            case AUTOMATED_OUTPOST -> new AutomatedOutpost(ID.create(), celestialObjectId, location, status);
+        };
+    }
+
+    public static CelestialAsset create(ID id, CelestialObjectId celestialObjectId, Kind kind, Location location,
+        Status status) {
+        return switch (kind) {
+            case STATION -> new Station(id, celestialObjectId, location, status);
+            case AUTOMATED_STATION -> new AutomatedStation(id, celestialObjectId, location, status);
+            case AUTOMATED_OUTPOST -> new AutomatedOutpost(id, celestialObjectId, location, status);
+        };
+    }
+
+    protected CelestialAsset(ID assetId, CelestialObjectId celestialObjectId, Kind kind, Location location,
+        Status status, Map<ItemStack, Long> constructionInventory) {
 
         this.assetId = assetId;
         this.status = status;
         this.celestialObjectId = celestialObjectId;
-        this.displayName = displayName;
+        this.displayName = celestialObjectId.displayName() + ":" + kind.getDisplayName();
         this.kind = kind;
         this.location = location;
-        this.requiredResources = requiredResources;
-        this.constructionInventory = constructionInventory;
+        this.requiredResources = defaultRequirements(kind);
+        this.constructionInventory = constructionInventory == null ? Collections.emptyMap() : constructionInventory;
     }
 
     public Map<ItemStack, Long> requiredResources() {
@@ -90,6 +136,22 @@ public final class CelestialAsset implements Buildable {
         return false;
     }
 
+    public static Map<ItemStack, Long> defaultRequirements(CelestialAsset.Kind kind) {
+        Map<ItemStack, Long> required = new LinkedHashMap<>();
+        switch (kind) {
+            case STATION -> {}
+            case AUTOMATED_STATION -> {
+                required.put(new ItemStack(Blocks.stone), 64L);
+                required.put(new ItemStack(Blocks.dirt), 64L);
+            }
+            case AUTOMATED_OUTPOST -> {
+                required.put(new ItemStack(Blocks.stone), 64L);
+                required.put(new ItemStack(Blocks.dirt), 64L);
+            }
+        }
+        return required;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
@@ -100,40 +162,7 @@ public final class CelestialAsset implements Buildable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(
-            assetId,
-            celestialObjectId,
-            displayName,
-            kind,
-            location,
-            status,
-            requiredResources,
-            constructionInventory);
-    }
-
-    public enum Kind {
-
-        STATION,
-        AUTOMATED_STATION,
-        AUTOMATED_OUTPOST,;
-
-        public String getDisplayName() {
-            return StatCollector.translateToLocal(
-                "galaxia.outpost.module.kind." + this.name()
-                    .toLowerCase());
-        }
-    }
-
-    public enum Location {
-
-        ORBIT,
-        SURFACE,;
-
-        public String getDisplayName() {
-            return StatCollector.translateToLocal(
-                "galaxia.outpost.module.location." + this.name()
-                    .toLowerCase());
-        }
+        return Objects.hash(assetId);
     }
 
     @Desugar

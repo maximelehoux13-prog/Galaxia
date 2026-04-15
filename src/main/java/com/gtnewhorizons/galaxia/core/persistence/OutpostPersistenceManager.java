@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.WorldServer;
@@ -275,21 +274,21 @@ public final class OutpostPersistenceManager {
         }
         CelestialObjectId objectId = CelestialObjectId.fromString(json.celestialObjectId);
         if (objectId == null) return null;
-        return new CelestialAsset(
+        CelestialAsset asset = CelestialAsset.create(
             json.assetId,
             objectId,
-            json.displayName == null ? json.assetId.toString() : json.displayName,
             CelestialAsset.Kind.valueOf(json.kind),
             CelestialAsset.Location.valueOf(json.location),
-            CelestialAsset.Status.valueOf(json.status),
-            decodeRequirements(json.requiredResources),
-            decodeRequirements(json.constructionInventory));
+            Buildable.Status.valueOf(json.status));
+        asset.setConstructionInventory(decodeRequirements(json.constructionInventory));
+        asset.setDisplayName(json.displayName);
+        return asset;
     }
 
     private OutpostStateJson encodeOutpostState(AutomatedOutpost state) {
         OutpostStateJson out = new OutpostStateJson();
         out.teamId = state.teamId.toString();
-        out.celestialBodyId = String.valueOf(state.celestialBodyId);
+        out.celestialBodyId = String.valueOf(state.celestialObjectId);
         out.systemId = String.valueOf(state.systemId);
         out.planetaryAnchorBodyId = String.valueOf(state.planetaryAnchorBodyId);
         out.energyStored = state.getEnergyStored();
@@ -364,7 +363,7 @@ public final class OutpostPersistenceManager {
             : GalaxiaCelestialAPI.findPlanetaryAnchor(bodyId)
                 .id();
 
-        AutomatedOutpost state = new AutomatedOutpost(asset.assetId, UUID.fromString(json.teamId), bodyId);
+        AutomatedOutpost state = (AutomatedOutpost) asset;
         state.setEnergyStored(json.energyStored);
 
         if (json.modules != null) {

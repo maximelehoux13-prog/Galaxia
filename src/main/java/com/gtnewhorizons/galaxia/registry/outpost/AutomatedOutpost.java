@@ -3,7 +3,6 @@ package com.gtnewhorizons.galaxia.registry.outpost;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -18,20 +17,12 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.OutpostModuleKind;
  * The outpost is the operational layer on top of a {@code CelestialManagedAsset}.
  * It adds logistics, inventory, and module state that only exist while the outpost is OPERATIONAL.
  */
-public final class AutomatedOutpost {
-
-    /** Matches the {@code assetId} in {@code CelestialManagedAsset}. */
-    public final CelestialAsset.ID assetId;
-
-    /** Owner team UUID resolved via NHLib. */
-    public final UUID teamId;
-
-    /** Parent celestial body id (key in CelestialRegistry). */
-    public final CelestialObjectId celestialBodyId;
+public final class AutomatedOutpost extends CelestialAsset {
 
     /**
      * The stellar system id (host star body id) used to bucket this outpost in {@code LogisticsSignalStore}.
      */
+    @Deprecated
     public final CelestialObjectId systemId;
 
     /**
@@ -41,6 +32,7 @@ public final class AutomatedOutpost {
      * For moons/stations/asteroids: the parent planet id.
      * Falls back to {@code celestialBodyId} if resolution fails.
      */
+    @Deprecated
     public final CelestialObjectId planetaryAnchorBodyId;
 
     /** Installed modules; ordering is significant for multi-module interactions. */
@@ -60,10 +52,9 @@ public final class AutomatedOutpost {
     public static final long MAX_ENERGY = 1_000_000L;
     public static final long PASSIVE_GENERATION = 512L;
 
-    public AutomatedOutpost(CelestialAsset.ID assetId, UUID teamId, CelestialObjectId celestialBodyId) {
-        this.assetId = assetId;
-        this.teamId = teamId;
-        this.celestialBodyId = celestialBodyId;
+    public AutomatedOutpost(CelestialAsset.ID assetId, CelestialObjectId celestialBodyId, Location location,
+        Status status) {
+        super(assetId, celestialBodyId, Kind.AUTOMATED_OUTPOST, location, status, null);
         this.systemId = GalaxiaCelestialAPI.findStar(celestialBodyId)
             .id();
         this.planetaryAnchorBodyId = GalaxiaCelestialAPI.findPlanetaryAnchor(celestialBodyId)

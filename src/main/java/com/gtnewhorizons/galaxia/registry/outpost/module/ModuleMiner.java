@@ -39,7 +39,7 @@ public class ModuleMiner extends AutomatedOutpostModule {
 
     @Override
     public void apply(AutomatedOutpost outpost) {
-        GalaxiaCelestialAPI.get(outpost.celestialBodyId)
+        GalaxiaCelestialAPI.get(outpost.celestialObjectId)
             .ifPresent(registration -> {
                 List<ItemStack> ores = registration.properties()
                     .ores();
