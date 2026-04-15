@@ -3,7 +3,9 @@ package com.gtnewhorizons.galaxia.outpost.logistics;
 import java.util.UUID;
 
 import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
@@ -81,6 +83,13 @@ public class LogisticsTask {
     /** Creates a new task with a freshly generated task id. */
     public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
         ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind) {
+
+        AutomatedOutpost from = OutpostDataStore.get().getByAssetId(fromAssetId);
+        AutomatedOutpost to = OutpostDataStore.get().getByAssetId(toAssetId);
+        // These cases *should* never happen, but you never know :^)
+        CelestialObjectId fromBody = from != null ? from.celestialBodyId : CelestialObjectId.INVALID;
+        CelestialObjectId toBody = to != null ? to.celestialBodyId : CelestialObjectId.INVALID;
+
         return createWithTrajectory(
             fromAssetId,
             toAssetId,
@@ -88,8 +97,8 @@ public class LogisticsTask {
             amount,
             deliveryTicks,
             transportKind,
-            CelestialObjectId.INVALID,
-            CelestialObjectId.INVALID,
+            fromBody,
+            toBody,
             0,
             0);
     }

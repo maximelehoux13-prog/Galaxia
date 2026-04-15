@@ -13,8 +13,7 @@ import com.gtnewhorizons.galaxia.core.network.OxygenSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.TeleportRequestPacket;
 import com.gtnewhorizons.galaxia.core.network.ToggleRCSPacket;
 import com.gtnewhorizons.galaxia.outpost.network.LogisticsConfigUpdatePacket;
-import com.gtnewhorizons.galaxia.outpost.network.LogisticsSignalsSyncPacket;
-import com.gtnewhorizons.galaxia.outpost.network.LogisticsTasksSyncPacket;
+import com.gtnewhorizons.galaxia.outpost.network.LogisticsSyncPacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostBuildModulePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostInventoryUpdatePacket;
 import com.gtnewhorizons.galaxia.outpost.network.OutpostModuleUpdatePacket;
@@ -113,10 +112,8 @@ public final class Galaxia {
                 Side.SERVER);
         GALAXIA_NETWORK.registerMessage(OutpostModuleUpdatePacket.Handler.class, OutpostModuleUpdatePacket.class, id++,
                 Side.SERVER);
-        GALAXIA_NETWORK.registerMessage(LogisticsTasksSyncPacket.Handler.class, LogisticsTasksSyncPacket.class, id++,
+        GALAXIA_NETWORK.registerMessage(LogisticsSyncPacket.Handler.class, LogisticsSyncPacket.class, id++,
                 Side.CLIENT);
-        GALAXIA_NETWORK.registerMessage(LogisticsSignalsSyncPacket.Handler.class, LogisticsSignalsSyncPacket.class,
-                id++, Side.CLIENT);
     }
     // spotless:on
 

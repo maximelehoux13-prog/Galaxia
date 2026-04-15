@@ -54,6 +54,17 @@ final class PacketUtil {
         return ordinal < values.length ? values[ordinal] : CelestialObjectId.INVALID;
     }
 
+    // ── UUID helpers ───────────────────────────────────────────────────────
+
+    static void writeUUID(ByteBuf buf, UUID uuid) {
+        buf.writeLong(uuid.getMostSignificantBits());
+        buf.writeLong(uuid.getLeastSignificantBits());
+    }
+
+    static UUID readUUID(ByteBuf buf) {
+        return new UUID(buf.readLong(), buf.readLong());
+    }
+
     // ── Enum helpers ───────────────────────────────────────────────────────
 
     static <T extends Enum<T>> void writeEnum(ByteBuf buf, T enumValue) {
