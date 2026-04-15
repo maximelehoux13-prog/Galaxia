@@ -8,7 +8,6 @@ import net.minecraft.client.Minecraft;
 
 import org.jetbrains.annotations.UnknownNullability;
 
-import com.gtnewhorizons.galaxia.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignal;
 import com.gtnewhorizons.galaxia.outpost.logistics.LogisticsSignalStore;
@@ -50,11 +49,13 @@ public final class LogisticsSyncPacket implements IMessage {
             CelestialObjectId systemId = entry.getKey();
             Map<String, Long> systemAgg = new LinkedHashMap<>();
             for (LogisticsSignal sig : entry.getValue()) {
-                String key = sig.resourceId().toKey();
+                String key = sig.resourceId()
+                    .toKey();
                 systemAgg.merge(key, sig.amount(), Long::sum);
                 CelestialObjectId anchorId = sig.planetaryAnchorBodyId();
                 if (anchorId != null) {
-                    pkt.byPlanet.computeIfAbsent(anchorId, k -> new LinkedHashMap<>()).merge(key, sig.amount(), Long::sum);
+                    pkt.byPlanet.computeIfAbsent(anchorId, k -> new LinkedHashMap<>())
+                        .merge(key, sig.amount(), Long::sum);
                 }
             }
             if (!systemAgg.isEmpty()) pkt.bySystem.put(systemId, systemAgg);
@@ -67,9 +68,12 @@ public final class LogisticsSyncPacket implements IMessage {
     public void toBytes(ByteBuf buf) {
         buf.writeInt(tasks.size());
         for (LogisticsTask.Data d : tasks) {
-            PacketUtil.writeUUID(buf, d.fromAssetId().id());
-            PacketUtil.writeUUID(buf, d.toAssetId().id());
-            PacketUtil.writeString(buf, d.resourceId().toKey());
+            PacketUtil.writeId(buf, d.fromAssetId());
+            PacketUtil.writeId(buf, d.toAssetId());
+            PacketUtil.writeString(
+                buf,
+                d.resourceId()
+                    .toKey());
             buf.writeLong(d.amount());
             PacketUtil.writeEnum(buf, d.transportKind());
             PacketUtil.writeCelestialObjectId(buf, d.fromBodyId());
@@ -87,8 +91,8 @@ public final class LogisticsSyncPacket implements IMessage {
         int taskCount = buf.readInt();
         tasks = new java.util.ArrayList<>(taskCount);
         for (int i = 0; i < taskCount; i++) {
-            CelestialAsset.ID fromAssetId = new CelestialAsset.ID(PacketUtil.readUUID(buf));
-            CelestialAsset.ID toAssetId = new CelestialAsset.ID(PacketUtil.readUUID(buf));
+            CelestialAsset.ID fromAssetId = PacketUtil.readAssetId(buf);
+            CelestialAsset.ID toAssetId = PacketUtil.readAssetId(buf);
             String resourceKey = PacketUtil.readString(buf);
             long amount = buf.readLong();
             LogisticsTask.TransportType transportKind = PacketUtil.readEnum(buf, LogisticsTask.TransportType.class);
@@ -96,16 +100,17 @@ public final class LogisticsSyncPacket implements IMessage {
             CelestialObjectId toBodyId = PacketUtil.readCelestialObjectId(buf);
             double departureOrbitalTime = buf.readDouble();
             double tofOrbitalSeconds = buf.readDouble();
-            tasks.add(new LogisticsTask.Data(
-                fromAssetId,
-                toAssetId,
-                ItemStackWrapper.fromKey(resourceKey),
-                amount,
-                transportKind,
-                fromBodyId,
-                toBodyId,
-                departureOrbitalTime,
-                tofOrbitalSeconds));
+            tasks.add(
+                new LogisticsTask.Data(
+                    fromAssetId,
+                    toAssetId,
+                    ItemStackWrapper.fromKey(resourceKey),
+                    amount,
+                    transportKind,
+                    fromBodyId,
+                    toBodyId,
+                    departureOrbitalTime,
+                    tofOrbitalSeconds));
         }
 
         bySystem = readAggMap(buf);
@@ -117,25 +122,28 @@ public final class LogisticsSyncPacket implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(LogisticsSyncPacket packet, MessageContext ctx) {
-            Minecraft.getMinecraft().func_152344_a(() -> {
-                List<OutpostDataStore.ClientLogisticsTask> clientTasks = new java.util.ArrayList<>(packet.tasks.size());
-                for (LogisticsTask.Data d : packet.tasks) {
-                    ItemStackWrapper resource = d.resourceId();
-                    if (resource == null) continue;
-                    clientTasks.add(new OutpostDataStore.ClientLogisticsTask(
-                        LogisticsTask.ID.create(),
-                        resource,
-                        d.amount(),
-                        d.transportKind(),
-                        d.fromBodyId(),
-                        d.toBodyId(),
-                        d.departureOrbitalTime(),
-                        d.tofOrbitalSeconds()));
-                }
-                OutpostDataStore store = OutpostDataStore.get();
-                store.updateClientTasks(clientTasks);
-                store.updateClientSignals(packet.bySystem, packet.byPlanet);
-            });
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> {
+                    List<OutpostDataStore.ClientLogisticsTask> clientTasks = new java.util.ArrayList<>(
+                        packet.tasks.size());
+                    for (LogisticsTask.Data d : packet.tasks) {
+                        ItemStackWrapper resource = d.resourceId();
+                        if (resource == null) continue;
+                        clientTasks.add(
+                            new OutpostDataStore.ClientLogisticsTask(
+                                LogisticsTask.ID.create(),
+                                resource,
+                                d.amount(),
+                                d.transportKind(),
+                                d.fromBodyId(),
+                                d.toBodyId(),
+                                d.departureOrbitalTime(),
+                                d.tofOrbitalSeconds()));
+                    }
+                    OutpostDataStore store = OutpostDataStore.get();
+                    store.updateClientTasks(clientTasks);
+                    store.updateClientSignals(packet.bySystem, packet.byPlanet);
+                });
             return null;
         }
     }

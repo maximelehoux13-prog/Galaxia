@@ -41,7 +41,7 @@ public final class OutpostInventoryUpdatePacket implements IMessage {
     }
 
     public static OutpostInventoryUpdatePacket removeAmount(CelestialAsset.ID assetId, ItemStackWrapper resource,
-                                                            long amount) {
+        long amount) {
         OutpostInventoryUpdatePacket pkt = new OutpostInventoryUpdatePacket();
         pkt.assetId = assetId;
         pkt.resourceKey = resource.toKey();
@@ -52,7 +52,7 @@ public final class OutpostInventoryUpdatePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeId(buf, assetId);
         PacketUtil.writeString(buf, resourceKey);
         buf.writeLong(delta);
         buf.writeBoolean(creativeOnly);
@@ -77,11 +77,9 @@ public final class OutpostInventoryUpdatePacket implements IMessage {
                 .getName();
 
             // TODO: Figure out if this path will be only used in creative. If not remove this check and maybe make
-            //       a factory method that checks for creative mode
+            // a factory method that checks for creative mode
             if (packet.creativeOnly && !player.capabilities.isCreativeMode) {
-                Galaxia.LOG.warn(
-                    "[Logistics] InventoryDelta rejected: player {} is not in creative mode.",
-                    playerName);
+                Galaxia.LOG.warn("[Logistics] InventoryDelta rejected: player {} is not in creative mode.", playerName);
                 return null;
             }
 
@@ -96,10 +94,8 @@ public final class OutpostInventoryUpdatePacket implements IMessage {
             AutomatedOutpost state = OutpostDataStore.get()
                 .getByAssetId(packet.assetId);
             if (state == null) {
-                Galaxia.LOG.warn(
-                    "[Logistics] InventoryDelta: unknown assetId {} from player {}",
-                    packet.assetId,
-                    playerName);
+                Galaxia.LOG
+                    .warn("[Logistics] InventoryDelta: unknown assetId {} from player {}", packet.assetId, playerName);
                 return null;
             }
 

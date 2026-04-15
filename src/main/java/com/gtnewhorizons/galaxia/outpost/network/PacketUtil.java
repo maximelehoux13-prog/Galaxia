@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.interfaces.WithUUID;
 
 import io.netty.buffer.ByteBuf;
 
@@ -28,21 +29,23 @@ final class PacketUtil {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-    // ── Asset ID helpers ──────────────────────────────────────────────────
+    // ── ID helpers ──────────────────────────────────────────────────
 
-    static void writeAssetId(ByteBuf buf, CelestialAsset.ID assetId) {
-        UUID uuid = assetId.id();
+    static <T extends WithUUID> void writeId(ByteBuf buf, T with) {
+        UUID uuid = with.id();
         buf.writeLong(uuid.getMostSignificantBits());
         buf.writeLong(uuid.getLeastSignificantBits());
     }
 
-    static CelestialAsset.ID readAssetId(ByteBuf buf) {
+    static UUID readId(ByteBuf buf) {
         long mostSig = buf.readLong();
         long leastSig = buf.readLong();
-        return new CelestialAsset.ID(new UUID(mostSig, leastSig));
+        return new UUID(mostSig, leastSig);
     }
 
-    // ── CelestialObjectId helpers ─────────────────────────────────────────
+    static CelestialAsset.ID readAssetId(ByteBuf buf) {
+        return new CelestialAsset.ID(readId(buf));
+    }
 
     static void writeCelestialObjectId(ByteBuf buf, CelestialObjectId id) {
         buf.writeByte(id.ordinal());
@@ -52,17 +55,6 @@ final class PacketUtil {
         int ordinal = buf.readUnsignedByte();
         CelestialObjectId[] values = CelestialObjectId.values();
         return ordinal < values.length ? values[ordinal] : CelestialObjectId.INVALID;
-    }
-
-    // ── UUID helpers ───────────────────────────────────────────────────────
-
-    static void writeUUID(ByteBuf buf, UUID uuid) {
-        buf.writeLong(uuid.getMostSignificantBits());
-        buf.writeLong(uuid.getLeastSignificantBits());
-    }
-
-    static UUID readUUID(ByteBuf buf) {
-        return new UUID(buf.readLong(), buf.readLong());
     }
 
     // ── Enum helpers ───────────────────────────────────────────────────────

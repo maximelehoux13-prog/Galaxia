@@ -32,7 +32,7 @@ public final class OutpostRequestSyncPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeId(buf, assetId);
     }
 
     @Override

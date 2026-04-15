@@ -95,7 +95,7 @@ public final class OutpostModuleUpdatePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeId(buf, assetId);
         buf.writeInt(moduleIndex);
         buf.writeByte(type);
         buf.writeByte(action);

@@ -47,7 +47,7 @@ public final class OutpostBuildModulePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeId(buf, assetId);
         PacketUtil.writeEnum(buf, moduleKind);
         buf.writeBoolean(instantBuild);
     }

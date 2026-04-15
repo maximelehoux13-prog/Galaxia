@@ -91,6 +91,6 @@ public final class AutomatedOutpostInventory {
     }
 
     public void clear() {
-       amounts.clear();
+        amounts.clear();
     }
 }

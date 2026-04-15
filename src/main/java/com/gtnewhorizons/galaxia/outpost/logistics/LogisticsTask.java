@@ -8,6 +8,7 @@ import com.gtnewhorizons.galaxia.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.outpost.persistence.OutpostDataStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.interfaces.WithUUID;
 
 /**
  * An in-flight logistics shipment between two outposts.
@@ -84,8 +85,10 @@ public class LogisticsTask {
     public static LogisticsTask create(CelestialAsset.ID fromAssetId, CelestialAsset.ID toAssetId,
         ItemStackWrapper resourceId, long amount, int deliveryTicks, TransportType transportKind) {
 
-        AutomatedOutpost from = OutpostDataStore.get().getByAssetId(fromAssetId);
-        AutomatedOutpost to = OutpostDataStore.get().getByAssetId(toAssetId);
+        AutomatedOutpost from = OutpostDataStore.get()
+            .getByAssetId(fromAssetId);
+        AutomatedOutpost to = OutpostDataStore.get()
+            .getByAssetId(toAssetId);
         // These cases *should* never happen, but you never know :^)
         CelestialObjectId fromBody = from != null ? from.celestialBodyId : CelestialObjectId.INVALID;
         CelestialObjectId toBody = to != null ? to.celestialBodyId : CelestialObjectId.INVALID;
@@ -156,7 +159,7 @@ public class LogisticsTask {
     }
 
     @Desugar
-    public record ID(UUID id) {
+    public record ID(UUID id) implements WithUUID {
 
         public static ID create() {
             return new ID(UUID.randomUUID());

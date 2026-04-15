@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
+import com.gtnewhorizons.galaxia.registry.interfaces.WithUUID;
 
 public final class CelestialAsset implements Buildable {
 
@@ -114,7 +115,7 @@ public final class CelestialAsset implements Buildable {
     }
 
     @Desugar
-    public record ID(UUID id) {
+    public record ID(UUID id) implements WithUUID {
 
         public static ID create() {
             return new ID(UUID.randomUUID());

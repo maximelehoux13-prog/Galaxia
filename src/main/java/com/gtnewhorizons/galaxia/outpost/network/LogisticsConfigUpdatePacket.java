@@ -59,7 +59,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        PacketUtil.writeAssetId(buf, assetId);
+        PacketUtil.writeId(buf, assetId);
         PacketUtil.writeString(buf, resourceKey);
         buf.writeInt(minReserve);
         buf.writeInt(orderSize);
