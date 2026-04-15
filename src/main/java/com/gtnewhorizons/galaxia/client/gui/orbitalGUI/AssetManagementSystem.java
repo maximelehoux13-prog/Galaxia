@@ -134,15 +134,11 @@ public final class AssetManagementSystem {
     public static final class OrbitalAssetSupport {
 
         boolean hasStoredConstructionResources(CelestialAsset asset) {
-            if (asset == null) return false;
-            for (Long amount : asset.constructionInventory()
-                .values()) if (amount > 0) return true;
-            return false;
+            return asset != null && asset.hasStoredConstructionResources();
         }
 
         boolean isManageableStationAsset(CelestialAsset asset) {
-            if (asset == null) return false;
-            return asset.isManageable();
+            return asset != null && asset.isManageable();
         }
 
         String formatAssetDisplayName(CelestialAsset asset) {
@@ -179,37 +175,18 @@ public final class AssetManagementSystem {
         List<StationTransferTarget> getTransferTargetsInSystem(CelestialObject root, CelestialObject body) {
             List<StationTransferTarget> targets = new ArrayList<>();
             if (body == null) return targets;
-            CelestialObject hostStar = GalaxiaCelestialAPI.findStar(root, body);
-            if (hostStar == null) return targets;
-            collectTargets(hostStar, targets);
+            for (CelestialAssetStore.TransferTarget t : CelestialAssetStore.getTransferTargetsInSystem(root, body)) {
+                targets.add(new StationTransferTarget(t.assetId(), t.displayName(), t.hostBody()));
+            }
             return targets;
         }
 
-        private void collectTargets(CelestialObject current, List<StationTransferTarget> targets) {
-            List<CelestialAsset> state = CelestialAssetStore.getState(current.id());
-            for (CelestialAsset asset : state) {
-                if (asset.isManageable()) {
-                    targets.add(new StationTransferTarget(asset.assetId, asset.displayName(), current));
-                }
-            }
-            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) collectTargets(child, targets);
-        }
-
         String formatAssetKind(CelestialAsset.Kind kind) {
-            // TODO: Localize
-            return switch (kind) {
-                case STATION -> "Station";
-                case AUTOMATED_STATION -> "Automated Station";
-                case AUTOMATED_OUTPOST -> "Automated Outpost";
-            };
+            return kind.getDisplayName();
         }
 
         String formatAssetLocation(CelestialAsset.Location location) {
-            // TODO: Localize
-            return switch (location) {
-                case ORBIT -> "Orbit";
-                case SURFACE -> "Surface";
-            };
+            return location.getDisplayName();
         }
 
         private String buildStoredInventorySummary(Map<ItemStack, Long> storedResources) {

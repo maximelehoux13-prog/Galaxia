@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.StatCollector;
 
 import com.github.bsideup.jabel.Desugar;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
@@ -82,6 +83,13 @@ public final class CelestialAsset implements Buildable {
         this.displayName = displayName;
     }
 
+    public boolean hasStoredConstructionResources() {
+        for (Long amount : constructionInventory.values()) {
+            if (amount > 0) return true;
+        }
+        return false;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
@@ -104,14 +112,28 @@ public final class CelestialAsset implements Buildable {
     }
 
     public enum Kind {
+
         STATION,
         AUTOMATED_STATION,
-        AUTOMATED_OUTPOST
+        AUTOMATED_OUTPOST,;
+
+        public String getDisplayName() {
+            return StatCollector.translateToLocal(
+                "galaxia.outpost.module.kind." + this.name()
+                    .toLowerCase());
+        }
     }
 
     public enum Location {
+
         ORBIT,
-        SURFACE
+        SURFACE,;
+
+        public String getDisplayName() {
+            return StatCollector.translateToLocal(
+                "galaxia.outpost.module.location." + this.name()
+                    .toLowerCase());
+        }
     }
 
     @Desugar

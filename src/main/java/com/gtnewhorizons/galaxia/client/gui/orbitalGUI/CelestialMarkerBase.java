@@ -58,6 +58,7 @@ public class CelestialMarkerBase {
             for (CelestialAsset asset : context.assetState()) {
                 ResourceLocation texture = CelestialAssetIcons.get(asset.kind);
                 if (texture == null) continue;
+                // TODO: Put these values in the colors maybe
                 float alpha = switch (asset.status()) {
                     case OPERATIONAL -> 1.0f;
                     case CONSTRUCTION_SITE -> 0.85f;

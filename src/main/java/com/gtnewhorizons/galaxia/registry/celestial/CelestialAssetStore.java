@@ -9,6 +9,8 @@ import java.util.Map;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 
+import com.github.bsideup.jabel.Desugar;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.core.persistence.OutpostDataStore;
 
 public final class CelestialAssetStore {
@@ -170,6 +172,33 @@ public final class CelestialAssetStore {
 
     public static Map<ItemStack, Long> previewRequirements(CelestialAsset.Kind kind) {
         return Collections.unmodifiableMap(new LinkedHashMap<>(defaultRequirements(kind)));
+    }
+
+    /// This is just used in the UI, I mark it as deprecated since it's just duplicate copied stuff, but I can't be
+    /// bothered to fix the UI
+    @Deprecated
+    @Desugar
+    public record TransferTarget(CelestialAsset.ID assetId, String displayName, CelestialObject hostBody) {}
+
+    public static List<TransferTarget> getTransferTargetsInSystem(CelestialObject root, CelestialObject body) {
+        List<TransferTarget> targets = new ArrayList<>();
+        if (body == null) return targets;
+        CelestialObject hostStar = GalaxiaCelestialAPI.findStar(root, body);
+        if (hostStar == null) return targets;
+        collectTransferTargets(hostStar, targets);
+        return targets;
+    }
+
+    private static void collectTransferTargets(CelestialObject current, List<TransferTarget> targets) {
+        List<CelestialAsset> state = getState(current.id());
+        for (CelestialAsset asset : state) {
+            if (asset.isManageable()) {
+                targets.add(new TransferTarget(asset.assetId, asset.displayName(), current));
+            }
+        }
+        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
+            collectTransferTargets(child, targets);
+        }
     }
 
     private static Map<ItemStack, Long> mergeIntoConstructionInventory(Map<ItemStack, Long> constructionInventory,
