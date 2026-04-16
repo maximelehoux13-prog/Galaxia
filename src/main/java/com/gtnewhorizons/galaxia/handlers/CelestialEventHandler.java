@@ -100,7 +100,7 @@ public class CelestialEventHandler {
                 .filter(
                     d -> d.data.scope() == LogisticSignal.Scope.SYSTEM
                         && CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
-                .toList();
+                .collect(Collectors.toList());
 
             if (!relevantDeliveries.isEmpty()) {
                 Galaxia.GALAXIA_NETWORK.sendTo(LogisticsSyncPacket.from(relevantDeliveries), player);
