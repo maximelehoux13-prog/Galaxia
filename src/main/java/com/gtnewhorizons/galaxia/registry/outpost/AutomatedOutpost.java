@@ -9,6 +9,7 @@ import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
 import com.gtnewhorizons.galaxia.registry.outpost.module.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.registry.outpost.module.OutpostModuleKind;
 
@@ -150,5 +151,7 @@ public final class AutomatedOutpost extends CelestialAsset {
             modules.get(i)
                 .tick(this);
         }
+
+        LogisticStore.updateSignalsForOutpost(this);
     }
 }

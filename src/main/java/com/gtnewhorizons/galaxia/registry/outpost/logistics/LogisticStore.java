@@ -5,7 +5,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
@@ -16,7 +18,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
 public final class LogisticStore {
 
     private static final List<LogisticsDelivery> activeDeliveries = new ArrayList<>();
-    private static final Map<LogisticSignal.Scope, Map<CelestialObjectId, List<LogisticSignal>>> signals = new LinkedHashMap<>();
+    private static final Map<CelestialAsset.ID, Map<ItemStackWrapper, LogisticSignal>> outpostSignals = new LinkedHashMap<>();
 
     private LogisticStore() {}
 
@@ -26,6 +28,10 @@ public final class LogisticStore {
 
     public static void addDelivery(LogisticsDelivery delivery) {
         activeDeliveries.add(delivery);
+    }
+
+    public static void clearDeliveries() {
+        activeDeliveries.clear();
     }
 
     public static List<LogisticsDelivery> tickDeliveries() {
@@ -48,73 +54,76 @@ public final class LogisticStore {
         return arrived;
     }
 
-    public static void rebuildSignals(List<AutomatedOutpost> outposts) {
-        signals.clear();
-        for (AutomatedOutpost outpost : outposts) {
-            emitSignals(outpost);
-        }
-    }
-
-    private static void emitSignals(AutomatedOutpost outpost) {
+    public static void updateSignalsForOutpost(AutomatedOutpost outpost) {
+        CelestialAsset.ID outpostAssetId = outpost.assetId;
         Map<ItemStackWrapper, Long> snapshot = outpost.inventory.snapshot();
         LogisticsConfiguration config = outpost.logisticsConfig;
 
-        List<ItemStackWrapper> resources = new ArrayList<>(
+        Map<ItemStackWrapper, LogisticSignal> currentSignals = outpostSignals
+            .computeIfAbsent(outpostAssetId, k -> new LinkedHashMap<>());
+
+        List<ItemStackWrapper> allResources = new ArrayList<>(
             config.snapshot()
                 .keySet());
         for (ItemStackWrapper r : snapshot.keySet()) {
-            if (!resources.contains(r)) resources.add(r);
+            if (!allResources.contains(r)) allResources.add(r);
         }
 
         CelestialObjectId bodyId = outpost.celestialObjectId;
         CelestialObjectId systemId = outpost.systemId;
         CelestialObjectId planetaryAnchorBodyId = outpost.planetaryAnchorBodyId;
 
-        for (ItemStackWrapper resource : resources) {
-            LogisticsResourceConfig cfg = config.get(resource);
+        for (ItemStackWrapper resource : allResources) {
             long stock = outpost.inventory.getAmount(resource);
-            long min = cfg.minReserve();
-            long diff = stock - min;
+            LogisticsResourceConfig cfg = config.get(resource);
 
-            if (diff == 0) continue;
+            LogisticSignal oldSignal = currentSignals.get(resource);
 
-            boolean importCase = diff < 0 && cfg.isImportEnabled();
-            boolean supplyCase = diff > 0 && cfg.isSupplyEnabled();
+            long newAmount = 0;
+            LogisticSignal.Scope newScope = LogisticSignal.Scope.SYSTEM;
 
-            if (importCase || supplyCase) {
-                addSignal(new LogisticSignal(
-                    outpost.assetId,
+            if (cfg.isImportEnabled() && stock < cfg.minReserve()) {
+                newAmount = -(cfg.minReserve() - stock);
+            } else if (cfg.isSupplyEnabled() && stock > cfg.minReserve()) {
+                newAmount = stock - cfg.minReserve();
+            }
+
+            if (newAmount == 0) {
+                if (oldSignal != null) {
+                    currentSignals.remove(resource);
+                }
+            } else {
+                LogisticSignal newSignal = new LogisticSignal(
+                    outpostAssetId,
                     systemId,
                     resource,
-                    diff,
-                    LogisticSignal.Scope.SYSTEM,
+                    newAmount,
+                    newScope,
                     bodyId,
-                    planetaryAnchorBodyId
-                ));
+                    planetaryAnchorBodyId);
+
+                if (!Objects.equals(oldSignal, newSignal)) {
+                    currentSignals.put(resource, newSignal);
+                }
             }
         }
     }
 
-    private static void addSignal(LogisticSignal signal) {
-        CelestialObjectId scopeKey = scopeKeyFor(signal);
-        if (scopeKey == null) return;
-        signals.computeIfAbsent(signal.scope(), s -> new LinkedHashMap<>())
-            .computeIfAbsent(scopeKey, k -> new ArrayList<>())
-            .add(signal);
-    }
-
-    public static List<LogisticSignal> getSignals(LogisticSignal.Scope scope, CelestialObjectId scopeKey) {
-        Map<CelestialObjectId, List<LogisticSignal>> byKey = signals.get(scope);
-        if (byKey == null) return Collections.emptyList();
-        List<LogisticSignal> list = byKey.get(scopeKey);
-        return list == null ? Collections.emptyList() : Collections.unmodifiableList(list);
-    }
-
     public static Map<CelestialObjectId, List<LogisticSignal>> allSignalsForScope(LogisticSignal.Scope scope) {
-        Map<CelestialObjectId, List<LogisticSignal>> byKey = signals.get(scope);
-        if (byKey == null) return Collections.emptyMap();
-        Map<CelestialObjectId, List<LogisticSignal>> safe = new LinkedHashMap<>(byKey.size());
-        for (Map.Entry<CelestialObjectId, List<LogisticSignal>> e : byKey.entrySet()) {
+        Map<CelestialObjectId, List<LogisticSignal>> result = new LinkedHashMap<>();
+
+        for (Map<ItemStackWrapper, LogisticSignal> outpostMap : outpostSignals.values()) {
+            for (LogisticSignal signal : outpostMap.values()) {
+                if (signal.scope() == scope) {
+                    CelestialObjectId scopeKey = scopeKeyFor(signal);
+                    result.computeIfAbsent(scopeKey, k -> new ArrayList<>())
+                        .add(signal);
+                }
+            }
+        }
+
+        Map<CelestialObjectId, List<LogisticSignal>> safe = new LinkedHashMap<>(result.size());
+        for (Map.Entry<CelestialObjectId, List<LogisticSignal>> e : result.entrySet()) {
             safe.put(e.getKey(), Collections.unmodifiableList(e.getValue()));
         }
         return Collections.unmodifiableMap(safe);
@@ -126,10 +135,5 @@ public final class LogisticStore {
             case SYSTEM -> signal.systemId();
             case GALACTIC -> signal.systemId();
         };
-    }
-
-    public static void clear() {
-        signals.clear();
-        activeDeliveries.clear();
     }
 }

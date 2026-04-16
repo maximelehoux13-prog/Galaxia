@@ -3,7 +3,6 @@ package com.gtnewhorizons.galaxia.handlers;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.CelestialClient;
@@ -49,14 +48,8 @@ public class CelestialEventHandler {
         }
 
         LogisticStore.tickDeliveries();
-
         double orbitalTime = GalaxiaCelestialAPI.currentOrbitalTime();
-        LogisticStore.rebuildSignals(
-            CelestialAssetStore.allAssets()
-                .stream()
-                .filter(asset -> asset.kind == CelestialAsset.Kind.AUTOMATED_OUTPOST)
-                .map(asset -> (AutomatedOutpost) asset)
-                .collect(Collectors.toList()));
+
         // All signals live in SYSTEM scope (one signal per resource per outpost).
         // Dispatch routing is decided at match time:
         // same planetary anchor → HAMMER (then BIG_HAMMER if planetaryTransferHandling is on)
@@ -71,6 +64,7 @@ public class CelestialEventHandler {
         syncCooldownTicks--;
         if (syncCooldownTicks > 0) return;
         syncCooldownTicks = 20;
+        // TODO: send only stuff to the right players
         for (AutomatedOutpost outpost : CelestialClient.allOutposts()) {
             Galaxia.GALAXIA_NETWORK.sendToAll(OutpostSyncPacket.fullSync(outpost));
         }
