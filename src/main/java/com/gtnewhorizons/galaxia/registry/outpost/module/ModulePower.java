@@ -10,7 +10,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 
 public class ModulePower extends AutomatedOutpostModule {
 
-    public static final OutpostModuleKind KIND = OutpostModuleKind.BIG_HAMMER;
+    public static final OutpostModuleKind KIND = OutpostModuleKind.POWER;
 
     // spotless:off
     public final static Map<ItemStack, Long> constructionCost = new HashMap<ItemStack, Long>() {{

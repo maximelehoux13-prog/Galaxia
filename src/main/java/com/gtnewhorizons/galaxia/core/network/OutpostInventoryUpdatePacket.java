@@ -91,13 +91,11 @@ public final class OutpostInventoryUpdatePacket implements IMessage {
                 return null;
             }
 
-AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o
+                : null;
             if (state == null) {
                 Galaxia.LOG
-                    .warn(
-                        "[Logistics] InventoryDelta: unknown assetId {} from player {}",
-                        packet.assetId,
-                        playerName);
+                    .warn("[Logistics] InventoryDelta: unknown assetId {} from player {}", packet.assetId, playerName);
                 return null;
             }
 

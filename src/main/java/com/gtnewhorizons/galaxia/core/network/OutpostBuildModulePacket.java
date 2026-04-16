@@ -66,7 +66,8 @@ public final class OutpostBuildModulePacket implements IMessage {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             if (player == null) return null;
 
-            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o
+                : null;
             if (state == null) {
                 Galaxia.LOG.warn(
                     "[Outpost] BuildModule: unknown assetId {} from player {}",

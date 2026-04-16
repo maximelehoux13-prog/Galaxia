@@ -110,7 +110,8 @@ public final class OutpostLogisticsEngine {
     }
 
     private void deliverTask(LogisticsTask task) {
-        AutomatedOutpost dest = CelestialClient.getByAssetId(task.data.toAssetId()) instanceof AutomatedOutpost o ? o : null;
+        AutomatedOutpost dest = CelestialClient.getByAssetId(task.data.toAssetId()) instanceof AutomatedOutpost o ? o
+            : null;
         if (dest == null) {
             Galaxia.LOG.warn(
                 "[Logistics] Task {} arrived but destination outpost {} not found; resources lost.",
@@ -224,8 +225,10 @@ public final class OutpostLogisticsEngine {
                 if (supply.outpostAssetId()
                     .equals(request.outpostAssetId())) continue;
 
-                AutomatedOutpost supplier = CelestialClient.getByAssetId(supply.outpostAssetId()) instanceof AutomatedOutpost o ? o : null;
-                AutomatedOutpost requester = CelestialClient.getByAssetId(request.outpostAssetId()) instanceof AutomatedOutpost o ? o : null;
+                AutomatedOutpost supplier = CelestialClient
+                    .getByAssetId(supply.outpostAssetId()) instanceof AutomatedOutpost o ? o : null;
+                AutomatedOutpost requester = CelestialClient
+                    .getByAssetId(request.outpostAssetId()) instanceof AutomatedOutpost o ? o : null;
                 if (supplier == null || requester == null) continue;
 
                 if (sharesPlanetaryAnchor(root, supplier.celestialObjectId, requester.celestialObjectId)) {

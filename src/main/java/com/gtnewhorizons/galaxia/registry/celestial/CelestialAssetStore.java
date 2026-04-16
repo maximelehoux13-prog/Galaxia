@@ -22,11 +22,10 @@ public final class CelestialAssetStore {
     private CelestialAssetStore() {}
 
     public static void add(UUID teamId, CelestialAsset asset) {
-        Map<CelestialObjectId, Set<CelestialAsset>> byBody =
-            STATE_BY_BODY.computeIfAbsent(teamId, k -> new LinkedHashMap<>());
+        Map<CelestialObjectId, Set<CelestialAsset>> byBody = STATE_BY_BODY
+            .computeIfAbsent(teamId, k -> new LinkedHashMap<>());
 
-        Set<CelestialAsset> celestialAssets =
-            byBody.computeIfAbsent(asset.celestialObjectId, k -> new HashSet<>());
+        Set<CelestialAsset> celestialAssets = byBody.computeIfAbsent(asset.celestialObjectId, k -> new HashSet<>());
 
         celestialAssets.add(asset);
         TEAM_BY_ID.put(asset.assetId, teamId);
@@ -78,18 +77,23 @@ public final class CelestialAssetStore {
     }
 
     public static boolean destroyAsset(CelestialAsset.ID assetId) {
-        CelestialAsset asset = BY_ID.remove(assetId);
+        CelestialAsset asset = BY_ID.get(assetId);
         if (asset == null) return false;
 
-        UUID id = new UUID(0, 0); // TODO
+        UUID id = TEAM_BY_ID.get(assetId);
+        if (id == null) return false;
+
         Map<CelestialObjectId, Set<CelestialAsset>> map = STATE_BY_BODY.get(id);
         if (map == null) {
             return false;
         }
+
         Set<CelestialAsset> list = map.get(asset.celestialObjectId);
-        if (list != null) {
-            list.remove(asset);
-        }
+        if (list == null) return false;
+
+        list.remove(asset);
+        BY_ID.remove(assetId);
+        TEAM_BY_ID.remove(assetId);
 
         return true;
     }
@@ -156,28 +160,6 @@ public final class CelestialAssetStore {
         STATE_BY_BODY.clear();
         BY_ID.clear();
     }
-
-    public static void loadAssets(List<CelestialAsset> assets) {
-        STATE_BY_BODY.clear();
-        BY_ID.clear();
-
-        if (assets == null || assets.isEmpty()) return;
-
-        for (CelestialAsset asset : assets) {
-            if (asset == null || asset.celestialObjectId == null || asset.assetId == null) continue;
-
-            UUID id = new UUID(0, 0); // TODO
-
-            Map<CelestialObjectId, Set<CelestialAsset>> byBody =
-                STATE_BY_BODY.computeIfAbsent(id, k -> new LinkedHashMap<>());
-
-            Set<CelestialAsset> list =
-                byBody.computeIfAbsent(asset.celestialObjectId, k -> new HashSet<>());
-
-            list.add(asset);
-
-            BY_ID.put(asset.assetId, asset);
-        }    }
 
     private static Map<ItemStack, Long> mergeIntoConstructionInventory(Map<ItemStack, Long> constructionInventory,
         ItemStack stack, long amount) {

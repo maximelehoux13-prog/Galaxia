@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.WorldServer;
@@ -25,7 +26,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
-import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -111,7 +111,7 @@ public final class OutpostPersistenceManager {
         if (event.world.provider.dimensionId != 0) return;
         if (worldSaveDir != null) saveAll();
         CelestialAssetStore.clear();
-        CelestialClient .clear();
+        CelestialClient.clear();
         OutpostLogisticsEngine.get()
             .activeTasksInternal()
             .clear();
@@ -139,18 +139,17 @@ public final class OutpostPersistenceManager {
             List<AssetJson> list = gson.fromJson(reader, listType);
             if (list == null) return;
 
-            List<CelestialAsset> assets = new ArrayList<>();
             for (AssetJson json : list) {
                 CelestialAsset asset = decodeAsset(json);
                 if (asset == null) continue;
-                assets.add(asset);
-
+                UUID teamId = UUID.fromString(json.teamId);
+                CelestialAssetStore.add(teamId, asset);
+                // TODO: This could create problems
                 AutomatedOutpost outpost = decodeOutpostState(asset, json.outpost);
                 if (outpost != null) {
                     CelestialClient.add(outpost);
                 }
             }
-            CelestialAssetStore.loadAssets(assets);
         } catch (IOException | JsonParseException | IllegalArgumentException e) {
             Galaxia.LOG.error("[Logistics] Failed to load station registry from {}: {}", file, e.getMessage());
         }
@@ -251,6 +250,7 @@ public final class OutpostPersistenceManager {
 
     private AssetJson encodeAsset(CelestialAsset asset) {
         AssetJson json = new AssetJson();
+        json.teamId = String.valueOf(CelestialAssetStore.getTeamId(asset.assetId));
         json.assetId = asset.assetId;
         json.celestialObjectId = asset.celestialObjectId.toString();
         json.displayName = asset.displayName();
@@ -264,7 +264,8 @@ public final class OutpostPersistenceManager {
     }
 
     private CelestialAsset decodeAsset(AssetJson json) {
-        if (json == null || json.assetId == null
+        if (json == null || json.teamId == null
+            || json.assetId == null
             || json.celestialObjectId == null
             || json.kind == null
             || json.location == null
@@ -285,7 +286,6 @@ public final class OutpostPersistenceManager {
 
     private OutpostStateJson encodeOutpostState(AutomatedOutpost state) {
         OutpostStateJson out = new OutpostStateJson();
-        out.teamId = String.valueOf(CelestialAssetStore.getTeamId(state.assetId));
         out.celestialBodyId = String.valueOf(state.celestialObjectId);
         out.systemId = String.valueOf(state.systemId);
         out.planetaryAnchorBodyId = String.valueOf(state.planetaryAnchorBodyId);
@@ -353,14 +353,7 @@ public final class OutpostPersistenceManager {
     }
 
     private AutomatedOutpost decodeOutpostState(CelestialAsset asset, OutpostStateJson json) {
-        if (asset == null || json == null || json.teamId == null || json.systemId == null) return null;
-        CelestialObjectId bodyId = json.celestialBodyId != null ? CelestialObjectId.valueOf(json.celestialBodyId)
-            : asset.celestialObjectId;
-        CelestialObjectId anchorBodyId = json.planetaryAnchorBodyId != null
-            ? CelestialObjectId.valueOf(json.planetaryAnchorBodyId)
-            : GalaxiaCelestialAPI.findPlanetaryAnchor(bodyId)
-                .id();
-
+        if (asset == null || json == null || json.systemId == null) return null;
         if (!(asset instanceof AutomatedOutpost state)) return null;
         state.setEnergyStored(json.energyStored);
 
@@ -496,6 +489,7 @@ public final class OutpostPersistenceManager {
     static final class AssetJson {
 
         CelestialAsset.ID assetId;
+        String teamId;
         String celestialObjectId;
         String displayName;
         String kind;
@@ -508,7 +502,6 @@ public final class OutpostPersistenceManager {
 
     static final class OutpostStateJson {
 
-        String teamId;
         String celestialBodyId;
         String systemId;
         String planetaryAnchorBodyId;

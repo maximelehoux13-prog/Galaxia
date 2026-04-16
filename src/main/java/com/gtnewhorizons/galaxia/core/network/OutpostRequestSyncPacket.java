@@ -2,10 +2,10 @@ package com.gtnewhorizons.galaxia.core.network;
 
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.client.CelestialClient;
+import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -45,7 +45,8 @@ public final class OutpostRequestSyncPacket implements IMessage {
         @Override
         public IMessage onMessage(OutpostRequestSyncPacket packet, MessageContext ctx) {
             if (ctx.side != Side.SERVER) return null;
-            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o
+                : null;
             if (state == null) {
                 CelestialAsset asset = CelestialAssetStore.findAsset(packet.assetId);
                 if (asset != null && asset.status() == CelestialAsset.Status.OPERATIONAL) {

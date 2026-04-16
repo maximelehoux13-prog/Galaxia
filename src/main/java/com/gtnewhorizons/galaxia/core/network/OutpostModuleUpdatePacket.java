@@ -155,7 +155,8 @@ public final class OutpostModuleUpdatePacket implements IMessage {
 
         @Override
         public IMessage onMessage(OutpostModuleUpdatePacket packet, MessageContext ctx) {
-            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o
+                : null;
             if (state == null) return null;
 
             var modules = state.modules();

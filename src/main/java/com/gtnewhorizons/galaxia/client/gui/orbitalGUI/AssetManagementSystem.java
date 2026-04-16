@@ -726,7 +726,7 @@ public final class AssetManagementSystem {
                 CelestialAsset.ID targetId = ItemPickerScreen.getPendingForOutpostId();
                 ItemStack pickedStack = ItemPickerScreen.pollPendingPickForOutpost();
                 AutomatedOutpost outpost = null;
-                if (targetId != null && CelestialClient.getByAssetId(targetId) instanceof AutomatedOutpost o){
+                if (targetId != null && CelestialClient.getByAssetId(targetId) instanceof AutomatedOutpost o) {
                     outpost = o;
                 }
                 if (pickedStack != null && outpost != null) {
@@ -806,7 +806,8 @@ public final class AssetManagementSystem {
                 state.buildModuleScrollPosition = scroll;
             } else if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
                 AutomatedOutpost outpost = null;
-                if (CelestialClient.getByAssetId(state.pendingAssetManagement.asset().assetId) instanceof AutomatedOutpost o){
+                if (CelestialClient
+                    .getByAssetId(state.pendingAssetManagement.asset().assetId) instanceof AutomatedOutpost o) {
                     outpost = o;
                 }
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
@@ -832,7 +833,8 @@ public final class AssetManagementSystem {
             if (state.selectingModuleBuild) return state.buildModuleScrollPosition;
             if (state.configuringModuleIndex >= 0 && state.pendingAssetManagement != null) {
                 AutomatedOutpost outpost = null;
-                if (CelestialClient.getByAssetId(state.pendingAssetManagement.asset().assetId) instanceof AutomatedOutpost o){
+                if (CelestialClient
+                    .getByAssetId(state.pendingAssetManagement.asset().assetId) instanceof AutomatedOutpost o) {
                     outpost = o;
                 }
                 if (outpost != null && state.configuringModuleIndex < outpost.modules()
@@ -1196,7 +1198,7 @@ public final class AssetManagementSystem {
             }
 
             AutomatedOutpost outpost = null;
-            if (asset instanceof AutomatedOutpost o ) {
+            if (asset instanceof AutomatedOutpost o) {
                 outpost = o;
             }
             ModalBounds bounds = createCenteredModalBounds(MODAL_MAX_WIDTH, MODAL_MAX_HEIGHT);

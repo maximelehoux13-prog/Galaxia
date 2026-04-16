@@ -372,7 +372,8 @@ public final class OutpostSyncPacket implements IMessage {
         }
 
         private void handleFull(OutpostSyncPacket packet) {
-            AutomatedOutpost state = CelestialAssetStore.findAsset(packet.assetId) instanceof AutomatedOutpost o ? o : null;
+            AutomatedOutpost state = CelestialAssetStore.findAsset(packet.assetId) instanceof AutomatedOutpost o ? o
+                : null;
             if (state == null) {
                 CelestialAsset newAsset = CelestialAsset
                     .create(packet.celestialBodyId, CelestialAsset.Kind.AUTOMATED_OUTPOST, packet.assetStatus);

@@ -90,7 +90,8 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             // for SERVER-bound packets, so direct mutation is safe (same as DestinationSetPacket).
             String playerName = player.getGameProfile()
                 .getName();
-            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o : null;
+            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o
+                : null;
             if (state == null) {
                 Galaxia.LOG.warn(
                     "[Logistics] LogisticsConfigUpdate: unknown assetId {} from player {}",
