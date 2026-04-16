@@ -36,7 +36,7 @@ public final class OrbitalMechanics {
 
     public static OrbitalState resolveWorldState(CelestialObject root, CelestialObject target, double globalTime) {
         if (root == null || target == null) return null;
-        return resolveWorldState(root, target, null, new OrbitalState(0.0, 0.0, 0.0, 0.0), globalTime);
+        return resolveWorldState(root, target, new OrbitalState(0.0, 0.0, 0.0, 0.0), globalTime);
     }
 
     public static OrbitalState resolveChildWorldState(CelestialObject parent, CelestialObject child,
@@ -160,11 +160,11 @@ public final class OrbitalMechanics {
     }
 
     private static OrbitalState resolveWorldState(CelestialObject current, CelestialObject target,
-        CelestialObject parent, OrbitalState currentState, double globalTime) {
-        if (parent == target) return currentState;
+        OrbitalState currentState, double globalTime) {
+        if (current == target) return currentState;
         for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
             OrbitalState childState = resolveChildWorldState(current, child, currentState, globalTime);
-            OrbitalState resolved = resolveWorldState(child, target, current, childState, globalTime);
+            OrbitalState resolved = resolveWorldState(child, target, childState, globalTime);
             if (resolved != null) return resolved;
         }
         return null;
