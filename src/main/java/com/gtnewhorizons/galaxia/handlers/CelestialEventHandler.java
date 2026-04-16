@@ -98,8 +98,7 @@ public class CelestialEventHandler {
 
             List<LogisticsDelivery> relevantDeliveries = LogisticStore.activeDeliveries()
                 .stream()
-                .filter(
-                    d -> CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
+                .filter(d -> CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
                 .collect(Collectors.toList());
 
             Galaxia.GALAXIA_NETWORK.sendTo(LogisticsSyncPacket.from(relevantDeliveries), player);
@@ -166,8 +165,7 @@ public class CelestialEventHandler {
                                 .findBodyById(root, supplier.celestialObjectId);
                             CelestialObject dstBody = GalaxiaCelestialAPI
                                 .findBodyById(root, requester.celestialObjectId);
-                            CelestialObject attractor = srcBody != null
-                                ? GalaxiaCelestialAPI.findStar(root, srcBody)
+                            CelestialObject attractor = srcBody != null ? GalaxiaCelestialAPI.findStar(root, srcBody)
                                 : null;
 
                             if (srcBody == null || dstBody == null || attractor == null) return false;
