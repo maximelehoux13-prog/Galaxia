@@ -1,8 +1,17 @@
 package com.gtnewhorizons.galaxia.handlers;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
+
+import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.client.CelestialClient;
@@ -13,6 +22,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
@@ -55,6 +65,7 @@ public class CelestialEventHandler {
         // same planetary anchor → HAMMER (then BIG_HAMMER if planetaryTransferHandling is on)
         // different planetary anchors → BIG_HAMMER only
         for (Map.Entry<CelestialObjectId, List<LogisticSignal>> entry : LogisticStore
+            // TODO: Use different scopes also?
             .allSignalsForScope(LogisticSignal.Scope.SYSTEM)
             .entrySet()) {
 
@@ -64,11 +75,34 @@ public class CelestialEventHandler {
         syncCooldownTicks--;
         if (syncCooldownTicks > 0) return;
         syncCooldownTicks = 20;
-        // TODO: send only stuff to the right players
-        for (AutomatedOutpost outpost : CelestialClient.allOutposts()) {
-            Galaxia.GALAXIA_NETWORK.sendToAll(OutpostSyncPacket.fullSync(outpost));
+
+        for (EntityPlayerMP player : MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
+            if (player == null) continue;
+
+            UUID playerTeam = TempTeamCompat.getTeam(player);
+            Map<CelestialObjectId, Set<CelestialAsset>> teamAssets = CelestialAssetStore.getTeamAssets(playerTeam);
+            Set<CelestialAsset> aggregatedAssets = teamAssets.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+
+            List<OutpostSyncPacket> playerOutpostPackets = new ArrayList<>();
+            for (CelestialAsset asset: aggregatedAssets) {
+                if (asset instanceof AutomatedOutpost outpost) {
+                    playerOutpostPackets.add(OutpostSyncPacket.fullSync(outpost));
+                }
+            }
+            // TODO: make aggregate packet for this
+            for (OutpostSyncPacket pkt : playerOutpostPackets) {
+                Galaxia.GALAXIA_NETWORK.sendTo(pkt, player);
+            }
+
+            List<LogisticsDelivery> relevantDeliveries =  LogisticStore.activeDeliveries().stream()
+                .filter(d -> d.data.scope() == LogisticSignal.Scope.SYSTEM
+                    && CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
+                .toList();
+
+            if (!relevantDeliveries.isEmpty()) {
+                Galaxia.GALAXIA_NETWORK.sendTo(LogisticsSyncPacket.from(relevantDeliveries), player);
+            }
         }
-        Galaxia.GALAXIA_NETWORK.sendToAll(LogisticsSyncPacket.from(LogisticStore.activeDeliveries()));
     }
 
     // TODO: Optimize this (O(n^2))

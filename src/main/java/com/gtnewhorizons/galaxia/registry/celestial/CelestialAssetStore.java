@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.DoubleStream;
 
 import net.minecraft.item.ItemStack;
 
@@ -40,6 +41,10 @@ public final class CelestialAssetStore {
         Set<CelestialAsset> celestialAssets = STATE_BY_BODY.getOrDefault(teamId, Collections.emptyMap())
             .getOrDefault(celestialObjectId, Collections.emptySet());
         return new ArrayList<>(celestialAssets);
+    }
+
+    public static Map<CelestialObjectId, Set<CelestialAsset>> getTeamAssets(UUID teamId) {
+        return STATE_BY_BODY.get(teamId);
     }
 
     public static CelestialAsset findAsset(CelestialAsset.ID assetId) {
@@ -168,4 +173,10 @@ public final class CelestialAssetStore {
         return merged;
     }
 
+    public static boolean isOwnedBy(UUID teamId, CelestialAsset.ID id) {
+        UUID owner = TEAM_BY_ID.get(id);
+        if (owner == null) return false;
+
+        return owner.equals(teamId);
+    }
 }
