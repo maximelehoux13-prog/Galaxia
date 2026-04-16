@@ -33,7 +33,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 
 /**
  * Map overlay that shows aggregated logistics signals for the current map scope.
@@ -154,7 +154,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         // TODO Colors
         int r = 0x1A2B3C4D;
         r = r * 31 + CelestialClient.clientSignalRevision();
-        r = r * 31 + CelestialClient.clientTaskRevision();
+        r = r * 31 + CelestialClient.clientDeliveryRevision();
         r = r * 31 + System.identityHashCode(viewRoot);
         return r == 0 ? Integer.MAX_VALUE : r;
     }
@@ -384,11 +384,11 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
             acc.put(item, new long[] { e.getValue(), 0L });
         }
 
-        for (LogisticsTask task : CelestialClient.clientTasks()) {
-            boolean fromInScope = isBodyIdInScope(task.data.fromBodyId(), scope, viewRoot);
-            boolean toInScope = isBodyIdInScope(task.data.toBodyId(), scope, viewRoot);
+        for (LogisticsDelivery delivery : CelestialClient.clientDeliveries()) {
+            boolean fromInScope = isBodyIdInScope(delivery.data.fromBodyId(), scope, viewRoot);
+            boolean toInScope = isBodyIdInScope(delivery.data.toBodyId(), scope, viewRoot);
             if (!fromInScope && !toInScope) continue;
-            acc.computeIfAbsent(task.data.resourceId(), k -> new long[] { 0L, 0L })[1] += task.data.amount();
+            acc.computeIfAbsent(delivery.data.resourceId(), k -> new long[] { 0L, 0L })[1] += delivery.data.amount();
         }
 
         List<SignalRow> rows = new ArrayList<>(acc.size());

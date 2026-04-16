@@ -16,7 +16,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -61,8 +61,8 @@ public final class CelestialClient {
     }
 
     public static void clear() {
-        tasks.clear();
-        taskRevision = 0;
+        deliveries.clear();
+        deliveryRevision = 0;
         signalRevision = 0;
     }
 
@@ -86,8 +86,8 @@ public final class CelestialClient {
      * {@link LogisticsSyncPacket}.
      * Always empty on the server; never null.
      */
-    private static final List<LogisticsTask> tasks = new ArrayList<>();
-    private static int taskRevision = 0;
+    private static final List<LogisticsDelivery> deliveries = new ArrayList<>();
+    private static int deliveryRevision = 0;
     private static int signalRevision = 0;
 
     /**
@@ -147,23 +147,23 @@ public final class CelestialClient {
     // Client-side task snapshot (populated by LogisticsTasksSyncPacket)
     // -------------------------------------------------------------------------
 
-    /** Replaces the client task list and bumps the revision counter. Client-side only. */
-    public static void updateClientTasks(List<LogisticsTask> tasks) {
-        tasks.clear();
-        tasks.stream()
+    /** Replaces the client delivery list and bumps the revision counter. Client-side only. */
+    public static void updateClientDeliveries(List<LogisticsDelivery> newDeliveries) {
+        deliveries.clear();
+        newDeliveries.stream()
             .filter(t -> t.data.resourceId() != null)
-            .forEach(tasks::add);
-        taskRevision++;
+            .forEach(deliveries::add);
+        deliveryRevision++;
     }
 
-    /** Returns an unmodifiable view of the latest client task snapshot. */
-    public static List<LogisticsTask> clientTasks() {
-        return Collections.unmodifiableList(tasks);
+    /** Returns an unmodifiable view of the latest client delivery snapshot. */
+    public static List<LogisticsDelivery> clientDeliveries() {
+        return Collections.unmodifiableList(deliveries);
     }
 
-    /** Monotonically incrementing counter; bumped each time tasks are replaced. */
-    public static int clientTaskRevision() {
-        return taskRevision;
+    /** Monotonically incrementing counter; bumped each time deliveries are replaced. */
+    public static int clientDeliveryRevision() {
+        return deliveryRevision;
     }
 
     private static void collectTransferTargets(CelestialObject current, List<TransferTarget> targets) {

@@ -3,10 +3,12 @@ package com.gtnewhorizons.galaxia.registry.outpost;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.outpost.module.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.registry.outpost.module.OutpostModuleKind;
 
@@ -108,6 +110,11 @@ public final class AutomatedOutpost extends CelestialAsset {
             if (m.getKind() == kind && m.isOperational()) return m;
         }
         return null;
+    }
+
+    public Stream<AutomatedOutpostModule> allOperationalModules() {
+        return modules.stream()
+            .filter(Buildable::isOperational);
     }
 
     /** Package-internal mutable list accessor; used by persistence and migration only. */

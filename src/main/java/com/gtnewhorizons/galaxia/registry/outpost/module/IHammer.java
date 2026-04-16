@@ -17,7 +17,11 @@ public interface IHammer {
 
     boolean getPlanetaryHandling();
 
+    boolean getCrossPlanetaryCapability();
+
     boolean canFire();
 
     void fire();
+
+    int maxBatchSize();
 }

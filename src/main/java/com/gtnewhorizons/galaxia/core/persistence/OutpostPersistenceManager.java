@@ -37,8 +37,9 @@ import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.OutpostLogisticsEngine;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 import com.gtnewhorizons.galaxia.registry.outpost.module.AutomatedOutpostModule;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleBigHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleHammer;
@@ -56,7 +57,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
  * <pre>
  * world/galaxiadata/
  *   _assets.json   <- all celestial assets, with embedded outpost state where applicable
- *   _tasks.json    <- global in-flight LogisticsTask list
+ *   _tasks.json    <- global in-flight LogisticsDelivery list
  * </pre>
  *
  * <p>
@@ -90,10 +91,8 @@ public final class OutpostPersistenceManager {
         ISaveHandler saveHandler = event.world.getSaveHandler();
         worldSaveDir = saveHandler.getWorldDirectory();
         CelestialAssetStore.clear();
+        LogisticStore.clear();
         CelestialClient.clear();
-        OutpostLogisticsEngine.get()
-            .activeTasksInternal()
-            .clear();
         loadAll();
     }
 
@@ -112,9 +111,7 @@ public final class OutpostPersistenceManager {
         if (worldSaveDir != null) saveAll();
         CelestialAssetStore.clear();
         CelestialClient.clear();
-        OutpostLogisticsEngine.get()
-            .activeTasksInternal()
-            .clear();
+        LogisticStore.clear();
         worldSaveDir = null;
     }
 
@@ -174,20 +171,19 @@ public final class OutpostPersistenceManager {
             Type listType = new TypeToken<List<TaskJson>>() {}.getType();
             List<TaskJson> list = gson.fromJson(reader, listType);
             if (list == null) return;
-            List<LogisticsTask> tasks = OutpostLogisticsEngine.get()
-                .activeTasksInternal();
+            List<LogisticsDelivery> tasks = LogisticStore.activeDeliveries();
             for (TaskJson tj : list) {
                 ItemStackWrapper resource = ItemStackWrapper.fromKey(tj.resourceId);
                 if (resource != null) {
                     tasks.add(
-                        LogisticsTask.createWithTrajectory(
-                            LogisticsTask.ID.from(tj.taskId),
+                        LogisticsDelivery.createWithTrajectory(
+                            LogisticsDelivery.ID.from(tj.taskId),
                             CelestialAsset.ID.from(tj.fromAssetId),
                             CelestialAsset.ID.from(tj.toAssetId),
                             resource,
                             tj.amount,
                             tj.remainingTicks,
-                            LogisticsTask.TransportType.valueOf(tj.transportKind),
+                            LogisticSignal.Scope.valueOf(tj.transportKind),
                             CelestialObjectId.valueOf(tj.fromBodyId),
                             CelestialObjectId.valueOf(tj.toBodyId),
                             tj.departureOrbitalTime,
@@ -201,21 +197,20 @@ public final class OutpostPersistenceManager {
 
     private void saveTasks(File file) {
         List<TaskJson> list = new ArrayList<>();
-        for (LogisticsTask task : OutpostLogisticsEngine.get()
-            .activeTasksInternal()) {
+        for (LogisticsDelivery delivery : LogisticStore.activeDeliveries()) {
             TaskJson tj = new TaskJson();
-            tj.taskId = String.valueOf(task.taskId);
-            tj.fromAssetId = String.valueOf(task.data.fromAssetId());
-            tj.toAssetId = String.valueOf(task.data.toAssetId());
-            tj.resourceId = task.data.resourceId()
+            tj.taskId = String.valueOf(delivery.deliveryId);
+            tj.fromAssetId = String.valueOf(delivery.data.fromAssetId());
+            tj.toAssetId = String.valueOf(delivery.data.toAssetId());
+            tj.resourceId = delivery.data.resourceId()
                 .toKey();
-            tj.amount = task.data.amount();
-            tj.remainingTicks = task.getRemainingTicks();
-            tj.transportKind = String.valueOf(task.data.transportKind());
-            tj.fromBodyId = String.valueOf(task.data.fromBodyId());
-            tj.toBodyId = String.valueOf(task.data.toBodyId());
-            tj.departureOrbitalTime = task.data.departureOrbitalTime();
-            tj.tofOrbitalSeconds = task.data.tofOrbitalSeconds();
+            tj.amount = delivery.data.amount();
+            tj.remainingTicks = delivery.getRemainingTicks();
+            tj.transportKind = String.valueOf(delivery.data.scope());
+            tj.fromBodyId = String.valueOf(delivery.data.fromBodyId());
+            tj.toBodyId = String.valueOf(delivery.data.toBodyId());
+            tj.departureOrbitalTime = delivery.data.departureOrbitalTime();
+            tj.tofOrbitalSeconds = delivery.data.tofOrbitalSeconds();
             list.add(tj);
         }
         writeJson(file, list);

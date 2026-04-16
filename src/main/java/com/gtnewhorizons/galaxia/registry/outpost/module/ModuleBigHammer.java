@@ -24,6 +24,7 @@ public class ModuleBigHammer extends AutomatedOutpostModule implements IHammer {
     // spotless:on
 
     public static final long BASE_ENERGY_CAPACITY = 5000L;
+    public static final int MAX_BATCH_SIZE = 128;
     public static final int POWER_DRAW_EU_PER_TICK = 25;
     public static final int COOLDOWN_TICKS = 20;
 
@@ -93,8 +94,18 @@ public class ModuleBigHammer extends AutomatedOutpostModule implements IHammer {
     }
 
     @Override
+    public int maxBatchSize() {
+        return MAX_BATCH_SIZE;
+    }
+
+    @Override
     public boolean getPlanetaryHandling() {
         return planetaryHandling;
+    }
+
+    @Override
+    public boolean getCrossPlanetaryCapability() {
+        return true;
     }
 
     public void setPlanetaryHandling(boolean planetaryHandling) {

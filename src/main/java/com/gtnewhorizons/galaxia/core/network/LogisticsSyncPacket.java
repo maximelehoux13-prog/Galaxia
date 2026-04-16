@@ -12,9 +12,9 @@ import org.jetbrains.annotations.UnknownNullability;
 import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsSignal;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsSignalStore;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -25,30 +25,30 @@ import io.netty.buffer.ByteBuf;
 
 public final class LogisticsSyncPacket implements IMessage {
 
-    private List<LogisticsTask> tasks;
+    private List<LogisticsDelivery> deliveries;
     private Map<CelestialObjectId, Map<String, Long>> bySystem;
     private Map<CelestialObjectId, Map<String, Long>> byPlanet;
 
     public LogisticsSyncPacket() {}
 
-    public static LogisticsSyncPacket from(LogisticsSignalStore store, List<LogisticsTask> activeTasks) {
+    public static LogisticsSyncPacket from(List<LogisticsDelivery> activeDeliveries) {
         LogisticsSyncPacket pkt = new LogisticsSyncPacket();
 
-        pkt.tasks = new java.util.ArrayList<>(activeTasks.size());
-        for (LogisticsTask t : activeTasks) {
+        pkt.deliveries = new java.util.ArrayList<>(activeDeliveries.size());
+        for (LogisticsDelivery t : activeDeliveries) {
             if (t.data.resourceId() == null) continue;
-            pkt.tasks.add(t);
+            pkt.deliveries.add(t);
         }
 
         pkt.bySystem = new LinkedHashMap<>();
         pkt.byPlanet = new LinkedHashMap<>();
 
-        for (Map.Entry<CelestialObjectId, List<LogisticsSignal>> entry : store
-            .allSignalsForScope(LogisticsSignal.Scope.SYSTEM)
+        for (Map.Entry<CelestialObjectId, List<LogisticSignal>> entry : LogisticStore
+            .allSignalsForScope(LogisticSignal.Scope.SYSTEM)
             .entrySet()) {
             CelestialObjectId systemId = entry.getKey();
             Map<String, Long> systemAgg = new LinkedHashMap<>();
-            for (LogisticsSignal sig : entry.getValue()) {
+            for (LogisticSignal sig : entry.getValue()) {
                 String key = sig.resourceId()
                     .toKey();
                 systemAgg.merge(key, sig.amount(), Long::sum);
@@ -66,10 +66,10 @@ public final class LogisticsSyncPacket implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(tasks.size());
-        for (LogisticsTask t : tasks) {
-            LogisticsTask.Data d = t.data;
-            PacketUtil.writeId(buf, t.taskId);
+        buf.writeInt(deliveries.size());
+        for (LogisticsDelivery t : deliveries) {
+            LogisticsDelivery.Data d = t.data;
+            PacketUtil.writeId(buf, t.deliveryId);
             PacketUtil.writeId(buf, d.fromAssetId());
             PacketUtil.writeId(buf, d.toAssetId());
             PacketUtil.writeString(
@@ -78,7 +78,7 @@ public final class LogisticsSyncPacket implements IMessage {
                     .toKey());
             buf.writeLong(d.amount());
             buf.writeInt(t.getRemainingTicks());
-            PacketUtil.writeEnum(buf, d.transportKind());
+            PacketUtil.writeEnum(buf, d.scope());
             PacketUtil.writeCelestialObjectId(buf, d.fromBodyId());
             PacketUtil.writeCelestialObjectId(buf, d.toBodyId());
             buf.writeDouble(d.departureOrbitalTime());
@@ -91,19 +91,18 @@ public final class LogisticsSyncPacket implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        int taskCount = buf.readInt();
-        tasks = new ArrayList<>(taskCount);
-        for (int i = 0; i < taskCount; i++) {
-            // Careful with the order of serialization/deserialization
-            tasks.add(
-                LogisticsTask.createWithTrajectory(
-                    PacketUtil.readTaskId(buf),
+        int deliveryCount = buf.readInt();
+        deliveries = new ArrayList<>(deliveryCount);
+        for (int i = 0; i < deliveryCount; i++) {
+            deliveries.add(
+                LogisticsDelivery.createWithTrajectory(
+                    PacketUtil.readDeliveryId(buf),
                     PacketUtil.readAssetId(buf),
                     PacketUtil.readAssetId(buf),
                     ItemStackWrapper.fromKey(PacketUtil.readString(buf)),
                     buf.readLong(),
                     buf.readInt(),
-                    PacketUtil.readEnum(buf, LogisticsTask.TransportType.class),
+                    PacketUtil.readEnum(buf, LogisticSignal.Scope.class),
                     PacketUtil.readCelestialObjectId(buf),
                     PacketUtil.readCelestialObjectId(buf),
                     buf.readDouble(),
@@ -121,7 +120,7 @@ public final class LogisticsSyncPacket implements IMessage {
         public IMessage onMessage(LogisticsSyncPacket packet, MessageContext ctx) {
             Minecraft.getMinecraft()
                 .func_152344_a(() -> {
-                    CelestialClient.updateClientTasks(packet.tasks);
+                    CelestialClient.updateClientDeliveries(packet.deliveries);
                     CelestialClient.updateClientSignals(packet.bySystem, packet.byPlanet);
                 });
             return null;

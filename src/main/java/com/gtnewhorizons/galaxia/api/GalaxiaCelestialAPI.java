@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import net.minecraft.server.MinecraftServer;
+
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialHierarchy;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialRegistry;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 
 public final class GalaxiaCelestialAPI {
 
@@ -208,5 +211,33 @@ public final class GalaxiaCelestialAPI {
             if (found != null) return found;
         }
         return null;
+    }
+
+    /**
+     * Returns {@code true} if both bodies share the same planetary anchor
+     * (i.e. same planet/gas-giant or both on the same planet's moon system).
+     * Used to gate BIG_HAMMER on the {@code planetaryTransferHandling} toggle.
+     */
+    public static boolean sharesPlanetaryAnchor(CelestialObject root, CelestialObjectId bodyIdA,
+        CelestialObjectId bodyIdB) {
+        if (root == null || bodyIdA == null || bodyIdB == null) return false;
+        CelestialObject a = GalaxiaCelestialAPI.findBodyById(root, bodyIdA);
+        CelestialObject b = GalaxiaCelestialAPI.findBodyById(root, bodyIdB);
+        if (a == null || b == null) return false;
+        CelestialObject anchorA = GalaxiaCelestialAPI.findPlanetaryAnchor(root, a);
+        CelestialObject anchorB = GalaxiaCelestialAPI.findPlanetaryAnchor(root, b);
+        return anchorA != null && anchorA == anchorB;
+    }
+
+    /**
+     * Returns the current orbital simulation time in OSU (orbital simulation units).
+     * Server-side: based on world tick count, converted with 42 OSU/s at 20 TPS.
+     */
+    public static double currentOrbitalTime() {
+        MinecraftServer server = MinecraftServer.getServer();
+        if (server == null) return 0.0;
+        long totalWorldTime = server.getEntityWorld()
+            .getTotalWorldTime();
+        return totalWorldTime * OrbitalTransferPlanner.OSU_PER_TICK;
     }
 }

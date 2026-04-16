@@ -1,0 +1,187 @@
+package com.gtnewhorizons.galaxia.handlers;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.client.CelestialClient;
+import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.core.network.LogisticsSyncPacket;
+import com.gtnewhorizons.galaxia.core.network.OutpostSyncPacket;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
+import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
+import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
+import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
+import com.gtnewhorizons.galaxia.registry.outpost.module.IHammer;
+import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleBigHammer;
+
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
+
+public class CelestialEventHandler {
+
+    public static final long EU_PER_ITEM_PER_DV = 100L;
+
+    // TODO: Is there a centralized way to get ticks?
+    private int syncCooldownTicks;
+
+    public CelestialEventHandler() {}
+
+    @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+
+        for (CelestialAsset asset : CelestialAssetStore.allAssets()) {
+            // TODO: Ticks other assets
+            if (asset.kind != CelestialAsset.Kind.AUTOMATED_OUTPOST) continue;
+
+            AutomatedOutpost outpost = (AutomatedOutpost) asset;
+            outpost.tick();
+        }
+
+        LogisticStore.tickDeliveries();
+
+        double orbitalTime = GalaxiaCelestialAPI.currentOrbitalTime();
+        LogisticStore.rebuildSignals(
+            CelestialAssetStore.allAssets()
+                .stream()
+                .filter(asset -> asset.kind == CelestialAsset.Kind.AUTOMATED_OUTPOST)
+                .map(asset -> (AutomatedOutpost) asset)
+                .collect(Collectors.toList()));
+        // All signals live in SYSTEM scope (one signal per resource per outpost).
+        // Dispatch routing is decided at match time:
+        // same planetary anchor → HAMMER (then BIG_HAMMER if planetaryTransferHandling is on)
+        // different planetary anchors → BIG_HAMMER only
+        for (Map.Entry<CelestialObjectId, List<LogisticSignal>> entry : LogisticStore
+            .allSignalsForScope(LogisticSignal.Scope.SYSTEM)
+            .entrySet()) {
+
+            handleSignal(entry.getValue(), orbitalTime);
+        }
+
+        syncCooldownTicks--;
+        if (syncCooldownTicks > 0) return;
+        syncCooldownTicks = 20;
+        for (AutomatedOutpost outpost : CelestialClient.allOutposts()) {
+            Galaxia.GALAXIA_NETWORK.sendToAll(OutpostSyncPacket.fullSync(outpost));
+        }
+        Galaxia.GALAXIA_NETWORK.sendToAll(LogisticsSyncPacket.from(LogisticStore.activeDeliveries()));
+    }
+
+    // TODO: Optimize this (O(n^2))
+    private void handleSignal(List<LogisticSignal> signals, double orbitalTime) {
+        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
+        int size = signals.size();
+
+        for (int i = 0; i < size; i++) {
+            LogisticSignal request = signals.get(i);
+            if (!request.isRequest()) continue;
+
+            for (int j = 0; j < size; j++) {
+                LogisticSignal supply = signals.get(j);
+                if (!supply.isSupply()) continue;
+
+                if (!supply.resourceId()
+                    .equals(request.resourceId())) continue;
+                if (supply.outpostAssetId()
+                    .equals(request.outpostAssetId())) continue;
+
+                AutomatedOutpost supplier = (AutomatedOutpost) CelestialAssetStore.findAsset(supply.outpostAssetId());
+                AutomatedOutpost requester = (AutomatedOutpost) CelestialAssetStore.findAsset(request.outpostAssetId());
+                if (supplier == null || requester == null) continue;
+
+                final boolean shareAnchor = GalaxiaCelestialAPI
+                    .sharesPlanetaryAnchor(root, supplier.celestialObjectId, requester.celestialObjectId);
+
+                final ItemStackWrapper resource = request.resourceId();
+                final LogisticsResourceConfig supplierCfg = supplier.logisticsConfig.get(resource);
+                final long supplierStock = supplier.inventory.getAmount(resource);
+                final long availableSurplus = supplierStock - supplierCfg.minReserve();
+                if (availableSurplus <= 0) continue;
+
+                LogisticsResourceConfig requesterCfg = requester.logisticsConfig.get(resource);
+                final long requesterStock = requester.inventory.getAmount(resource);
+                final long inboundInTransit = getInboundInTransitAmount(requester.assetId, resource);
+                final long requestedAmount = Math
+                    .max(0L, requesterCfg.minReserve() - requesterStock - inboundInTransit);
+
+                final boolean success = supplier.allOperationalModules()
+                    .filter(
+                        m -> m instanceof IHammer h && h.canFire()
+                            && h.getPlanetaryHandling()
+                            && (shareAnchor || h.getCrossPlanetaryCapability()))
+                    .sorted(Comparator.comparingInt(m -> (m instanceof ModuleBigHammer) ? 1 : 0))
+                    .map(m -> (IHammer) m)
+                    .anyMatch(hammer -> {
+                        final long sendAmount = Math
+                            .min(Math.min(requestedAmount, availableSurplus), hammer.maxBatchSize());
+                        if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
+
+                        double departureDv = 1;
+                        if (!supplier.celestialObjectId.equals(requester.celestialObjectId)) {
+                            CelestialObject srcBody = GalaxiaCelestialAPI
+                                .findBodyById(root, supplier.celestialObjectId);
+                            CelestialObject dstBody = GalaxiaCelestialAPI
+                                .findBodyById(root, requester.celestialObjectId);
+                            CelestialObject attractor = srcBody != null
+                                ? GalaxiaCelestialAPI.findPlanetaryAnchor(root, srcBody)
+                                : null;
+
+                            if (srcBody == null || dstBody == null || attractor == null) return false;
+                            OrbitalTransferPlanner.TransferRoute route = OrbitalTransferPlanner.computeRoute(
+                                root,
+                                attractor,
+                                srcBody,
+                                dstBody,
+                                orbitalTime,
+                                hammer.getRoutePriority());
+
+                            departureDv = route.departureDv();
+                            if (!hammer.getConfig()
+                                .allows(departureDv, route.tofSeconds())) return false;
+                        }
+
+                        final long euPerItem = Math.max(1L, (long) Math.ceil(departureDv * EU_PER_ITEM_PER_DV));
+                        final long affordableAmount = Math.min(supplier.getEnergyStored() / euPerItem, sendAmount);
+                        final long euRequired = sendAmount * euPerItem;
+
+                        if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
+                        if (!supplier.tryConsumeEnergy(euRequired)) return false;
+                        if (!supplier.inventory.tryConsume(resource, affordableAmount)) return false;
+                        hammer.fire();
+                        LogisticsDelivery task = LogisticsDelivery.create(
+                            supplier.assetId,
+                            requester.assetId,
+                            resource,
+                            sendAmount,
+                            1,
+                            LogisticSignal.Scope.PLANETARY);
+
+                        LogisticStore.addDelivery(task);
+                        return true;
+                    });
+
+                if (success) break;
+            }
+        }
+    }
+
+    private long getInboundInTransitAmount(CelestialAsset.ID toAssetId, ItemStackWrapper resource) {
+        long total = 0L;
+        for (LogisticsDelivery task : LogisticStore.activeDeliveries()) {
+            if (!toAssetId.equals(task.data.toAssetId())) continue;
+            if (!resource.equals(task.data.resourceId())) continue;
+            total += task.data.amount();
+        }
+        return total;
+    }
+}

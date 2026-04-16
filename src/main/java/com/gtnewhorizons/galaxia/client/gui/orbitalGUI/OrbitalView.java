@@ -32,7 +32,8 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalMechanics;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalParams;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 
 public class OrbitalView {
 
@@ -2015,13 +2016,13 @@ public class OrbitalView {
         }
 
         private void syncRenderedLogisticsTransfers() {
-            int revision = CelestialClient.clientTaskRevision();
+            int revision = CelestialClient.clientDeliveryRevision();
             if (revision == lastRenderedLogisticsTaskRevision
                 && orbitalClockRevision == lastRenderedLogisticsClockRevision) return;
 
             List<InterplanetaryTransferJob> logisticsTransfers = new ArrayList<>();
-            for (LogisticsTask task : CelestialClient.clientTasks()) {
-                InterplanetaryTransferJob transfer = buildRenderedLogisticsTransfer(task);
+            for (LogisticsDelivery delivery : CelestialClient.clientDeliveries()) {
+                InterplanetaryTransferJob transfer = buildRenderedLogisticsTransfer(delivery);
                 if (transfer != null) logisticsTransfers.add(transfer);
             }
 
@@ -2033,20 +2034,20 @@ public class OrbitalView {
             lastRenderedLogisticsClockRevision = orbitalClockRevision;
         }
 
-        private InterplanetaryTransferJob buildRenderedLogisticsTransfer(LogisticsTask task) {
-            if (task == null || task.data.resourceId() == null) return null;
-            CelestialObject sourceBody = GalaxiaCelestialAPI.findBodyById(root, task.data.fromBodyId());
-            CelestialObject destinationBody = GalaxiaCelestialAPI.findBodyById(root, task.data.toBodyId());
+        private InterplanetaryTransferJob buildRenderedLogisticsTransfer(LogisticsDelivery delivery) {
+            if (delivery == null || delivery.data.resourceId() == null) return null;
+            CelestialObject sourceBody = GalaxiaCelestialAPI.findBodyById(root, delivery.data.fromBodyId());
+            CelestialObject destinationBody = GalaxiaCelestialAPI.findBodyById(root, delivery.data.toBodyId());
             if (sourceBody == null || destinationBody == null) return null;
 
-            String itemName = task.data.resourceId()
+            String itemName = delivery.data.resourceId()
                 .toStack(1)
                 .getDisplayName();
-            String summary = task.data.amount() + " x " + itemName;
-            String transportLabel = formatTransportKindLabel(task.data.transportKind());
-            double departureDisplayTime = mapServerOrbitalTimeToDisplay(task.data.departureOrbitalTime());
+            String summary = delivery.data.amount() + " x " + itemName;
+            String transportLabel = formatTransportKindLabel(delivery.data.scope());
+            double departureDisplayTime = mapServerOrbitalTimeToDisplay(delivery.data.departureOrbitalTime());
             double arrivalDisplayTime = mapServerOrbitalTimeToDisplay(
-                task.data.departureOrbitalTime() + task.data.tofOrbitalSeconds());
+                delivery.data.departureOrbitalTime() + delivery.data.tofOrbitalSeconds());
             double displayedTof = Math.max(1e-6, arrivalDisplayTime - departureDisplayTime);
             InterplanetaryTransferJob base = transferSupport.createTransferJob(
                 root,
@@ -2059,7 +2060,7 @@ public class OrbitalView {
             if (base == null) return null;
 
             return new InterplanetaryTransferJob(
-                "logistics:" + task.taskId,
+                "logistics:" + delivery.deliveryId,
                 base.displayName(),
                 base.inventorySummary(),
                 base.rootBody(),
@@ -2073,20 +2074,22 @@ public class OrbitalView {
                 base.trajectoryPointCount());
         }
 
-        private String formatTransportKindLabel(LogisticsTask.TransportType transportKind) {
-            // TOOD: here
-            if (transportKind == null) return "Logistics";
-            return transportKind.toString();
+        private String formatTransportKindLabel(LogisticSignal.Scope transportType) {
+            /// TODO: LOCALLIZE
+            if (transportType == null) return "Logistics";
+            return transportType.toString();
         }
 
         private void dispatchSimulatedTransfer() {
             if (!transferSimulatorState.isOpen()) return;
             if (transferSimulatorState.originBody() == null || transferSimulatorState.destinationBody() == null) {
+                /// TODO: LOCALLIZE
                 showActionStatus("Select transfer origin and destination first");
                 return;
             }
             if (!transferSimulatorState.hasPreview() || transferSimulatorState.previewTof() <= 0.0) {
                 showActionStatus("No valid transfer trajectory");
+                /// TODO: LOCALLIZE
                 return;
             }
             InterplanetaryTransferJob transfer = transferSupport.createTransferJob(

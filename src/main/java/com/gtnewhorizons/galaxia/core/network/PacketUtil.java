@@ -6,7 +6,7 @@ import java.util.UUID;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.interfaces.WithUUID;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsTask;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 
 import io.netty.buffer.ByteBuf;
 
@@ -48,8 +48,8 @@ final class PacketUtil {
         return new CelestialAsset.ID(readId(buf));
     }
 
-    public static LogisticsTask.ID readTaskId(ByteBuf buf) {
-        return new LogisticsTask.ID(readId(buf));
+    public static LogisticsDelivery.ID readDeliveryId(ByteBuf buf) {
+        return new LogisticsDelivery.ID(readId(buf));
     }
 
     @Deprecated
