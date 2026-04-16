@@ -17,7 +17,6 @@ public class TempTeamCompat {
         return player != null ? player.getUniqueID() : new UUID(0L, 0L);
     }
 
-    @SideOnly(Side.SERVER)
     public static UUID getTeam(EntityPlayerMP player) {
         return player != null ? player.getUniqueID() : new UUID(0L, 0L);
     }
