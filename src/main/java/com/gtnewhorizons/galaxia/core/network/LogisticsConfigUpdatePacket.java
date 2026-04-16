@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.core.network;
 
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.client.CelestialClient;
@@ -90,7 +91,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
             // for SERVER-bound packets, so direct mutation is safe (same as DestinationSetPacket).
             String playerName = player.getGameProfile()
                 .getName();
-            AutomatedOutpost state = CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedOutpost o ? o
+            AutomatedOutpost state = CelestialAssetStore.findAsset(packet.assetId) instanceof AutomatedOutpost o ? o
                 : null;
             if (state == null) {
                 Galaxia.LOG.warn(
@@ -99,10 +100,6 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
                     playerName);
                 return null;
             }
-
-            // Team permission check: the player's team must match the outpost's team.
-            // TODO: resolve the player's team UUID via NHLib and compare with state.teamId.
-            // For now, any authenticated player may update any outpost (remove when NHLib wired).
 
             if (!packet.removeEntry && packet.orderSize <= 0) {
                 Galaxia.LOG

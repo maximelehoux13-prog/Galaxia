@@ -67,8 +67,6 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
  */
 public final class OutpostPersistenceManager {
 
-    // TODO: Don't use client here
-
     private static final String DATA_DIR = "galaxiadata";
     private static final String ASSETS_FILE = "_assets.json";
     private static final String TASKS_FILE = "_tasks.json";
@@ -140,12 +138,8 @@ public final class OutpostPersistenceManager {
                 CelestialAsset asset = decodeAsset(json);
                 if (asset == null) continue;
                 UUID teamId = UUID.fromString(json.teamId);
+                decodeOutpostState(asset, json.outpost);
                 CelestialAssetStore.add(teamId, asset);
-                // TODO: This could create problems
-                AutomatedOutpost outpost = decodeOutpostState(asset, json.outpost);
-                if (outpost != null) {
-                    CelestialClient.add(outpost);
-                }
             }
         } catch (IOException | JsonParseException | IllegalArgumentException e) {
             Galaxia.LOG.error("[Logistics] Failed to load station registry from {}: {}", file, e.getMessage());
@@ -156,7 +150,7 @@ public final class OutpostPersistenceManager {
         List<AssetJson> list = new ArrayList<>();
         for (CelestialAsset asset : CelestialAssetStore.allAssets()) {
             AssetJson json = encodeAsset(asset);
-            CelestialAsset outpost = CelestialClient.getByAssetId(asset.assetId);
+            CelestialAsset outpost = CelestialAssetStore.findAsset(asset.assetId);
             if (outpost instanceof AutomatedOutpost o) {
                 json.outpost = encodeOutpostState(o);
             }

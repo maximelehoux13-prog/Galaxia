@@ -28,6 +28,7 @@ public class ModuleMiner extends AutomatedOutpostModule {
     }};
     // spotless:on
 
+    // TODO: Maybe not string but itemstackwrapper?
     public List<String> blacklistedItemKeys;
 
     public static final long BASE_ENERGY_CAPACITY = 2000L;
@@ -45,7 +46,7 @@ public class ModuleMiner extends AutomatedOutpostModule {
                     .ores();
                 if (ores.isEmpty()) return;
                 ItemStack chosen = ores.get(RANDOM.nextInt(ores.size()));
-                if (isBlacklisted(chosen)) return;
+                if (isBlacklisted(ItemStackWrapper.of(chosen))) return;
                 ItemStack ore = chosen.copy();
                 ore.stackSize = 1;
                 outpost.inventory.add(ItemStackWrapper.of(ore), 1);
@@ -64,17 +65,8 @@ public class ModuleMiner extends AutomatedOutpostModule {
         return new ModuleMiner(Collections.emptyList());
     }
 
-    // TODO: This is just for compat
-    public boolean isBlacklisted(ItemStack item) {
-        GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(item.getItem());
-        if (id == null) {
-            Galaxia.LOG.warn(
-                "[ItemStackWrapper] Item {} has no registry entry; key will not resolve on reload.",
-                item.getClass()
-                    .getName());
-            return true;
-        }
-        return blacklistedItemKeys.contains(id.modId + ":" + id.name + ":" + item.getItemDamage());
+    public boolean isBlacklisted(ItemStackWrapper item) {
+        return blacklistedItemKeys.contains(item.toKey());
     }
 
     @Deprecated
