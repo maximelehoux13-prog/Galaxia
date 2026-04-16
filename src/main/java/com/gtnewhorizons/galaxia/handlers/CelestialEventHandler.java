@@ -11,10 +11,8 @@ import java.util.stream.Collectors;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 
-import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
-
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.client.CelestialClient;
+import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.network.LogisticsSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.OutpostSyncPacket;
@@ -22,7 +20,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
-import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedOutpost;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
@@ -76,15 +73,19 @@ public class CelestialEventHandler {
         if (syncCooldownTicks > 0) return;
         syncCooldownTicks = 20;
 
-        for (EntityPlayerMP player : MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
+        for (EntityPlayerMP player : MinecraftServer.getServer()
+            .getConfigurationManager().playerEntityList) {
             if (player == null) continue;
 
             UUID playerTeam = TempTeamCompat.getTeam(player);
             Map<CelestialObjectId, Set<CelestialAsset>> teamAssets = CelestialAssetStore.getTeamAssets(playerTeam);
-            Set<CelestialAsset> aggregatedAssets = teamAssets.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+            Set<CelestialAsset> aggregatedAssets = teamAssets.values()
+                .stream()
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
 
             List<OutpostSyncPacket> playerOutpostPackets = new ArrayList<>();
-            for (CelestialAsset asset: aggregatedAssets) {
+            for (CelestialAsset asset : aggregatedAssets) {
                 if (asset instanceof AutomatedOutpost outpost) {
                     playerOutpostPackets.add(OutpostSyncPacket.fullSync(outpost));
                 }
@@ -94,9 +95,11 @@ public class CelestialEventHandler {
                 Galaxia.GALAXIA_NETWORK.sendTo(pkt, player);
             }
 
-            List<LogisticsDelivery> relevantDeliveries =  LogisticStore.activeDeliveries().stream()
-                .filter(d -> d.data.scope() == LogisticSignal.Scope.SYSTEM
-                    && CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
+            List<LogisticsDelivery> relevantDeliveries = LogisticStore.activeDeliveries()
+                .stream()
+                .filter(
+                    d -> d.data.scope() == LogisticSignal.Scope.SYSTEM
+                        && CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
                 .toList();
 
             if (!relevantDeliveries.isEmpty()) {
