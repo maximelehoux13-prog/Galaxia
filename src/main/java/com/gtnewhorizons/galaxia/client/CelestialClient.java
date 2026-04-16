@@ -29,6 +29,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 public final class CelestialClient {
 
     public static List<CelestialAsset> getState(CelestialObjectId celestialObjectId) {
+        // TODO: Is it safe to use the store here? (Store = server state)
         return CelestialAssetStore.getState(TempTeamCompat.getTeam(), celestialObjectId);
     }
 
