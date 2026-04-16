@@ -161,8 +161,8 @@ public final class OrbitalMechanics {
 
     private static OrbitalState resolveWorldState(CelestialObject current, CelestialObject target,
         CelestialObject parent, OrbitalState currentState, double globalTime) {
-        if (current == target) return currentState;
-        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(parent)) {
+        if (parent == target) return currentState;
+        for (CelestialObject child : GalaxiaCelestialAPI.getChildren(current)) {
             OrbitalState childState = resolveChildWorldState(current, child, currentState, globalTime);
             OrbitalState resolved = resolveWorldState(child, target, current, childState, globalTime);
             if (resolved != null) return resolved;
