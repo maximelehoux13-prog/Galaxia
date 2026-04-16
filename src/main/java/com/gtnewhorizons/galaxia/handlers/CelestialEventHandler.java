@@ -79,6 +79,7 @@ public class CelestialEventHandler {
 
             UUID playerTeam = TempTeamCompat.getTeam(player);
             Map<CelestialObjectId, Set<CelestialAsset>> teamAssets = CelestialAssetStore.getTeamAssets(playerTeam);
+            if (teamAssets == null) continue;
             Set<CelestialAsset> aggregatedAssets = teamAssets.values()
                 .stream()
                 .flatMap(Set::stream)
@@ -98,13 +99,10 @@ public class CelestialEventHandler {
             List<LogisticsDelivery> relevantDeliveries = LogisticStore.activeDeliveries()
                 .stream()
                 .filter(
-                    d -> d.data.scope() == LogisticSignal.Scope.SYSTEM
-                        && CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
+                    d -> CelestialAssetStore.isOwnedBy(playerTeam, d.data.fromAssetId()))
                 .collect(Collectors.toList());
 
-            if (!relevantDeliveries.isEmpty()) {
-                Galaxia.GALAXIA_NETWORK.sendTo(LogisticsSyncPacket.from(relevantDeliveries), player);
-            }
+            Galaxia.GALAXIA_NETWORK.sendTo(LogisticsSyncPacket.from(relevantDeliveries), player);
         }
     }
 
@@ -148,23 +146,28 @@ public class CelestialEventHandler {
                 final boolean success = supplier.allOperationalModules()
                     .filter(
                         m -> m instanceof IHammer h && h.canFire()
-                            && h.getPlanetaryHandling()
+                            && (!shareAnchor || h.getPlanetaryHandling())
                             && (shareAnchor || h.getCrossPlanetaryCapability()))
                     .sorted(Comparator.comparingInt(m -> (m instanceof ModuleBigHammer) ? 1 : 0))
                     .map(m -> (IHammer) m)
                     .anyMatch(hammer -> {
+                        LogisticSignal.Scope deliveryScope = LogisticSignal.Scope.PLANETARY;
+                        int travelTime = 1;
+                        double osu = 0;
+
                         final long sendAmount = Math
                             .min(Math.min(requestedAmount, availableSurplus), hammer.maxBatchSize());
                         if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
 
                         double departureDv = 1;
                         if (!supplier.celestialObjectId.equals(requester.celestialObjectId)) {
+                            deliveryScope = LogisticSignal.Scope.SYSTEM;
                             CelestialObject srcBody = GalaxiaCelestialAPI
                                 .findBodyById(root, supplier.celestialObjectId);
                             CelestialObject dstBody = GalaxiaCelestialAPI
                                 .findBodyById(root, requester.celestialObjectId);
                             CelestialObject attractor = srcBody != null
-                                ? GalaxiaCelestialAPI.findPlanetaryAnchor(root, srcBody)
+                                ? GalaxiaCelestialAPI.findStar(root, srcBody)
                                 : null;
 
                             if (srcBody == null || dstBody == null || attractor == null) return false;
@@ -175,8 +178,11 @@ public class CelestialEventHandler {
                                 dstBody,
                                 orbitalTime,
                                 hammer.getRoutePriority());
+                            if (route == null) return false;
 
                             departureDv = route.departureDv();
+                            travelTime = route.tofTicks();
+                            osu = route.tofOsu();
                             if (!hammer.getConfig()
                                 .allows(departureDv, route.tofSeconds())) return false;
                         }
@@ -189,13 +195,17 @@ public class CelestialEventHandler {
                         if (!supplier.tryConsumeEnergy(euRequired)) return false;
                         if (!supplier.inventory.tryConsume(resource, affordableAmount)) return false;
                         hammer.fire();
-                        LogisticsDelivery task = LogisticsDelivery.create(
+                        LogisticsDelivery task = LogisticsDelivery.createWithTrajectory(
                             supplier.assetId,
                             requester.assetId,
                             resource,
                             sendAmount,
-                            1,
-                            LogisticSignal.Scope.PLANETARY);
+                            travelTime,
+                            deliveryScope,
+                            supplier.celestialObjectId,
+                            requester.celestialObjectId,
+                            orbitalTime,
+                            osu);
 
                         LogisticStore.addDelivery(task);
                         return true;

@@ -360,15 +360,12 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         switch (scope) {
             case SYSTEM:
                 signalData = CelestialClient.clientSignalsForSystem(
-                    viewRoot.id()
-                        .getId());
+                    viewRoot.id() );
                 break;
             case PLANETARY: {
                 CelestialObject anchor = GalaxiaCelestialAPI.findPlanetaryAnchor(galaxyRoot, viewRoot);
-                String anchorId = anchor != null ? anchor.id()
-                    .getId()
-                    : viewRoot.id()
-                        .getId();
+                CelestialObjectId anchorId = anchor != null ? anchor.id()
+                    : viewRoot.id();
                 signalData = CelestialClient.clientSignalsForPlanet(anchorId);
                 break;
             }

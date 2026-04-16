@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
@@ -23,7 +24,7 @@ public final class LogisticStore {
     private LogisticStore() {}
 
     public static List<LogisticsDelivery> activeDeliveries() {
-        return Collections.unmodifiableList(activeDeliveries);
+        return activeDeliveries;
     }
 
     public static void addDelivery(LogisticsDelivery delivery) {
@@ -34,8 +35,7 @@ public final class LogisticStore {
         activeDeliveries.clear();
     }
 
-    public static List<LogisticsDelivery> tickDeliveries() {
-        List<LogisticsDelivery> arrived = new ArrayList<>();
+    public static void tickDeliveries() {
         for (int i = activeDeliveries.size() - 1; i >= 0; i--) {
             LogisticsDelivery current = activeDeliveries.get(i);
             if (CelestialAssetStore.findAsset(current.data.fromAssetId()) == null
@@ -46,12 +46,27 @@ public final class LogisticStore {
             LogisticsDelivery ticked = current.tick();
             if (ticked.isArrived()) {
                 activeDeliveries.remove(i);
-                arrived.add(ticked);
+                CelestialAsset destination = CelestialAssetStore.findAsset(ticked.data.toAssetId());
+                if (destination == null) {
+                    Galaxia.LOG.warn(
+                        "[Logistics] Task {} arrived but destination outpost {} not found; resources lost.",
+                        ticked.deliveryId,
+                        ticked.data.toAssetId());
+                    return;
+                }
+                if (destination instanceof AutomatedOutpost outpost) {
+                    outpost.inventory.add(ticked.data.resourceId(), ticked.data.amount());
+                    Galaxia.LOG.debug(
+                        "[Logistics] Task {} delivered {} x {} to {}",
+                        ticked.deliveryId,
+                        ticked.data.amount(),
+                        ticked.data.resourceId(),
+                        ticked.data.toAssetId());
+                }
             } else {
                 activeDeliveries.set(i, ticked);
             }
         }
-        return arrived;
     }
 
     public static void updateSignalsForOutpost(AutomatedOutpost outpost) {

@@ -142,14 +142,18 @@ public final class GalaxiaCelestialAPI {
         return Optional.empty();
     }
 
-    public static CelestialObject findBodyById(CelestialObject root, CelestialObjectId id) {
-        if (root == null || id == null) return null;
-        return findBodyByIdRec(root, id);
+    public static CelestialObject findBodyById(CelestialObject root, CelestialObjectId needle) {
+        if (root == null || needle == null) return null;
+        return findBodyByIdRec(root, needle);
     }
 
-    private static CelestialObject findBodyByIdRec(CelestialObject current, CelestialObjectId id) {
+    private static CelestialObject findBodyByIdRec(CelestialObject current, CelestialObjectId needle) {
         for (CelestialObject child : getChildren(current)) {
-            CelestialObject found = findBodyByIdRec(child, id);
+            if (child.id() == needle) {
+                return child;
+            }
+
+            CelestialObject found = findBodyByIdRec(child, needle);
             if (found != null) return found;
         }
         return null;

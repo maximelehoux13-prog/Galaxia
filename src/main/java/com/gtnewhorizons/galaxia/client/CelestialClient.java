@@ -124,7 +124,7 @@ public final class CelestialClient {
      * Returns the aggregated net amounts (resourceKey → netAmount) for the given
      * star system, or an empty map if none are available.
      */
-    public static Map<String, Long> clientSignalsForSystem(String systemId) {
+    public static Map<String, Long> clientSignalsForSystem(CelestialObjectId systemId) {
         Map<String, Long> result = systemSignals.get(systemId);
         return result != null ? Collections.unmodifiableMap(result) : Collections.emptyMap();
     }
@@ -133,7 +133,7 @@ public final class CelestialClient {
      * Returns the aggregated net amounts (resourceKey → netAmount) for the given
      * planetary anchor body, or an empty map if none are available.
      */
-    public static Map<String, Long> clientSignalsForPlanet(String anchorBodyId) {
+    public static Map<String, Long> clientSignalsForPlanet(CelestialObjectId anchorBodyId) {
         Map<String, Long> result = planetSignals.get(anchorBodyId);
         return result != null ? Collections.unmodifiableMap(result) : Collections.emptyMap();
     }
