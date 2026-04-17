@@ -127,10 +127,10 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
         updateRowStates(rows, scope, viewRoot);
 
         String structureSignature = buildStructureSignature(rows);
-        if (!structureSignature.equals(lastStructureSignature) || rowsContainer == null) {
-            rebuildPanel(scope, viewRoot, rows);
-            lastStructureSignature = structureSignature;
-        }
+        // if (!structureSignature.equals(lastStructureSignature) || rowsContainer == null) {
+        rebuildPanel(scope, viewRoot, rows);
+        lastStructureSignature = structureSignature;
+        // }
     }
 
     @Override
@@ -280,7 +280,7 @@ public final class LogisticsSignalsWidget extends ParentWidget<LogisticsSignalsW
 
         rowWidget.tooltip(t -> {
             for (String line : state.tooltipLines) {
-                t.addLine(line);
+                t.addLine(IKey.dynamic(() -> line));
             }
         });
 
