@@ -1,9 +1,5 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
-import com.gtnewhorizons.galaxia.vaporchamber.BlockVaporChamber;
-import com.gtnewhorizons.galaxia.vaporchamber.BlockVaporChamberController;
-import com.gtnewhorizons.galaxia.vaporchamber.TileEntityVaporChamber;
-import com.gtnewhorizons.galaxia.vaporchamber.TileEntityVaporChamberController;
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
 
@@ -24,6 +20,10 @@ import com.gtnewhorizons.galaxia.rocketmodules.tileentities.gantry.BlockGantry;
 import com.gtnewhorizons.galaxia.rocketmodules.tileentities.gantry.BlockGantryTerminal;
 import com.gtnewhorizons.galaxia.rocketmodules.tileentities.gantry.TileEntityGantry;
 import com.gtnewhorizons.galaxia.rocketmodules.tileentities.gantry.TileEntityGantryTerminal;
+import com.gtnewhorizons.galaxia.vaporchamber.BlockVaporChamber;
+import com.gtnewhorizons.galaxia.vaporchamber.BlockVaporChamberController;
+import com.gtnewhorizons.galaxia.vaporchamber.TileEntityVaporChamber;
+import com.gtnewhorizons.galaxia.vaporchamber.TileEntityVaporChamberController;
 
 import cpw.mods.fml.common.registry.GameRegistry;
 

@@ -1,30 +1,31 @@
 package com.gtnewhorizons.galaxia.vaporchamber;
 
-import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
-import net.minecraft.client.renderer.Tessellator;
+import java.util.*;
+
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import org.apache.commons.lang3.ArrayUtils;
-import org.lwjgl.opengl.GL11;
 
-import java.util.*;
+import org.apache.commons.lang3.ArrayUtils;
+
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
 
 public class TileEntityVaporChamberController extends TileEntity {
+
     private int ticks = 0;
     public EulerianSimAPI grid;
 
     @Override
     public void updateEntity() {
-//        final Tessellator tess = Tessellator.instance;
-//        tess.startDrawing(GL11.GL_LINE_STRIP);
-//
-//        tess.addVertex(10, 10, 10);
-//        tess.addVertex(10, 11, 11);
-//
-//        tess.draw();
+        // final Tessellator tess = Tessellator.instance;
+        // tess.startDrawing(GL11.GL_LINE_STRIP);
+        //
+        // tess.addVertex(10, 10, 10);
+        // tess.addVertex(10, 11, 11);
+        //
+        // tess.draw();
         ticks = ticks + 1;
         if (worldObj.isRemote && ticks == 20) {
             genGrid();
@@ -40,22 +41,72 @@ public class TileEntityVaporChamberController extends TileEntity {
                 for (int y = 0; y < cells[x].length; y++) {
                     for (int z = 0; z < cells[x][y].length; z++) {
                         if ((cells[x][y][z] & (byte) 0b00000001) != 0) {
-                            //worldObj.spawnParticle("crit", x, y + 10, z, 0, 0, 0);
+                            // worldObj.spawnParticle("crit", x, y + 10, z, 0, 0, 0);
 
                             float t = 3f;
                             float eps = 0.18f;
 
-                            if (grid.u[x][y][z] > eps || grid.u[x+1][y][z] > eps || grid.v[x][y][z] > eps || grid.v[x][y+1][z] > eps || grid.w[x][y][z] > eps || grid.w[x][y][z+1] > eps ||
-                            grid.u[x][y][z] < -eps || grid.u[x+1][y][z] < -eps || grid.v[x][y][z] < -eps || grid.v[x][y+1][z] < -eps || grid.w[x][y][z] < -eps || grid.w[x][y][z+1] < -eps
-                            ) {
-                                worldObj.spawnParticle("reddust", x - 0.5, y + 10, z, 1, Math.max(0f, grid.u[x][y][z]) * t, Math.min(0f, grid.u[x][y][z]) * t);
-                                worldObj.spawnParticle("reddust", x + 0.5, y + 10, z, 1, Math.max(0f, grid.u[x + 1][y][z]) * t, Math.min(0f, grid.u[x + 1][y][z]) * t);
+                            if (grid.u[x][y][z] > eps || grid.u[x + 1][y][z] > eps
+                                || grid.v[x][y][z] > eps
+                                || grid.v[x][y + 1][z] > eps
+                                || grid.w[x][y][z] > eps
+                                || grid.w[x][y][z + 1] > eps
+                                || grid.u[x][y][z] < -eps
+                                || grid.u[x + 1][y][z] < -eps
+                                || grid.v[x][y][z] < -eps
+                                || grid.v[x][y + 1][z] < -eps
+                                || grid.w[x][y][z] < -eps
+                                || grid.w[x][y][z + 1] < -eps) {
+                                worldObj.spawnParticle(
+                                    "reddust",
+                                    x - 0.5,
+                                    y + 10,
+                                    z,
+                                    1,
+                                    Math.max(0f, grid.u[x][y][z]) * t,
+                                    Math.min(0f, grid.u[x][y][z]) * t);
+                                worldObj.spawnParticle(
+                                    "reddust",
+                                    x + 0.5,
+                                    y + 10,
+                                    z,
+                                    1,
+                                    Math.max(0f, grid.u[x + 1][y][z]) * t,
+                                    Math.min(0f, grid.u[x + 1][y][z]) * t);
 
-                                worldObj.spawnParticle("reddust", x, y + 9.5, z, 1, Math.max(0f, grid.v[x][y][z]) * t, Math.min(0f, grid.v[x][y][z]) * t);
-                                worldObj.spawnParticle("reddust", x, y + 10.5, z, 1, Math.max(0f, grid.v[x][y + 1][z]) * t, Math.min(0f, grid.v[x][y + 1][z]) * t);
+                                worldObj.spawnParticle(
+                                    "reddust",
+                                    x,
+                                    y + 9.5,
+                                    z,
+                                    1,
+                                    Math.max(0f, grid.v[x][y][z]) * t,
+                                    Math.min(0f, grid.v[x][y][z]) * t);
+                                worldObj.spawnParticle(
+                                    "reddust",
+                                    x,
+                                    y + 10.5,
+                                    z,
+                                    1,
+                                    Math.max(0f, grid.v[x][y + 1][z]) * t,
+                                    Math.min(0f, grid.v[x][y + 1][z]) * t);
 
-                                worldObj.spawnParticle("reddust", x, y + 10, z - 0.5, 1, Math.max(0f, grid.w[x][y][z]) * t, Math.min(0f, grid.w[x][y][z]) * t);
-                                worldObj.spawnParticle("reddust", x, y + 10, z + 0.5, 1, Math.max(0f, grid.w[x][y][z + 1]) * t, Math.min(0f, grid.w[x][y][z + 1]) * t);
+                                worldObj.spawnParticle(
+                                    "reddust",
+                                    x,
+                                    y + 10,
+                                    z - 0.5,
+                                    1,
+                                    Math.max(0f, grid.w[x][y][z]) * t,
+                                    Math.min(0f, grid.w[x][y][z]) * t);
+                                worldObj.spawnParticle(
+                                    "reddust",
+                                    x,
+                                    y + 10,
+                                    z + 0.5,
+                                    1,
+                                    Math.max(0f, grid.w[x][y][z + 1]) * t,
+                                    Math.min(0f, grid.w[x][y][z + 1]) * t);
                             }
                         }
                     }
@@ -63,17 +114,17 @@ public class TileEntityVaporChamberController extends TileEntity {
             }
         }
 
-//        if (ticks % 5 == 0) {
-//            for (BlockPos pos : outline) {
-//                worldObj.spawnParticle("crit", pos.x + 0.5, pos.y + 0.5, pos.z + 0.5, 0, 0, 0);
-//            }
-//        }
-//        if ((ticks + 5) % 5 == 0) {
-//            for (BlockPos pos : structure) {
-//
-//                worldObj.spawnParticle("magicCrit", pos.x + 0.5, pos.y + 0.5, pos.z + 0.5, 0, 0, 0);
-//            }
-//        }
+        // if (ticks % 5 == 0) {
+        // for (BlockPos pos : outline) {
+        // worldObj.spawnParticle("crit", pos.x + 0.5, pos.y + 0.5, pos.z + 0.5, 0, 0, 0);
+        // }
+        // }
+        // if ((ticks + 5) % 5 == 0) {
+        // for (BlockPos pos : structure) {
+        //
+        // worldObj.spawnParticle("magicCrit", pos.x + 0.5, pos.y + 0.5, pos.z + 0.5, 0, 0, 0);
+        // }
+        // }
     }
 
     private Set<BlockPos> outline = new HashSet<>();
@@ -82,8 +133,7 @@ public class TileEntityVaporChamberController extends TileEntity {
 
     public void genGrid() {
         if (worldObj.getTileEntity(xCoord, yCoord - 1, zCoord) instanceof TileEntityVaporChamber tevc) {
-            if (!worldObj.isRemote)
-                this.bfs(tevc);
+            if (!worldObj.isRemote) this.bfs(tevc);
 
             BlockPos pos = new ArrayList<>(structure).get(0);
             grid = EulerianSimAPI.createGrid(new ArrayList<>(structure), new ArrayList<>(outline), pos);
@@ -111,18 +161,18 @@ public class TileEntityVaporChamberController extends TileEntity {
             }
         }
 
-        int[] total = new int[]{};
+        int[] total = new int[] {};
         for (TileEntityVaporChamber teev : visited) {
-            int[] array = {teev.xCoord, teev.yCoord, teev.zCoord};
+            int[] array = { teev.xCoord, teev.yCoord, teev.zCoord };
             total = ArrayUtils.addAll(total, array);
         }
 
-        int[] array = new int[]{};
+        int[] array = new int[] {};
         for (int integer : total) {
             array = ArrayUtils.add(array, integer);
             if (array.length == 3) {
                 structure.add(new BlockPos(array[0], array[1], array[2]));
-                array = new int[]{};
+                array = new int[] {};
             }
         }
     }
@@ -133,15 +183,15 @@ public class TileEntityVaporChamberController extends TileEntity {
         this.writeToNBT(tag);
         int[] total = {};
         for (BlockPos pos : outline) {
-            int[] array = {pos.x, pos.y, pos.z};
+            int[] array = { pos.x, pos.y, pos.z };
             total = ArrayUtils.addAll(total, array);
         }
 
         tag.setIntArray("outline", total);
 
-        total = new int[]{};
+        total = new int[] {};
         for (TileEntityVaporChamber teev : visited) {
-            int[] array = {teev.xCoord, teev.yCoord, teev.zCoord};
+            int[] array = { teev.xCoord, teev.yCoord, teev.zCoord };
             total = ArrayUtils.addAll(total, array);
         }
 
@@ -159,16 +209,16 @@ public class TileEntityVaporChamberController extends TileEntity {
             array = ArrayUtils.add(array, integer);
             if (array.length == 3) {
                 outline.add(new BlockPos(array[0], array[1], array[2]));
-                array = new int[]{};
+                array = new int[] {};
             }
         }
 
-        array = new int[]{};
+        array = new int[] {};
         for (int integer : tag.getIntArray("structure")) {
             array = ArrayUtils.add(array, integer);
             if (array.length == 3) {
                 structure.add(new BlockPos(array[0], array[1], array[2]));
-                array = new int[]{};
+                array = new int[] {};
             }
         }
     }

@@ -9,6 +9,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
 public class BlockVaporChamberController extends Block implements ITileEntityProvider {
+
     public BlockVaporChamberController() {
         super(Material.iron);
         this.setHardness(1.5F);

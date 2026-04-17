@@ -1,8 +1,9 @@
 package com.gtnewhorizons.galaxia.vaporchamber;
 
+import static com.gtnewhorizons.galaxia.core.Galaxia.TEXTURE_PREFIX;
+
 import java.util.ArrayList;
 
-import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -12,7 +13,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-import static com.gtnewhorizons.galaxia.core.Galaxia.TEXTURE_PREFIX;
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
 
 public class BlockVaporChamber extends Block implements ITileEntityProvider {
 
@@ -57,8 +58,7 @@ public class BlockVaporChamber extends Block implements ITileEntityProvider {
             TileEntity checkTe = world.getTileEntity(cx, cy, cz);
             if (checkTe instanceof TileEntityVaporChamber checkVaporChamber) {
                 tevc.connect(checkVaporChamber);
-            }
-            else {
+            } else {
                 tevc.notNeighbours.add(new BlockPos(cx, cy, cz));
             }
         }

@@ -1,17 +1,19 @@
 package com.gtnewhorizons.galaxia.vaporchamber;
 
-import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+
 // formulas extrapolated from https://matthias-research.github.io/pages/tenMinutePhysics/17-fluidSim.pdf
-// code overview from https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/17-fluidSim.html (i dont use any part in any significant portion, i only looked at it for inspiration on how to make this)
+// code overview from https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/17-fluidSim.html (i dont
+// use any part in any significant portion, i only looked at it for inspiration on how to make this)
 // thank you matthias for the helpful tutorial
 // made by me! (chloe)
 
 public class EulerianSimAPI {
-    public static final float dT = 1/120f;
+
+    public static final float dT = 1 / 120f;
     public static final float h = 0.5f;
     public static final int hINT = (int) (1 / h);
 
@@ -29,7 +31,8 @@ public class EulerianSimAPI {
 
     ArrayList<Long> time = new ArrayList<>();
 
-    public EulerianSimAPI(byte[][][] _cells, float[][][] _u, float[][][] _v, float[][][] _w, int _dX, int _dY, int _dZ) {
+    public EulerianSimAPI(byte[][][] _cells, float[][][] _u, float[][][] _v, float[][][] _w, int _dX, int _dY,
+        int _dZ) {
         u = _u;
         v = _v;
         w = _w;
@@ -39,9 +42,8 @@ public class EulerianSimAPI {
         dZ = _dZ;
 
         if (_cells == null) {
-            cells = new byte[][][]{};
-        }
-        else {
+            cells = new byte[][][] {};
+        } else {
             cells = _cells;
         }
 
@@ -53,7 +55,8 @@ public class EulerianSimAPI {
             for (int j = 0; j < lengthY; j++) {
                 int lengthZ = cells[i][j].length;
                 for (int k = 0; k < lengthZ; k++) {
-                    s[i][j][k] = ((cells[i][j][k] & (byte) 0b00000010) == 0 && (cells[i][j][k] & (byte) 0b00000001) != 0) ? (byte) 1 : (byte) 0;
+                    s[i][j][k] = ((cells[i][j][k] & (byte) 0b00000010) == 0
+                        && (cells[i][j][k] & (byte) 0b00000001) != 0) ? (byte) 1 : (byte) 0;
                 }
             }
         }
@@ -61,7 +64,7 @@ public class EulerianSimAPI {
 
     public byte[][][] getCells() {
         if (cells == null) {
-            return new byte[][][]{};
+            return new byte[][][] {};
         }
         return cells;
     }
@@ -134,31 +137,28 @@ public class EulerianSimAPI {
 
         for (BlockPos internal : internals) {
             for (int i = 0; i < h; i++) {
-                for (int dx = 0; dx < hINT; dx++)
-                    for (int dy = 0; dy < hINT; dy++)
-                        for (int dz = 0; dz < hINT; dz++) {
-                            cells[(internal.getX() - leftBound) * hINT + dx][(internal.getY() - lowerBound) * hINT + dy][(internal.getZ() - backwardBound) * hINT + dz] = (byte) 0b00000001;
-                        }
+                for (int dx = 0; dx < hINT; dx++) for (int dy = 0; dy < hINT; dy++) for (int dz = 0; dz < hINT; dz++) {
+                    cells[(internal.getX() - leftBound) * hINT + dx][(internal.getY() - lowerBound) * hINT
+                        + dy][(internal.getZ() - backwardBound) * hINT + dz] = (byte) 0b00000001;
+                }
             }
         }
         for (BlockPos external : externals) {
             for (int i = 0; i < h; i++) {
-                for (int dx = 0; dx < hINT; dx++)
-                    for (int dy = 0; dy < hINT; dy++)
-                        for (int dz = 0; dz < hINT; dz++) {
-                             cells[(external.getX() - leftBound) * hINT + dx][(external.getY() - lowerBound) * hINT + dy][(external.getZ() - backwardBound) * hINT + dz] = (byte) 0b00000010;
+                for (int dx = 0; dx < hINT; dx++) for (int dy = 0; dy < hINT; dy++) for (int dz = 0; dz < hINT; dz++) {
+                    cells[(external.getX() - leftBound) * hINT + dx][(external.getY() - lowerBound) * hINT
+                        + dy][(external.getZ() - backwardBound) * hINT + dz] = (byte) 0b00000010;
                 }
             }
         }
 
-//        cells[heat.getX() - leftBound][heat.getY() - lowerBound][heat.getZ() - backwardBound] = (byte) 0b00000101;
+        // cells[heat.getX() - leftBound][heat.getY() - lowerBound][heat.getZ() - backwardBound] = (byte) 0b00000101;
 
         int a = 4;
-        cells[dX_/2][hINT+1][dZ_/2] = (byte) 0b00000101;
-        //cells[6+a][5][5+a] = (byte) 0b00000101;
-        //cells[5+a][5][6+a] = (byte) 0b00000101;
-        //cells[6+a][5][6+a] = (byte) 0b00000101;
-
+        cells[dX_ / 2][hINT + 1][dZ_ / 2] = (byte) 0b00000101;
+        // cells[6+a][5][5+a] = (byte) 0b00000101;
+        // cells[5+a][5][6+a] = (byte) 0b00000101;
+        // cells[6+a][5][6+a] = (byte) 0b00000101;
 
         // create 3 arrays, 1 for each component of a vector at pos xyz
 
@@ -173,15 +173,15 @@ public class EulerianSimAPI {
         // maybe apply gravity here if i want, will do heating walls and cooling walls here later
         byte[][][] cells = getCells();
 
-//        for (int i = 0; i < cells.length; i++) {
-//            for (int j = 0; j < cells[i].length; j++) {
-//                for (int k = 0; k < cells[i][j].length; k++) {
-//                    if (j % 2 == 0 && getS(i, j, k) == 1) {
-//                        v[i][j][k] = v[i][j][k] + (-10f * dT);
-//                    }
-//                }
-//            }
-//        }
+        // for (int i = 0; i < cells.length; i++) {
+        // for (int j = 0; j < cells[i].length; j++) {
+        // for (int k = 0; k < cells[i][j].length; k++) {
+        // if (j % 2 == 0 && getS(i, j, k) == 1) {
+        // v[i][j][k] = v[i][j][k] + (-10f * dT);
+        // }
+        // }
+        // }
+        // }
         for (int i = 0; i < cells.length; i++) {
             for (int j = 0; j < cells[i].length; j++) {
                 for (int k = 0; k < cells[i][j].length; k++) {
@@ -205,9 +205,9 @@ public class EulerianSimAPI {
 
         byte[][][] cells = getCells();
 
-//        float[][][] newU = new float[dX + 1][dY][dZ];
-//        float[][][] newV = new float[dX][dY + 1][dZ];
-//        float[][][] newW = new float[dX][dY][dZ + 1];
+        // float[][][] newU = new float[dX + 1][dY][dZ];
+        // float[][][] newV = new float[dX][dY + 1][dZ];
+        // float[][][] newW = new float[dX][dY][dZ + 1];
 
         // uses a red/black pattern for SIMD parallelization
 
@@ -223,31 +223,25 @@ public class EulerianSimAPI {
                     if (s[i][j][k] == 0) {
                         continue;
                     }
-                    float d =
-                        1.95f *
-                            (u[i+1][j][k] - u[i][j][k] +
-                                v[i][j+1][k] - v[i][j][k] +
-                                w[i][j][k+1] - w[i][j][k]);
+                    float d = 1.95f
+                        * (u[i + 1][j][k] - u[i][j][k] + v[i][j + 1][k] - v[i][j][k] + w[i][j][k + 1] - w[i][j][k]);
                     // s is the scalar for differentiating walls and other non-fluids
                     // if s is 6 then it scales the divergence normally because all 6 axis are fluids
-                    float S =
-                        s[i + 1][j][k] +
-                            s[i - 1][j][k] +
-                            s[i][j + 1][k] +
-                            s[i][j - 1][k] +
-                            s[i][j][k + 1] +
-                            s[i][j][k - 1];
-                    if (S == 0)
-                        continue;
+                    float S = s[i + 1][j][k] + s[i - 1][j][k]
+                        + s[i][j + 1][k]
+                        + s[i][j - 1][k]
+                        + s[i][j][k + 1]
+                        + s[i][j][k - 1];
+                    if (S == 0) continue;
 
                     S = 1f / S;
 
                     u[i][j][k] = u[i][j][k] + (d * (s[i - 1][j][k] * S)); // east
-                    u[i+1][j][k] = u[i+1][j][k] - (d * (s[i + 1][j][k] * S)); // west
+                    u[i + 1][j][k] = u[i + 1][j][k] - (d * (s[i + 1][j][k] * S)); // west
                     v[i][j][k] = v[i][j][k] + (d * (s[i][j - 1][k] * S)); // north
-                    v[i][j+1][k] = v[i][j+1][k] - (d * (s[i][j + 1][k] * S)); // south
+                    v[i][j + 1][k] = v[i][j + 1][k] - (d * (s[i][j + 1][k] * S)); // south
                     w[i][j][k] = w[i][j][k] + (d * (s[i][j][k - 1] * S)); // top
-                    w[i][j][k+1] = w[i][j][k+1] - (d * (s[i][j][k + 1] * S)); // bottom
+                    w[i][j][k + 1] = w[i][j][k + 1] - (d * (s[i][j][k + 1] * S)); // bottom
                 }
             }
         }
@@ -263,37 +257,31 @@ public class EulerianSimAPI {
                     if (s[i][j][k] == 0) {
                         continue;
                     }
-                    float d =
-                        1.95f *
-                            (u[i+1][j][k] - u[i][j][k] +
-                                v[i][j+1][k] - v[i][j][k] +
-                                w[i][j][k+1] - w[i][j][k]);
+                    float d = 1.95f
+                        * (u[i + 1][j][k] - u[i][j][k] + v[i][j + 1][k] - v[i][j][k] + w[i][j][k + 1] - w[i][j][k]);
                     // s is the scalar for differentiating walls and other non-fluids
                     // if s is 6 then it scales the divergence normally because all 6 axis are fluids
-                    float S =
-                        s[i + 1][j][k] +
-                            s[i - 1][j][k] +
-                            s[i][j + 1][k] +
-                            s[i][j - 1][k] +
-                            s[i][j][k + 1] +
-                            s[i][j][k - 1];
-                    if (S == 0)
-                        continue;
+                    float S = s[i + 1][j][k] + s[i - 1][j][k]
+                        + s[i][j + 1][k]
+                        + s[i][j - 1][k]
+                        + s[i][j][k + 1]
+                        + s[i][j][k - 1];
+                    if (S == 0) continue;
 
                     S = 1f / S;
 
                     u[i][j][k] = u[i][j][k] + (d * (s[i - 1][j][k] * S)); // east
-                    u[i+1][j][k] = u[i+1][j][k] - (d * (s[i + 1][j][k] * S)); // west
+                    u[i + 1][j][k] = u[i + 1][j][k] - (d * (s[i + 1][j][k] * S)); // west
                     v[i][j][k] = v[i][j][k] + (d * (s[i][j - 1][k] * S)); // north
-                    v[i][j+1][k] = v[i][j+1][k] - (d * (s[i][j + 1][k] * S)); // south
+                    v[i][j + 1][k] = v[i][j + 1][k] - (d * (s[i][j + 1][k] * S)); // south
                     w[i][j][k] = w[i][j][k] + (d * (s[i][j][k - 1] * S)); // top
-                    w[i][j][k+1] = w[i][j][k+1] - (d * (s[i][j][k + 1] * S)); // bottom
+                    w[i][j][k + 1] = w[i][j][k + 1] - (d * (s[i][j][k + 1] * S)); // bottom
                 }
             }
         }
-//        u = newU;
-//        v = newV;
-//        w = newW;
+        // u = newU;
+        // v = newV;
+        // w = newW;
     }
 
     public float velAt(float x, float y, float z, byte component) {
@@ -316,19 +304,15 @@ public class EulerianSimAPI {
             activeField = u;
             yOffset = halfH;
             zOffset = halfH;
-        }
-        else if (component == 1) {
+        } else if (component == 1) {
             activeField = v;
             xOffset = halfH;
             zOffset = halfH;
-        }
-        else if (component == 2) {
+        } else if (component == 2) {
             activeField = w;
             xOffset = halfH;
             yOffset = halfH;
-        }
-        else
-            activeField = new float[][][]{};
+        } else activeField = new float[][][] {};
 
         // Get offset target coordinates
         float adjX = x - xOffset;
@@ -355,15 +339,14 @@ public class EulerianSimAPI {
         float sy = 1 - distanceY;
         float sz = 1 - distanceZ;
 
-        return
-            sx * sy * sz * activeField[eastIndex][topIndex][northIndex] +
-            distanceX * sy * sz * activeField[westIndex][topIndex][northIndex] +
-            sx * distanceY * sz * activeField[eastIndex][bottomIndex][northIndex] +
-            distanceX * distanceY * sz * activeField[westIndex][bottomIndex][northIndex] +
-            sx * sy * distanceZ * activeField[eastIndex][topIndex][southIndex] +
-            distanceX * sy * distanceZ * activeField[westIndex][topIndex][southIndex] +
-            sx * distanceY * distanceZ * activeField[eastIndex][bottomIndex][southIndex] +
-            distanceX * distanceY * distanceZ * activeField[westIndex][bottomIndex][southIndex];
+        return sx * sy * sz * activeField[eastIndex][topIndex][northIndex]
+            + distanceX * sy * sz * activeField[westIndex][topIndex][northIndex]
+            + sx * distanceY * sz * activeField[eastIndex][bottomIndex][northIndex]
+            + distanceX * distanceY * sz * activeField[westIndex][bottomIndex][northIndex]
+            + sx * sy * distanceZ * activeField[eastIndex][topIndex][southIndex]
+            + distanceX * sy * distanceZ * activeField[westIndex][topIndex][southIndex]
+            + sx * distanceY * distanceZ * activeField[eastIndex][bottomIndex][southIndex]
+            + distanceX * distanceY * distanceZ * activeField[westIndex][bottomIndex][southIndex];
     }
 
     public void advection() {
@@ -378,7 +361,8 @@ public class EulerianSimAPI {
         // (VdTx, VdTy, VdTz) = V * dT
         // x, y, z refers to the realspace position of the current vector component
         // we compute what x, y, z would be if the current V was reversed by one timestep ((xyz) - V);
-        // then use that position to calculate what the velocity component of that particle is using a weighted average of the points closest to it
+        // then use that position to calculate what the velocity component of that particle is using a weighted average
+        // of the points closest to it
         // then set the value of the current vector component to the value of that particle after processing all cells
 
         int lengthX = cells.length;

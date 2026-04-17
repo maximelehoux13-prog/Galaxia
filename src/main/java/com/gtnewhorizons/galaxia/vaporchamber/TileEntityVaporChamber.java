@@ -5,27 +5,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
-import com.gtnewhorizon.gtnhlib.blockpos.IBlockPos;
-import com.gtnewhorizons.galaxia.registry.block.PlanetBlocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.Vec3;
-import net.minecraftforge.common.util.Constants.NBT;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
+import com.gtnewhorizons.galaxia.registry.block.PlanetBlocks;
+
 public class TileEntityVaporChamber extends TileEntity {
-    public static final Vec3[] CHECK_OFFSETS = {
-        Vec3.createVectorHelper(1, 0, 0), Vec3.createVectorHelper(-1, 0, 0),
-        Vec3.createVectorHelper(0, 0, 1), Vec3.createVectorHelper(0, 0, -1),
-        Vec3.createVectorHelper(0, 1, 0), Vec3.createVectorHelper(0, -1, 0)};
+
+    public static final Vec3[] CHECK_OFFSETS = { Vec3.createVectorHelper(1, 0, 0), Vec3.createVectorHelper(-1, 0, 0),
+        Vec3.createVectorHelper(0, 0, 1), Vec3.createVectorHelper(0, 0, -1), Vec3.createVectorHelper(0, 1, 0),
+        Vec3.createVectorHelper(0, -1, 0) };
 
     List<TileEntityVaporChamber> neighbours = new ArrayList<>();
     public Set<BlockPos> notNeighbours = new HashSet<>();
@@ -44,9 +41,9 @@ public class TileEntityVaporChamber extends TileEntity {
         }
 
         try {
-            //worldObj.playerEntities.get(0).addChatMessage(new ChatComponentText(Integer.toString(neighbours.size())));
-        }
-        catch (Exception e) {
+            // worldObj.playerEntities.get(0).addChatMessage(new
+            // ChatComponentText(Integer.toString(neighbours.size())));
+        } catch (Exception e) {
 
         }
 
@@ -119,14 +116,14 @@ public class TileEntityVaporChamber extends TileEntity {
     public void writeToNBT(NBTTagCompound tag) {
         super.writeToNBT(tag);
 
-        int[] array = new int[]{};
+        int[] array = new int[] {};
         for (TileEntityVaporChamber neighbour : neighbours) {
             array = ArrayUtils.addAll(array, neighbour.xCoord, neighbour.yCoord, neighbour.zCoord);
         }
 
         tag.setIntArray("neighbours", array);
 
-        array = new int[]{};
+        array = new int[] {};
         for (BlockPos pos : notNeighbours) {
             array = ArrayUtils.addAll(array, pos.x, pos.y, pos.z);
         }
@@ -146,7 +143,7 @@ public class TileEntityVaporChamber extends TileEntity {
                     if (worldObj.getTileEntity(array[0], array[1], array[2]) instanceof TileEntityVaporChamber teev) {
                         neighbours.add(teev);
                     }
-                    array = new int[]{};
+                    array = new int[] {};
                 }
             }
         }
@@ -156,10 +153,10 @@ public class TileEntityVaporChamber extends TileEntity {
             for (int integer : tag.getIntArray("notNeighbours")) {
                 array = ArrayUtils.add(array, integer);
                 if (array.length == 3) {
-                    if (!(worldObj.getTileEntity(array[0], array[1], array[2]) instanceof TileEntityVaporChamber)){
+                    if (!(worldObj.getTileEntity(array[0], array[1], array[2]) instanceof TileEntityVaporChamber)) {
                         notNeighbours.add(new BlockPos(array[0], array[1], array[2]));
                     }
-                    array = new int[]{};
+                    array = new int[] {};
                 }
             }
         }
@@ -170,7 +167,7 @@ public class TileEntityVaporChamber extends TileEntity {
         NBTTagCompound tag = new NBTTagCompound();
         this.writeToNBT(tag);
 
-        int[] array = new int[]{};
+        int[] array = new int[] {};
         for (TileEntityVaporChamber neighbour : neighbours) {
             array = ArrayUtils.addAll(array, neighbour.xCoord, neighbour.yCoord, neighbour.zCoord);
         }
@@ -191,7 +188,7 @@ public class TileEntityVaporChamber extends TileEntity {
                 if (worldObj.getTileEntity(array[0], array[1], array[2]) instanceof TileEntityVaporChamber teev) {
                     neighbours.add(teev);
                 }
-                array = new int[]{};
+                array = new int[] {};
             }
         }
     }
@@ -206,4 +203,3 @@ public class TileEntityVaporChamber extends TileEntity {
         return 512 * 512;
     }
 }
-

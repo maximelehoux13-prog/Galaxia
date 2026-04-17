@@ -1,7 +1,5 @@
 package com.gtnewhorizons.galaxia.core;
 
-import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest.EntityTest;
-import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest.RenderEntityTest;
 import net.minecraft.item.Item;
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.common.MinecraftForge;
@@ -13,6 +11,8 @@ import com.gtnewhorizons.galaxia.handlers.GalaxiaOverlayHandler;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.rocketmodules.client.render.GantryItemRenderer;
 import com.gtnewhorizons.galaxia.rocketmodules.client.render.GantryRenderer;
+import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest.EntityTest;
+import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest.RenderEntityTest;
 import com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketRenderer;
 import com.gtnewhorizons.galaxia.rocketmodules.client.render.SiloRenderer;
 import com.gtnewhorizons.galaxia.rocketmodules.rocket.entities.EntityRocket;
