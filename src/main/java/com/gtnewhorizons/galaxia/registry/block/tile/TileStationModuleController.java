@@ -1,6 +1,5 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
-import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -18,7 +17,6 @@ import com.cleanroommc.modularui.utils.Alignment;
 import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
-import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceAir;
 
 public class TileStationModuleController extends TileEntity implements IGuiHolder<PosGuiData> {
 
@@ -32,13 +30,6 @@ public class TileStationModuleController extends TileEntity implements IGuiHolde
         if (!isDepressurized) return;
         this.isDepressurized = false;
         int x = this.xCoord, y = this.yCoord, z = this.zCoord;
-        Block spaceAir = Block.getBlockFromName("galaxia:space_air");
-        for (int[] d : BlockSpaceAir.adjacents) {
-            if (BlockSpaceAir.isDepressurized(this.worldObj, x + d[0], y + d[1], z + d[2])) {
-                this.worldObj.setBlock(x + d[0], y + d[1], z + d[2], spaceAir, 2, 2);
-                this.worldObj.notifyBlockOfNeighborChange(x + d[0], y + d[1], z + d[2], spaceAir);
-            }
-        }
     }
 
     @Override
