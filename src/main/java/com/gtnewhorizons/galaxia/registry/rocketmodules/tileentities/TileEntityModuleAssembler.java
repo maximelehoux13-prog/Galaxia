@@ -342,7 +342,7 @@ public class TileEntityModuleAssembler extends GalaxiaMultiblockBase<TileEntityM
         }
     }
 
-    private ForgeDirection placedFacing = ForgeDirection.NORTH; // default
+    private ForgeDirection placedFacing = ForgeDirection.NORTH;
 
     @Override
     public ForgeDirection getPlacedFacing() {
@@ -372,7 +372,7 @@ public class TileEntityModuleAssembler extends GalaxiaMultiblockBase<TileEntityM
         for (String key : mapNbt.func_150296_c()) {
             moduleMap.put(Integer.parseInt(key), mapNbt.getInteger(key));
         }
-        placedFacing = ForgeDirection.getOrientation(tag.getInteger("placedFacing"));
+        if (tag.hasKey("placedFacing")) placedFacing = ForgeDirection.getOrientation(tag.getInteger("placedFacing"));
     }
 
     @Override

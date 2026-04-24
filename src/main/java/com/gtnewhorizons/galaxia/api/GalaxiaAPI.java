@@ -5,6 +5,13 @@ import static com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry.G
 
 import javax.annotation.Nonnull;
 
+import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationModuleController;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -28,6 +35,8 @@ import com.gtnewhorizons.galaxia.registry.items.baubles.ItemThermalProtection;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemWitherProtection;
 
 import baubles.api.BaublesApi;
+
+import java.util.Set;
 
 /**
  * API underpinning planetary mechanics
@@ -321,4 +330,24 @@ public final class GalaxiaAPI {
     public static String format(String key, Object... objects) {
         return StatCollector.translateToLocalFormatted(key, objects);
     }
+
+    public static boolean isInsideStation(@Nonnull EntityPlayer player) {
+        CelestialObjectId id = GalaxiaCelestialAPI.getObjectFromDimension(player.dimension);
+        if (id == CelestialObjectId.INVALID) return false;
+        Set<CelestialAsset> teamAssets = CelestialAssetStore.getTeamAssets(TempTeamCompat.getTeam(player), id);
+        for (CelestialAsset asset : teamAssets) {
+            if (asset instanceof Station station) {
+                BlockPos pos = station.getController();
+                if (pos == null) continue;
+
+                TileStationModuleController controller = (TileStationModuleController) player.worldObj.getTileEntity(pos.x(), pos.y(), pos.z());
+                if (controller.isInside((int) player.posX, (int) player.posY, (int) player.posZ)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 }

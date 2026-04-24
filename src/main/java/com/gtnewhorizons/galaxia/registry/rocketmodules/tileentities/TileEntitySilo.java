@@ -964,7 +964,7 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo>
         hasAssembler = nbt.getBoolean("hasAssembler");
 
         if (nbt.hasKey("facing")) currentFacing = ExtendedFacing.byIndex(nbt.getInteger("facing"));
-        placedFacing = ForgeDirection.getOrientation(nbt.getInteger("placedFacing"));
+        if (nbt.hasKey("placedFacing")) placedFacing = ForgeDirection.getOrientation(nbt.getInteger("placedFacing"));
 
     }
 

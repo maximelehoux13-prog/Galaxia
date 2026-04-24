@@ -111,9 +111,13 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             false);
     }
 
-    protected void onStructureFormed() {}
+    protected void onStructureFormed() {
+        System.out.println("FORMED");
+    }
 
-    protected void onStructureDisformed() {}
+    protected void onStructureDisformed() {
+        System.out.println("DESTROYED");
+    }
 
     @Override
     public void updateEntity() {
