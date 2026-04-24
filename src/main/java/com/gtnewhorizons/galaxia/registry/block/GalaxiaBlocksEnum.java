@@ -6,7 +6,6 @@ import net.minecraft.tileentity.TileEntity;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockConfigurable;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockFumarole;
-import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceAir;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStation;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStationGlass;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockStationModuleController;
@@ -46,7 +45,6 @@ public enum GalaxiaBlocksEnum {
     // NON-TE
     SPACE_STATION_BLOCK(new BlockSpaceStation(), "space_station_block"),
     SPACE_STATION_GLASS(new BlockSpaceStationGlass(), "space_station_glass"),
-    SPACE_AIR(new BlockSpaceAir(), "space_air"),
 
     // MISC
     BLOCK_OF_PYRITE(new BlockConfigurable("resource/block_of_pyrite")),

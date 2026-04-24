@@ -29,24 +29,16 @@ public class BlockStationModuleController extends Block implements ITileEntityPr
         if (worldIn.isRemote) return true;
         TileEntity te = worldIn.getTileEntity(x, y, z);
         if (!(te instanceof TileStationModuleController)) return false;
-        for (int[] d : BlockSpaceAir.adjacents) {
-            if (BlockSpaceAir.isDepressurized(worldIn, x + d[0], y + d[1], z + d[2]))
-                ((TileStationModuleController) te).depressurize();
-        }
+
         GuiFactories.tileEntity()
             .open(player, x, y, z);
+
         return true;
     }
 
     @Override
     public void onNeighborBlockChange(World worldIn, int x, int y, int z, Block neighbor) {
-        if (!(neighbor == Block.getBlockFromName("galaxia:space_air"))) return;
-        if (BlockSpaceAir.isDepressurized(worldIn, x + 1, y, z) || BlockSpaceAir.isDepressurized(worldIn, x - 1, y, z)
-            || BlockSpaceAir.isDepressurized(worldIn, x, y + 1, z)
-            || BlockSpaceAir.isDepressurized(worldIn, x, y - 1, z)
-            || BlockSpaceAir.isDepressurized(worldIn, x, y, z + 1)
-            || BlockSpaceAir.isDepressurized(worldIn, x, y, z - 1))
-            ((TileStationModuleController) worldIn.getTileEntity(x, y, z)).depressurize();
+        return;
     }
 
     @Override
