@@ -2,15 +2,6 @@ package com.gtnewhorizons.galaxia.registry.block.tile;
 
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
-import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
-import com.gtnewhorizons.galaxia.registry.outpost.Station;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -33,8 +24,18 @@ import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
+import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
+
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 public class TileStationModuleController extends GalaxiaMultiblockBase<TileStationModuleController>
     implements IGuiHolder<PosGuiData> {
@@ -104,7 +105,8 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
             markDirty();
             worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
 
-            Station station = (Station) CelestialAsset.create(objectId, CelestialAsset.Kind.STATION, Buildable.Status.OPERATIONAL);
+            Station station = (Station) CelestialAsset
+                .create(objectId, CelestialAsset.Kind.STATION, Buildable.Status.OPERATIONAL);
             station.setController(new BlockPos(xCoord, yCoord, zCoord));
             backingStation = station.assetId;
 
@@ -114,8 +116,7 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
     }
 
     public boolean isValidBoundaryBlock(Block b) {
-        return b == GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get() ||
-            b == GalaxiaBlocksEnum.MODULE_CONTROLLER.get();
+        return b == GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get() || b == GalaxiaBlocksEnum.MODULE_CONTROLLER.get();
     }
 
     private IntSet floodStructure(World world) {
@@ -332,8 +333,10 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
 
         public static boolean isInBounds(int x, int y, int z) {
             return x >= -SEARCH_RADIUS && x <= SEARCH_RADIUS
-                && y >= -SEARCH_RADIUS && y <= SEARCH_RADIUS
-                && z >= -SEARCH_RADIUS && z <= SEARCH_RADIUS;
+                && y >= -SEARCH_RADIUS
+                && y <= SEARCH_RADIUS
+                && z >= -SEARCH_RADIUS
+                && z <= SEARCH_RADIUS;
         }
 
         public static IntSet newBlockSet() {
@@ -342,6 +345,7 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
     }
 
     private static class IntQueue {
+
         private static final int INITIAL_QUEUE_SIZE = 4096;
 
         private int[] queue = new int[INITIAL_QUEUE_SIZE];

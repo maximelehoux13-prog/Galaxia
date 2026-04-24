@@ -56,8 +56,8 @@ public final class AssetCreateRequestPacket implements IMessage {
             var teamId = TempTeamCompat.getTeam(player);
 
             CelestialAsset asset;
-            asset = CelestialAssetStore.createAsset(teamId, packet.celestialObjectId,
-                packet.displayName, packet.kind, packet.operational);
+            asset = CelestialAssetStore
+                .createAsset(teamId, packet.celestialObjectId, packet.displayName, packet.kind, packet.operational);
 
             Galaxia.LOG.info(
                 "[Outpost] Created asset {} ({}) at {} for player {}",

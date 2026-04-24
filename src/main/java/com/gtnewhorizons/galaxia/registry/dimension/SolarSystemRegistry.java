@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.gtnewhorizons.galaxia.registry.dimension.planets.Vitris;
 import net.minecraftforge.common.DimensionManager;
 
 import com.gtnewhorizons.galaxia.registry.dimension.asteroidbelts.FrozenBelt;
@@ -13,6 +12,7 @@ import com.gtnewhorizons.galaxia.registry.dimension.planets.BasePlanet;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Hemateria;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Panspira;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Theia;
+import com.gtnewhorizons.galaxia.registry.dimension.planets.Vitris;
 
 import cpw.mods.fml.common.FMLLog;
 

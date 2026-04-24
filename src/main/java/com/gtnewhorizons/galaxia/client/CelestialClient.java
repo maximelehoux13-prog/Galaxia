@@ -28,7 +28,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
-import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
@@ -86,11 +85,12 @@ public final class CelestialClient {
         return CelestialAssetStore.getState(TempTeamCompat.getTeam(), celestialObjectId);
     }
 
-    public static CelestialAsset createAsset(CelestialObjectId celestialObjectId, String displayName, CelestialAsset.Kind kind, boolean operational) {
-        Galaxia.GALAXIA_NETWORK.sendToServer(
-            new AssetCreateRequestPacket(celestialObjectId, displayName, kind, operational));
+    public static CelestialAsset createAsset(CelestialObjectId celestialObjectId, String displayName,
+        CelestialAsset.Kind kind, boolean operational) {
+        Galaxia.GALAXIA_NETWORK
+            .sendToServer(new AssetCreateRequestPacket(celestialObjectId, displayName, kind, operational));
         return CelestialAssetStore
-                .createAsset(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind, operational);
+            .createAsset(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind, operational);
     }
 
     public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,

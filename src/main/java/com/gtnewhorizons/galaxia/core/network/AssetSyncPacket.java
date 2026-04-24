@@ -7,12 +7,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
-import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import net.minecraft.client.Minecraft;
 
 import com.gtnewhorizons.galaxia.client.CelestialClient;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
@@ -21,6 +19,7 @@ import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleRegistry;
@@ -497,7 +496,12 @@ public final class AssetSyncPacket implements IMessage {
             if (syncKind == STATION_SYNC) {
                 Station station = CelestialAssetStore.findAsset(packet.assetId) instanceof Station s ? s : null;
                 if (station == null) {
-                    station = new Station(packet.assetId, CelestialObjectId.fromString(packet.assetId.id().toString()), packet.assetStatus);
+                    station = new Station(
+                        packet.assetId,
+                        CelestialObjectId.fromString(
+                            packet.assetId.id()
+                                .toString()),
+                        packet.assetStatus);
                     CelestialClient.add(station);
                 }
                 station.setController(packet.stationControllerPos);
