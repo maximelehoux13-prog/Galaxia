@@ -1,6 +1,7 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
-import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
+import java.util.UUID;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -13,9 +14,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.cleanroommc.modularui.factory.GuiFactories;
+import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileStationModuleController;
-
-import java.util.UUID;
 
 public class BlockStationModuleController extends Block implements ITileEntityProvider {
 
@@ -31,10 +31,7 @@ public class BlockStationModuleController extends Block implements ITileEntityPr
     }
 
     @Override
-    public void onBlockPlacedBy(World world,
-                                int x, int y, int z,
-                                EntityLivingBase placer,
-                                ItemStack stack) {
+    public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase placer, ItemStack stack) {
 
         if (placer instanceof EntityPlayer player) {
             UUID teamId = TempTeamCompat.getTeam();
@@ -44,14 +41,14 @@ public class BlockStationModuleController extends Block implements ITileEntityPr
             sm.setOwner(teamId);
 
             int f = MathHelper.floor_double((placer.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
-            ForgeDirection[] dirs = { ForgeDirection.NORTH, ForgeDirection.EAST, ForgeDirection.SOUTH, ForgeDirection.WEST };
+            ForgeDirection[] dirs = { ForgeDirection.NORTH, ForgeDirection.EAST, ForgeDirection.SOUTH,
+                ForgeDirection.WEST };
             sm.setPlacedFacing(dirs[f]);
         }
     }
 
     @Override
-    public void breakBlock(World world, int x, int y, int z,
-                           Block block, int meta) {
+    public void breakBlock(World world, int x, int y, int z, Block block, int meta) {
 
         TileEntity te = world.getTileEntity(x, y, z);
 

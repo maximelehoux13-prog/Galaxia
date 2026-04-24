@@ -15,7 +15,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.IRocketControllerTE;
-import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -61,7 +60,8 @@ public abstract class BlockRocketController extends Block {
     @Override
     public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase placer, ItemStack stack) {
         int f = MathHelper.floor_double((placer.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
-        ForgeDirection[] dirs = { ForgeDirection.NORTH, ForgeDirection.EAST, ForgeDirection.SOUTH, ForgeDirection.WEST };
+        ForgeDirection[] dirs = { ForgeDirection.NORTH, ForgeDirection.EAST, ForgeDirection.SOUTH,
+            ForgeDirection.WEST };
         ForgeDirection dir = dirs[f];
         TileEntity te = world.getTileEntity(x, y, z);
         if (te instanceof IRocketControllerTE rte) rte.setPlacedFacing(dir);

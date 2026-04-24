@@ -3,15 +3,10 @@ package com.gtnewhorizons.galaxia.api;
 import static com.gtnewhorizons.galaxia.core.Galaxia.GALAXIA_NETWORK;
 import static com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry.GALAXIA_DIMENSIONS;
 
+import java.util.Set;
+
 import javax.annotation.Nonnull;
 
-import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
-import com.gtnewhorizons.galaxia.registry.block.tile.TileStationModuleController;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
-import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
-import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -20,10 +15,16 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
 
+import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.config.ConfigPlayer;
 import com.gtnewhorizons.galaxia.core.network.OxygenSyncPacket;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationModuleController;
 import com.gtnewhorizons.galaxia.registry.capabilities.ZeroGMovementProvider;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionDef;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
 import com.gtnewhorizons.galaxia.registry.dimension.builder.EffectBuilder;
@@ -34,10 +35,9 @@ import com.gtnewhorizons.galaxia.registry.items.baubles.ItemProtectionShield;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemSporeFilter;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemThermalProtection;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemWitherProtection;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
 import baubles.api.BaublesApi;
-
-import java.util.Set;
 
 /**
  * API underpinning planetary mechanics
@@ -342,7 +342,8 @@ public final class GalaxiaAPI {
                 BlockPos pos = station.getController();
                 if (pos == null) continue;
 
-                TileStationModuleController controller = (TileStationModuleController) player.worldObj.getTileEntity(pos.x(), pos.y(), pos.z());
+                TileStationModuleController controller = (TileStationModuleController) player.worldObj
+                    .getTileEntity(pos.x(), pos.y(), pos.z());
                 if (controller.isInside((int) player.posX, (int) player.posY, (int) player.posZ)) {
                     return true;
                 }
