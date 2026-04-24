@@ -171,7 +171,7 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
             }
         }
 
-        if (queue.isEmpty()) return false;
+        if (!queue.isEmpty()) return false;
 
         structureBlocks.clear();
         for (BlockPos current: airPocket) {
