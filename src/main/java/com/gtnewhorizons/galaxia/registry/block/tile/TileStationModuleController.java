@@ -1,18 +1,16 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
-import java.util.ArrayDeque;
-import java.util.HashSet;
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.api.GalaxiaAPI;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
-import com.gtnewhorizons.galaxia.registry.dimension.DimensionEnum;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -37,39 +35,21 @@ import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
+
 public class TileStationModuleController extends GalaxiaMultiblockBase<TileStationModuleController>
     implements IGuiHolder<PosGuiData> {
 
-    private static final int SEARCH_RADIUS = 16;
-    private static final int SEARCH_DIAMETER = SEARCH_RADIUS * 2;
-    private static final int MAX_BLOCKS_TO_CHECK = SEARCH_RADIUS * SEARCH_RADIUS * SEARCH_RADIUS;
+    public static final int SEARCH_RADIUS = 16;
+    public static final int MAX_BLOCKS = SEARCH_RADIUS * SEARCH_RADIUS * SEARCH_RADIUS;
 
-    private final HashSet<BlockPos> structureBlocks = new HashSet<>(SEARCH_DIAMETER * SEARCH_DIAMETER * 6);
+    private final IntSet structureBlocks = LocalCoord.newBlockSet();
+
     private UUID owner;
     private boolean inValidDimension = false;
     private CelestialAsset.ID backingStation;
 
     private ForgeDirection placedFacing = ForgeDirection.NORTH;
     private ExtendedFacing currentFacing = ExtendedFacing.DEFAULT;
-
-    private enum CleanroomBlockType {
-        CASING,
-        GLASS,
-        OTHER,
-        INVALID
-    }
-
-    // Specify which blocks are allowed where. This skips checks for other blocks.
-    private static final int MASK_CASING = 1;
-    private static final int MASK_GLASS = 1 << 1;
-    private static final int MASK_OTHER = 1 << 2;
-
-    private static final int MASK_WALL_INTERNAL = MASK_CASING | MASK_GLASS | MASK_OTHER;
-    private static final int MASK_WALL_EDGE = MASK_CASING | MASK_GLASS | MASK_OTHER;
-
-    public static boolean isBlockAllowed(Block block) {
-        return block == GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get();
-    }
 
     @Override
     public Block getControllerBlock() {
@@ -108,15 +88,15 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
     @Override
     protected boolean checkStructure() {
         if (worldObj == null || worldObj.isRemote) return structureValid;
-        // On reload, recompute but keep structure valid to not mess anything up
         if (structureValid && !this.structureBlocks.isEmpty()) return true;
 
         World world = this.worldObj;
-        CelestialObjectId objectId =  GalaxiaCelestialAPI.getObjectFromDimension(world.provider.dimensionId);
+        CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(world.provider.dimensionId);
         this.inValidDimension = objectId != CelestialObjectId.INVALID;
         if (!this.inValidDimension) return false;
 
-        boolean enclosed = checkEnclosed(world);
+        IntSet validBoundary = floodStructure(world);
+        boolean enclosed = checkEnclosed(world, validBoundary);
         if (enclosed != structureValid) {
             structureValid = enclosed;
             if (enclosed) onStructureFormed();
@@ -133,64 +113,107 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
         return enclosed;
     }
 
-    private boolean checkEnclosed(World world) {
+    public boolean isValidBoundaryBlock(Block b) {
+        return b == GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get() ||
+            b == GalaxiaBlocksEnum.MODULE_CONTROLLER.get();
+    }
+
+    private IntSet floodStructure(World world) {
+        IntQueue floodBFS = new IntQueue();
+        final IntSet connectedStructure = LocalCoord.newBlockSet();
+
+        int start = LocalCoord.pack(0, 0, 0);
+        floodBFS.enqueue(start);
+        connectedStructure.add(start);
+
+        while (!floodBFS.isEmpty()) {
+            int cur = floodBFS.dequeue();
+            int lx = LocalCoord.unpackX(cur);
+            int ly = LocalCoord.unpackY(cur);
+            int lz = LocalCoord.unpackZ(cur);
+
+            for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
+                int nlx = lx + d.offsetX;
+                int nly = ly + d.offsetY;
+                int nlz = lz + d.offsetZ;
+
+                if (!LocalCoord.isInBounds(nlx, nly, nlz)) {
+                    continue;
+                }
+
+                int np = LocalCoord.pack(nlx, nly, nlz);
+
+                int wx = xCoord + nlx;
+                int wy = yCoord + nly;
+                int wz = zCoord + nlz;
+
+                Block b = world.getBlock(wx, wy, wz);
+
+                if (isValidBoundaryBlock(b)) {
+                    continue;
+                }
+
+                if (connectedStructure.add(np)) {
+                    floodBFS.enqueue(np);
+                }
+            }
+        }
+
+        return connectedStructure;
+    }
+
+    boolean checkEnclosed(World world, IntSet validBoundary) {
+        IntQueue bfs = new IntQueue();
+        IntSet visited = LocalCoord.newBlockSet();
 
         ForgeDirection dir = placedFacing;
+        int start = LocalCoord.pack(dir.offsetX, dir.offsetY, dir.offsetZ);
 
-        int startX = xCoord + dir.offsetX;
-        int startY = yCoord + dir.offsetY;
-        int startZ = zCoord + dir.offsetZ;
+        bfs.enqueue(start);
+        visited.add(start);
 
-        BlockPos start = new BlockPos(startX, startY, startZ);
-
-        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        HashSet<BlockPos> airPocket = new HashSet<>();
-
-        queue.add(start);
-        airPocket.add(start);
-
-        int blocksChecked = 0;
-        while (!queue.isEmpty() && blocksChecked++ < MAX_BLOCKS_TO_CHECK) {
-            BlockPos current = queue.poll();
+        int checked = 0;
+        while (!bfs.isEmpty() && checked++ < MAX_BLOCKS) {
+            int cur = bfs.dequeue();
+            int lx = LocalCoord.unpackX(cur);
+            int ly = LocalCoord.unpackY(cur);
+            int lz = LocalCoord.unpackZ(cur);
 
             for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
-                BlockPos n = new BlockPos(
-                    current.x() + d.offsetX,
-                    current.y() + d.offsetY,
-                    current.z() + d.offsetZ
-                );
+                int nlx = lx + d.offsetX;
+                int nly = ly + d.offsetY;
+                int nlz = lz + d.offsetZ;
 
-                Block b = world.getBlock(n.x(), n.y(), n.z());
+                if (!LocalCoord.isInBounds(nlx, nly, nlz)) {
+                    return false;
+                }
 
-                boolean isAir = b.isAir(world, n.x(), n.y(), n.z());
-                if (!isAir) continue;
+                int np = LocalCoord.pack(nlx, nly, nlz);
 
-                if (airPocket.add(n)) {
-                    queue.add(n);
+                int nwx = xCoord + nlx;
+                int nwy = yCoord + nly;
+                int nwz = zCoord + nlz;
+
+                Block b = world.getBlock(nwx, nwy, nwz);
+
+                if (isValidBoundaryBlock(b)) {
+                    if (validBoundary.contains(np)) {
+                        this.structureBlocks.add(np);
+                    }
+                    continue;
+                }
+
+                if (!b.isAir(world, nwx, nwy, nwz)) {
+                    continue;
+                }
+
+                if (visited.add(np)) {
+                    bfs.enqueue(np);
                 }
             }
         }
 
-        if (!queue.isEmpty()) return false;
-
-        structureBlocks.clear();
-        for (BlockPos current: airPocket) {
-            for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
-                BlockPos n = new BlockPos(
-                    current.x() + d.offsetX,
-                    current.y() + d.offsetY,
-                    current.z() + d.offsetZ
-                );
-
-                Block b = world.getBlock(n.x(), n.y(), n.z());
-
-                if (b == GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get()) {
-                    structureBlocks.add(n);
-                }
-            }
-        }
-
-        return !structureBlocks.isEmpty() && structureBlocks.size() >= 6;
+        return !this.structureBlocks.isEmpty() && this.structureBlocks.size() >= 6;
     }
 
     @Override
@@ -232,9 +255,7 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
     @Override
     public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
-
         nbt.setInteger("placedFacing", placedFacing.ordinal());
-
         if (owner != null) {
             nbt.setLong("ownerMost", owner.getMostSignificantBits());
             nbt.setLong("ownerLeast", owner.getLeastSignificantBits());
@@ -244,14 +265,9 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
-
         placedFacing = ForgeDirection.getOrientation(nbt.getInteger("placedFacing"));
-
         if (nbt.hasKey("ownerMost") && nbt.hasKey("ownerLeast")) {
-            owner = new UUID(
-                nbt.getLong("ownerMost"),
-                nbt.getLong("ownerLeast")
-            );
+            owner = new UUID(nbt.getLong("ownerMost"), nbt.getLong("ownerLeast"));
         }
     }
 
@@ -277,29 +293,85 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
 
     public void unregisterStation() {
         if (this.backingStation == null) return;
-
         CelestialAssetStore.destroyAsset(this.backingStation);
     }
 
     public boolean isInside(int x, int y, int z) {
-
-        boolean hitUp = false;
-        boolean hitDown = false;
-
         for (int d = 1; d <= SEARCH_RADIUS; d++) {
-            if (!hitUp && structureBlocks.contains(new BlockPos(x, y + d, z))) {
-                hitUp = true;
-            }
-
-            if (!hitDown && structureBlocks.contains(new BlockPos(x, y - d, z))) {
-                hitDown = true;
-            }
-
-            if (hitUp && hitDown) {
-                return true;
-            }
+            if (structureBlocks.contains(LocalCoord.pack(x, y + d, z))) return true;
+            if (structureBlocks.contains(LocalCoord.pack(x, y - d, z))) return true;
         }
-
         return false;
     }
+
+    private static class LocalCoord {
+
+        private static int offset(int v) {
+            return v + SEARCH_RADIUS;
+        }
+
+        private static int unoffset(int v) {
+            return v - SEARCH_RADIUS;
+        }
+
+        public static int pack(int x, int y, int z) {
+            return (offset(x) << 12) | (offset(y) << 6) | offset(z);
+        }
+
+        public static int unpackX(int v) {
+            return unoffset((v >> 12) & 63);
+        }
+
+        public static int unpackY(int v) {
+            return unoffset((v >> 6) & 63);
+        }
+
+        public static int unpackZ(int v) {
+            return unoffset(v & 63);
+        }
+
+        public static boolean isInBounds(int x, int y, int z) {
+            return x >= -SEARCH_RADIUS && x <= SEARCH_RADIUS
+                && y >= -SEARCH_RADIUS && y <= SEARCH_RADIUS
+                && z >= -SEARCH_RADIUS && z <= SEARCH_RADIUS;
+        }
+
+        public static IntSet newBlockSet() {
+            return new IntOpenHashSet();
+        }
+    }
+
+    private static class IntQueue {
+        private static final int INITIAL_QUEUE_SIZE = 4096;
+
+        private int[] queue = new int[INITIAL_QUEUE_SIZE];
+        private int head;
+        private int tail;
+
+        public void enqueue(int v) {
+            if (tail == queue.length) {
+                queue = java.util.Arrays.copyOf(queue, queue.length * 2);
+            }
+            queue[tail++] = v;
+        }
+
+        public int dequeue() {
+            return queue[head++];
+        }
+
+        public boolean isEmpty() {
+            return head >= tail;
+        }
+
+        public void reset() {
+            head = 0;
+            tail = 0;
+        }
+
+        public void clear() {
+            reset();
+            queue = new int[INITIAL_QUEUE_SIZE];
+        }
+    }
+
 }
