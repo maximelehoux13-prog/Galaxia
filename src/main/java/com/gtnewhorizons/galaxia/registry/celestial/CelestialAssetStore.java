@@ -42,6 +42,10 @@ public final class CelestialAssetStore {
         return new ArrayList<>(celestialAssets);
     }
 
+    public static Set<CelestialAsset> getTeamAssets(UUID teamId, CelestialObjectId objectId) {
+        return getTeamAssets(teamId).getOrDefault(objectId, Set.of());
+    }
+
     public static Map<CelestialObjectId, Set<CelestialAsset>> getTeamAssets(UUID teamId) {
         return STATE_BY_BODY.getOrDefault(teamId, new LinkedHashMap<>());
     }

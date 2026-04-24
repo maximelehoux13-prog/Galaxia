@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.gtnewhorizons.galaxia.registry.dimension.planets.Vitris;
 import net.minecraftforge.common.DimensionManager;
 
 import com.gtnewhorizons.galaxia.registry.dimension.asteroidbelts.FrozenBelt;
@@ -39,6 +40,7 @@ public final class SolarSystemRegistry {
         registerDimensions(new Mars());
         registerDimensions(new FrozenBelt());
         registerDimensions(new Panspira());
+        registerDimensions(new Vitris());
 
         FMLLog.info("[Galaxia] Registered %d celestial bodies", BODIES.size());
     }
