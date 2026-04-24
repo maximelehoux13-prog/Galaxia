@@ -231,13 +231,8 @@ public final class AssetManagementSystem {
 
         void createBaseStation(CelestialObject body) {
             if (body == null) return;
-            System.out.println("here 2");
-            CelestialClient.createOperationalAsset(
-                body.id(),
-                buildDefaultAssetDisplayName(body, CelestialAsset.Kind.STATION),
-                CelestialAsset.Kind.STATION);
             // TODO: Localize
-            callbacks.showActionStatus("Station created");
+            callbacks.showActionStatus("Stations must be placed with a controller block");
         }
 
         void triggerAssetCreation(OrbitalAssetUiState state, CelestialObject body, CelestialAsset.Kind kind,
@@ -246,6 +241,10 @@ public final class AssetManagementSystem {
             if (openManagementFirst) openAssetManagement(state, body);
             CelestialAsset.Location location = getDefaultAssetLocation(kind);
             String displayName = buildDefaultAssetDisplayName(body, kind);
+            if (kind == CelestialAsset.Kind.STATION) {
+                callbacks.showActionStatus("Stations must be placed with a controller block");
+                return;
+            }
             if (callbacks.isCreativeBuildModeEnabled()) {
                 System.out.println("here 1");
                 CelestialClient.createOperationalAsset(body.id(), displayName, kind);

@@ -99,11 +99,12 @@ public final class AssetSyncPacket implements IMessage {
     public AssetSyncPacket() {}
 
     public static AssetSyncPacket fullSync(CelestialAsset state) {
-        return switch (state) {
-            case AutomatedFacility facility -> fullSync(facility);
-            case Station station -> fullSync(station);
-            default -> throw new IllegalStateException("Unexpected value: " + state);
-        };
+        if (state instanceof AutomatedFacility) {
+            return fullSync((AutomatedFacility) state);
+        } else if (state instanceof Station) {
+            return fullSync((Station) state);
+        }
+        throw new IllegalStateException("Unexpected value: " + state);
     }
 
     public static AssetSyncPacket fullSync(Station state) {
