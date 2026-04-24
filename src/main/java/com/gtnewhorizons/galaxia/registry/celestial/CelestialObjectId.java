@@ -19,6 +19,7 @@ public enum CelestialObjectId {
     THEIA("galaxia.celestial.theia", DimensionEnum.THEIA),
     FROZEN_BELT("galaxia.celestial.frozen_belt", DimensionEnum.FROZEN_BELT),
     AMBERGRIS_FRAGMENT("galaxia.celestial.ambergris_fragment", null),
+    VITRIS("galaxia.celestial.vitris", DimensionEnum.VITRIS),
     VITRIS_SPACE("galaxia.celestial.vitris_space", DimensionEnum.VITRIS_SPACE),
 
     ;

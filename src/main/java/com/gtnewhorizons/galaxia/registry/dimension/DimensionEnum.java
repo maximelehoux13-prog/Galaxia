@@ -6,6 +6,8 @@ package com.gtnewhorizons.galaxia.registry.dimension;
 public enum DimensionEnum {
 
     // Format: ENUMNAME(int ID, String name)
+    // This is just the overworld
+    VITRIS(0, "Vitris", "galaxia.dimension.vitris"),
     VITRIS_SPACE(-19, "Vitris_Space_Stations", "galaxia.dimension.vitris_space"),
     THEIA(20, "Theia", "galaxia.dimension.theia"),
     HEMATERIA(21, "Hemateria", "galaxia.dimension.hemateria"),
@@ -35,4 +37,11 @@ public enum DimensionEnum {
         return this.translationKey;
     }
 
+    public static DimensionEnum fromId(int id) {
+        for (DimensionEnum e : values()) {
+            if (e.id == id) return e;
+        }
+
+        return null;
+    }
 }
