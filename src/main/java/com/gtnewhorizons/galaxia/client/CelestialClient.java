@@ -16,6 +16,7 @@ import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.network.AssetBuildModulePacket;
+import com.gtnewhorizons.galaxia.core.network.AssetCreateRequestPacket;
 import com.gtnewhorizons.galaxia.core.network.AssetModuleUpdatePacket;
 import com.gtnewhorizons.galaxia.core.network.AssetModuleUpdatePacket.ConfigAction;
 import com.gtnewhorizons.galaxia.core.network.LogisticsSyncPacket;
@@ -27,6 +28,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
@@ -84,23 +86,28 @@ public final class CelestialClient {
         return CelestialAssetStore.getState(TempTeamCompat.getTeam(), celestialObjectId);
     }
 
+    public static CelestialAsset createAsset(CelestialObjectId celestialObjectId, String displayName, CelestialAsset.Kind kind, boolean operational) {
+        Galaxia.GALAXIA_NETWORK.sendToServer(
+            new AssetCreateRequestPacket(celestialObjectId, displayName, kind, operational));
+        return CelestialAssetStore
+                .createAsset(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind, operational);
+    }
+
     public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,
         CelestialAsset.Kind kind) {
-        return CelestialAssetStore
-            .createAssetInConstruction(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind);
+        return createAsset(celestialObjectId, displayName, kind, false);
     }
 
     public static CelestialAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
         CelestialAsset.Kind kind) {
-        return CelestialAssetStore
-            .createOperationalAsset(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind);
+        return createAsset(celestialObjectId, displayName, kind, true);
     }
 
     public static CelestialAsset getByAssetId(CelestialAsset.ID assetId) {
         return CelestialAssetStore.findAsset(assetId);
     }
 
-    public static void add(AutomatedFacility state) {
+    public static void add(CelestialAsset state) {
         CelestialAssetStore.add(TempTeamCompat.getTeam(), state);
     }
 

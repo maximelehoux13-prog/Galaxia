@@ -64,20 +64,10 @@ public final class CelestialAssetStore {
         return all;
     }
 
-    public static CelestialAsset createAssetInConstruction(UUID teamId, CelestialObjectId celestialObjectId,
-        String displayName, CelestialAsset.Kind kind) {
+    public static CelestialAsset createAsset(UUID teamId, CelestialObjectId celestialObjectId,
+        String displayName, CelestialAsset.Kind kind, boolean operational) {
 
-        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.CONSTRUCTION_SITE);
-        asset.setDisplayName(displayName);
-
-        add(teamId, asset);
-        return asset;
-    }
-
-    public static CelestialAsset createOperationalAsset(UUID teamId, CelestialObjectId celestialObjectId,
-        String displayName, CelestialAsset.Kind kind) {
-
-        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.OPERATIONAL);
+        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, operational ? Buildable.Status.OPERATIONAL : Buildable.Status.CONSTRUCTION_SITE);
         asset.setDisplayName(displayName);
 
         add(teamId, asset);

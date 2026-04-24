@@ -121,6 +121,12 @@ public class DimensionEventHandler {
      */
     private void applyEffects(EffectBuilder def, EntityPlayer player) {
         this.batchedWarnings.clear();
+        if (GalaxiaAPI.isInsideStation(player))  {
+            System.out.println("INSIDE");
+        } else {
+            System.out.println("OUTSIDE");
+        }
+
         for (EnvironmentalHazard h : ENVIRONMENTAL_HAZARDS) {
             HazardWarnings w = h.applyTotal(def, player);
             if (w != HazardWarnings.FINE) {

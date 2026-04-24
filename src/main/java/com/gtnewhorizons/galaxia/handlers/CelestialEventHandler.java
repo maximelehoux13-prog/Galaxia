@@ -86,9 +86,7 @@ public class CelestialEventHandler {
 
             List<AssetSyncPacket> playerOutpostPackets = new ArrayList<>();
             for (CelestialAsset asset : aggregatedAssets) {
-                if (asset instanceof AutomatedFacility outpost) {
-                    playerOutpostPackets.add(AssetSyncPacket.fullSync(outpost));
-                }
+                playerOutpostPackets.add(AssetSyncPacket.fullSync(asset));
             }
             // TODO: make aggregate packet for this
             for (AssetSyncPacket pkt : playerOutpostPackets) {
