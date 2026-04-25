@@ -106,11 +106,11 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
             worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
 
             Station station = (Station) CelestialAsset
-                .create(objectId, CelestialAsset.Kind.STATION, Buildable.Status.OPERATIONAL);
+                .create(objectId, CelestialAsset.Kind.STATION, true);
             station.setController(new BlockPos(xCoord, yCoord, zCoord));
             backingStation = station.assetId;
 
-            CelestialAssetStore.add(owner, station);
+            CelestialAssetStore.registerAsset(owner, station);
         }
         return enclosed;
     }
@@ -144,13 +144,13 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
 
                 int np = LocalCoord.pack(nlx, nly, nlz);
 
-                int wx = xCoord + nlx;
-                int wy = yCoord + nly;
-                int wz = zCoord + nlz;
+                int wx = LocalCoord.worldX(nlx, xCoord);
+                int wy = LocalCoord.worldY(nly, yCoord);
+                int wz = LocalCoord.worldZ(nlz, zCoord);
 
                 Block b = world.getBlock(wx, wy, wz);
 
-                if (isValidBoundaryBlock(b)) {
+                if (!isValidBoundaryBlock(b)) {
                     continue;
                 }
 
@@ -191,9 +191,9 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
 
                 int np = LocalCoord.pack(nlx, nly, nlz);
 
-                int nwx = xCoord + nlx;
-                int nwy = yCoord + nly;
-                int nwz = zCoord + nlz;
+                int nwx = LocalCoord.worldX(nlx, xCoord);
+                int nwy = LocalCoord.worldY(nly, yCoord);
+                int nwz = LocalCoord.worldZ(nlz, zCoord);
 
                 Block b = world.getBlock(nwx, nwy, nwz);
 
@@ -298,10 +298,20 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
     }
 
     public boolean isInside(int x, int y, int z) {
+
+        int packed = LocalCoord.packFromWorld(x, y, z, xCoord, yCoord, zCoord);
+        int lx = LocalCoord.unpackX(packed);
+        int ly = LocalCoord.unpackY(packed);
+        int lz = LocalCoord.unpackZ(packed);
+
+        boolean top = false, bottom = false;
+
         for (int d = 1; d <= SEARCH_RADIUS; d++) {
-            if (structureBlocks.contains(LocalCoord.pack(x, y + d, z))) return true;
-            if (structureBlocks.contains(LocalCoord.pack(x, y - d, z))) return true;
+            if (structureBlocks.contains(LocalCoord.pack(lx, ly + d, lz))) top = true;
+            if (structureBlocks.contains(LocalCoord.pack(lx, ly - d, lz))) bottom = true;
+            if (top && bottom) return true;
         }
+
         return false;
     }
 
@@ -319,6 +329,10 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
             return (offset(x) << 12) | (offset(y) << 6) | offset(z);
         }
 
+        public static int packFromWorld(int wx, int wy, int wz, int xCoord, int yCoord, int zCoord) {
+            return pack(wx - xCoord, wy - yCoord, wz - zCoord);
+        }
+
         public static int unpackX(int v) {
             return unoffset((v >> 12) & 63);
         }
@@ -329,6 +343,18 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
 
         public static int unpackZ(int v) {
             return unoffset(v & 63);
+        }
+
+        public static int worldX(int localX, int xCoord) {
+            return localX + xCoord;
+        }
+
+        public static int worldY(int localY, int yCoord) {
+            return localY + yCoord;
+        }
+
+        public static int worldZ(int localZ, int zCoord) {
+            return localZ + zCoord;
         }
 
         public static boolean isInBounds(int x, int y, int z) {

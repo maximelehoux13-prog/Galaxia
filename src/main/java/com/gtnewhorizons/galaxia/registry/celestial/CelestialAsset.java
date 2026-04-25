@@ -66,6 +66,10 @@ public abstract class CelestialAsset implements Buildable {
 
     private int syncRevision;
 
+    public static CelestialAsset create(CelestialObjectId celestialObjectId, Kind kind, boolean operational) {
+        return create(celestialObjectId, kind, operational ? Status.OPERATIONAL : Status.CONSTRUCTION_SITE);
+    }
+
     public static CelestialAsset create(CelestialObjectId celestialObjectId, Kind kind, Status status) {
         return switch (kind) {
             case STATION -> new Station(ID.create(), celestialObjectId, status);

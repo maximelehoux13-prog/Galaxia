@@ -19,4 +19,38 @@ public class Station extends CelestialAsset {
     public void setController(BlockPos controller) {
         this.controller = controller;
     }
+
+    public BlockPos toWorld(BlockPos local) {
+        if (controller == null) return null;
+        return new BlockPos(local.x() + controller.x(), local.y() + controller.y(), local.z() + controller.z());
+    }
+
+    public BlockPos toLocal(BlockPos world) {
+        if (controller == null) return null;
+        return new BlockPos(world.x() - controller.x(), world.y() - controller.y(), world.z() - controller.z());
+    }
+
+    public int toWorldX(int localX) {
+        return controller == null ? localX : localX + controller.x();
+    }
+
+    public int toWorldY(int localY) {
+        return controller == null ? localY : localY + controller.y();
+    }
+
+    public int toWorldZ(int localZ) {
+        return controller == null ? localZ : localZ + controller.z();
+    }
+
+    public int toLocalX(int worldX) {
+        return controller == null ? worldX : worldX - controller.x();
+    }
+
+    public int toLocalY(int worldY) {
+        return controller == null ? worldY : worldY - controller.y();
+    }
+
+    public int toLocalZ(int worldZ) {
+        return controller == null ? worldZ : worldZ - controller.z();
+    }
 }

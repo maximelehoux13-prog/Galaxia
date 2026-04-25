@@ -4,9 +4,11 @@ import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -20,14 +22,33 @@ public final class AssetCreateRequestPacket implements IMessage {
     private CelestialAsset.Kind kind;
     private boolean operational;
 
+    private BlockPos controller;
+
     public AssetCreateRequestPacket() {}
 
-    public AssetCreateRequestPacket(CelestialObjectId celestialObjectId, String displayName, CelestialAsset.Kind kind,
-        boolean operational) {
-        this.celestialObjectId = celestialObjectId;
-        this.displayName = displayName;
-        this.kind = kind;
-        this.operational = operational;
+    public static AssetCreateRequestPacket createFacility(CelestialObjectId celestialObjectId, String displayName,
+        CelestialAsset.Kind kind, boolean operational) {
+        AssetCreateRequestPacket pkt = new AssetCreateRequestPacket();
+
+        pkt.celestialObjectId = celestialObjectId;
+        pkt.displayName = displayName;
+        pkt.kind = kind;
+        pkt.operational = operational;
+
+        return pkt;
+    }
+
+    public static AssetCreateRequestPacket createStation(CelestialObjectId celestialObjectId, String displayName,
+        BlockPos controller) {
+        AssetCreateRequestPacket pkt = new AssetCreateRequestPacket();
+
+        pkt.celestialObjectId = celestialObjectId;
+        pkt.displayName = displayName;
+        pkt.kind = CelestialAsset.Kind.STATION;
+        pkt.operational = true;
+        pkt.controller = controller;
+
+        return pkt;
     }
 
     @Override
@@ -36,6 +57,11 @@ public final class AssetCreateRequestPacket implements IMessage {
         PacketUtil.writeString(buf, displayName);
         PacketUtil.writeEnum(buf, kind);
         buf.writeBoolean(operational);
+        if (kind == CelestialAsset.Kind.STATION) {
+            buf.writeInt(controller.x());
+            buf.writeInt(controller.y());
+            buf.writeInt(controller.z());
+        }
     }
 
     @Override
@@ -44,6 +70,9 @@ public final class AssetCreateRequestPacket implements IMessage {
         displayName = PacketUtil.readString(buf);
         kind = PacketUtil.readEnum(buf, CelestialAsset.Kind.class);
         operational = buf.readBoolean();
+        if (kind == CelestialAsset.Kind.STATION) {
+            controller = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
+        }
     }
 
     public static final class Handler implements IMessageHandler<AssetCreateRequestPacket, IMessage> {
@@ -55,9 +84,14 @@ public final class AssetCreateRequestPacket implements IMessage {
 
             var teamId = TempTeamCompat.getTeam(player);
 
-            CelestialAsset asset;
-            asset = CelestialAssetStore
-                .createAsset(teamId, packet.celestialObjectId, packet.displayName, packet.kind, packet.operational);
+            CelestialAsset asset = CelestialAsset.create(packet.celestialObjectId, packet.kind, packet.operational);
+            asset.setDisplayName(packet.displayName);
+            if (packet.kind == CelestialAsset.Kind.STATION) {
+                Station station = (Station) asset;
+                station.setController(packet.controller);
+            }
+
+            CelestialAssetStore.registerAsset(teamId, asset);
 
             Galaxia.LOG.info(
                 "[Outpost] Created asset {} ({}) at {} for player {}",
