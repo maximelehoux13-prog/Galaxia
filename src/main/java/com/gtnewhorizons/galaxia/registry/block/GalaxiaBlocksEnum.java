@@ -5,10 +5,14 @@ import net.minecraft.tileentity.TileEntity;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockConfigurable;
+import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockCasing;
+import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockController;
+import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockFumarole;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStation;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStationGlass;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockStationController;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityAirlock;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityFumarole;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.BlockRocketTrophy;
@@ -41,6 +45,11 @@ public enum GalaxiaBlocksEnum {
     GANTRY(new BlockGantry(), TileEntityGantry.class, "gantry_block"),
     GANTRY_TERMINAL(new BlockGantryTerminal(), TileEntityGantryTerminal.class, "gantry_terminal"),
     ROCKET_TROPHY(new BlockRocketTrophy(), TileEntityRocketTrophy.class, "rocket_trophy"),
+
+    // AIRLOCK
+    AIRLOCK_CONTROLLER(new BlockAirlockController(), TileEntityAirlock.class, "airlock_controller"),
+    AIRLOCK_CASING(new BlockAirlockCasing(), "airlock_casing"),
+    AIRLOCK_DOOR(new BlockAirlockDoor(), "airlock_door"),
 
     // NON-TE
     SPACE_STATION_BLOCK(new BlockSpaceStation(), "space_station_block"),

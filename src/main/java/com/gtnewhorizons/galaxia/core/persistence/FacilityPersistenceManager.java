@@ -261,9 +261,12 @@ public final class FacilityPersistenceManager {
         json.requiredResources = encodeRequirements(asset.requiredResources());
         json.constructionInventory = encodeRequirements(asset.constructionInventory());
         if (asset instanceof Station station && station.getController() != null) {
-            json.controllerX = station.getController().x();
-            json.controllerY = station.getController().y();
-            json.controllerZ = station.getController().z();
+            json.controllerX = station.getController()
+                .x();
+            json.controllerY = station.getController()
+                .y();
+            json.controllerZ = station.getController()
+                .z();
         }
         return json;
     }
@@ -285,7 +288,9 @@ public final class FacilityPersistenceManager {
         CelestialAsset asset = CelestialAsset.create(json.assetId, objectId, kind, status);
         asset.setConstructionInventory(decodeRequirements(json.constructionInventory));
         asset.setDisplayName(json.displayName);
-        if (asset instanceof Station station && json.controllerX != null && json.controllerY != null && json.controllerZ != null) {
+        if (asset instanceof Station station && json.controllerX != null
+            && json.controllerY != null
+            && json.controllerZ != null) {
             station.setController(new BlockPos(json.controllerX, json.controllerY, json.controllerZ));
         }
         return asset;
