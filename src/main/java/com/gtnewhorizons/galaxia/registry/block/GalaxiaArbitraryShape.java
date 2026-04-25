@@ -126,8 +126,7 @@ public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> 
         IntSet visited = LocalCoord.newBlockSet();
         IntSet localStructureBlocks = LocalCoord.newBlockSet();
 
-        ForgeDirection dir = placedFacing;
-        int start = LocalCoord.pack(dir.offsetX, dir.offsetY, dir.offsetZ);
+        int start = LocalCoord.pack(placedFacing.offsetX, placedFacing.offsetY, placedFacing.offsetZ);
 
         bfs.enqueue(start);
         visited.add(start);
