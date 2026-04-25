@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.registry.block.special;
 
 import java.util.UUID;
 
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -15,19 +16,18 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import com.cleanroommc.modularui.factory.GuiFactories;
 import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
-import com.gtnewhorizons.galaxia.registry.block.tile.TileStationModuleController;
 
-public class BlockStationModuleController extends Block implements ITileEntityProvider {
+public class BlockStationController extends Block implements ITileEntityProvider {
 
-    public BlockStationModuleController() {
+    public BlockStationController() {
         super(Material.iron);
-        this.setBlockName("module_controller");
+        this.setBlockName("station_controller");
         this.setBlockTextureName("galaxia:space_station/space_station_block_1");
     }
 
     @Override
     public TileEntity createNewTileEntity(World worldIn, int meta) {
-        return new TileStationModuleController();
+        return new TileStationController();
     }
 
     @Override
@@ -36,7 +36,7 @@ public class BlockStationModuleController extends Block implements ITileEntityPr
         if (placer instanceof EntityPlayer player) {
             UUID teamId = TempTeamCompat.getTeam();
             TileEntity te = world.getTileEntity(x, y, z);
-            if (!(te instanceof TileStationModuleController sm)) return;
+            if (!(te instanceof TileStationController sm)) return;
 
             sm.setOwner(teamId);
 
@@ -52,7 +52,7 @@ public class BlockStationModuleController extends Block implements ITileEntityPr
 
         TileEntity te = world.getTileEntity(x, y, z);
 
-        if (te instanceof TileStationModuleController tile) {
+        if (te instanceof TileStationController tile) {
             tile.unregisterStation();
         }
 
@@ -64,7 +64,7 @@ public class BlockStationModuleController extends Block implements ITileEntityPr
         float hitY, float hitZ) {
         if (worldIn.isRemote) return true;
         TileEntity te = worldIn.getTileEntity(x, y, z);
-        if (!(te instanceof TileStationModuleController)) return false;
+        if (!(te instanceof TileStationController)) return false;
 
         GuiFactories.tileEntity()
             .open(player, x, y, z);
