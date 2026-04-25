@@ -8,9 +8,9 @@ import com.gtnewhorizons.galaxia.registry.block.base.BlockConfigurable;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockFumarole;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStation;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStationGlass;
-import com.gtnewhorizons.galaxia.registry.block.special.BlockStationModuleController;
+import com.gtnewhorizons.galaxia.registry.block.special.BlockStationController;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityFumarole;
-import com.gtnewhorizons.galaxia.registry.block.tile.TileStationModuleController;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.BlockRocketTrophy;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.TileEntityModuleAssembler;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.TileEntityRocketTrophy;
@@ -35,7 +35,7 @@ public enum GalaxiaBlocksEnum {
 
     // TE
     SILO_CONTROLLER(new BlockSilo(), TileEntitySilo.class, "silo_controller"),
-    MODULE_CONTROLLER(new BlockStationModuleController(), TileStationModuleController.class, "module_controller"),
+    MODULE_CONTROLLER(new BlockStationController(), TileStationController.class, "station_controller"),
     ASSEMBLER_CONTROLLER(new BlockModuleAssembler(), TileEntityModuleAssembler.class, "module_assembler_controller"),
     FUMAROLE(new BlockFumarole(), TileEntityFumarole.class, "tenebrae_fumarole"),
     GANTRY(new BlockGantry(), TileEntityGantry.class, "gantry_block"),

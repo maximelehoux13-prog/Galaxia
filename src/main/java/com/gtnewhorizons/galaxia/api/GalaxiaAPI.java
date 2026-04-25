@@ -20,7 +20,7 @@ import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.config.ConfigPlayer;
 import com.gtnewhorizons.galaxia.core.network.OxygenSyncPacket;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
-import com.gtnewhorizons.galaxia.registry.block.tile.TileStationModuleController;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.capabilities.ZeroGMovementProvider;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -342,7 +342,7 @@ public final class GalaxiaAPI {
                 BlockPos pos = station.getController();
                 if (pos == null) continue;
 
-                TileStationModuleController controller = (TileStationModuleController) player.worldObj
+                TileStationController controller = (TileStationController) player.worldObj
                     .getTileEntity(pos.x(), pos.y(), pos.z());
                 if (controller.isInside((int) player.posX, (int) player.posY, (int) player.posZ)) {
                     return true;
