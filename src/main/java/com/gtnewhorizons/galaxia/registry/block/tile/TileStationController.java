@@ -79,11 +79,6 @@ public class TileStationController extends GalaxiaArbitraryShape<TileStationCont
     }
 
     @Override
-    public IStructureDefinition<TileStationController> getStructureDefinition() {
-        return null;
-    }
-
-    @Override
     public ModularPanel buildUI(PosGuiData data, PanelSyncManager syncManager, UISettings settings) {
         if (!worldObj.isRemote) {
             markStructureDirty();
