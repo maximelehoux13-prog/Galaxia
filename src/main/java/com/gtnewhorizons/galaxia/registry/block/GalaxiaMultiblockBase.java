@@ -5,6 +5,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import com.gtnewhorizon.structurelib.alignment.constructable.ISurvivalConstructable;
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
@@ -14,6 +15,7 @@ import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> extends TileEntity
     implements ISurvivalConstructable {
 
+    protected ExtendedFacing currentFacing = ExtendedFacing.DEFAULT;
     protected boolean structureValid = false;
     private int mCheckTimer = 0;
 
@@ -146,12 +148,57 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
     public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         nbt.setBoolean("structureValid", structureValid);
+        nbt.setInteger("facing", currentFacing.getIndex());
     }
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
         structureValid = nbt.getBoolean("structureValid");
+        if (nbt.hasKey("facing")) {
+            currentFacing = ExtendedFacing.byIndex(nbt.getInteger("facing"));
+        }
         mCheckTimer = 0;
+    }
+
+    public void setFacing(ForgeDirection dir) {
+        if (dir == null) return;
+
+        switch (dir) {
+
+            case NORTH:
+                this.currentFacing = ExtendedFacing.NORTH_NORMAL_NONE;
+                break;
+
+            case SOUTH:
+                this.currentFacing = ExtendedFacing.SOUTH_NORMAL_NONE;
+                break;
+
+            case EAST:
+                this.currentFacing = ExtendedFacing.EAST_NORMAL_NONE;
+                break;
+
+            case WEST:
+                this.currentFacing = ExtendedFacing.WEST_NORMAL_NONE;
+                break;
+
+            case UP:
+                this.currentFacing = ExtendedFacing.UP_NORMAL_NONE;
+                break;
+
+            case DOWN:
+                this.currentFacing = ExtendedFacing.DOWN_NORMAL_NONE;
+                break;
+
+            default:
+                this.currentFacing = ExtendedFacing.DEFAULT;
+                break;
+        }
+
+        markDirty();
+
+        if (worldObj != null) {
+            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+        }
     }
 }

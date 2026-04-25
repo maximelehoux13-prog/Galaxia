@@ -22,7 +22,6 @@ import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
-import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
@@ -40,7 +39,6 @@ public class TileStationController extends GalaxiaArbitraryShape<TileStationCont
     private CelestialAsset.ID backingStation;
 
     private ForgeDirection placedFacing = ForgeDirection.NORTH;
-    private ExtendedFacing currentFacing = ExtendedFacing.DEFAULT;
 
     @Override
     public Block getControllerBlock() {
@@ -60,8 +58,7 @@ public class TileStationController extends GalaxiaArbitraryShape<TileStationCont
     protected void onStructureFormed() {
         CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(this.worldObj.provider.dimensionId);
 
-        Station station = (Station) CelestialAsset
-            .create(objectId, CelestialAsset.Kind.STATION, true);
+        Station station = (Station) CelestialAsset.create(objectId, CelestialAsset.Kind.STATION, true);
         station.setController(new BlockPos(xCoord, yCoord, zCoord));
         backingStation = station.assetId;
         CelestialAssetStore.registerAsset(owner, station);
@@ -118,7 +115,6 @@ public class TileStationController extends GalaxiaArbitraryShape<TileStationCont
     @Override
     public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
-        nbt.setInteger("placedFacing", placedFacing.ordinal());
         if (owner != null) {
             nbt.setLong("ownerMost", owner.getMostSignificantBits());
             nbt.setLong("ownerLeast", owner.getLeastSignificantBits());
@@ -128,7 +124,6 @@ public class TileStationController extends GalaxiaArbitraryShape<TileStationCont
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
-        placedFacing = ForgeDirection.getOrientation(nbt.getInteger("placedFacing"));
         if (nbt.hasKey("ownerMost") && nbt.hasKey("ownerLeast")) {
             owner = new UUID(nbt.getLong("ownerMost"), nbt.getLong("ownerLeast"));
         }

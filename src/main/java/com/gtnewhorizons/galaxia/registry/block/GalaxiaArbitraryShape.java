@@ -1,12 +1,13 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
-import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
-import it.unimi.dsi.fastutil.ints.IntIterator;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
+
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> extends GalaxiaMultiblockBase<T> {
 

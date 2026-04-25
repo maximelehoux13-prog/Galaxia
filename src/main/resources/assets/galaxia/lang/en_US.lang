@@ -453,3 +453,8 @@ galaxia.system_asset.tooltip.body=Body: %s
 galaxia.system_asset.tooltip.status=Status: %s
 galaxia.system_asset.tooltip.warning=Warning: %s
 galaxia.system_asset.tooltip.construction=Construction: %d%%
+
+#### Airlock
+tile.airlock_controller.name=AirLock Controller
+tile.airlock_door.name=AirLock Door
+tile.airlock_casing.name=AirLock Casing
