@@ -25,6 +25,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
+import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.core.network.PacketUtil;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -34,6 +36,7 @@ import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
@@ -137,7 +140,7 @@ public final class FacilityPersistenceManager {
                 }
                 UUID teamId = UUID.fromString(json.teamId);
                 decodeFacilityState(asset, json.facility);
-                CelestialAssetStore.add(teamId, asset);
+                CelestialAssetStore.registerAsset(teamId, asset);
             } catch (RuntimeException e) {
                 LOG.error("[Logistics] Skipping malformed asset entry in {}: {}", file, e.getMessage());
             }
@@ -257,6 +260,11 @@ public final class FacilityPersistenceManager {
             .name();
         json.requiredResources = encodeRequirements(asset.requiredResources());
         json.constructionInventory = encodeRequirements(asset.constructionInventory());
+        if (asset instanceof Station station && station.getController() != null) {
+            json.controllerX = station.getController().x();
+            json.controllerY = station.getController().y();
+            json.controllerZ = station.getController().z();
+        }
         return json;
     }
 
@@ -277,6 +285,9 @@ public final class FacilityPersistenceManager {
         CelestialAsset asset = CelestialAsset.create(json.assetId, objectId, kind, status);
         asset.setConstructionInventory(decodeRequirements(json.constructionInventory));
         asset.setDisplayName(json.displayName);
+        if (asset instanceof Station station && json.controllerX != null && json.controllerY != null && json.controllerZ != null) {
+            station.setController(new BlockPos(json.controllerX, json.controllerY, json.controllerZ));
+        }
         return asset;
     }
 
@@ -598,6 +609,9 @@ public final class FacilityPersistenceManager {
         Map<String, Long> requiredResources;
         Map<String, Long> constructionInventory;
         FacilityStateJson facility;
+        Integer controllerX;
+        Integer controllerY;
+        Integer controllerZ;
     }
 
     static final class FacilityStateJson {

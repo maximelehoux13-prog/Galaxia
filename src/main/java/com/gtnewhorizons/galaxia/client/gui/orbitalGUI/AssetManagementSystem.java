@@ -247,7 +247,9 @@ public final class AssetManagementSystem {
             }
             if (callbacks.isCreativeBuildModeEnabled()) {
                 System.out.println("here 1");
-                CelestialClient.createOperationalAsset(body.id(), displayName, kind);
+                CelestialAsset asset = CelestialAsset.create(body.id(), kind, true);
+                asset.setDisplayName(displayName);
+                CelestialClient.registerAsset(body.id(), asset);
                 callbacks.showActionStatus(assetSupport.formatAssetKind(kind) + " created");
                 return;
             }
@@ -262,18 +264,19 @@ public final class AssetManagementSystem {
         void confirmPendingAssetCreation(OrbitalAssetUiState state) {
             if (state.pendingAssetCreation == null) return;
             if (callbacks.isCreativeBuildModeEnabled()) {
-                CelestialClient.createOperationalAsset(
-                    state.pendingAssetCreation.celestialObjectId(),
-                    state.pendingAssetCreation.displayName(),
-                    state.pendingAssetCreation.kind());
+                CelestialAsset asset = CelestialAsset
+                    .create(state.pendingAssetCreation.celestialObjectId(), state.pendingAssetCreation.kind(), true);
+                asset.setDisplayName(state.pendingAssetCreation.displayName());
+                CelestialClient.registerAsset(state.pendingAssetCreation.celestialObjectId(), asset);
+
                 callbacks
                     // TODO: Localize
                     .showActionStatus(assetSupport.formatAssetKind(state.pendingAssetCreation.kind()) + " created");
             } else {
-                CelestialClient.createAssetInConstruction(
-                    state.pendingAssetCreation.celestialObjectId(),
-                    state.pendingAssetCreation.displayName(),
-                    state.pendingAssetCreation.kind());
+                CelestialAsset asset = CelestialAsset
+                    .create(state.pendingAssetCreation.celestialObjectId(), state.pendingAssetCreation.kind(), false);
+                asset.setDisplayName(state.pendingAssetCreation.displayName());
+                CelestialClient.registerAsset(state.pendingAssetCreation.celestialObjectId(), asset);
                 callbacks.showActionStatus(
                     // TODO: Localize
                     assetSupport.formatAssetKind(state.pendingAssetCreation.kind()) + " construction planned");
@@ -2391,7 +2394,7 @@ public final class AssetManagementSystem {
                     AssetManagerButtonGlyph.DESTROY,
                     // TODO: Localize
                     "Destroy",
-                    true,
+                    asset.kind == CelestialAsset.Kind.STATION ? callbacks.isCreativeBuildModeEnabled() : true,
                     () -> callbacks.openPendingAssetDestruction(asset)).pos(buttonX, 9));
             return row;
         }

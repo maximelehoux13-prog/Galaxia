@@ -43,9 +43,6 @@ import io.netty.buffer.ByteBuf;
 
 public final class AssetSyncPacket implements IMessage {
 
-    public static final byte FACILITY_SYNC = 0;
-    public static final byte STATION_SYNC = 1;
-
     public static final byte FULL_SYNC = 0;
     public static final byte MODULE_ADDED = 1;
     public static final byte MODULE_REMOVED = 2;
@@ -55,18 +52,6 @@ public final class AssetSyncPacket implements IMessage {
     public static final byte LOGISTICS_CONFIG_REMOVED = 7;
     public static final byte LAYOUT_TILE_UPDATED = 8;
     public static final byte LAYOUT_TILE_REMOVED = 9;
-
-    public static byte getSyncKind(byte syncType) {
-        return (byte) ((syncType >> 6) & 0x03);
-    }
-
-    public static byte getSyncAction(byte syncType) {
-        return (byte) (syncType & 0x3F);
-    }
-
-    public static byte makeSyncType(byte action, byte syncKind) {
-        return (byte) (action | (syncKind << 6));
-    }
 
     private CelestialAsset.ID assetId;
     private byte syncType;
@@ -109,7 +94,8 @@ public final class AssetSyncPacket implements IMessage {
     public static AssetSyncPacket fullSync(Station state) {
         AssetSyncPacket pkt = new AssetSyncPacket();
         pkt.assetId = state.assetId;
-        pkt.syncType = makeSyncType(FULL_SYNC, STATION_SYNC);
+        pkt.assetKind = state.kind;
+        pkt.syncType = FULL_SYNC;
 
         pkt.celestialBodyId = state.celestialObjectId;
         pkt.stationControllerPos = state.getController();
@@ -120,7 +106,7 @@ public final class AssetSyncPacket implements IMessage {
     public static AssetSyncPacket fullSync(AutomatedFacility state) {
         AssetSyncPacket pkt = new AssetSyncPacket();
         pkt.assetId = state.assetId;
-        pkt.syncType = makeSyncType(FULL_SYNC, FACILITY_SYNC);
+        pkt.syncType = FULL_SYNC;
 
         pkt.teamId = CelestialAssetStore.getTeamId(state.assetId);
         pkt.celestialBodyId = state.celestialObjectId;
@@ -253,26 +239,29 @@ public final class AssetSyncPacket implements IMessage {
 
         switch (syncType) {
             case FULL_SYNC -> {
-                byte syncKind = getSyncKind(syncType);
-                if (syncKind == STATION_SYNC) {
-                    PacketUtil.writeEnum(buf, celestialBodyId);
-                    buf.writeInt(stationControllerPos.x());
-                    buf.writeInt(stationControllerPos.y());
-                    buf.writeInt(stationControllerPos.z());
-                } else {
-                    buf.writeLong(teamId.getMostSignificantBits());
-                    buf.writeLong(teamId.getLeastSignificantBits());
-                    PacketUtil.writeEnum(buf, celestialBodyId);
-                    PacketUtil.writeEnum(buf, systemId);
-                    PacketUtil.writeEnum(buf, planetaryAnchorBodyId);
-                    PacketUtil.writeEnum(buf, assetStatus);
-                    PacketUtil.writeEnum(buf, assetKind);
-                    buf.writeLong(energyStored);
+                PacketUtil.writeEnum(buf, assetKind);
 
-                    buf.writeInt(fullSyncDeltas.size());
-                    for (AssetSyncPacket d : fullSyncDeltas) {
-                        buf.writeByte(d.syncType);
-                        d.writeDelta(buf);
+                switch (assetKind) {
+                    case STATION -> {
+                        PacketUtil.writeEnum(buf, celestialBodyId);
+                        buf.writeInt(stationControllerPos.x());
+                        buf.writeInt(stationControllerPos.y());
+                        buf.writeInt(stationControllerPos.z());
+                    }
+                    case AUTOMATED_OUTPOST, AUTOMATED_STATION -> {
+                        buf.writeLong(teamId.getMostSignificantBits());
+                        buf.writeLong(teamId.getLeastSignificantBits());
+                        PacketUtil.writeEnum(buf, celestialBodyId);
+                        PacketUtil.writeEnum(buf, systemId);
+                        PacketUtil.writeEnum(buf, planetaryAnchorBodyId);
+                        PacketUtil.writeEnum(buf, assetStatus);
+                        buf.writeLong(energyStored);
+
+                        buf.writeInt(fullSyncDeltas.size());
+                        for (AssetSyncPacket d : fullSyncDeltas) {
+                            buf.writeByte(d.syncType);
+                            d.writeDelta(buf);
+                        }
                     }
                 }
             }
@@ -287,28 +276,31 @@ public final class AssetSyncPacket implements IMessage {
 
         switch (syncType) {
             case FULL_SYNC -> {
-                byte syncKind = getSyncKind(syncType);
-                if (syncKind == STATION_SYNC) {
-                    celestialBodyId = PacketUtil.readEnum(buf, CelestialObjectId.class);
-                    stationControllerPos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
-                } else {
-                    teamId = new UUID(buf.readLong(), buf.readLong());
-                    celestialBodyId = PacketUtil.readEnum(buf, CelestialObjectId.class);
-                    systemId = PacketUtil.readEnum(buf, CelestialObjectId.class);
-                    planetaryAnchorBodyId = PacketUtil.readEnum(buf, CelestialObjectId.class);
-                    assetStatus = PacketUtil.readEnum(buf, Buildable.Status.class);
-                    assetKind = PacketUtil.readEnum(buf, CelestialAsset.Kind.class);
-                    energyStored = buf.readLong();
+                assetKind = PacketUtil.readEnum(buf, CelestialAsset.Kind.class);
 
-                    int count = buf.readInt();
-                    fullSyncDeltas = new ArrayList<>(count);
+                switch (assetKind) {
+                    case STATION -> {
+                        celestialBodyId = PacketUtil.readEnum(buf, CelestialObjectId.class);
+                        stationControllerPos = new BlockPos(buf.readInt(), buf.readInt(), buf.readInt());
+                    }
+                    case AUTOMATED_OUTPOST, AUTOMATED_STATION -> {
+                        teamId = new UUID(buf.readLong(), buf.readLong());
+                        celestialBodyId = PacketUtil.readEnum(buf, CelestialObjectId.class);
+                        systemId = PacketUtil.readEnum(buf, CelestialObjectId.class);
+                        planetaryAnchorBodyId = PacketUtil.readEnum(buf, CelestialObjectId.class);
+                        assetStatus = PacketUtil.readEnum(buf, Buildable.Status.class);
+                        energyStored = buf.readLong();
 
-                    for (int i = 0; i < count; i++) {
-                        AssetSyncPacket d = new AssetSyncPacket();
-                        d.assetId = assetId;
-                        d.syncType = buf.readByte();
-                        d.readDelta(buf);
-                        fullSyncDeltas.add(d);
+                        int count = buf.readInt();
+                        fullSyncDeltas = new ArrayList<>(count);
+
+                        for (int i = 0; i < count; i++) {
+                            AssetSyncPacket d = new AssetSyncPacket();
+                            d.assetId = assetId;
+                            d.syncType = buf.readByte();
+                            d.readDelta(buf);
+                            fullSyncDeltas.add(d);
+                        }
                     }
                 }
             }
@@ -481,9 +473,8 @@ public final class AssetSyncPacket implements IMessage {
         }
 
         private void handle(AssetSyncPacket packet) {
-            byte syncKind = (byte) ((packet.syncType >> 6) & 0x03);
-            switch (getSyncAction(packet.syncType)) {
-                case FULL_SYNC -> handleFull(packet, syncKind);
+            switch (packet.syncType) {
+                case FULL_SYNC -> handleFull(packet);
                 default -> {
                     if (CelestialClient.getByAssetId(packet.assetId) instanceof AutomatedFacility state) {
                         handleDelta(state, packet);
@@ -492,45 +483,44 @@ public final class AssetSyncPacket implements IMessage {
             }
         }
 
-        private void handleFull(AssetSyncPacket packet, byte syncKind) {
-            if (syncKind == STATION_SYNC) {
-                Station station = CelestialAssetStore.findAsset(packet.assetId) instanceof Station s ? s : null;
-                if (station == null) {
-                    station = new Station(
-                        packet.assetId,
-                        CelestialObjectId.fromString(
-                            packet.assetId.id()
-                                .toString()),
-                        packet.assetStatus);
-                    CelestialClient.add(station);
+        private void handleFull(AssetSyncPacket packet) {
+            CelestialAsset asset = CelestialAssetStore.findAsset(packet.assetId);
+            switch (packet.assetKind) {
+                case STATION -> {
+                    Station station = asset instanceof Station s ? s : null;
+                    if (station == null) {
+                        station = new Station(packet.assetId, packet.celestialBodyId, packet.assetStatus);
+                        CelestialClient.add(station);
+                        asset = station;
+                    }
+                    station.setController(packet.stationControllerPos);
                 }
-                station.setController(packet.stationControllerPos);
-                return;
+                case AUTOMATED_OUTPOST, AUTOMATED_STATION -> {
+                    AutomatedFacility state = asset instanceof AutomatedFacility o ? o : null;
+                    if (state == null) {
+                        CelestialAsset newAsset = CelestialAsset
+                            .create(packet.celestialBodyId, packet.assetKind, packet.assetStatus);
+                        if (!(newAsset instanceof AutomatedFacility newState)) return;
+                        state = newState;
+                        CelestialClient.add(newState);
+                        asset = newState;
+                    }
+
+                    state.setEnergyStored(packet.energyStored);
+
+                    state.clearModules();
+                    state.inventory.clear();
+                    state.logisticsConfig.clear();
+                    StationLayout layout = state.stationLayout();
+                    if (layout != null) layout.loadFromSnapshot(Collections.emptyMap());
+
+                    for (AssetSyncPacket d : packet.fullSyncDeltas) {
+                        handleDelta(state, d);
+                    }
+
+                }
             }
-
-            AutomatedFacility state = CelestialAssetStore.findAsset(packet.assetId) instanceof AutomatedFacility o ? o
-                : null;
-            if (state == null) {
-                CelestialAsset newAsset = CelestialAsset
-                    .create(packet.celestialBodyId, packet.assetKind, packet.assetStatus);
-                if (!(newAsset instanceof AutomatedFacility newState)) return;
-                state = newState;
-                CelestialClient.add(newState);
-            }
-
-            state.setEnergyStored(packet.energyStored);
-
-            state.clearModules();
-            state.inventory.clear();
-            state.logisticsConfig.clear();
-            StationLayout layout = state.stationLayout();
-            if (layout != null) layout.loadFromSnapshot(Collections.emptyMap());
-
-            for (AssetSyncPacket d : packet.fullSyncDeltas) {
-                handleDelta(state, d);
-            }
-
-            state.bumpSyncRevision();
+            asset.bumpSyncRevision();
         }
 
         private void handleDelta(AutomatedFacility state, AssetSyncPacket packet) {

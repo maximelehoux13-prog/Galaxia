@@ -28,6 +28,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
+import com.gtnewhorizons.galaxia.registry.outpost.Station;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
@@ -85,22 +86,15 @@ public final class CelestialClient {
         return CelestialAssetStore.getState(TempTeamCompat.getTeam(), celestialObjectId);
     }
 
-    public static CelestialAsset createAsset(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind, boolean operational) {
-        Galaxia.GALAXIA_NETWORK
-            .sendToServer(new AssetCreateRequestPacket(celestialObjectId, displayName, kind, operational));
-        return CelestialAssetStore
-            .createAsset(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind, operational);
-    }
+    public static void registerAsset(CelestialObjectId celestialObjectId, CelestialAsset asset) {
 
-    public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind) {
-        return createAsset(celestialObjectId, displayName, kind, false);
-    }
-
-    public static CelestialAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind) {
-        return createAsset(celestialObjectId, displayName, kind, true);
+        Galaxia.GALAXIA_NETWORK.sendToServer(switch (asset.kind) {
+            case STATION -> AssetCreateRequestPacket
+                .createStation(celestialObjectId, asset.displayName(), ((Station) asset).getController());
+            case AUTOMATED_STATION, AUTOMATED_OUTPOST -> AssetCreateRequestPacket
+                .createFacility(celestialObjectId, asset.displayName(), asset.kind, asset.isOperational());
+        });
+        CelestialAssetStore.registerAsset(TempTeamCompat.getTeam(), asset);
     }
 
     public static CelestialAsset getByAssetId(CelestialAsset.ID assetId) {
@@ -108,7 +102,7 @@ public final class CelestialClient {
     }
 
     public static void add(CelestialAsset state) {
-        CelestialAssetStore.add(TempTeamCompat.getTeam(), state);
+        CelestialAssetStore.registerAsset(TempTeamCompat.getTeam(), state);
     }
 
     public static List<AutomatedFacility> allOutposts() {

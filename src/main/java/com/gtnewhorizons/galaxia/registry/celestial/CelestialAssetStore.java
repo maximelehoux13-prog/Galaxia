@@ -11,8 +11,6 @@ import java.util.UUID;
 
 import net.minecraft.item.ItemStack;
 
-import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
-
 public final class CelestialAssetStore {
 
     private static final Map<UUID, Map<CelestialObjectId, Set<CelestialAsset>>> STATE_BY_BODY = new LinkedHashMap<>();
@@ -21,7 +19,7 @@ public final class CelestialAssetStore {
 
     private CelestialAssetStore() {}
 
-    public static void add(UUID teamId, CelestialAsset asset) {
+    public static void registerAsset(UUID teamId, CelestialAsset asset) {
         Map<CelestialObjectId, Set<CelestialAsset>> byBody = STATE_BY_BODY
             .computeIfAbsent(teamId, k -> new LinkedHashMap<>());
 
@@ -62,19 +60,6 @@ public final class CelestialAssetStore {
             }
         }
         return all;
-    }
-
-    public static CelestialAsset createAsset(UUID teamId, CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind, boolean operational) {
-
-        CelestialAsset asset = CelestialAsset.create(
-            celestialObjectId,
-            kind,
-            operational ? Buildable.Status.OPERATIONAL : Buildable.Status.CONSTRUCTION_SITE);
-        asset.setDisplayName(displayName);
-
-        add(teamId, asset);
-        return asset;
     }
 
     public static boolean destroyAsset(CelestialAsset.ID assetId) {

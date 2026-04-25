@@ -52,7 +52,7 @@ public final class AssetRequestSyncPacket implements IMessage {
                 if (asset != null && asset.status() == CelestialAsset.Status.OPERATIONAL) {
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     UUID teamId = TempTeamCompat.getTeam(player);
-                    CelestialAssetStore.add(teamId, asset);
+                    CelestialAssetStore.registerAsset(teamId, asset);
                     Galaxia.LOG.info(
                         "[Outpost] Auto-created state for outpost {} (player {})",
                         packet.assetId,
