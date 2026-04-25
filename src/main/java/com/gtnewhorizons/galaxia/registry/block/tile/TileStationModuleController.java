@@ -31,9 +31,9 @@ import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
-import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
+import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -89,7 +89,7 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
     @Override
     protected boolean checkStructure() {
         if (worldObj == null || worldObj.isRemote) return structureValid;
-        if (structureValid && !this.structureBlocks.isEmpty()) return true;
+        if (fastRevalidate()) return true;
 
         World world = this.worldObj;
         CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(world.provider.dimensionId);
@@ -297,6 +297,23 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
         CelestialAssetStore.destroyAsset(this.backingStation);
     }
 
+    public boolean fastRevalidate() {
+        if (!structureValid || structureBlocks.isEmpty()) return false;
+        if (worldObj == null || worldObj.isRemote) return true;
+
+        for (IntIterator it = structureBlocks.iterator(); it.hasNext(); ) {
+            int packed = it.nextInt();
+            int wx = LocalCoord.worldX(LocalCoord.unpackX(packed), xCoord);
+            int wy = LocalCoord.worldY(LocalCoord.unpackSignedY(packed), yCoord);
+            int wz = LocalCoord.worldZ(LocalCoord.unpackZ(packed), zCoord);
+            Block b = worldObj.getBlock(wx, wy, wz);
+            if (!isValidBoundaryBlock(b)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean isInside(int x, int y, int z) {
 
         int packed = LocalCoord.packFromWorld(x, y, z, xCoord, yCoord, zCoord);
@@ -335,6 +352,10 @@ public class TileStationModuleController extends GalaxiaMultiblockBase<TileStati
 
         public static int unpackX(int v) {
             return unoffset((v >> 12) & 63);
+        }
+
+        public static int unpackSignedY(int v) {
+            return unoffset((v >> 6) & 63);
         }
 
         public static int unpackY(int v) {
