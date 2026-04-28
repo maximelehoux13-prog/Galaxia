@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
+import java.util.Arrays;
+
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -8,8 +10,6 @@ import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-
-import java.util.Arrays;
 
 public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> extends GalaxiaMultiblockBase<T> {
 

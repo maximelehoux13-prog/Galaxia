@@ -1,7 +1,5 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
-import com.gtnewhorizons.galaxia.registry.block.GalaxiaArbitraryShape;
-import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
@@ -12,6 +10,9 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import com.gtnewhorizons.galaxia.registry.block.GalaxiaArbitraryShape;
+import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
 public class BlockAirlockDoor extends Block {
 
@@ -93,7 +94,7 @@ public class BlockAirlockDoor extends Block {
 
     @Override
     public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
-                                    float hitY, float hitZ) {
+        float hitY, float hitZ) {
         if (world.isRemote) return true;
 
         GalaxiaArbitraryShape.IntQueue floodBFS = new GalaxiaArbitraryShape.IntQueue();
