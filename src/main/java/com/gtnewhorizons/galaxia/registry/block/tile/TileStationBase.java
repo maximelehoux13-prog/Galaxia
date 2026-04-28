@@ -106,6 +106,8 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
             }
             return false;
         }
+
+
         return true;
     }
 
@@ -137,5 +139,18 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
     @Override
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
         this.readFromNBT(pkt.func_148857_g());
+    }
+
+    public abstract boolean tryRebuildMonitorGraph();
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        for (BlockPos b: airlocks) {
+            TileEntityAirlock airlock = b.getTE(worldObj);
+            if (airlock == null) return;
+
+            airlock.untrackStationController(this.here);
+        }
     }
 }

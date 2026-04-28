@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.block.Block;
@@ -24,8 +25,8 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
 
     private AirlockState state = AirlockState.CLOSED;
 
-    private BlockPos stationController1;
-    private BlockPos stationController2;
+    public static final int MAX_CONNECTIONS = 2;
+    private final List<BlockPos> stationControllers = new ArrayList<>(MAX_CONNECTIONS);
 
     /**
      * Controller is now on the BOTTOM layer of the structure.
@@ -41,10 +42,6 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(),
         GalaxiaBlocksEnum.AIRLOCK_DOOR.get());
 
-    /**
-     * Structure updated:
-     * Controller ('R') is on bottom layer now.
-     */
     private static final IStructureDefinition<TileEntityAirlock> STRUCTURE_DEFINITION = StructureDefinition
         .<TileEntityAirlock>builder()
         .addShape(
@@ -122,22 +119,38 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     }
 
     public void trackStationController(BlockPos pos) {
-        if (stationController1 == null) {
-            stationController1 = pos;
-        } else if (stationController2 == null) {
-            stationController2 = pos;
-        } else {
+        if (stationControllers.size() >= MAX_CONNECTIONS) {
             Galaxia.LOG.error("Too many station controllers to track");
+            return;
+        }
+
+        if (stationControllers.contains(pos)) return;
+        stationControllers.add(pos);
+
+        if (stationControllers.size() >= MAX_CONNECTIONS) {
+            for (BlockPos controllerPos : stationControllers) {
+                TileStationBase base = controllerPos.getTE(worldObj);
+                if (base == null) continue;
+                if (base.tryRebuildMonitorGraph()) return;
+            }
         }
     }
 
     public void untrackStationController(BlockPos pos) {
-        if (stationController1 == pos) {
-            stationController1 = null;
-        } else if (stationController2 == pos) {
-            stationController2 = null;
-        } else {
-            Galaxia.LOG.error("Invalid station controllers to track");
+        if (!stationControllers.remove(pos)) {
+            Galaxia.LOG.error("Invalid station controller to untrack");
+        }
+    }
+
+    public void collectGraph(TileStationController controller, List<BlockPos> monitors) {
+        for (BlockPos b : stationControllers) {
+            if (monitors.contains(b)) continue;
+
+            TileStationBase te = b.getTE(worldObj);
+            if (te instanceof TileStationMonitor monitor) {
+                monitors.add(b);
+                monitor.collectGraph(controller, monitors);
+            }
         }
     }
 
@@ -245,5 +258,12 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         }
 
         this.markDirty();
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+
+        setDoorState(false);
     }
 }

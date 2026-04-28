@@ -20,6 +20,7 @@ import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -37,9 +38,13 @@ public class TileStationController extends TileStationBase {
     private UUID owner;
     private CelestialAsset.ID backingStation;
 
+    private final List<BlockPos> monitors = new ArrayList<>();
+
     @Override
     protected void onStructureFormed() {
         super.onStructureFormed();
+
+        tryRebuildMonitorGraph();
         // Avoid registering potentially duplicate station on reload
         if (backingStation == null) {
             CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(this.worldObj.provider.dimensionId);
@@ -54,11 +59,25 @@ public class TileStationController extends TileStationBase {
     }
 
     @Override
+    public boolean tryRebuildMonitorGraph() {
+        monitors.clear();
+        for (BlockPos pos : airlocks) {
+            TileEntityAirlock airlock = pos.getTE(worldObj);
+            if (airlock == null) continue;
+
+            airlock.collectGraph(this, monitors);
+        }
+
+        return true;
+    }
+
+    @Override
     protected void onStructureDisformed() {
         super.onStructureDisformed();
         if (backingStation != null) {
             CelestialAssetStore.disableAsset(backingStation);
         }
+        monitors.clear();
     }
 
     @Override
@@ -87,6 +106,12 @@ public class TileStationController extends TileStationBase {
                     .syncHandler(new InteractionSyncHandler().setOnMousePressed(mouseData -> {
                         if (mouseData.mouseButton != 0 || worldObj.isRemote) return;
                         markStructureDirty();
+                        for (BlockPos b : monitors) {
+                            TileStationMonitor monitor = (TileStationMonitor) b.getTE(worldObj);
+                            if (monitor != null) {
+                                System.out.println(monitor.here);
+                            }
+                        }
                     })));
     }
 
@@ -97,16 +122,9 @@ public class TileStationController extends TileStationBase {
             nbt.setLong("ownerMost", owner.getMostSignificantBits());
             nbt.setLong("ownerLeast", owner.getLeastSignificantBits());
         }
-
         if (backingStation != null) {
-            nbt.setLong(
-                "backingStationMost",
-                backingStation.id()
-                    .getMostSignificantBits());
-            nbt.setLong(
-                "backingStationLeast",
-                backingStation.id()
-                    .getLeastSignificantBits());
+            nbt.setLong("backingStationMost", backingStation.id().getMostSignificantBits());
+            nbt.setLong("backingStationLeast", backingStation.id().getLeastSignificantBits());
         }
     }
 
@@ -116,6 +134,7 @@ public class TileStationController extends TileStationBase {
         if (nbt.hasKey("ownerMost") && nbt.hasKey("ownerLeast")) {
             owner = new UUID(nbt.getLong("ownerMost"), nbt.getLong("ownerLeast"));
         }
+
         if (nbt.hasKey("backingStationMost") && nbt.hasKey("backingStationLeast")) {
             backingStation = CelestialAsset.ID
                 .from(new UUID(nbt.getLong("backingStationMost"), nbt.getLong("backingStationLeast")));
@@ -134,6 +153,7 @@ public class TileStationController extends TileStationBase {
         this.readFromNBT(pkt.func_148857_g());
     }
 
+
     public UUID getOwner() {
         return owner;
     }
@@ -142,12 +162,15 @@ public class TileStationController extends TileStationBase {
         this.owner = owner;
     }
 
-    public void unregisterStation() {
-        if (this.backingStation == null) return;
-        CelestialAssetStore.destroyAsset(this.backingStation);
-    }
-
     public CelestialAsset.ID getBackingStation() {
         return backingStation;
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        if (backingStation != null) {
+            CelestialAssetStore.destroyAsset(backingStation);
+        }
     }
 }

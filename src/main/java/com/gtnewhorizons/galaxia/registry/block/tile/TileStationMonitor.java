@@ -3,6 +3,7 @@ package com.gtnewhorizons.galaxia.registry.block.tile;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
@@ -20,6 +21,8 @@ import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
+import javax.annotation.Nullable;
+
 public class TileStationMonitor extends TileStationBase {
 
     private static final List<Block> VALID_BLOCKS = new ArrayList<>();
@@ -28,10 +31,7 @@ public class TileStationMonitor extends TileStationBase {
         VALID_BLOCKS.add(GalaxiaBlocksEnum.STATION_MONITOR.get());
     }
 
-    @Override
-    protected void onStructureFormed() {
-        super.onStructureFormed();
-    }
+    private @Nullable BlockPos mainController;
 
     @Override
     protected boolean isValidBoundaryBlock(Block b) {
@@ -82,5 +82,27 @@ public class TileStationMonitor extends TileStationBase {
     @Override
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
         this.readFromNBT(pkt.func_148857_g());
+    }
+
+    public void collectGraph(TileStationController controller, List<BlockPos> monitors) {
+        mainController = controller.here;
+
+        for (BlockPos pos : airlocks) {
+            TileEntityAirlock airlock = pos.getTE(worldObj);
+            if (airlock == null) continue;
+
+            airlock.collectGraph(controller, monitors);
+        }
+    }
+
+    public boolean tryRebuildMonitorGraph() {
+        if (mainController != null) {
+            TileStationController controller = mainController.getTE(worldObj);
+            if (controller == null) return false;
+
+            return controller.tryRebuildMonitorGraph();
+        }
+
+        return false;
     }
 }
