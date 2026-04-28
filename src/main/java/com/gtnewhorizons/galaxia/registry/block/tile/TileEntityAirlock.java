@@ -1,9 +1,11 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
-import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
+import java.util.List;
+
+import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
 
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
@@ -11,6 +13,7 @@ import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
+import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
 
 public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> {
 
@@ -21,6 +24,9 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
 
     private AirlockState state = AirlockState.CLOSED;
 
+    private BlockPos stationController1;
+    private BlockPos stationController2;
+
     /**
      * Controller is now on the BOTTOM layer of the structure.
      */
@@ -29,6 +35,11 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     public static final int CONTROLLER_OFFSET_Z = 0;
 
     private static final String STRUCTURE_PIECE_MAIN = "main";
+
+    public static final List<Block> VALID_BLOCKS = List.of(
+        GalaxiaBlocksEnum.AIRLOCK_CASING.get(),
+        GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(),
+        GalaxiaBlocksEnum.AIRLOCK_DOOR.get());
 
     /**
      * Structure updated:
@@ -48,7 +59,10 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
             // spotless:on
         .addElement('C', StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CASING.get(), 0))
         .addElement('R', StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
-        .addElement('D', StructureUtility.ofChain(StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_DOOR.get(), 0),
+        .addElement(
+            'D',
+            StructureUtility.ofChain(
+                StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_DOOR.get(), 0),
                 StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_DOOR.get(), 1)))
         .build();
 
@@ -107,13 +121,30 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
     }
 
+    public void trackStationController(BlockPos pos) {
+        if (stationController1 == null) {
+            stationController1 = pos;
+        } else if (stationController2 == null) {
+            stationController2 = pos;
+        } else {
+            Galaxia.LOG.error("Too many station controllers to track");
+        }
+    }
+
+    public void untrackStationController(BlockPos pos) {
+        if (stationController1 == pos) {
+            stationController1 = null;
+        } else if (stationController2 == pos) {
+            stationController2 = null;
+        } else {
+            Galaxia.LOG.error("Invalid station controllers to track");
+        }
+    }
+
     @Override
     protected boolean checkStructure() {
-
         if (worldObj == null || worldObj.isRemote) return structureValid;
-
         for (ExtendedFacing facing : ExtendedFacing.values()) {
-
             boolean valid = getStructureDefinition().check(
                 this,
                 STRUCTURE_PIECE_MAIN,
@@ -128,7 +159,6 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
                 false);
 
             if (valid) {
-
                 if (!structureValid || currentFacing != facing) {
                     structureValid = true;
                     currentFacing = facing;
@@ -138,7 +168,6 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
                     markDirty();
                     worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
                 }
-
                 return true;
             }
         }
@@ -152,6 +181,11 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         }
 
         return false;
+    }
+
+    @Override
+    public void updateEntity() {
+        super.updateEntity();
     }
 
     @Override
@@ -209,4 +243,5 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
                 }
             }
         }
-    }}
+    }
+}

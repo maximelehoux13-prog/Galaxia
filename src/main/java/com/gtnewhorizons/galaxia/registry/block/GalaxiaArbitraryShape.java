@@ -15,6 +15,7 @@ public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> 
     public static final int MAX_BLOCKS = SEARCH_RADIUS * SEARCH_RADIUS * SEARCH_RADIUS;
 
     protected final IntSet structureBlocks = LocalCoord.newBlockSet();
+    protected int volume = -1;
 
     protected abstract boolean isValidBoundaryBlock(Block b);
 
@@ -155,15 +156,14 @@ public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> 
                 int nwz = LocalCoord.worldZ(nlz, zCoord);
 
                 Block b = world.getBlock(nwx, nwy, nwz);
-
-                if (isValidBoundaryBlock(b)) {
+                if (!b.isAir(world, nwx, nwy, nwz)) {
+                    // No need to check if the block is valid since only valid blocks are kept in the boundary
                     if (validBoundary.contains(np)) {
                         localStructureBlocks.add(np);
-                    }
-                    continue;
-                }
 
-                if (!b.isAir(world, nwx, nwy, nwz)) {
+                        boolean valid = checkDefinition(world, b, nwx, nwy, nwz);
+                        if (!valid) return false;
+                    }
                     continue;
                 }
 
@@ -173,8 +173,14 @@ public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> 
             }
         }
 
-        return !localStructureBlocks.isEmpty() && localStructureBlocks.size() >= 6;
+        if (!localStructureBlocks.isEmpty() && localStructureBlocks.size() >= 6) {
+             this.volume = visited.size();
+             return true;
+        }
+        return false;
     }
+
+    protected abstract boolean checkDefinition(World world, Block block, int x, int y, int z);
 
     public boolean isInside(int x, int y, int z) {
         int packed = LocalCoord.packFromWorld(x, y, z, xCoord, yCoord, zCoord);

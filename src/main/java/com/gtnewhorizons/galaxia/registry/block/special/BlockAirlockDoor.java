@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Facing;
@@ -7,10 +8,6 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-
-
-import net.minecraft.block.Block;
-
 
 public class BlockAirlockDoor extends Block {
 
@@ -45,12 +42,14 @@ public class BlockAirlockDoor extends Block {
     @Override
     public boolean shouldSideBeRendered(IBlockAccess world, int x, int y, int z, int side) {
         // TODO: This is a complete hack
-        int meta = world.getBlockMetadata(x - Facing.offsetsXForSide[side],
+        int meta = world.getBlockMetadata(
+            x - Facing.offsetsXForSide[side],
             y - Facing.offsetsYForSide[side],
             z - Facing.offsetsZForSide[side]);
 
         return meta == META_CLOSED;
     }
+
     @Override
     public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
         int meta = world.getBlockMetadata(x, y, z);
@@ -59,10 +58,7 @@ public class BlockAirlockDoor extends Block {
             return null;
         }
 
-        return AxisAlignedBB.getBoundingBox(
-            x, y, z,
-            x + 1, y + 1, z + 1
-        );
+        return AxisAlignedBB.getBoundingBox(x, y, z, x + 1, y + 1, z + 1);
     }
 
     @Override

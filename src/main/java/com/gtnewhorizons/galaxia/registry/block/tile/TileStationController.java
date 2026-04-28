@@ -1,19 +1,17 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
+import java.util.List;
 import java.util.UUID;
 
 import net.minecraft.block.Block;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
-import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import com.cleanroommc.modularui.api.IGuiHolder;
 import com.cleanroommc.modularui.api.drawable.IKey;
 import com.cleanroommc.modularui.factory.PosGuiData;
 import com.cleanroommc.modularui.screen.ModularPanel;
@@ -21,58 +19,38 @@ import com.cleanroommc.modularui.screen.UISettings;
 import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
-import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
-import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
-import com.gtnewhorizons.galaxia.registry.block.GalaxiaArbitraryShape;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
-public class TileStationController extends GalaxiaArbitraryShape<TileStationController>
-    implements IGuiHolder<PosGuiData> {
+public class TileStationController extends TileStationBase {
+
+    private static final List<Block> VALID_BLOCKS = List.of();
+    static {
+        VALID_BLOCKS.addAll(TileStationBase.BASE_VALID_BLOCKS);
+        VALID_BLOCKS.add(GalaxiaBlocksEnum.STATION_CONTROLLER.get());
+    }
 
     private UUID owner;
     private CelestialAsset.ID backingStation;
 
-    private ForgeDirection placedFacing = ForgeDirection.NORTH;
-
-    @Override
-    public Block getControllerBlock() {
-        return GalaxiaBlocksEnum.MODULE_CONTROLLER.get();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void construct(ItemStack trigger, boolean hintsOnly) {}
-
-    @Override
-    public int survivalConstruct(ItemStack trigger, int elementBudget, ISurvivalBuildEnvironment env) {
-        return -2;
-    }
-
     @Override
     protected void onStructureFormed() {
+        super.onStructureFormed();
         CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(this.worldObj.provider.dimensionId);
-
         Station station = (Station) CelestialAsset.create(objectId, CelestialAsset.Kind.STATION, true);
-        station.setController(new BlockPos(xCoord, yCoord, zCoord));
+        station.setController(this.here);
         backingStation = station.assetId;
+
         CelestialAssetStore.registerAsset(owner, station);
     }
 
     @Override
     protected boolean isValidBoundaryBlock(Block b) {
-        return b == GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get() || b == GalaxiaBlocksEnum.MODULE_CONTROLLER.get();
-    }
-
-    @Override
-    protected boolean isValidDimension(World world) {
-        CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(world.provider.dimensionId);
-        return objectId != CelestialObjectId.INVALID;
+        return VALID_BLOCKS.contains(b);
     }
 
     @Override
@@ -102,14 +80,6 @@ public class TileStationController extends GalaxiaArbitraryShape<TileStationCont
     @Override
     public ForgeDirection getPlacedFacing() {
         return placedFacing;
-    }
-
-    public void setPlacedFacing(ForgeDirection dir) {
-        placedFacing = dir;
-    }
-
-    public ExtendedFacing getCurrentFacing() {
-        return currentFacing;
     }
 
     @Override
@@ -154,4 +124,7 @@ public class TileStationController extends GalaxiaArbitraryShape<TileStationCont
         CelestialAssetStore.destroyAsset(this.backingStation);
     }
 
+    public CelestialAsset.ID getBackingStation() {
+        return backingStation;
+    }
 }
