@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
+import com.gtnewhorizons.galaxia.registry.block.special.BlockStationMonitor;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationMonitor;
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
 
@@ -39,7 +41,8 @@ public enum GalaxiaBlocksEnum {
 
     // TE
     SILO_CONTROLLER(new BlockSilo(), TileEntitySilo.class, "silo_controller"),
-    MODULE_CONTROLLER(new BlockStationController(), TileStationController.class, "station_controller"),
+    STATION_CONTROLLER(new BlockStationController(), TileStationController.class, "station_controller"),
+    STATION_MONITOR(new BlockStationMonitor(), TileStationMonitor.class, "station_monitor"),
     ASSEMBLER_CONTROLLER(new BlockModuleAssembler(), TileEntityModuleAssembler.class, "module_assembler_controller"),
     FUMAROLE(new BlockFumarole(), TileEntityFumarole.class, "tenebrae_fumarole"),
     GANTRY(new BlockGantry(), TileEntityGantry.class, "gantry_block"),

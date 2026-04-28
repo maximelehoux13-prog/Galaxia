@@ -15,8 +15,9 @@ public class Vitris extends BasePlanet {
     @Override
     protected DimensionBuilder customizeDimension(DimensionBuilder builder) {
         return builder.orbitalRadius(1 * earthRadiusToAU)
-            .effects(EffectBuilder.builder()
-                .build())
+            .effects(
+                EffectBuilder.builder()
+                    .build())
             .tier(EnumTiers.TIER_1);
     }
 }
