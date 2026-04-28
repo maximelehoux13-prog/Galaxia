@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import com.cleanroommc.modularui.api.drawable.IKey;
 import com.cleanroommc.modularui.factory.PosGuiData;
@@ -19,7 +19,12 @@ import com.cleanroommc.modularui.screen.UISettings;
 import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
+import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
+import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeTile;
+import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -27,21 +32,40 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
-public class TileStationController extends TileStationBase {
+import it.unimi.dsi.fastutil.ints.IntSet;
 
-    private static final List<Block> VALID_BLOCKS = new ArrayList<>();
-    static {
-        VALID_BLOCKS.addAll(TileStationBase.BASE_VALID_BLOCKS);
-        VALID_BLOCKS.add(GalaxiaBlocksEnum.STATION_CONTROLLER.get());
-    }
+public class TileStationController extends TileStationBase<TileStationController>
+    implements ArbitraryShapeTile<TileStationController> {
 
+    private final IntSet structureBlocks = LocalCoord.newBlockSet();
+    private int volume = -1;
     private UUID owner;
     private CelestialAsset.ID backingStation;
 
     private final List<BlockPos> monitors = new ArrayList<>();
 
+    public final ArbitraryShapeDefinition<TileStationController> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
+        .<TileStationController>builder()
+        .addElements(
+            BASE_VALID_BLOCKS.stream()
+                .map(b -> StructureUtility.ofBlock(b, 0)))
+        .addElement(StructureUtility.ofChain(StructureUtility.ofTileAdder((_, tileEntity) -> {
+            if (tileEntity instanceof TileEntityAirlock airlock) {
+                if (!airlock.isStructureValid()) return false;
+
+                BlockPos airlockPos = new BlockPos(airlock.xCoord, airlock.yCoord, airlock.zCoord);
+                if (!this.airlocks.contains(airlockPos)) {
+                    this.airlocks.add(airlockPos);
+                }
+                return true;
+            }
+            return false;
+        }, GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0)))
+        .embedDefinition(TileEntityAirlock.STRUCTURE_PIECE_MAIN, TileEntityAirlock.STRUCTURE_DEFINITION)
+        .build();
+
     @Override
-    protected void onStructureFormed() {
+    public void onStructureFormed() {
         super.onStructureFormed();
 
         tryRebuildMonitorGraph();
@@ -72,7 +96,7 @@ public class TileStationController extends TileStationBase {
     }
 
     @Override
-    protected void onStructureDisformed() {
+    public void onStructureDisformed() {
         super.onStructureDisformed();
         if (backingStation != null) {
             CelestialAssetStore.disableAsset(backingStation);
@@ -81,8 +105,55 @@ public class TileStationController extends TileStationBase {
     }
 
     @Override
-    protected boolean isValidBoundaryBlock(Block b) {
-        return VALID_BLOCKS.contains(b);
+    public ForgeDirection getPlacedFacing() {
+        return placedFacing;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public IntSet getStructureBlocks() {
+        return structureBlocks;
+    }
+
+    @Override
+    public void setStructureBlocks(IntSet blocks) {
+        this.structureBlocks.clear();
+        this.structureBlocks.addAll(blocks);
+    }
+
+    @Override
+    public boolean isStructureValid() {
+        return structureValid;
+    }
+
+    @Override
+    public int getVolume() {
+        return volume;
+    }
+
+    @Override
+    public void setVolume(int volume) {
+        this.volume = volume;
+    }
+
+    @Override
+    public IStructureDefinition<TileStationController> getStructureDefinition() {
+        return STRUCTURE_DEFINITION;
+    }
+
+    @Override
+    protected int getControllerOffsetX() {
+        return 0;
+    }
+
+    @Override
+    protected int getControllerOffsetY() {
+        return 0;
+    }
+
+    @Override
+    protected int getControllerOffsetZ() {
+        return 0;
     }
 
     @Override

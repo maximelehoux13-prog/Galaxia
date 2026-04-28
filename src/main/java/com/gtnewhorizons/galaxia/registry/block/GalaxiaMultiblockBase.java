@@ -47,7 +47,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
     protected boolean checkStructure() {
         if (worldObj == null || worldObj.isRemote) return structureValid;
 
-        boolean valid = getStructureDefinition().check(
+        return getStructureDefinition().check(
             (T) this,
             "main",
             worldObj,
@@ -59,15 +59,6 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             getControllerOffsetY(),
             getControllerOffsetZ(),
             false);
-
-        if (valid != structureValid) {
-            structureValid = valid;
-            if (valid) onStructureFormed();
-            else onStructureDisformed();
-            markDirty();
-            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-        }
-        return valid;
     }
 
     @SuppressWarnings("unchecked")
@@ -127,7 +118,14 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
         if (worldObj.isRemote) return;
 
         if (mCheckTimer <= 0) {
-            checkStructure();
+            final boolean valid = checkStructure();
+            if (valid != structureValid) {
+                structureValid = valid;
+                if (valid) onStructureFormed();
+                else onStructureDisformed();
+                markDirty();
+                worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
+            }
             mCheckTimer = 100;
         } else {
             mCheckTimer--;

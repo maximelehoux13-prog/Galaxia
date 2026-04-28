@@ -35,14 +35,14 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     public static final int CONTROLLER_OFFSET_Y = 3;
     public static final int CONTROLLER_OFFSET_Z = 0;
 
-    private static final String STRUCTURE_PIECE_MAIN = "main";
+    public static final String STRUCTURE_PIECE_MAIN = "main";
 
     public static final List<Block> VALID_BLOCKS = List.of(
         GalaxiaBlocksEnum.AIRLOCK_CASING.get(),
         GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(),
         GalaxiaBlocksEnum.AIRLOCK_DOOR.get());
 
-    private static final IStructureDefinition<TileEntityAirlock> STRUCTURE_DEFINITION = StructureDefinition
+    public static final IStructureDefinition<TileEntityAirlock> STRUCTURE_DEFINITION = StructureDefinition
         .<TileEntityAirlock>builder()
         .addShape(
             STRUCTURE_PIECE_MAIN,
@@ -56,11 +56,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
             // spotless:on
         .addElement('C', StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CASING.get(), 0))
         .addElement('R', StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
-        .addElement(
-            'D',
-            StructureUtility.ofChain(
-                StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_DOOR.get(), 0),
-                StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_DOOR.get(), 1)))
+        .addElement('D', StructureUtility.ofBlockAnyMeta(GalaxiaBlocksEnum.AIRLOCK_DOOR.get()))
         .build();
 
     @Override
@@ -172,33 +168,17 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
                 false);
 
             if (valid) {
-                if (!structureValid || currentFacing != facing) {
-                    structureValid = true;
+                if (currentFacing != facing) {
+                    // This forces a call to onStructureFormed
+                    structureValid = false;
+
                     currentFacing = facing;
-
-                    onStructureFormed();
-
-                    markDirty();
-                    worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
                 }
                 return true;
             }
         }
 
-        if (structureValid) {
-            structureValid = false;
-            onStructureDisformed();
-
-            markDirty();
-            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-        }
-
         return false;
-    }
-
-    @Override
-    public void updateEntity() {
-        super.updateEntity();
     }
 
     @Override

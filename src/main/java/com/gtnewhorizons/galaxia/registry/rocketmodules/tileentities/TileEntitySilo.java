@@ -252,13 +252,6 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo>
             valid = false;
         }
 
-        if (valid != structureValid) {
-            structureValid = valid;
-            if (valid) onStructureFormed();
-            else onStructureDisformed();
-            markDirty();
-            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-        }
         return valid;
     }
 

@@ -1,11 +1,9 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -20,22 +18,88 @@ import com.cleanroommc.modularui.screen.UISettings;
 import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
+import com.gtnewhorizon.structurelib.structure.StructureUtility;
+import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
+import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeTile;
+import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
-public class TileStationMonitor extends TileStationBase {
+import it.unimi.dsi.fastutil.ints.IntSet;
 
-    private static final List<Block> VALID_BLOCKS = new ArrayList<>();
-    static {
-        VALID_BLOCKS.addAll(TileStationBase.BASE_VALID_BLOCKS);
-        VALID_BLOCKS.add(GalaxiaBlocksEnum.STATION_MONITOR.get());
-    }
+public class TileStationMonitor extends TileStationBase<TileStationMonitor>
+    implements ArbitraryShapeTile<TileStationMonitor> {
 
+    private final IntSet structureBlocks = LocalCoord.newBlockSet();
+    private int volume = -1;
     private @Nullable BlockPos mainController;
 
+    public final ArbitraryShapeDefinition<TileStationMonitor> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
+        .<TileStationMonitor>builder()
+        .addElements(
+            BASE_VALID_BLOCKS.stream()
+                .map(b -> StructureUtility.ofBlock(b, 0)))
+        .addElement(StructureUtility.ofChain(StructureUtility.ofTileAdder((_, tileEntity) -> {
+            if (tileEntity instanceof TileEntityAirlock airlock) {
+                if (!airlock.isStructureValid()) return false;
+
+                BlockPos airlockPos = new BlockPos(airlock.xCoord, airlock.yCoord, airlock.zCoord);
+                if (!this.airlocks.contains(airlockPos)) {
+                    this.airlocks.add(airlockPos);
+                }
+                return true;
+            }
+            return false;
+        }, GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0)))
+        .embedDefinition(TileEntityAirlock.STRUCTURE_PIECE_MAIN, TileEntityAirlock.STRUCTURE_DEFINITION)
+        .build();
+
+    @SuppressWarnings("unchecked")
     @Override
-    protected boolean isValidBoundaryBlock(Block b) {
-        return VALID_BLOCKS.contains(b);
+    public IntSet getStructureBlocks() {
+        return structureBlocks;
+    }
+
+    @Override
+    public void setStructureBlocks(IntSet blocks) {
+        this.structureBlocks.clear();
+        this.structureBlocks.addAll(blocks);
+    }
+
+    @Override
+    public boolean isStructureValid() {
+        return structureValid;
+    }
+
+    @Override
+    public int getVolume() {
+        return volume;
+    }
+
+    @Override
+    public void setVolume(int volume) {
+        this.volume = volume;
+    }
+
+    @Override
+    public IStructureDefinition<TileStationMonitor> getStructureDefinition() {
+        return STRUCTURE_DEFINITION;
+    }
+
+    @Override
+    protected int getControllerOffsetX() {
+        return 0;
+    }
+
+    @Override
+    protected int getControllerOffsetY() {
+        return 0;
+    }
+
+    @Override
+    protected int getControllerOffsetZ() {
+        return 0;
     }
 
     @Override

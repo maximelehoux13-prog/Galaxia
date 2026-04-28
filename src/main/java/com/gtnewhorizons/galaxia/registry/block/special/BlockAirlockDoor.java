@@ -11,7 +11,8 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import com.gtnewhorizons.galaxia.registry.block.GalaxiaArbitraryShape;
+import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
+import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
 public class BlockAirlockDoor extends Block {
@@ -97,26 +98,26 @@ public class BlockAirlockDoor extends Block {
         float hitY, float hitZ) {
         if (world.isRemote) return true;
 
-        GalaxiaArbitraryShape.IntQueue floodBFS = new GalaxiaArbitraryShape.IntQueue();
-        int start = GalaxiaArbitraryShape.LocalCoord.pack(0, 0, 0);
+        IntQueue floodBFS = new IntQueue();
+        int start = LocalCoord.pack(0, 0, 0);
         floodBFS.enqueue(start);
 
         while (!floodBFS.isEmpty()) {
             int cur = floodBFS.dequeue();
-            int lx = GalaxiaArbitraryShape.LocalCoord.unpackX(cur);
-            int ly = GalaxiaArbitraryShape.LocalCoord.unpackY(cur);
-            int lz = GalaxiaArbitraryShape.LocalCoord.unpackZ(cur);
+            int lx = LocalCoord.unpackX(cur);
+            int ly = LocalCoord.unpackY(cur);
+            int lz = LocalCoord.unpackZ(cur);
 
             for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
                 int nlx = lx + d.offsetX;
                 int nly = ly + d.offsetY;
                 int nlz = lz + d.offsetZ;
 
-                int np = GalaxiaArbitraryShape.LocalCoord.pack(nlx, nly, nlz);
+                int np = LocalCoord.pack(nlx, nly, nlz);
 
-                int wx = GalaxiaArbitraryShape.LocalCoord.worldX(nlx, x);
-                int wy = GalaxiaArbitraryShape.LocalCoord.worldY(nly, y);
-                int wz = GalaxiaArbitraryShape.LocalCoord.worldZ(nlz, z);
+                int wx = LocalCoord.worldX(nlx, x);
+                int wy = LocalCoord.worldY(nly, y);
+                int wz = LocalCoord.worldZ(nlz, z);
 
                 Block b = world.getBlock(wx, wy, wz);
 
