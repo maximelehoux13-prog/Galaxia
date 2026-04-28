@@ -167,13 +167,6 @@ public class TileEntityModuleAssembler extends GalaxiaMultiblockBase<TileEntityM
             valid = false;
         }
 
-        if (valid != structureValid) {
-            structureValid = valid;
-            if (valid) onStructureFormed();
-            else onStructureDisformed();
-            markDirty();
-            worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
-        }
         return valid;
     }
 

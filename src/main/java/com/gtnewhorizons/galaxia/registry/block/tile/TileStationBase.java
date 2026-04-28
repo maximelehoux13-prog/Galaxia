@@ -17,12 +17,13 @@ import com.cleanroommc.modularui.factory.PosGuiData;
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
-import com.gtnewhorizons.galaxia.registry.block.GalaxiaArbitraryShape;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
+import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
-public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationController>
+public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extends GalaxiaMultiblockBase<T>
     implements IGuiHolder<PosGuiData> {
 
     public static final List<Block> BASE_VALID_BLOCKS = new ArrayList<>();
@@ -53,7 +54,12 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
     }
 
     @Override
-    protected void onStructureFormed() {
+    protected boolean checkStructure() {
+        return isValidDimension(worldObj) && super.checkStructure();
+    }
+
+    @Override
+    public void onStructureFormed() {
         super.onStructureFormed();
         this.here = new BlockPos(xCoord, yCoord, zCoord);
 
@@ -66,7 +72,7 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
     }
 
     @Override
-    protected void onStructureDisformed() {
+    public void onStructureDisformed() {
         super.onStructureDisformed();
         for (BlockPos airlock : airlocks) {
             if (!(worldObj.getTileEntity(airlock.x(), airlock.y(), airlock.z()) instanceof TileEntityAirlock teLock))
@@ -77,37 +83,14 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
         airlocks.clear();
     }
 
-    @Override
-    protected abstract boolean isValidBoundaryBlock(Block b);
-
-    @Override
-    protected boolean isValidDimension(World world) {
+    public boolean isValidDimension(World world) {
         CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(world.provider.dimensionId);
         return objectId != CelestialObjectId.INVALID;
     }
 
-    @Override
+    // TODO: Move to GalaxiaMultiblockBase
     public ForgeDirection getPlacedFacing() {
         return placedFacing;
-    }
-
-    @Override
-    protected boolean checkDefinition(World world, Block block, int x, int y, int z) {
-        if (block == GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get()) {
-            if (world.getTileEntity(x, y, z) instanceof TileEntityAirlock airlock) {
-                if (!airlock.isStructureValid()) return false;
-
-                BlockPos airlockPos = new BlockPos(x, y, z);
-                if (!airlocks.contains(airlockPos)) {
-                    airlocks.add(airlockPos);
-                }
-
-                return true;
-            }
-            return false;
-        }
-
-        return true;
     }
 
     public void setPlacedFacing(ForgeDirection dir) {
@@ -151,5 +134,16 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
 
             airlock.untrackStationController(this.here);
         }
+    }
+
+    public boolean isInside(int x, int y, int z) {
+        boolean top = false, bottom = false;
+        for (int d = 1; d <= LocalCoord.SEARCH_RADIUS; d++) {
+            if (getStructureDefinition().isContainedInStructure("main", x, y + d, z)) top = true;
+            if (getStructureDefinition().isContainedInStructure("main", x, y - d, z)) bottom = true;
+            if (top && bottom) return true;
+        }
+
+        return false;
     }
 }

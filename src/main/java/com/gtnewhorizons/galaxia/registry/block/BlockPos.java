@@ -6,6 +6,7 @@ import net.minecraft.world.World;
 
 public record BlockPos(int x, int y, int z) {
 
+    @SuppressWarnings("unchecked")
     public <T extends TileEntity> T getTE(World world) {
         return (T) world.getTileEntity(x, y, z);
     }
