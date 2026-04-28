@@ -174,8 +174,8 @@ public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> 
         }
 
         if (!localStructureBlocks.isEmpty() && localStructureBlocks.size() >= 6) {
-             this.volume = visited.size();
-             return true;
+            this.volume = visited.size();
+            return true;
         }
         return false;
     }

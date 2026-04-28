@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.block.Block;
@@ -24,14 +25,13 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationController>
     implements IGuiHolder<PosGuiData> {
 
-    public static final List<Block> BASE_VALID_BLOCKS = List.of();
+    public static final List<Block> BASE_VALID_BLOCKS = new ArrayList<>();
     static {
         BASE_VALID_BLOCKS.addAll(
             List.of(
                 GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get(),
                 GalaxiaBlocksEnum.SPACE_STATION_PANEL.get(),
-                GalaxiaBlocksEnum.SPACE_STATION_GLASS.get()
-            ));
+                GalaxiaBlocksEnum.SPACE_STATION_GLASS.get()));
         BASE_VALID_BLOCKS.addAll(TileEntityAirlock.VALID_BLOCKS);
     }
 
@@ -54,7 +54,7 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
 
     @Override
     protected void onStructureFormed() {
-        this.here= new BlockPos(xCoord, yCoord, zCoord);
+        this.here = new BlockPos(xCoord, yCoord, zCoord);
 
         for (BlockPos airlock : airlocks) {
             if (!(worldObj.getTileEntity(airlock.x(), airlock.y(), airlock.z()) instanceof TileEntityAirlock teLock))
@@ -95,15 +95,16 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
             if (world.getTileEntity(x, y, z) instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;
 
-                BlockPos airlockPos = new BlockPos(x,y,z);
+                BlockPos airlockPos = new BlockPos(x, y, z);
                 if (!airlocks.contains(airlockPos)) {
                     airlocks.add(airlockPos);
                 }
 
                 return true;
             }
+            return false;
         }
-        return false;
+        return true;
     }
 
     public void setPlacedFacing(ForgeDirection dir) {

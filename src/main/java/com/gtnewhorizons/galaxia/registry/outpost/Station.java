@@ -4,12 +4,7 @@ import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 
-import javax.annotation.Nonnull;
-import java.util.List;
-import java.util.Map;
-
 public class Station extends CelestialAsset {
-
 
     private BlockPos controller;
 
