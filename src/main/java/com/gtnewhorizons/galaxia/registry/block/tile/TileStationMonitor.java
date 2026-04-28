@@ -1,14 +1,8 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
-import com.cleanroommc.modularui.api.drawable.IKey;
-import com.cleanroommc.modularui.factory.PosGuiData;
-import com.cleanroommc.modularui.screen.ModularPanel;
-import com.cleanroommc.modularui.screen.UISettings;
-import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
-import com.cleanroommc.modularui.value.sync.PanelSyncManager;
-import com.cleanroommc.modularui.widgets.ButtonWidget;
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
-import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
@@ -17,11 +11,18 @@ import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 
-import java.util.List;
+import com.cleanroommc.modularui.api.drawable.IKey;
+import com.cleanroommc.modularui.factory.PosGuiData;
+import com.cleanroommc.modularui.screen.ModularPanel;
+import com.cleanroommc.modularui.screen.UISettings;
+import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
+import com.cleanroommc.modularui.value.sync.PanelSyncManager;
+import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
 public class TileStationMonitor extends TileStationBase {
 
-    private static final List<Block> VALID_BLOCKS = List.of();
+    private static final List<Block> VALID_BLOCKS = new ArrayList<>();
     static {
         VALID_BLOCKS.addAll(TileStationBase.BASE_VALID_BLOCKS);
         VALID_BLOCKS.add(GalaxiaBlocksEnum.STATION_MONITOR.get());

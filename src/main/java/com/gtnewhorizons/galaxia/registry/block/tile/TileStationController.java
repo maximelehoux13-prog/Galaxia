@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,7 +11,6 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
-import net.minecraftforge.common.util.ForgeDirection;
 
 import com.cleanroommc.modularui.api.drawable.IKey;
 import com.cleanroommc.modularui.factory.PosGuiData;
@@ -28,7 +28,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
 public class TileStationController extends TileStationBase {
 
-    private static final List<Block> VALID_BLOCKS = List.of();
+    private static final List<Block> VALID_BLOCKS = new ArrayList<>();
     static {
         VALID_BLOCKS.addAll(TileStationBase.BASE_VALID_BLOCKS);
         VALID_BLOCKS.add(GalaxiaBlocksEnum.STATION_CONTROLLER.get());
@@ -40,12 +40,22 @@ public class TileStationController extends TileStationBase {
     @Override
     protected void onStructureFormed() {
         super.onStructureFormed();
-        CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(this.worldObj.provider.dimensionId);
-        Station station = (Station) CelestialAsset.create(objectId, CelestialAsset.Kind.STATION, true);
-        station.setController(this.here);
-        backingStation = station.assetId;
+        // Avoid registering potentially duplicate station on reload
+        if (backingStation == null) {
+            CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(this.worldObj.provider.dimensionId);
+            Station station = (Station) CelestialAsset.create(objectId, CelestialAsset.Kind.STATION, true);
+            station.setController(this.here);
+            backingStation = station.assetId;
 
-        CelestialAssetStore.registerAsset(owner, station);
+            CelestialAssetStore.registerAsset(owner, station);
+        }
+    }
+
+    @Override
+    protected void onStructureDisformed() {
+        if (backingStation != null) {
+            CelestialAssetStore.destroyAsset(backingStation);
+        }
     }
 
     @Override
@@ -78,16 +88,22 @@ public class TileStationController extends TileStationBase {
     }
 
     @Override
-    public ForgeDirection getPlacedFacing() {
-        return placedFacing;
-    }
-
-    @Override
     public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         if (owner != null) {
             nbt.setLong("ownerMost", owner.getMostSignificantBits());
             nbt.setLong("ownerLeast", owner.getLeastSignificantBits());
+        }
+
+        if (backingStation != null) {
+            nbt.setLong(
+                "backingStationMost",
+                backingStation.id()
+                    .getMostSignificantBits());
+            nbt.setLong(
+                "backingStationLeast",
+                backingStation.id()
+                    .getLeastSignificantBits());
         }
     }
 
@@ -96,6 +112,10 @@ public class TileStationController extends TileStationBase {
         super.readFromNBT(nbt);
         if (nbt.hasKey("ownerMost") && nbt.hasKey("ownerLeast")) {
             owner = new UUID(nbt.getLong("ownerMost"), nbt.getLong("ownerLeast"));
+        }
+        if (nbt.hasKey("backingStationMost") && nbt.hasKey("backingStationLeast")) {
+            backingStation = CelestialAsset.ID
+                .from(new UUID(nbt.getLong("backingStationMost"), nbt.getLong("backingStationLeast")));
         }
     }
 
