@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import net.minecraft.item.ItemStack;
 
 public final class CelestialAssetStore {
@@ -81,6 +82,24 @@ public final class CelestialAssetStore {
         BY_ID.remove(assetId);
         TEAM_BY_ID.remove(assetId);
 
+        return true;
+    }
+
+    public static boolean disableAsset(CelestialAsset.ID assetId) {
+        return updateAssetStatus(assetId, Buildable.Status.DISABLED);
+    }
+
+    public static boolean enableAsset(CelestialAsset.ID assetId) {
+        return updateAssetStatus(assetId, Buildable.Status.OPERATIONAL);
+    }
+
+    public static boolean updateAssetStatus(CelestialAsset.ID assetId, Buildable.Status newStatus) {
+        CelestialAsset asset = BY_ID.get(assetId);
+        if (asset == null) return false;
+
+        assert newStatus == Buildable.Status.DISABLED && asset.status() == Buildable.Status.OPERATIONAL : "Can only disable already built asset";
+
+        asset.updateStatus(newStatus);
         return true;
     }
 

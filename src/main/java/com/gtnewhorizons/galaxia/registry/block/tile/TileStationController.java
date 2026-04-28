@@ -48,13 +48,16 @@ public class TileStationController extends TileStationBase {
             backingStation = station.assetId;
 
             CelestialAssetStore.registerAsset(owner, station);
+        } else {
+            CelestialAssetStore.enableAsset(backingStation);
         }
     }
 
     @Override
     protected void onStructureDisformed() {
+        super.onStructureDisformed();
         if (backingStation != null) {
-            CelestialAssetStore.destroyAsset(backingStation);
+            CelestialAssetStore.disableAsset(backingStation);
         }
     }
 

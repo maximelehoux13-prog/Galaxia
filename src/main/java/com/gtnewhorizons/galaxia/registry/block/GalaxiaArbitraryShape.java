@@ -9,6 +9,8 @@ import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
+import java.util.Arrays;
+
 public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> extends GalaxiaMultiblockBase<T> {
 
     public static final int SEARCH_RADIUS = 16;
@@ -268,7 +270,7 @@ public abstract class GalaxiaArbitraryShape<T extends GalaxiaArbitraryShape<T>> 
 
         public void enqueue(int v) {
             if (tail == queue.length) {
-                queue = java.util.Arrays.copyOf(queue, queue.length * 2);
+                queue = Arrays.copyOf(queue, queue.length * 2);
             }
             queue[tail++] = v;
         }
