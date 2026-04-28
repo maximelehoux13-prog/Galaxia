@@ -1,13 +1,17 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import com.gtnewhorizons.galaxia.registry.block.GalaxiaArbitraryShape;
+import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Facing;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockAirlockDoor extends Block {
 
@@ -85,5 +89,45 @@ public class BlockAirlockDoor extends Block {
         }
 
         return super.collisionRayTrace(world, x, y, z, start, end);
+    }
+
+    @Override
+    public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
+                                    float hitY, float hitZ) {
+        if (world.isRemote) return true;
+
+        GalaxiaArbitraryShape.IntQueue floodBFS = new GalaxiaArbitraryShape.IntQueue();
+        int start = GalaxiaArbitraryShape.LocalCoord.pack(0, 0, 0);
+        floodBFS.enqueue(start);
+
+        while (!floodBFS.isEmpty()) {
+            int cur = floodBFS.dequeue();
+            int lx = GalaxiaArbitraryShape.LocalCoord.unpackX(cur);
+            int ly = GalaxiaArbitraryShape.LocalCoord.unpackY(cur);
+            int lz = GalaxiaArbitraryShape.LocalCoord.unpackZ(cur);
+
+            for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
+                int nlx = lx + d.offsetX;
+                int nly = ly + d.offsetY;
+                int nlz = lz + d.offsetZ;
+
+                int np = GalaxiaArbitraryShape.LocalCoord.pack(nlx, nly, nlz);
+
+                int wx = GalaxiaArbitraryShape.LocalCoord.worldX(nlx, x);
+                int wy = GalaxiaArbitraryShape.LocalCoord.worldY(nly, y);
+                int wz = GalaxiaArbitraryShape.LocalCoord.worldZ(nlz, z);
+
+                Block b = world.getBlock(wx, wy, wz);
+
+                if (b == GalaxiaBlocksEnum.AIRLOCK_DOOR.get()) {
+                    floodBFS.enqueue(np);
+                } else if (b == GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get()) {
+                    BlockAirlockController controller = (BlockAirlockController) b;
+                    return controller.toggleDoor(world, wx, wy, wz);
+                }
+            }
+        }
+
+        return false;
     }
 }

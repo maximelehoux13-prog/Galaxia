@@ -36,7 +36,7 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
     }
 
     protected ForgeDirection placedFacing = ForgeDirection.NORTH;
-    protected List<BlockPos> airlocks = List.of();
+    protected List<BlockPos> airlocks = new ArrayList<>();
     protected BlockPos here;
 
     @Override
@@ -54,6 +54,7 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
 
     @Override
     protected void onStructureFormed() {
+        super.onStructureFormed();
         this.here = new BlockPos(xCoord, yCoord, zCoord);
 
         for (BlockPos airlock : airlocks) {
@@ -66,6 +67,7 @@ public abstract class TileStationBase extends GalaxiaArbitraryShape<TileStationC
 
     @Override
     protected void onStructureDisformed() {
+        super.onStructureDisformed();
         for (BlockPos airlock : airlocks) {
             if (!(worldObj.getTileEntity(airlock.x(), airlock.y(), airlock.z()) instanceof TileEntityAirlock teLock))
                 continue;

@@ -45,7 +45,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
      * Structure updated:
      * Controller ('R') is on bottom layer now.
      */
-    private final IStructureDefinition<TileEntityAirlock> STRUCTURE_DEFINITION = StructureDefinition
+    private static final IStructureDefinition<TileEntityAirlock> STRUCTURE_DEFINITION = StructureDefinition
         .<TileEntityAirlock>builder()
         .addShape(
             STRUCTURE_PIECE_MAIN,
@@ -243,5 +243,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
                 }
             }
         }
+
+        this.markDirty();
     }
 }
