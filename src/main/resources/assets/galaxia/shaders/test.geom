@@ -11,8 +11,8 @@ uniform mat4 view;
 uniform mat4 projection;
 
 const vec3 cubeVerts[8] = vec3[](
-vec3(0,0,0), vec3(0.25,0,0), vec3(0.25,0,0.25), vec3(0,0,0.25),
-vec3(0,0.25,0), vec3(0.25,0.25,0), vec3(0.25,0.25,0.25), vec3(0,0.25,0.25)
+vec3(0,0,0), vec3(0.5,0,0), vec3(0.5,0,0.5), vec3(0,0,0.5),
+vec3(0,0.5,0), vec3(0.5,0.5,0), vec3(0.5,0.5,0.5), vec3(0,0.5,0.5)
 );
 
 const int indices[36] = int[](
@@ -27,7 +27,7 @@ const int indices[36] = int[](
 void main() {
     int base = gl_PrimitiveIDIn * 3;
 
-    vec3 origin = vec3(ssbo.coords[base], ssbo.coords[base+1], ssbo.coords[base+2]);
+    vec3 origin = vec3(ssbo.coords[base] / 2, ssbo.coords[base+1] / 2, ssbo.coords[base+2] / 2);
 
     for (int i = 0; i < 36; i++) {
         vec3 pos = origin + cubeVerts[indices[i]];

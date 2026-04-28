@@ -88,10 +88,18 @@ public class RenderEntityTest extends Render {
 
         GL30.glBindVertexArray(vaoID);
 
+        // reading particle count for point draws
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, entityTest.ssboOUTCount);
+
+        IntBuffer count = BufferUtils.createIntBuffer(1);
+
+        GL15.glGetBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, count);
+
+
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, entityTest.ssboOUT);
         GL20.glVertexAttribPointer(0, 1, GL11.GL_FLOAT, false, 4, 0);
 
-        GL11.glDrawArrays(GL11.GL_POINTS, 0, 100);
+        GL11.glDrawArrays(GL11.GL_POINTS, 0, count.get());
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         GL30.glBindVertexArray(0);
@@ -141,13 +149,19 @@ public class RenderEntityTest extends Render {
             int height = image.getHeight();
             int[] pixels = new int[width * height];
             image.getRGB(0, 0, width, height, pixels, 0, width);
-            IntBuffer buffer = IntBuffer.wrap(pixels);
+
+            IntBuffer buffer = BufferUtils.createIntBuffer(pixels.length);
+            buffer.put(pixels);
+            buffer.flip();
 
             int texture = GL11.glGenTextures();
 
             if (texture == 0) return 0;
 
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
             // skip conversion from argb to rgba by using GL_BGRA and just using the REV (reverse) version of uint 8888
             // so it reads the int correctly

@@ -18,8 +18,16 @@ layout(std430, binding = 3) buffer w {
     restrict int W[];
 };
 
-layout(std430, binding = 11) buffer outcount {
-    int count;
+layout(std430, binding = 8) buffer uw {
+    restrict int UW[];
+};
+
+layout(std430, binding = 9) buffer vw {
+    restrict int VW[];
+};
+
+layout(std430, binding = 10) buffer ww {
+    restrict int WW[];
 };
 
 uniform int maxWidth;
@@ -34,21 +42,5 @@ void main() {
     int zxwxh = z * maxWidth * maxHeight;
     int current = x + yxw + zxwxh;
 
-    int dXpos = (x + 1) + yxw + zxwxh;
-    int dYpos = x + ((y + 1) * maxWidth) + zxwxh;
-    int dZpos = x + yxw + ((z + 1) * maxWidth * maxHeight);
-
-    float d =
-    (U[dXpos] - U[current] +
-    V[dYpos] - V[current] +
-    W[dZpos] - W[current]);
-
-    if (abs(d) < 1) return;
-
-    int now = atomicAdd(count, 1);
-
-
-    vertices[now * 3] = x;
-    vertices[now * 3 + 1] = y;
-    vertices[now * 3 + 2] = z;
+    U[current] = U[current] / UW[current];
 }

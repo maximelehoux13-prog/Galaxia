@@ -24,7 +24,7 @@ public class ShaderHelper {
 
         GL20.glLinkProgram(program);
 
-        // maybe good practice?
+        // maybe deleting and detaching is a good practice?
         GL20.glDetachShader(program, vertShader);
         GL20.glDetachShader(program, fragShader);
         GL20.glDeleteShader(vertShader);

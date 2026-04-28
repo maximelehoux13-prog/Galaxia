@@ -3,7 +3,11 @@
 layout(local_size_x = 2, local_size_y = 2, local_size_z = 2) in;
 
 layout(std430, binding = 3) buffer w {
-    float W[];
+    int W[];
+};
+
+layout(std430, binding = 10) buffer ww {
+    restrict int WW[];
 };
 
 uniform int maxWidth;
@@ -14,5 +18,6 @@ void main() {
     int y = int(gl_GlobalInvocationID.y);
     int z = int(gl_GlobalInvocationID.z);
 
-    W[x + (y * maxWidth) + (z * maxWidth * maxHeight)] = 0.0;
+    W[x + (y * maxWidth) + (z * maxWidth * maxHeight)] = 0;
+    WW[x + (y * maxWidth) + (z * maxWidth * maxHeight)] = 0;
 }

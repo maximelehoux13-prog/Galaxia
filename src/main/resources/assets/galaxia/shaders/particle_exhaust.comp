@@ -1,0 +1,52 @@
+#version 430 core
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+struct Particle {
+    float x;
+    float y;
+    float z;
+
+    float u;
+    float v;
+    float w;
+};
+
+layout(std430, binding = 6) buffer p {
+    Particle P[];
+};
+
+layout(std430, binding = 7) buffer n {
+    int index;
+};
+
+layout(rgba8, binding = 2) uniform readonly restrict image2D mask;
+
+uniform float xPos;
+uniform float yPos;
+uniform float zPos;
+
+uniform float seed;
+
+const float mult = 10000;
+
+void main() {
+    ivec2 maskSize = imageSize(mask);
+    for (int x = 0; x < maskSize.x; x++) {
+        for (int y = 0; y < maskSize.y; y++) {
+            vec4 pixel = imageLoad(mask, ivec2(x, y));
+
+            if (sin(pixel.a * seed * mult) > 0.975) {
+                // maybe i should add a bit of random lateral in later if its too laminar
+                // real exhaust bounces off the nozzle slightly and comes out in a spread angle
+                // this could be calculated using distance from center of the texture so it comes out in a sphere
+
+                // pos is already adjusted, this is originating from the corner of the entitypos, to be tweaked later
+                // the magnitude of the exhaust velocity is the alpha of the respective pixel (moves downwards)
+                P[index] = Particle((xPos + x) / 4, yPos / 4, (zPos + y) / 4, 0.0, 0.0 - pixel.a * 11.0, 0.0);
+                index = index + 1;
+            }
+
+        }
+    }
+}

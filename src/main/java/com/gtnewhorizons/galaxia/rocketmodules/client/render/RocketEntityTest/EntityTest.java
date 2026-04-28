@@ -1,9 +1,12 @@
 package com.gtnewhorizons.galaxia.rocketmodules.client.render.RocketEntityTest;
 
+import java.nio.ByteBuffer;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 
 import com.gtnewhorizons.galaxia.core.ShaderHelper;
@@ -17,7 +20,12 @@ public class EntityTest extends Entity {
     public static int wProgram = 0;
     public static int projectionProgram = 0;
     public static int scalarProgram = 0;
-    public static int particleProgram = 0;
+    public static int toCellUProgram = 0;
+    public static int toCellVProgram = 0;
+    public static int toCellWProgram = 0;
+
+    public static int moveProgram = 0;
+    public static int exhaustProgram = 0;
 
     public int ssboOUT;
     public int ssboU;
@@ -26,12 +34,19 @@ public class EntityTest extends Entity {
     public int ssboS;
     public int ssboScalar;
     public int ssboParticle;
+    public int ssboParticleCount;
+    public int ssboUW;
+    public int ssboVW;
+    public int ssboWW;
+    public int ssboOUTCount;
 
     final int width = 8 * 10;
     final int height = 8 * 12;
     final float spacing = 0.5f;
     final int cubeLength = (int) (1.0f / spacing);
     final int perCube = cubeLength * cubeLength * cubeLength;
+
+    public static final ByteBuffer zero = BufferUtils.createByteBuffer(4);
 
     float time = 0;
 
@@ -56,8 +71,13 @@ public class EntityTest extends Entity {
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 4, ssboS);
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 5, ssboScalar);
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 6, ssboParticle);
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 7, ssboParticleCount);
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 8, ssboUW);
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 9, ssboVW);
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 10, ssboWW);
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 11, ssboOUTCount);
 
-            GL42.glBindImageTexture(0, RenderEntityTest.rocketmask1, 0, false, 0, GL15.GL_READ_WRITE, GL11.GL_RGBA8);
+            GL42.glBindImageTexture(2, RenderEntityTest.rocketmask1, 0, false, 0, GL15.GL_READ_ONLY, GL11.GL_RGBA8);
 
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -108,55 +128,149 @@ public class EntityTest extends Entity {
 
             compute();
         }
-
     }
 
     private void compute() {
-        GL20.glUseProgram(particleProgram); // add particles
-        GL43.glDispatchCompute(width / 4, height / 4, width / 4); // unknown array size (local 4x4x4)
 
-        GL20.glUseProgram(projectionProgram);
+        runExhaust(); // add particles from exhaust
 
-        int rb = GL20.glGetUniformLocation(projectionProgram, "RB");
+        moveParticles(); // move particles dT (0.05 because 20tps)
 
-        GL20.glUniform1i(GL20.glGetUniformLocation(projectionProgram, "maxWidth"), cubeLength * width);
-        GL20.glUniform1i(GL20.glGetUniformLocation(projectionProgram, "maxHeight"), cubeLength * height);
-        GL20.glUniform1i(GL20.glGetUniformLocation(projectionProgram, "wxh"), cubeLength * width * cubeLength * height);
+        resetCellVelocities(); // set all velocities and their weights to 0
 
-        GL20.glUniform1i(rb, 0);
+        // to do: set all cells to either solid or air
+        // to do: then for each particle, if its cell is an air cell, make it a fluid cell
+
+        transferToCells();
+
+
+
+        /*
+         * GL20.glUseProgram(projectionProgram);
+         * int rb = GL20.glGetUniformLocation(projectionProgram, "RB");
+         * GL20.glUniform1i(GL20.glGetUniformLocation(projectionProgram, "maxWidth"), cubeLength * width);
+         * GL20.glUniform1i(GL20.glGetUniformLocation(projectionProgram, "maxHeight"), cubeLength * height);
+         * GL20.glUniform1i(GL20.glGetUniformLocation(projectionProgram, "wxh"), cubeLength * width * cubeLength *
+         * height);
+         * GL20.glUniform1i(rb, 0);
+         * GL15.glBeginQuery(GL33.GL_TIME_ELAPSED, 1021);
+         * for (int i = 0; i < 20; i++) {
+         * GL43.glDispatchCompute(width / 8, height / 4, width / 2);
+         * GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+         * GL20.glUniform1i(rb, 1);
+         * GL43.glDispatchCompute(width / 8, height / 4, width / 2);
+         * GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+         * GL20.glUniform1i(rb, 0);
+         * }
+         * GL15.glEndQuery(GL33.GL_TIME_ELAPSED);
+         * System.out.println(GL33.glGetQueryObjectui64(1021, GL15.GL_QUERY_RESULT));
+         */
+
         GL15.glBeginQuery(GL33.GL_TIME_ELAPSED, 1021);
-        for (int i = 0; i < 20; i++) {
-            GL43.glDispatchCompute(width / 8, height / 4, width / 2);
-
-            GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
-
-            GL20.glUniform1i(rb, 1);
-
-            GL43.glDispatchCompute(width / 8, height / 4, width / 2);
-
-            GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
-
-            GL20.glUniform1i(rb, 0);
-        }
-        GL15.glEndQuery(GL33.GL_TIME_ELAPSED);
-
-        System.out.println(GL33.glGetQueryObjectui64(1021, GL15.GL_QUERY_RESULT));
-
-        // old stuff
 
         GL20.glUseProgram(program);
 
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, ssboOUT);
 
-        int timeLoc = GL20.glGetUniformLocation(program, "u_Time");
+        GL20.glUniform1i(GL20.glGetUniformLocation(program, "maxWidth"), cubeLength * width);
+        GL20.glUniform1i(GL20.glGetUniformLocation(program, "maxHeight"), cubeLength * height);
 
-        GL20.glUniform1f(timeLoc, time);
-
-        GL43.glDispatchCompute(1, 1, 1);
+        GL43.glDispatchCompute(width / 8, height / 8, width / 4);
 
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
         GL20.glUseProgram(0);
+        GL15.glEndQuery(GL33.GL_TIME_ELAPSED);
+        System.out.println(GL33.glGetQueryObjectui64(1021, GL15.GL_QUERY_RESULT));
+    }
+
+    private void transferToCells() {
+        // 3 different programs for each component
+        GL20.glUseProgram(toCellUProgram);
+
+        // same thread width as before for particles
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellUProgram, "width"), width / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellUProgram, "height"), height / 4 * 8);
+
+        // various uniforms to be precomputed outside the loop (more details in the shader code)
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellUProgram, "maxWidth"), cubeLength * width);
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellUProgram, "maxHeight"), cubeLength * height);
+
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellUProgram, "maxWidthDNeg"), (cubeLength * width) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellUProgram, "maxHeightDNeg"), (cubeLength * height) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellUProgram, "maxWidthDPos"), (cubeLength * width) + 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellUProgram, "wxh"), ((cubeLength * width) + 1) * (cubeLength * height));
+
+        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+
+
+        GL20.glUseProgram(toCellVProgram);
+
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "width"), width / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "height"), height / 4 * 8);
+
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxWidth"), cubeLength * width);
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxHeight"), cubeLength * height);
+
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxWidthDNeg"), (cubeLength * width) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxHeightDNeg"), (cubeLength * height) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxHeightDPos"), (cubeLength * height) + 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "wxh"), (cubeLength * width) * ((cubeLength * height) + 1));
+
+        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+
+
+        GL20.glUseProgram(toCellWProgram);
+
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "width"), width / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "height"), height / 4 * 8);
+
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxWidth"), cubeLength * width);
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxHeight"), cubeLength * height);
+
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxWidthDNeg"), (cubeLength * width) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxHeightDNeg"), (cubeLength * height) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "wxh"), (cubeLength * width) * (cubeLength * height));
+
+        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+
+
+        // distribute the velocity so that weight = 1 per cell
+
+    }
+
+    private void moveParticles() {
+        GL20.glUseProgram(moveProgram);
+
+        // passing precomputed thread width and height values,
+        // I dispatch x = width / 4 and y = height / 4. internally the local size of
+        // the shader is 8x8x4, so thread width = (width / 4) * 8
+        // and thread height = (height / 4) * 8
+        GL30.glUniform1ui(GL20.glGetUniformLocation(moveProgram, "width"), width / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(moveProgram, "height"), height / 4 * 8);
+
+        // unknown array size (local 8x8x4)
+        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
+    private void runExhaust() {
+        GL20.glUseProgram(exhaustProgram);
+
+        // currently arbitrary 50, when the movement tracking is added based on a start pos, this needs to move with it
+        GL20.glUniform1f(GL20.glGetUniformLocation(exhaustProgram, "xPos"), 10);
+        GL20.glUniform1f(GL20.glGetUniformLocation(exhaustProgram, "yPos"), 150);
+        GL20.glUniform1f(GL20.glGetUniformLocation(exhaustProgram, "zPos"), 10);
+
+        GL20.glUniform1f(GL20.glGetUniformLocation(exhaustProgram, "seed"), (float)Math.random());
+
+        // just a serial program ran on the gpu, could parallelize later if needed
+        GL43.glDispatchCompute(1, 1, 1);
+
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     public void genSSBOs() {
@@ -167,12 +281,19 @@ public class EntityTest extends Entity {
         ssboS = GL15.glGenBuffers();
         ssboScalar = GL15.glGenBuffers();
         ssboParticle = GL15.glGenBuffers();
+        ssboParticleCount = GL15.glGenBuffers();
+        ssboUW = GL15.glGenBuffers();
+        ssboVW = GL15.glGenBuffers();
+        ssboWW = GL15.glGenBuffers();
+        ssboOUTCount = GL15.glGenBuffers();
+
+        // spotless:off
 
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboOUT);
-        // max cubes sent to render
         GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER,
             width * height * width * 3 * 4,
-            GL15.GL_DYNAMIC_DRAW);
+            GL15.GL_DYNAMIC_DRAW); // max cubes sent to render
+
 
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboU);
         GL15.glBufferData(
@@ -180,11 +301,13 @@ public class EntityTest extends Entity {
             (width + 1) * width * height * perCube * 4,
             GL15.GL_DYNAMIC_COPY); // MAC grid U
 
+
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboV);
         GL15.glBufferData(
             GL43.GL_SHADER_STORAGE_BUFFER,
             width * (width + 1) * height * perCube * 4,
             GL15.GL_DYNAMIC_COPY); // MAC grid V
+
 
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboW);
         GL15.glBufferData(
@@ -192,23 +315,58 @@ public class EntityTest extends Entity {
             width * width * (height + 1) * perCube * 4,
             GL15.GL_DYNAMIC_COPY); // MAC grid W
 
+
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboS);
-        // cell s value
         GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER,
             width * width * height * perCube,
-            GL15.GL_STATIC_DRAW);
+            GL15.GL_STATIC_DRAW); // cell s value
+
 
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboScalar);
-        // cell data
         GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER,
             width * width * height * perCube * 2 * 4,
-            GL15.GL_STATIC_DRAW);
+            GL15.GL_STATIC_DRAW); // cell data
+
 
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboParticle);
         GL15.glBufferData(
             GL43.GL_SHADER_STORAGE_BUFFER,
             width * width * height * perCube * 2 * 4,
             GL15.GL_DYNAMIC_COPY); // particle data
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboParticleCount);
+        GL15.glBufferData(
+            GL43.GL_SHADER_STORAGE_BUFFER,
+            4,
+            GL15.GL_DYNAMIC_COPY); // particle count
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboUW);
+        GL15.glBufferData(
+            GL43.GL_SHADER_STORAGE_BUFFER,
+            (width + 1) * width * height * perCube * 4,
+            GL15.GL_DYNAMIC_COPY); // weights for U
+
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboVW);
+        GL15.glBufferData(
+            GL43.GL_SHADER_STORAGE_BUFFER,
+            width * (width + 1) * height * perCube * 4,
+            GL15.GL_DYNAMIC_COPY); // weights for V
+
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboWW);
+        GL15.glBufferData(
+            GL43.GL_SHADER_STORAGE_BUFFER,
+            width * width * (height + 1) * perCube * 4,
+            GL15.GL_DYNAMIC_COPY); // weights for W
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboOUTCount);
+        GL15.glBufferData(
+            GL43.GL_SHADER_STORAGE_BUFFER,
+            4,
+            GL15.GL_DYNAMIC_COPY); // number of cells to draw
+
+        // spotless:on
     }
 
     private static void createPrograms() {
@@ -233,9 +391,43 @@ public class EntityTest extends Entity {
         if (scalarProgram == 0) {
             scalarProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/scalar.comp");
         }
-        if (particleProgram == 0) {
-            particleProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle.comp");
+        if (moveProgram == 0) {
+            moveProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle_move.comp");
         }
+        if (exhaustProgram == 0) {
+            exhaustProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle_exhaust.comp");
+        }
+        if (toCellUProgram == 0) {
+            toCellUProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle_to_cell_u.comp");
+        }
+        if (toCellVProgram == 0) {
+            toCellVProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle_to_cell_v.comp");
+        }
+        if (toCellWProgram == 0) {
+            toCellWProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle_to_cell_w.comp");
+        }
+    }
+
+    public void resetCellVelocities() {
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboU);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboV);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboW);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboUW);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboVW);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboWW);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     @Override
