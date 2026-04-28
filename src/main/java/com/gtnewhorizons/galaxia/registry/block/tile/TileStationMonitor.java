@@ -3,7 +3,8 @@ package com.gtnewhorizons.galaxia.registry.block.tile;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
+import javax.annotation.Nullable;
+
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
@@ -19,9 +20,8 @@ import com.cleanroommc.modularui.screen.UISettings;
 import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
-
-import javax.annotation.Nullable;
 
 public class TileStationMonitor extends TileStationBase {
 

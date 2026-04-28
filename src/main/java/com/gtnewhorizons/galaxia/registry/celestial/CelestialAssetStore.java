@@ -9,8 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import net.minecraft.item.ItemStack;
+
+import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 
 public final class CelestialAssetStore {
 
@@ -97,7 +98,8 @@ public final class CelestialAssetStore {
         CelestialAsset asset = BY_ID.get(assetId);
         if (asset == null) return false;
 
-        assert newStatus == Buildable.Status.DISABLED && asset.status() == Buildable.Status.OPERATIONAL : "Can only disable already built asset";
+        assert newStatus == Buildable.Status.DISABLED
+            && asset.status() == Buildable.Status.OPERATIONAL : "Can only disable already built asset";
 
         asset.updateStatus(newStatus);
         return true;

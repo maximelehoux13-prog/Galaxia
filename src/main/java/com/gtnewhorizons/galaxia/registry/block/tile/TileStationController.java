@@ -123,8 +123,14 @@ public class TileStationController extends TileStationBase {
             nbt.setLong("ownerLeast", owner.getLeastSignificantBits());
         }
         if (backingStation != null) {
-            nbt.setLong("backingStationMost", backingStation.id().getMostSignificantBits());
-            nbt.setLong("backingStationLeast", backingStation.id().getLeastSignificantBits());
+            nbt.setLong(
+                "backingStationMost",
+                backingStation.id()
+                    .getMostSignificantBits());
+            nbt.setLong(
+                "backingStationLeast",
+                backingStation.id()
+                    .getLeastSignificantBits());
         }
     }
 
@@ -152,7 +158,6 @@ public class TileStationController extends TileStationBase {
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
         this.readFromNBT(pkt.func_148857_g());
     }
-
 
     public UUID getOwner() {
         return owner;
