@@ -48,18 +48,6 @@ public class BlockStationController extends Block implements ITileEntityProvider
     }
 
     @Override
-    public void breakBlock(World world, int x, int y, int z, Block block, int meta) {
-
-        TileEntity te = world.getTileEntity(x, y, z);
-
-        if (te instanceof TileStationController tile) {
-            tile.unregisterStation();
-        }
-
-        super.breakBlock(world, x, y, z, block, meta);
-    }
-
-    @Override
     public boolean onBlockActivated(World worldIn, int x, int y, int z, EntityPlayer player, int side, float hitX,
         float hitY, float hitZ) {
         if (worldIn.isRemote) return true;
