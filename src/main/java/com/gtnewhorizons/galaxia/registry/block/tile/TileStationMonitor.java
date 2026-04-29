@@ -98,11 +98,6 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
                     })));
     }
 
-    @Override
-    protected boolean needsFormationOnReload() {
-        return true;
-    }
-
     public void collectGraph(TileStationController controller, List<BlockPos> monitors) {
         mainController = controller.here;
 

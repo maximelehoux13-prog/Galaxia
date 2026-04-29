@@ -105,11 +105,6 @@ public class TileStationController extends TileStationBase<TileStationController
     }
 
     @Override
-    protected boolean needsFormationOnReload() {
-        return true;
-    }
-
-    @Override
     public void onStructureDisformed() {
         super.onStructureDisformed();
         if (backingStation != null) {
@@ -192,7 +187,7 @@ public class TileStationController extends TileStationBase<TileStationController
                         if (mouseData.mouseButton != 0 || worldObj.isRemote) return;
                         markStructureDirty();
                         for (BlockPos b : monitors) {
-                            TileStationMonitor monitor = (TileStationMonitor) b.getTE(worldObj);
+                            TileStationMonitor monitor = b.getTE(worldObj);
                             if (monitor != null) {
                                 System.out.println(monitor.here);
                             }

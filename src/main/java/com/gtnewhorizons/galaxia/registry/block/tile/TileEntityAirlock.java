@@ -96,10 +96,6 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         return state == AirlockState.OPEN;
     }
 
-    public ExtendedFacing getCurrentFacing() {
-        return currentFacing;
-    }
-
     public void toggleState() {
         if (!structureValid) return;
 
@@ -247,7 +243,8 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     @Override
     public void invalidate() {
         super.invalidate();
-
-        setDoorState(false);
+        if (isChunkUnloading) {
+            setDoorState(false);
+        }
     }
 }
