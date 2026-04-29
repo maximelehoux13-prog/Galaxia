@@ -22,9 +22,9 @@ import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
+import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeTile;
-import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -32,12 +32,9 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
-import it.unimi.dsi.fastutil.ints.IntSet;
-
 public class TileStationController extends TileStationBase<TileStationController>
     implements ArbitraryShapeTile<TileStationController> {
 
-    private final IntSet structureBlocks = LocalCoord.newBlockSet();
     private int volume = -1;
     private UUID owner;
     private CelestialAsset.ID backingStation;
@@ -46,10 +43,11 @@ public class TileStationController extends TileStationBase<TileStationController
 
     public final ArbitraryShapeDefinition<TileStationController> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
         .<TileStationController>builder()
+        .addControllerBlock(GalaxiaBlocksEnum.STATION_CONTROLLER.get())
         .addElements(
             BASE_VALID_BLOCKS.stream()
                 .map(b -> StructureUtility.ofBlock(b, 0)))
-        .addElement(StructureUtility.ofChain(StructureUtility.ofTileAdder((_, tileEntity) -> {
+        .addElement(GalaxiaStructureUtility.ofTileAdderCheckHints((_, tileEntity) -> {
             if (tileEntity instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;
 
@@ -60,7 +58,7 @@ public class TileStationController extends TileStationBase<TileStationController
                 return true;
             }
             return false;
-        }, GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0)))
+        }, GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
         .embedDefinition(TileEntityAirlock.STRUCTURE_PIECE_MAIN, TileEntityAirlock.STRUCTURE_DEFINITION)
         .build();
 
@@ -107,18 +105,6 @@ public class TileStationController extends TileStationBase<TileStationController
     @Override
     public ForgeDirection getPlacedFacing() {
         return placedFacing;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public IntSet getStructureBlocks() {
-        return structureBlocks;
-    }
-
-    @Override
-    public void setStructureBlocks(IntSet blocks) {
-        this.structureBlocks.clear();
-        this.structureBlocks.addAll(blocks);
     }
 
     @Override

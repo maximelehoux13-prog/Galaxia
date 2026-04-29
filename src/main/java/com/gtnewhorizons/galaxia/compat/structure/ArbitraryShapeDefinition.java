@@ -1,6 +1,7 @@
 package com.gtnewhorizons.galaxia.compat.structure;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -14,9 +15,11 @@ import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.IStructureElement;
 import com.gtnewhorizon.structurelib.structure.IStructureWalker;
+import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
 import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -27,14 +30,15 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     private T tile;
     private final IStructureElement<T>[] structureElements;
+    private final IntSet structureBlocks = LocalCoord.newBlockSet();
 
     public static <T extends TileEntity & ArbitraryShapeTile<T>> Builder<T> builder() {
         return new Builder<>();
     }
 
     @SuppressWarnings("unchecked")
-    private ArbitraryShapeDefinition(IStructureElement<T>[] structureElement) {
-        this.structureElements = structureElement;
+    private ArbitraryShapeDefinition(List<IStructureElement<T>> structureElement) {
+        this.structureElements = structureElement.toArray(new IStructureElement[0]);
     }
 
     @Override
@@ -48,8 +52,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             Galaxia.LOG.error("Structure is not formed yet");
             return false;
         }
-        return tile.getStructureBlocks()
-            .contains(LocalCoord.pack(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord));
+        return structureBlocks.contains(LocalCoord.pack(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord));
     }
 
     @Override
@@ -57,14 +60,14 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
 
         if (fastRevalidate(tile)) return true;
-
         IntSet validBoundary = floodStructure(tile, world);
-        ForgeDirection placedFacing = tile.getPlacedFacing();
-        IntSet localStructureBlocks = LocalCoord.newBlockSet();
+        debugSet(world, validBoundary, tile.xCoord, tile.yCoord, tile.zCoord);
 
-        boolean enclosed = checkEnclosed(tile, world, validBoundary, placedFacing, localStructureBlocks);
+        ForgeDirection placedFacing = tile.getPlacedFacing();
+        structureBlocks.clear();
+
+        boolean enclosed = checkEnclosed(tile, world, validBoundary, placedFacing, structureBlocks);
         if (enclosed) {
-            tile.setStructureBlocks(localStructureBlocks);
             this.tile = tile;
         }
         return enclosed;
@@ -108,13 +111,12 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         int offsetY, int offsetZ, IStructureWalker<T> walker) {}
 
     private boolean fastRevalidate(T tile) {
-        if (!tile.isStructureValid() || tile.getStructureBlocks()
-            .isEmpty()) return false;
+        if (!tile.isStructureValid() || structureBlocks.isEmpty()) return false;
 
         World world = tile.worldObj();
         if (world == null || world.isRemote) return true;
 
-        for (int packed : tile.getStructureBlocks()) {
+        for (int packed : structureBlocks) {
             int wx = LocalCoord.worldX(LocalCoord.unpackX(packed), tile.xCoord);
             int wy = LocalCoord.worldY(LocalCoord.unpackSignedY(packed), tile.yCoord);
             int wz = LocalCoord.worldZ(LocalCoord.unpackZ(packed), tile.zCoord);
@@ -163,14 +165,38 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         return connectedStructure;
     }
 
+    private static void debugSet(World world, IntSet set, int xc, int yc, int zc) {
+        HashMap<BlockPos, Block> dbg = new HashMap<>();
+        for (int coord : set) {
+            int x = LocalCoord.unpackX(coord) + xc;
+            int y = LocalCoord.unpackY(coord) + yc;
+            int z = LocalCoord.unpackZ(coord) + zc;
+            BlockPos pos = new BlockPos(x, y, z);
+            Block b = world.getBlock(x, y, z);
+            dbg.put(pos, b);
+        }
+
+        System.out.println(dbg.size());
+    }
+
     private boolean isValidBoundary(T tile, World world, int x, int y, int z) {
         for (IStructureElement<T> element : structureElements) {
-            if (!element.couldBeValid(tile, world, x, y, z, null)) {
-                return false;
+            if (element.couldBeValid(tile, world, x, y, z, null)) {
+                return true;
             }
         }
 
-        return true;
+        return false;
+    }
+
+    private boolean checkValidBoundary(T tile, World world, int x, int y, int z) {
+        for (IStructureElement<T> element : structureElements) {
+            if (element.check(tile, world, x, y, z)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean checkEnclosed(T tile, World world, IntSet validBoundary, ForgeDirection placedFacing,
@@ -210,10 +236,8 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
                     if (validBoundary.contains(np)) {
                         localStructureBlocks.add(np);
 
-                        for (IStructureElement<T> element : structureElements) {
-                            if (!element.check(tile, world, nwx, nwy, nwz)) {
-                                return false;
-                            }
+                        if (!checkValidBoundary(tile, world, nwx, nwy, nwz)) {
+                            return false;
                         }
                     }
                     continue;
@@ -238,6 +262,10 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         private Builder() {}
 
+        public Builder<T> addControllerBlock(Block controller) {
+            return addElement(StructureUtility.ofBlockAnyMeta(controller));
+        }
+
         public Builder<T> addElement(IStructureElement<T> element) {
             elements.add(element);
             return this;
@@ -250,15 +278,31 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         public Builder<T> embedDefinition(String shape, IStructureDefinition<?> definition) {
+            // TODO: Don't use reflection
+            Class<?> navClass;
+            try {
+                navClass = Class.forName("com.gtnewhorizon.structurelib.structure.IStructureNavigate");
+            } catch (ClassNotFoundException e) {
+                navClass = null;
+            }
+
             for (IStructureElement element : definition.getStructureFor(shape)) {
+
+                // Skip navigation elements if interface exists
+                if (navClass != null && navClass.isInstance(element)) {
+                    continue;
+                }
+
                 elements.add((IStructureElement<T>) element);
             }
+
             return this;
         }
 
         @SuppressWarnings("unchecked")
         public ArbitraryShapeDefinition<T> build() {
-            return new ArbitraryShapeDefinition<>(elements.toArray(new IStructureElement[0]));
+            // TODO: Too many structure elements
+            return new ArbitraryShapeDefinition<>(elements);
         }
     }
 }
