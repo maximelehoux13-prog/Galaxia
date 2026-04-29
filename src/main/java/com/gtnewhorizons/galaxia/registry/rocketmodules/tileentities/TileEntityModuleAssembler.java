@@ -74,6 +74,10 @@ public class TileEntityModuleAssembler extends GalaxiaMultiblockBase<TileEntityM
             StructureUtility.ofBlock(GalaxiaBlocksEnum.RUSTY_PANEL.get(), 0)))
         .build();
 
+    public TileEntityModuleAssembler() {
+        super();
+    }
+
     /**
      * Gets the structure definition of this multiblock
      *

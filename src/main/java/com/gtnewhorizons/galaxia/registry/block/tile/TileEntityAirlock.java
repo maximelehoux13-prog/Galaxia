@@ -18,6 +18,10 @@ import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
 
 public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> {
 
+    public TileEntityAirlock() {
+        super();
+    }
+
     public enum AirlockState {
         CLOSED,
         OPEN,

@@ -29,6 +29,10 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
     protected List<BlockPos> airlocks = new ArrayList<>();
     protected BlockPos here;
 
+    public TileStationBase() {
+        super();
+    }
+
     @Override
     public Block getControllerBlock() {
         return GalaxiaBlocksEnum.STATION_CONTROLLER.get();
@@ -77,6 +81,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
+        this.here = new BlockPos(xCoord, yCoord, zCoord);
     }
 
     @Override
