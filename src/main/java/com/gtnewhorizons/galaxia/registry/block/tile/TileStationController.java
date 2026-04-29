@@ -105,6 +105,11 @@ public class TileStationController extends TileStationBase<TileStationController
     }
 
     @Override
+    protected boolean needsFormationOnReload() {
+        return true;
+    }
+
+    @Override
     public void onStructureDisformed() {
         super.onStructureDisformed();
         if (backingStation != null) {

@@ -129,6 +129,10 @@ public class TileEntitySilo extends GalaxiaMultiblockBase<TileEntitySilo>
             StructureUtility.ofBlock(GalaxiaBlocksEnum.RUSTY_PANEL.get(), 0)))
         .build();
 
+    public TileEntitySilo() {
+        super();
+    }
+
     /**
      * Gets the structure definition of the Silo multi
      *
