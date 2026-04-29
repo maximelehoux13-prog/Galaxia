@@ -105,7 +105,12 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         }
     }
 
+    // TODO remove hardcoded search radius
     public boolean isInside(int x, int y, int z) {
+        // Chebyshev Distance
+        if (Math.max(Math.abs(x - xCoord), Math.max(Math.abs(y - yCoord), Math.abs(z - zCoord)))
+            > LocalCoord.SEARCH_RADIUS) return false;
+
         boolean top = false, bottom = false;
         for (int d = 1; d <= LocalCoord.SEARCH_RADIUS; d++) {
             if (getStructureDefinition().isContainedInStructure("main", x, y + d, z)) top = true;
@@ -114,5 +119,9 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         }
 
         return false;
+    }
+
+    public boolean isOxygenated() {
+        return structureValid;
     }
 }
