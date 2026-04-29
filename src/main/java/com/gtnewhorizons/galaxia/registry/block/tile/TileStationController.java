@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -34,8 +33,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
 
-import javax.annotation.Nonnull;
-
 public class TileStationController extends TileStationBase<TileStationController>
     implements ArbitraryShapeTile<TileStationController> {
 
@@ -46,6 +43,7 @@ public class TileStationController extends TileStationBase<TileStationController
 
     public final ArbitraryShapeDefinition<TileStationController> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
         .<TileStationController>builder()
+        .withSearchRadius(16)
         .addControllerBlock(GalaxiaBlocksEnum.STATION_CONTROLLER.get())
         .addElements(
             BASE_VALID_BLOCKS.stream()
@@ -99,6 +97,11 @@ public class TileStationController extends TileStationBase<TileStationController
             return true;
         }
         return false;
+    }
+
+    @Override
+    public int getSearchRadius() {
+        return ArbitraryShapeTile.super.getSearchRadius();
     }
 
     @Override
