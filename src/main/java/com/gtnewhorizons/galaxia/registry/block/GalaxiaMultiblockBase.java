@@ -15,9 +15,12 @@ import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> extends TileEntity
     implements ISurvivalConstructable {
 
+    protected ForgeDirection placedFacing = ForgeDirection.NORTH;
     protected ExtendedFacing currentFacing = ExtendedFacing.DEFAULT;
-    protected boolean structureValid = false;
     private int mCheckTimer = 0;
+
+    protected boolean structureValid = false;
+    protected boolean isChunkUnloading = false;
 
     public abstract IStructureDefinition<T> getStructureDefinition();
 
@@ -199,4 +202,23 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
         }
     }
+
+    @Override
+    public void onChunkUnload() {
+        super.onChunkUnload();
+        isChunkUnloading = true;
+    }
+
+    public ForgeDirection getPlacedFacing() {
+        return placedFacing;
+    }
+
+    public void setPlacedFacing(ForgeDirection dir) {
+        placedFacing = dir;
+    }
+
+    public ExtendedFacing getCurrentFacing() {
+        return currentFacing;
+    }
+
 }

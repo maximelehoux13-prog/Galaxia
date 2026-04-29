@@ -82,15 +82,20 @@ public class TileStationController extends TileStationBase<TileStationController
 
     @Override
     public boolean tryRebuildMonitorGraph() {
-        monitors.clear();
+        List<BlockPos> newMonitors = new ArrayList<>();
         for (BlockPos pos : airlocks) {
             TileEntityAirlock airlock = pos.getTE(worldObj);
             if (airlock == null) continue;
 
-            airlock.collectGraph(this, monitors);
+            airlock.collectGraph(this, newMonitors);
         }
 
-        return true;
+        if (!newMonitors.isEmpty()) {
+            monitors.clear();
+            monitors.addAll(newMonitors);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -232,7 +237,11 @@ public class TileStationController extends TileStationBase<TileStationController
     public void invalidate() {
         super.invalidate();
         if (backingStation != null) {
-            CelestialAssetStore.destroyAsset(backingStation);
+            if (isChunkUnloading) {
+                CelestialAssetStore.disableAsset(backingStation);
+            } else {
+                CelestialAssetStore.destroyAsset(backingStation);
+            }
         }
     }
 }

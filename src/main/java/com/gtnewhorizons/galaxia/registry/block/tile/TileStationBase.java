@@ -31,21 +31,12 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         GalaxiaBlocksEnum.SPACE_STATION_PANEL.get(),
         GalaxiaBlocksEnum.SPACE_STATION_GLASS.get());
 
-    protected ForgeDirection placedFacing = ForgeDirection.NORTH;
     protected List<BlockPos> airlocks = new ArrayList<>();
     protected BlockPos here;
 
     @Override
     public Block getControllerBlock() {
         return GalaxiaBlocksEnum.STATION_CONTROLLER.get();
-    }
-
-    @Override
-    public void construct(ItemStack trigger, boolean hintsOnly) {}
-
-    @Override
-    public int survivalConstruct(ItemStack trigger, int elementBudget, ISurvivalBuildEnvironment env) {
-        return -2;
     }
 
     @Override
@@ -81,19 +72,6 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
     public boolean isValidDimension(World world) {
         CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(world.provider.dimensionId);
         return objectId != CelestialObjectId.INVALID;
-    }
-
-    // TODO: Move to GalaxiaMultiblockBase
-    public ForgeDirection getPlacedFacing() {
-        return placedFacing;
-    }
-
-    public void setPlacedFacing(ForgeDirection dir) {
-        placedFacing = dir;
-    }
-
-    public ExtendedFacing getCurrentFacing() {
-        return currentFacing;
     }
 
     @Override
