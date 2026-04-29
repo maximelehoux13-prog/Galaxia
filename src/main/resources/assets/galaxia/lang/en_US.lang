@@ -110,6 +110,11 @@ tile.space_station_block.name=Space Insulation Block
 tile.space_station_glass.name=Space glass
 tile.space_station_panel.name=Space Station Panel
 
+# Blocks - "Space Station Airlock"
+tile.airlock_controller.name=AirLock Controller
+tile.airlock_door.name=AirLock Door
+tile.airlock_casing.name=AirLock Casing
+
 # Blocks - "Miscellaneous / Resource blocks"
 tile.bleeding_obsidian.name=Bleeding Obsidian
 tile.block_of_cheese.name=Block of Cheese
@@ -454,16 +459,11 @@ galaxia.system_asset.tooltip.status=Status: %s
 galaxia.system_asset.tooltip.warning=Warning: %s
 galaxia.system_asset.tooltip.construction=Construction: %d%%
 
-#### Airlock
-tile.airlock_controller.name=AirLock Controller
-tile.airlock_door.name=AirLock Door
-tile.airlock_casing.name=AirLock Casing
-
 #### Station Controller
 galaxia.gui.station_controller.title=Station Controller
 galaxia.gui.station_controller.status=Structure Valid
-galaxia.gui.station_controller.airlocks=Airlock Controllers:
-galaxia.gui.station_controller.monitors=Station Monitors:
+galaxia.gui.station_controller.airlocks=Airlock Controllers
+galaxia.gui.station_controller.monitors=Station Monitors
 galaxia.gui.station_controller.none_found=None found
 
 #### Station Monitor

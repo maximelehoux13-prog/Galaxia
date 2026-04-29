@@ -331,7 +331,7 @@ public final class GalaxiaAPI {
         return StatCollector.translateToLocalFormatted(key, objects);
     }
 
-    public static boolean isInsideStation(@Nonnull EntityPlayer player) {
+    public static boolean isPlayerInsideStation(@Nonnull EntityPlayer player) {
         CelestialObjectId id = GalaxiaCelestialAPI.getObjectFromDimension(player.dimension);
         if (id == CelestialObjectId.INVALID) return false;
         Set<CelestialAsset> teamAssets = CelestialAssetStore.getTeamAssets(TempTeamCompat.getTeam(player), id);
