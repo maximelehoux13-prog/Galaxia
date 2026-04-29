@@ -29,11 +29,16 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         * LocalCoord.SEARCH_RADIUS;
 
     private T tile;
+    private int volume;
     private final IStructureElement<T>[] structureElements;
     private final IntSet structureBlocks = LocalCoord.newBlockSet();
 
     public static <T extends TileEntity & ArbitraryShapeTile<T>> Builder<T> builder() {
         return new Builder<>();
+    }
+
+    public int getVolume() {
+        return volume;
     }
 
     @SuppressWarnings("unchecked")
@@ -69,6 +74,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         boolean enclosed = checkEnclosed(tile, world, validBoundary, placedFacing, structureBlocks);
         if (enclosed) {
             this.tile = tile;
+            this.volume = structureBlocks.size();
         }
         return enclosed;
     }
@@ -249,11 +255,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             }
         }
 
-        if (!localStructureBlocks.isEmpty() && localStructureBlocks.size() >= 6) {
-            tile.setVolume(visited.size());
-            return true;
-        }
-        return false;
+        return !localStructureBlocks.isEmpty() && localStructureBlocks.size() >= 6;
     }
 
     public static class Builder<T extends TileEntity & ArbitraryShapeTile<T>> {

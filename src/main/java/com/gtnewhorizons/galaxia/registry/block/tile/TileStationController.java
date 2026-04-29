@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.registry.block.tile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -35,7 +36,6 @@ import com.gtnewhorizons.galaxia.registry.outpost.Station;
 public class TileStationController extends TileStationBase<TileStationController>
     implements ArbitraryShapeTile<TileStationController> {
 
-    private int volume = -1;
     private UUID owner;
     private CelestialAsset.ID backingStation;
 
@@ -103,6 +103,16 @@ public class TileStationController extends TileStationBase<TileStationController
     }
 
     @Override
+    public int getVolume() {
+        int own = ArbitraryShapeTile.super.getVolume();
+        return monitors.stream()
+            .map(pos -> (TileStationMonitor) pos.getTE(worldObj))
+            .filter(Objects::nonNull)
+            .mapToInt(ArbitraryShapeTile::getVolume)
+            .sum() + own;
+    }
+
+    @Override
     public ForgeDirection getPlacedFacing() {
         return placedFacing;
     }
@@ -110,16 +120,6 @@ public class TileStationController extends TileStationBase<TileStationController
     @Override
     public boolean isStructureValid() {
         return structureValid;
-    }
-
-    @Override
-    public int getVolume() {
-        return volume;
-    }
-
-    @Override
-    public void setVolume(int volume) {
-        this.volume = volume;
     }
 
     @Override

@@ -29,7 +29,6 @@ import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 public class TileStationMonitor extends TileStationBase<TileStationMonitor>
     implements ArbitraryShapeTile<TileStationMonitor> {
 
-    private int volume = -1;
     private @Nullable BlockPos mainController;
 
     public final ArbitraryShapeDefinition<TileStationMonitor> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
@@ -56,16 +55,6 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
     @Override
     public boolean isStructureValid() {
         return structureValid;
-    }
-
-    @Override
-    public int getVolume() {
-        return volume;
-    }
-
-    @Override
-    public void setVolume(int volume) {
-        this.volume = volume;
     }
 
     @Override
