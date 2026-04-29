@@ -26,15 +26,10 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extends GalaxiaMultiblockBase<T>
     implements IGuiHolder<PosGuiData> {
 
-    public static final List<Block> BASE_VALID_BLOCKS = new ArrayList<>();
-    static {
-        BASE_VALID_BLOCKS.addAll(
-            List.of(
-                GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get(),
-                GalaxiaBlocksEnum.SPACE_STATION_PANEL.get(),
-                GalaxiaBlocksEnum.SPACE_STATION_GLASS.get()));
-        BASE_VALID_BLOCKS.addAll(TileEntityAirlock.VALID_BLOCKS);
-    }
+    public static final List<Block> BASE_VALID_BLOCKS = List.of(
+        GalaxiaBlocksEnum.SPACE_STATION_BLOCK.get(),
+        GalaxiaBlocksEnum.SPACE_STATION_PANEL.get(),
+        GalaxiaBlocksEnum.SPACE_STATION_GLASS.get());
 
     protected ForgeDirection placedFacing = ForgeDirection.NORTH;
     protected List<BlockPos> airlocks = new ArrayList<>();
