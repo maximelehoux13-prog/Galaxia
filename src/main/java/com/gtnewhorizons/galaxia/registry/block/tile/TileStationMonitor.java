@@ -20,27 +20,25 @@ import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
+import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeTile;
-import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
-
-import it.unimi.dsi.fastutil.ints.IntSet;
 
 public class TileStationMonitor extends TileStationBase<TileStationMonitor>
     implements ArbitraryShapeTile<TileStationMonitor> {
 
-    private final IntSet structureBlocks = LocalCoord.newBlockSet();
     private int volume = -1;
     private @Nullable BlockPos mainController;
 
     public final ArbitraryShapeDefinition<TileStationMonitor> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
         .<TileStationMonitor>builder()
+        .addControllerBlock(GalaxiaBlocksEnum.STATION_MONITOR.get())
         .addElements(
             BASE_VALID_BLOCKS.stream()
                 .map(b -> StructureUtility.ofBlock(b, 0)))
-        .addElement(StructureUtility.ofChain(StructureUtility.ofTileAdder((_, tileEntity) -> {
+        .addElement(GalaxiaStructureUtility.ofTileAdderCheckHints((_, tileEntity) -> {
             if (tileEntity instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;
 
@@ -51,21 +49,9 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
                 return true;
             }
             return false;
-        }, GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0)))
+        }, GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
         .embedDefinition(TileEntityAirlock.STRUCTURE_PIECE_MAIN, TileEntityAirlock.STRUCTURE_DEFINITION)
         .build();
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public IntSet getStructureBlocks() {
-        return structureBlocks;
-    }
-
-    @Override
-    public void setStructureBlocks(IntSet blocks) {
-        this.structureBlocks.clear();
-        this.structureBlocks.addAll(blocks);
-    }
 
     @Override
     public boolean isStructureValid() {
