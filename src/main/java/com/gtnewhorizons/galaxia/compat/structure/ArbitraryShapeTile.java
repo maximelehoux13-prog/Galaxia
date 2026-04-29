@@ -14,9 +14,9 @@ public interface ArbitraryShapeTile<T extends TileEntity & ArbitraryShapeTile<T>
 
     boolean isStructureValid();
 
-    int getVolume();
-
-    void setVolume(int volume);
+    default int getVolume() {
+        return ((ArbitraryShapeDefinition<T>) this).getVolume();
+    }
 
     default World worldObj() {
         return ((TileEntity) this).getWorldObj();
