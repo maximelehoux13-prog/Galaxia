@@ -333,7 +333,17 @@ public final class GalaxiaAPI {
         return StatCollector.translateToLocalFormatted(key, objects);
     }
 
-    public static boolean isPlayerInsideStation(@Nonnull EntityPlayer player) {
+    public static boolean canBreathe(@Nonnull EntityPlayer player) {
+        return canBreathe(
+            player,
+            SolarSystemRegistry.getById(player.dimension)
+                .effects());
+    }
+
+    public static boolean canBreathe(@Nonnull EntityPlayer player, EffectBuilder def) {
+        final int oxygenPercent = def.getOxygenPercent(player);
+        if (oxygenPercent >= 100) return true;
+
         CelestialObjectId id = GalaxiaCelestialAPI.getObjectFromDimension(player.dimension);
         if (id == CelestialObjectId.INVALID) return false;
         Set<CelestialAsset> teamAssets = CelestialAssetStore.getTeamAssets(TempTeamCompat.getTeam(player), id);
@@ -344,7 +354,8 @@ public final class GalaxiaAPI {
 
                 TileStationController controller = (TileStationController) player.worldObj
                     .getTileEntity(pos.x(), pos.y(), pos.z());
-                if (controller.isInside((int) player.posX, (int) player.posY, (int) player.posZ)) {
+
+                if (controller.hasOxygen((int) player.posX, (int) player.posY, (int) player.posZ)) {
                     return true;
                 }
             }

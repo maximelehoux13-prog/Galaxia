@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -32,6 +33,8 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
+
+import javax.annotation.Nonnull;
 
 public class TileStationController extends TileStationBase<TileStationController>
     implements ArbitraryShapeTile<TileStationController> {
@@ -145,6 +148,18 @@ public class TileStationController extends TileStationBase<TileStationController
     @Override
     protected int getControllerOffsetZ() {
         return 0;
+    }
+
+    public boolean hasOxygen(int x, int y, int z) {
+        if (isInside(x, y, z)) return isOxygenated();
+
+        for (BlockPos pos : monitors) {
+            TileStationMonitor monitor = pos.getTE(worldObj);
+            if (monitor == null) continue; // Maybe remove
+            if (monitor.isInside(x, y, z)) return monitor.isOxygenated();
+        }
+
+        return false;
     }
 
     @Override
