@@ -3,8 +3,10 @@ package com.gtnewhorizons.galaxia.compat.structure;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
+import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -279,27 +281,32 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         }
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
-        public Builder<T> embedDefinition(String shape, IStructureDefinition<?> definition) {
-            // TODO: Don't use reflection
-            Class<?> navClass;
-            try {
-                navClass = Class.forName("com.gtnewhorizon.structurelib.structure.IStructureNavigate");
-            } catch (ClassNotFoundException e) {
-                navClass = null;
+        public <D> Builder<T> embedDefinition(String shape, IStructureDefinition<D> definition) {
+            if (!(definition instanceof StructureDefinition<D> def)) {
+                throw new IllegalArgumentException("Unsupported structure definition");
             }
 
-            for (IStructureElement element : definition.getStructureFor(shape)) {
+            String encodedShape = def.getShapes().get(shape);
+            if (encodedShape == null) {
+                throw new IllegalArgumentException("Unknown shape: " + shape);
+            }
 
-                // Skip navigation elements if interface exists
-                if (navClass != null && navClass.isInstance(element)) {
-                    continue;
+            Map<Character, IStructureElement<D>> sourceElements = def.getElements();
+
+            for (char c : encodedShape.toCharArray()) {
+                IStructureElement<D> element = sourceElements.get(c);
+
+                if (element == null) continue;
+
+                // Skip special vanilla chars instead of reflection
+                if (c == '+' || c == '-' || c == ' ') continue;
+
+                if (!this.elements.contains(element)) {
+                    this.elements.add((IStructureElement<T>) element);
                 }
-
-                elements.add((IStructureElement<T>) element);
             }
 
-            return this;
-        }
+            return this;        }
 
         @SuppressWarnings("unchecked")
         public ArbitraryShapeDefinition<T> build() {
