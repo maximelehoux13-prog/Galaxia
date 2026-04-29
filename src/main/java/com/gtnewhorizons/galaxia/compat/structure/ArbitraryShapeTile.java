@@ -18,6 +18,10 @@ public interface ArbitraryShapeTile<T extends TileEntity & ArbitraryShapeTile<T>
         return ((ArbitraryShapeDefinition<T>) this).getVolume();
     }
 
+    default int getSearchRadius() {
+        return ((ArbitraryShapeDefinition<T>) this).getSearchRadius();
+    }
+
     default World worldObj() {
         return ((TileEntity) this).getWorldObj();
     }

@@ -33,6 +33,7 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
 
     public final ArbitraryShapeDefinition<TileStationMonitor> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
         .<TileStationMonitor>builder()
+        .withSearchRadius(16)
         .addControllerBlock(GalaxiaBlocksEnum.STATION_MONITOR.get())
         .addElements(
             BASE_VALID_BLOCKS.stream()
@@ -143,5 +144,10 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
         }
 
         return false;
+    }
+
+    @Override
+    public int getSearchRadius() {
+        return ArbitraryShapeTile.super.getSearchRadius();
     }
 }

@@ -13,7 +13,6 @@ import net.minecraft.world.World;
 import com.cleanroommc.modularui.api.IGuiHolder;
 import com.cleanroommc.modularui.factory.PosGuiData;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
-import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
@@ -94,6 +93,8 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
 
     public abstract boolean tryRebuildMonitorGraph();
 
+    public abstract int getSearchRadius();
+
     @Override
     public void invalidate() {
         super.invalidate();
@@ -105,14 +106,13 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         }
     }
 
-    // TODO remove hardcoded search radius
     public boolean isInside(int x, int y, int z) {
-        // Chebyshev Distance
-        if (Math.max(Math.abs(x - xCoord), Math.max(Math.abs(y - yCoord), Math.abs(z - zCoord)))
-            > LocalCoord.SEARCH_RADIUS) return false;
+        int searchRadius = getSearchRadius();
+        if (Math.max(Math.abs(x - xCoord), Math.max(Math.abs(y - yCoord), Math.abs(z - zCoord))) > searchRadius)
+            return false;
 
         boolean top = false, bottom = false;
-        for (int d = 1; d <= LocalCoord.SEARCH_RADIUS; d++) {
+        for (int d = 1; d <= searchRadius; d++) {
             if (getStructureDefinition().isContainedInStructure("main", x, y + d, z)) top = true;
             if (getStructureDefinition().isContainedInStructure("main", x, y - d, z)) bottom = true;
             if (top && bottom) return true;

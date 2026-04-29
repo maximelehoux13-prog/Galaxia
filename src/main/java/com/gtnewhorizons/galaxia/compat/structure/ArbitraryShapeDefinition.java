@@ -27,9 +27,8 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 
 public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<T>> implements IStructureDefinition<T> {
 
-    private static final int MAX_BLOCKS = LocalCoord.SEARCH_RADIUS * LocalCoord.SEARCH_RADIUS
-        * LocalCoord.SEARCH_RADIUS;
-
+    private final int searchRadius;
+    private final int maxBlocks;
     private T tile;
     private int volume;
     private final IStructureElement<T>[] structureElements;
@@ -43,8 +42,17 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         return volume;
     }
 
+    public int getSearchRadius() {
+        return searchRadius;
+    }
+
     @SuppressWarnings("unchecked")
-    private ArbitraryShapeDefinition(List<IStructureElement<T>> structureElement) {
+    private ArbitraryShapeDefinition(List<IStructureElement<T>> structureElement, int searchRadius) {
+        if (searchRadius > LocalCoord.MAX_SEARCH_RADIUS) {
+            throw new IllegalArgumentException("Search radius too large: " + searchRadius);
+        }
+        this.searchRadius = searchRadius;
+        this.maxBlocks = searchRadius * searchRadius * searchRadius;
         this.structureElements = structureElement.toArray(new IStructureElement[0]);
     }
 
@@ -59,7 +67,8 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             Galaxia.LOG.error("Structure is not formed yet");
             return false;
         }
-        return structureBlocks.contains(LocalCoord.pack(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord));
+        return structureBlocks
+            .contains(LocalCoord.pack(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord, searchRadius));
     }
 
     @Override
@@ -68,7 +77,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         if (fastRevalidate(tile)) return true;
         IntSet validBoundary = floodStructure(tile, world);
-        debugSet(world, validBoundary, tile.xCoord, tile.yCoord, tile.zCoord);
+        // debugSet(world, validBoundary, tile.xCoord, tile.yCoord, tile.zCoord, searchRadius);
 
         ForgeDirection placedFacing = tile.getPlacedFacing();
         structureBlocks.clear();
@@ -125,9 +134,9 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         if (world == null || world.isRemote) return true;
 
         for (int packed : structureBlocks) {
-            int wx = LocalCoord.worldX(LocalCoord.unpackX(packed), tile.xCoord);
-            int wy = LocalCoord.worldY(LocalCoord.unpackSignedY(packed), tile.yCoord);
-            int wz = LocalCoord.worldZ(LocalCoord.unpackZ(packed), tile.zCoord);
+            int wx = LocalCoord.worldX(LocalCoord.unpackX(packed, searchRadius), tile.xCoord);
+            int wy = LocalCoord.worldY(LocalCoord.unpackY(packed, searchRadius), tile.yCoord);
+            int wz = LocalCoord.worldZ(LocalCoord.unpackZ(packed, searchRadius), tile.zCoord);
             if (!isValidBoundary(tile, world, wx, wy, wz)) {
                 return false;
             }
@@ -139,24 +148,24 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         IntQueue floodBFS = new IntQueue();
         final IntSet connectedStructure = LocalCoord.newBlockSet();
 
-        int start = LocalCoord.pack(0, 0, 0);
+        int start = LocalCoord.pack(0, 0, 0, searchRadius);
         floodBFS.enqueue(start);
         connectedStructure.add(start);
 
         while (!floodBFS.isEmpty()) {
             int cur = floodBFS.dequeue();
-            int lx = LocalCoord.unpackX(cur);
-            int ly = LocalCoord.unpackY(cur);
-            int lz = LocalCoord.unpackZ(cur);
+            int lx = LocalCoord.unpackX(cur, searchRadius);
+            int ly = LocalCoord.unpackY(cur, searchRadius);
+            int lz = LocalCoord.unpackZ(cur, searchRadius);
 
             for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
                 int nlx = lx + d.offsetX;
                 int nly = ly + d.offsetY;
                 int nlz = lz + d.offsetZ;
 
-                if (!LocalCoord.isInBounds(nlx, nly, nlz)) continue;
+                if (!LocalCoord.isInBounds(nlx, nly, nlz, searchRadius)) continue;
 
-                int np = LocalCoord.pack(nlx, nly, nlz);
+                int np = LocalCoord.pack(nlx, nly, nlz, searchRadius);
 
                 int wx = LocalCoord.worldX(nlx, tile.xCoord);
                 int wy = LocalCoord.worldY(nly, tile.yCoord);
@@ -173,12 +182,12 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         return connectedStructure;
     }
 
-    private static void debugSet(World world, IntSet set, int xc, int yc, int zc) {
+    private static void debugSet(World world, IntSet set, int xc, int yc, int zc, int searchRadius) {
         HashMap<BlockPos, Block> dbg = new HashMap<>();
         for (int coord : set) {
-            int x = LocalCoord.unpackX(coord) + xc;
-            int y = LocalCoord.unpackY(coord) + yc;
-            int z = LocalCoord.unpackZ(coord) + zc;
+            int x = LocalCoord.unpackX(coord, searchRadius) + xc;
+            int y = LocalCoord.unpackY(coord, searchRadius) + yc;
+            int z = LocalCoord.unpackZ(coord, searchRadius) + zc;
             BlockPos pos = new BlockPos(x, y, z);
             Block b = world.getBlock(x, y, z);
             dbg.put(pos, b);
@@ -213,26 +222,26 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         IntQueue bfs = new IntQueue();
         IntSet visited = LocalCoord.newBlockSet();
 
-        int start = LocalCoord.pack(placedFacing.offsetX, placedFacing.offsetY, placedFacing.offsetZ);
+        int start = LocalCoord.pack(placedFacing.offsetX, placedFacing.offsetY, placedFacing.offsetZ, searchRadius);
 
         bfs.enqueue(start);
         visited.add(start);
 
         int checked = 0;
-        while (!bfs.isEmpty() && checked++ < MAX_BLOCKS) {
+        while (!bfs.isEmpty() && checked++ < maxBlocks) {
             int cur = bfs.dequeue();
-            int lx = LocalCoord.unpackX(cur);
-            int ly = LocalCoord.unpackY(cur);
-            int lz = LocalCoord.unpackZ(cur);
+            int lx = LocalCoord.unpackX(cur, searchRadius);
+            int ly = LocalCoord.unpackY(cur, searchRadius);
+            int lz = LocalCoord.unpackZ(cur, searchRadius);
 
             for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
                 int nlx = lx + d.offsetX;
                 int nly = ly + d.offsetY;
                 int nlz = lz + d.offsetZ;
 
-                if (!LocalCoord.isInBounds(nlx, nly, nlz)) return false;
+                if (!LocalCoord.isInBounds(nlx, nly, nlz, searchRadius)) return false;
 
-                int np = LocalCoord.pack(nlx, nly, nlz);
+                int np = LocalCoord.pack(nlx, nly, nlz, searchRadius);
 
                 int nwx = LocalCoord.worldX(nlx, tile.xCoord);
                 int nwy = LocalCoord.worldY(nly, tile.yCoord);
@@ -263,8 +272,17 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     public static class Builder<T extends TileEntity & ArbitraryShapeTile<T>> {
 
         private final List<IStructureElement<T>> elements = new ArrayList<>();
+        private int searchRadius = LocalCoord.SEARCH_RADIUS;
 
         private Builder() {}
+
+        public Builder<T> withSearchRadius(int radius) {
+            if (radius > LocalCoord.MAX_SEARCH_RADIUS) {
+                throw new IllegalArgumentException("Search radius too large for 10-bit encoding: " + radius);
+            }
+            this.searchRadius = radius;
+            return this;
+        }
 
         public Builder<T> addControllerBlock(Block controller) {
             return addElement(StructureUtility.ofBlockAnyMeta(controller));
@@ -299,7 +317,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
                 if (element == null) continue;
 
-                // Skip special vanilla chars instead of reflection
                 if (c == '+' || c == '-' || c == ' ') continue;
 
                 if (!this.elements.contains(element)) {
@@ -312,8 +329,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         @SuppressWarnings("unchecked")
         public ArbitraryShapeDefinition<T> build() {
-            // TODO: Too many structure elements
-            return new ArbitraryShapeDefinition<>(elements);
+            return new ArbitraryShapeDefinition<>(elements, searchRadius);
         }
     }
 }

@@ -93,27 +93,31 @@ public class BlockAirlockDoor extends Block {
         return super.collisionRayTrace(world, x, y, z, start, end);
     }
 
+    private static final int AIRLOCK_FLOOD_RADIUS = 8;
+
     @Override
     public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
         float hitY, float hitZ) {
         if (world.isRemote) return true;
 
         IntQueue floodBFS = new IntQueue();
-        int start = LocalCoord.pack(0, 0, 0);
+        int start = LocalCoord.pack(0, 0, 0, AIRLOCK_FLOOD_RADIUS);
         floodBFS.enqueue(start);
 
         while (!floodBFS.isEmpty()) {
             int cur = floodBFS.dequeue();
-            int lx = LocalCoord.unpackX(cur);
-            int ly = LocalCoord.unpackY(cur);
-            int lz = LocalCoord.unpackZ(cur);
+            int lx = LocalCoord.unpackX(cur, AIRLOCK_FLOOD_RADIUS);
+            int ly = LocalCoord.unpackY(cur, AIRLOCK_FLOOD_RADIUS);
+            int lz = LocalCoord.unpackZ(cur, AIRLOCK_FLOOD_RADIUS);
 
             for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
                 int nlx = lx + d.offsetX;
                 int nly = ly + d.offsetY;
                 int nlz = lz + d.offsetZ;
 
-                int np = LocalCoord.pack(nlx, nly, nlz);
+                if (!LocalCoord.isInBounds(nlx, nly, nlz, AIRLOCK_FLOOD_RADIUS)) continue;
+
+                int np = LocalCoord.pack(nlx, nly, nlz, AIRLOCK_FLOOD_RADIUS);
 
                 int wx = LocalCoord.worldX(nlx, x);
                 int wy = LocalCoord.worldY(nly, y);
