@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -17,6 +16,7 @@ import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.IStructureElement;
 import com.gtnewhorizon.structurelib.structure.IStructureWalker;
+import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
 import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
@@ -282,11 +282,12 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         public <D> Builder<T> embedDefinition(String shape, IStructureDefinition<D> definition) {
-            if (!(definition instanceof StructureDefinition<D> def)) {
+            if (!(definition instanceof StructureDefinition<D>def)) {
                 throw new IllegalArgumentException("Unsupported structure definition");
             }
 
-            String encodedShape = def.getShapes().get(shape);
+            String encodedShape = def.getShapes()
+                .get(shape);
             if (encodedShape == null) {
                 throw new IllegalArgumentException("Unknown shape: " + shape);
             }
@@ -306,7 +307,8 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
                 }
             }
 
-            return this;        }
+            return this;
+        }
 
         @SuppressWarnings("unchecked")
         public ArbitraryShapeDefinition<T> build() {
