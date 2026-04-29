@@ -18,6 +18,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
     protected ForgeDirection placedFacing = ForgeDirection.NORTH;
     protected ExtendedFacing currentFacing = ExtendedFacing.DEFAULT;
     private int mCheckTimer = 0;
+
     protected boolean structureValid = false;
     protected boolean isChunkUnloading = false;
 
@@ -29,7 +30,9 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
 
     protected abstract int getControllerOffsetZ();
 
-    protected boolean needsFormationOnReload() { return false; }
+    protected boolean needsFormationOnReload() {
+        return false;
+    }
 
     public abstract Block getControllerBlock();
 
@@ -151,18 +154,18 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
         super.writeToNBT(nbt);
         nbt.setBoolean("structureValid", structureValid);
         nbt.setInteger("facing", currentFacing.getIndex());
+        nbt.setInteger("placedFacing", placedFacing.ordinal());
     }
 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
-        structureValid = nbt.getBoolean("structureValid");
-        if (structureValid && needsFormationOnReload()) {
-            structureValid = false;
-        }
-
+        structureValid = !needsFormationOnReload() && nbt.getBoolean("structureValid");
         if (nbt.hasKey("facing")) {
             currentFacing = ExtendedFacing.byIndex(nbt.getInteger("facing"));
+        }
+        if (nbt.hasKey("placedFacing")) {
+            placedFacing = ForgeDirection.values()[nbt.getInteger("placedFacing")];
         }
         mCheckTimer = 0;
     }

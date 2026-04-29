@@ -34,6 +34,11 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
     }
 
     @Override
+    protected boolean needsFormationOnReload() {
+        return true;
+    }
+
+    @Override
     public Block getControllerBlock() {
         return GalaxiaBlocksEnum.STATION_CONTROLLER.get();
     }
