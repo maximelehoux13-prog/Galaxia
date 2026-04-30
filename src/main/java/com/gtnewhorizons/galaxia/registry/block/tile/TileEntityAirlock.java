@@ -5,9 +5,7 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.Packet;
-import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
+import net.minecraftforge.common.util.Constants;
 
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
@@ -18,8 +16,6 @@ import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraftforge.common.util.Constants;
 
 public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> {
 
@@ -101,8 +97,13 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         return state == AirlockState.OPEN;
     }
 
-    public boolean isExternalConnection() { return stationControllers.size() < MAX_CONNECTIONS; }
-    public boolean isInternalConnection() { return !isExternalConnection(); }
+    public boolean isExternalConnection() {
+        return stationControllers.size() < MAX_CONNECTIONS;
+    }
+
+    public boolean isInternalConnection() {
+        return !isExternalConnection();
+    }
 
     public List<BlockPos> getStationControllers() {
         return new ArrayList<>(stationControllers);
@@ -205,31 +206,6 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         closeDoor();
     }
 
-    @Override
-    protected boolean needsFormationOnReload() {
-        return true;
-    }
-
-    @Override
-    public void validate() {
-        super.validate();
-        if (!worldObj.isRemote) {
-            markStructureDirty();
-        }
-    }
-
-    @Override
-    public Packet getDescriptionPacket() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        this.writeToNBT(nbt);
-        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, nbt);
-    }
-
-    @Override
-    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
-        this.readFromNBT(pkt.func_148857_g());
-    }
-
     private void openDoor() {
         setDoorState(true);
     }
@@ -290,26 +266,5 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         if (isChunkUnloading) {
             setDoorState(false);
         }
-    }
-
-    protected static NBTTagList blockPosListToNBT(List<BlockPos> positions) {
-        NBTTagList tagList = new NBTTagList();
-        for (BlockPos pos : positions) {
-            NBTTagCompound tag = new NBTTagCompound();
-            tag.setInteger("x", pos.x());
-            tag.setInteger("y", pos.y());
-            tag.setInteger("z", pos.z());
-            tagList.appendTag(tag);
-        }
-        return tagList;
-    }
-
-    protected static List<BlockPos> blockPosListFromNBT(NBTTagList tagList) {
-        List<BlockPos> positions = new ArrayList<>();
-        for (int i = 0; i < tagList.tagCount(); i++) {
-            NBTTagCompound tag = tagList.getCompoundTagAt(i);
-            positions.add(new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")));
-        }
-        return positions;
     }
 }

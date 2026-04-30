@@ -1,11 +1,12 @@
 package com.gtnewhorizons.galaxia.registry.outpost;
 
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.WorldServer;
+
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.World;
 
 public class Station extends CelestialAsset {
 
@@ -28,11 +29,12 @@ public class Station extends CelestialAsset {
         if (this.isDisabled()) return;
         if (controller == null) return;
 
-        net.minecraft.server.MinecraftServer server = net.minecraft.server.MinecraftServer.getServer();
+        MinecraftServer server = MinecraftServer.getServer();
         if (server == null) return;
 
-        int dimId = celestialObjectId.dimension().getId();
-        net.minecraft.world.WorldServer world = server.worldServerForDimension(dimId);
+        int dimId = celestialObjectId.dimension()
+            .getId();
+        WorldServer world = server.worldServerForDimension(dimId);
         if (world == null) return;
 
         TileStationController teController = controller.getTE(world);

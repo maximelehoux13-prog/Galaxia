@@ -1,8 +1,15 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -32,7 +39,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
     protected abstract int getControllerOffsetZ();
 
     protected boolean needsFormationOnReload() {
-        return false;
+        return true;
     }
 
     public abstract Block getControllerBlock();
@@ -59,7 +66,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             (T) this,
             "main",
             worldObj,
-            ExtendedFacing.DEFAULT,
+            currentFacing,
             xCoord,
             yCoord,
             zCoord,
@@ -80,7 +87,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             trigger,
             "main",
             worldObj,
-            ExtendedFacing.DEFAULT,
+            currentFacing,
             xCoord,
             yCoord,
             zCoord,
@@ -100,7 +107,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             trigger,
             "main",
             worldObj,
-            ExtendedFacing.DEFAULT,
+            currentFacing,
             xCoord,
             yCoord,
             zCoord,
@@ -234,4 +241,36 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
         return currentFacing;
     }
 
+    @Override
+    public Packet getDescriptionPacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        this.writeToNBT(nbt);
+        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, nbt);
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
+        this.readFromNBT(pkt.func_148857_g());
+    }
+
+    protected static NBTTagList blockPosListToNBT(List<BlockPos> positions) {
+        NBTTagList tagList = new NBTTagList();
+        for (BlockPos pos : positions) {
+            NBTTagCompound tag = new NBTTagCompound();
+            tag.setInteger("x", pos.x());
+            tag.setInteger("y", pos.y());
+            tag.setInteger("z", pos.z());
+            tagList.appendTag(tag);
+        }
+        return tagList;
+    }
+
+    protected static List<BlockPos> blockPosListFromNBT(NBTTagList tagList) {
+        List<BlockPos> positions = new ArrayList<>();
+        for (int i = 0; i < tagList.tagCount(); i++) {
+            NBTTagCompound tag = tagList.getCompoundTagAt(i);
+            positions.add(new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")));
+        }
+        return positions;
+    }
 }

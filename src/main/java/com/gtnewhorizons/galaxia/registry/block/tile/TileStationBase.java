@@ -7,10 +7,6 @@ import java.util.Set;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.Packet;
-import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 
@@ -38,11 +34,6 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
 
     public TileStationBase() {
         super();
-    }
-
-    @Override
-    protected boolean needsFormationOnReload() {
-        return true;
     }
 
     @Override
@@ -104,18 +95,6 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         }
     }
 
-    @Override
-    public Packet getDescriptionPacket() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        this.writeToNBT(nbt);
-        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, nbt);
-    }
-
-    @Override
-    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
-        this.readFromNBT(pkt.func_148857_g());
-    }
-
     public abstract boolean tryRebuildMonitorGraph();
 
     public abstract int getSearchRadius();
@@ -129,27 +108,6 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
 
             airlock.untrackStationController(this.here);
         }
-    }
-
-    protected static NBTTagList blockPosListToNBT(List<BlockPos> positions) {
-        NBTTagList tagList = new NBTTagList();
-        for (BlockPos pos : positions) {
-            NBTTagCompound tag = new NBTTagCompound();
-            tag.setInteger("x", pos.x());
-            tag.setInteger("y", pos.y());
-            tag.setInteger("z", pos.z());
-            tagList.appendTag(tag);
-        }
-        return tagList;
-    }
-
-    protected static List<BlockPos> blockPosListFromNBT(NBTTagList tagList) {
-        List<BlockPos> positions = new ArrayList<>();
-        for (int i = 0; i < tagList.tagCount(); i++) {
-            NBTTagCompound tag = tagList.getCompoundTagAt(i);
-            positions.add(new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")));
-        }
-        return positions;
     }
 
     public boolean isInside(int x, int y, int z) {
