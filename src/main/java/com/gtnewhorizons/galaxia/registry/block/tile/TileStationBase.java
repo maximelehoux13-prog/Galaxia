@@ -1,7 +1,9 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
@@ -28,6 +30,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
 
     protected List<BlockPos> airlocks = new ArrayList<>();
     protected BlockPos here;
+    protected int oxygenLevel = 100;
 
     public TileStationBase() {
         super();
@@ -132,6 +135,49 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
     }
 
     public boolean isOxygenated() {
-        return structureValid;
+        return isOxygenated(new HashSet<>());
     }
+
+    private boolean isOxygenated(Set<BlockPos> visited) {
+        if (!structureValid) return false;
+
+        // Prevent cycles
+        if (!visited.add(here)) {
+            return oxygenLevel > 0;
+        }
+
+        boolean hasOpenAirlock = false;
+        boolean foundOxygenPath = false;
+
+        for (BlockPos airlockPos : airlocks) {
+            TileEntityAirlock airlock = airlockPos.getTE(worldObj);
+            if (airlock == null) continue;
+            if (!airlock.isOpen()) continue;
+
+            // Open to outside = immediate failure
+            if (airlock.isExternalConnection()) return false;
+
+            hasOpenAirlock = true;
+
+            for (BlockPos otherPos : airlock.getStationControllers()) {
+                if (otherPos.equals(here)) continue;
+
+                TileStationBase other = otherPos.getTE(worldObj);
+                if (other == null) continue;
+
+                if (other.isOxygenated(visited)) {
+                    foundOxygenPath = true;
+                }
+            }
+        }
+
+        // Case 1: no open doors → sealed
+        if (!hasOpenAirlock) {
+            return oxygenLevel > 0;
+        }
+
+        // Case 2: doors open → rely on network
+        return foundOxygenPath;
+    }
+
 }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import com.cleanroommc.modularui.widgets.TextWidget;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 
@@ -11,6 +12,7 @@ import com.cleanroommc.modularui.api.drawable.IKey;
 import com.cleanroommc.modularui.factory.PosGuiData;
 import com.cleanroommc.modularui.screen.ModularPanel;
 import com.cleanroommc.modularui.screen.UISettings;
+import com.cleanroommc.modularui.value.sync.BooleanSyncValue;
 import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
@@ -79,19 +81,41 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
         if (!worldObj.isRemote) {
             markStructureDirty();
         }
+
+        BooleanSyncValue structureValidSync = new BooleanSyncValue(
+            () -> structureValid,
+            () -> structureValid
+        );
+        syncManager.syncValue("structureValid", 0, structureValidSync);
+        BooleanSyncValue oxygenatedSync = new BooleanSyncValue(
+            () -> isOxygenated(),
+            () -> isOxygenated()
+        );
+        syncManager.syncValue("oxygenated", 0, oxygenatedSync);
+
         return new ModularPanel("galaxia:station_monitor").size(210, 130)
             .child(
                 IKey.str(StatCollector.translateToLocal("galaxia.gui.station_monitor.title"))
                     .asWidget()
                     .pos(8, 8))
+            .child(new TextWidget<>(IKey.dynamic(() -> {
+                boolean valid = structureValidSync.getBoolValue();
+                String structure = StatCollector.translateToLocal("galaxia.gui.station_monitor.structure");
+                String status = StatCollector.translateToLocal(valid ? "galaxia.gui.status_valid" : "galaxia.gui.status_invalid");
+                EnumChatFormatting color = valid ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
+                return structure + ": " + color + status;
+            })).pos(10, 30))
+            .child(new TextWidget<>(IKey.dynamic(() -> {
+                boolean oxy = oxygenatedSync.getBoolValue();
+                String oxygen = StatCollector.translateToLocal("galaxia.gui.station_controller.oxygen");
+                String status = StatCollector.translateToLocal(oxy ? "galaxia.gui.status_yes" : "galaxia.gui.status_no");
+                EnumChatFormatting color = oxy ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
+                return oxygen + ": " + color + status;
+            })).pos(10, 50))
             .child(
                 new ButtonWidget<>().size(190, 30)
                     .pos(10, 85)
-                    .overlay(
-                        IKey.str(
-                            (structureValid ? EnumChatFormatting.GREEN : EnumChatFormatting.RED)
-                                + StatCollector.translateToLocal("galaxia.gui.station_monitor.status")
-                                + EnumChatFormatting.RESET))
+                    .overlay(IKey.str(StatCollector.translateToLocal("galaxia.gui.station_monitor.refresh")))
                     .syncHandler(new InteractionSyncHandler().setOnMousePressed(mouseData -> {
                         if (mouseData.mouseButton != 0 || worldObj.isRemote) return;
                         markStructureDirty();

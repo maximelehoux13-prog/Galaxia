@@ -96,6 +96,13 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         return state == AirlockState.OPEN;
     }
 
+    public boolean isExternalConnection() { return stationControllers.size() < MAX_CONNECTIONS; }
+    public boolean isInternalConnection() { return !isExternalConnection(); }
+
+    public List<BlockPos> getStationControllers() {
+        return new ArrayList<>(stationControllers);
+    }
+
     public void toggleState() {
         if (!structureValid) return;
 

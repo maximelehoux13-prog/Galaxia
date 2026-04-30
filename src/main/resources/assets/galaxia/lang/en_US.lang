@@ -468,6 +468,7 @@ galaxia.system_asset.tooltip.construction=Construction: %d%%
 #### Station Controller
 galaxia.gui.station_controller.title=Station Controller
 galaxia.gui.station_controller.status=Structure Valid
+galaxia.gui.station_controller.refresh=Refresh
 galaxia.gui.station_controller.airlocks=Airlock Controllers
 galaxia.gui.station_controller.monitors=Station Monitors
 galaxia.gui.station_controller.none_found=None found
@@ -476,3 +477,9 @@ galaxia.gui.station_controller.none_found=None found
 galaxia.gui.station_monitor.title=Station Monitor
 galaxia.gui.station_monitor.status=Structure Valid
 galaxia.gui.station_monitor.controller=Controller: 
+
+#### Status
+galaxia.gui.status_valid=Valid
+galaxia.gui.status_invalid=Invalid
+galaxia.gui.status_yes=Yes
+galaxia.gui.status_no=No
