@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
@@ -26,52 +25,6 @@ public class BlockGantry extends Block implements ITileEntityProvider {
     @Override
     public TileEntity createNewTileEntity(World world, int meta) {
         return new TileEntityGantry();
-    }
-
-    @Override
-    public void onEntityWalking(World world, int x, int y, int z, Entity entity) {
-        if (world.isRemote && entity.isSprinting()) {
-
-            int particlesToSpawn = 5;
-
-            for (int i = 0; i < particlesToSpawn; i++) {
-
-                double motionX = (entity.motionX * -1.5D) + (world.rand.nextFloat() - 0.5D) * 0.3D;
-                double motionY = 0.1D + (world.rand.nextFloat() * 0.1D); // Slight upward bounce
-                double motionZ = (entity.motionZ * -1.5D) + (world.rand.nextFloat() - 0.5D) * 0.3D;
-
-                world.spawnParticle(
-                    "crit",
-                    entity.posX + (world.rand.nextFloat() - 0.5D) * entity.width,
-                    entity.boundingBox.minY + 0.1D, // Spawn slightly above the floor
-                    entity.posZ + (world.rand.nextFloat() - 0.5D) * entity.width,
-                    motionX,
-                    motionY,
-                    motionZ);
-            }
-        }
-    }
-
-    // Triggers when an entity lands on the block from a jump or fall
-    @Override
-    public void onFallenUpon(World world, int x, int y, int z, Entity entity, float fallDistance) {
-        if (world.isRemote && fallDistance > 0.5F) {
-            // Scale the number of particles based on how far they fell
-            int numParticles = (int) (15.0F * fallDistance);
-            if (numParticles > 100) numParticles = 100;
-
-            for (int i = 0; i < numParticles; ++i) {
-                world.spawnParticle(
-                    "crit",
-                    entity.posX + (world.rand.nextFloat() - 0.5D) * entity.width * 1.5D,
-                    entity.boundingBox.minY + 0.1D,
-                    entity.posZ + (world.rand.nextFloat() - 0.5D) * entity.width * 1.5D,
-                    (world.rand.nextFloat() - 0.5D) * 0.5D, // Random outward burst
-                    world.rand.nextFloat() * 0.3D, // Slight upward burst
-                    (world.rand.nextFloat() - 0.5D) * 0.5D);
-            }
-        }
-        super.onFallenUpon(world, x, y, z, entity, fallDistance);
     }
 
     /**
