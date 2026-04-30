@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.cleanroommc.modularui.widgets.TextWidget;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
@@ -24,6 +22,7 @@ import com.cleanroommc.modularui.value.sync.BooleanSyncValue;
 import com.cleanroommc.modularui.value.sync.InteractionSyncHandler;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.cleanroommc.modularui.widgets.TextWidget;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
@@ -187,16 +186,10 @@ public class TileStationController extends TileStationBase<TileStationController
             markStructureDirty();
         }
 
-        BooleanSyncValue structureValidSync = new BooleanSyncValue(
-            () -> structureValid,
-            () -> structureValid
-        );
+        BooleanSyncValue structureValidSync = new BooleanSyncValue(() -> structureValid, () -> structureValid);
         syncManager.syncValue("structureValid", 0, structureValidSync);
 
-        BooleanSyncValue oxygenatedSync = new BooleanSyncValue(
-            () -> isOxygenated(),
-            () -> isOxygenated()
-        );
+        BooleanSyncValue oxygenatedSync = new BooleanSyncValue(() -> isOxygenated(), () -> isOxygenated());
         syncManager.syncValue("oxygenated", 0, oxygenatedSync);
 
         return new ModularPanel("galaxia:station_controller").size(210, 130)
@@ -207,14 +200,16 @@ public class TileStationController extends TileStationBase<TileStationController
             .child(new TextWidget<>(IKey.dynamic(() -> {
                 boolean valid = structureValidSync.getBoolValue();
                 String structure = StatCollector.translateToLocal("galaxia.gui.station_controller.structure");
-                String status = StatCollector.translateToLocal(valid ? "galaxia.gui.status_valid" : "galaxia.gui.status_invalid");
+                String status = StatCollector
+                    .translateToLocal(valid ? "galaxia.gui.status_valid" : "galaxia.gui.status_invalid");
                 EnumChatFormatting color = valid ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
                 return structure + ": " + color + status;
             })).pos(10, 30))
             .child(new TextWidget<>(IKey.dynamic(() -> {
                 boolean oxy = oxygenatedSync.getBoolValue();
                 String oxygen = StatCollector.translateToLocal("galaxia.gui.station_controller.oxygen");
-                String status = StatCollector.translateToLocal(oxy ? "galaxia.gui.status_yes" : "galaxia.gui.status_no");
+                String status = StatCollector
+                    .translateToLocal(oxy ? "galaxia.gui.status_yes" : "galaxia.gui.status_no");
                 EnumChatFormatting color = oxy ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
                 return oxygen + ": " + color + status;
             })).pos(10, 50))

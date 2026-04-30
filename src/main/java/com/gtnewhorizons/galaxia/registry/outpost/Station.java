@@ -1,11 +1,12 @@
 package com.gtnewhorizons.galaxia.registry.outpost;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.World;
+
 import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.World;
 
 public class Station extends CelestialAsset {
 

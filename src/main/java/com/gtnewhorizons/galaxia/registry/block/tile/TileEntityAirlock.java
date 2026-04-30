@@ -5,6 +5,8 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
 
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
@@ -15,8 +17,6 @@ import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraftforge.common.util.Constants;
 
 public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> {
 
@@ -98,8 +98,13 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         return state == AirlockState.OPEN;
     }
 
-    public boolean isExternalConnection() { return stationControllers.size() < MAX_CONNECTIONS; }
-    public boolean isInternalConnection() { return !isExternalConnection(); }
+    public boolean isExternalConnection() {
+        return stationControllers.size() < MAX_CONNECTIONS;
+    }
+
+    public boolean isInternalConnection() {
+        return !isExternalConnection();
+    }
 
     public List<BlockPos> getStationControllers() {
         return new ArrayList<>(stationControllers);
