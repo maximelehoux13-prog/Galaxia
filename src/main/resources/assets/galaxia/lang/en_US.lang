@@ -22,6 +22,7 @@ galaxia.dimension.panspira=Panspira
 galaxia.dimension.tenebrae=Tenebrae
 galaxia.dimension.moon=Moon
 galaxia.dimension.overworld_orbit=Overworld Orbit Stations
+galaxia.dimension.vitris=Vitris
 
 #### Celestial Bodies
 galaxia.celestial.novum_caelum=Novum Caelum
@@ -37,6 +38,7 @@ galaxia.celestial.moon=Moon
 galaxia.celestial.frozen_belt=Frozen Belt
 galaxia.celestial.ambergris_fragment=Ambergris Fragment
 galaxia.celestial.overworld_orbit=Overworld Orbit
+galaxia.celestial.overworld=Overworld
 
 #### Blocks
 # Blocks - "Moon"
@@ -138,6 +140,8 @@ tile.tenebrae_lava.name=Tenebrae Lava
 
 # Blocks - "Tile Entities"
 tile.module_controller.name=Station Module Controller
+tile.station_controller.name=Station Controller
+tile.station_monitor.name=Station Monitor
 tile.silo_controller.name=Rocket Silo
 tile.module_assembler_controller.name=Module Assembler
 tile.tenebrae_fumarole.name=Fumarole
@@ -277,6 +281,24 @@ galaxia.gui.rocket_trophy.scale=Scale
 
 # Elements - GUI - "Module Assembler"
 galaxia.gui.module_assembler.not_formed=Module Assembler not properly formed!
+
+# Elements - GUI - "Station Controller"
+X galaxia.gui.station_controller.title=Station Controller
+X galaxia.gui.station_controller.oxygen=Oxygen
+X galaxia.gui.station_controller.structure=Structure
+X galaxia.gui.station_controller.refresh=Refresh
+
+# Elements - GUI - "Station Monitor"
+X galaxia.gui.station_monitor.title=Station Monitor
+X galaxia.gui.station_monitor.structure=Structure
+X galaxia.gui.station_monitor.oxygen=Oxygen
+X galaxia.gui.station_monitor.refresh=Refresh
+
+# Elements - GUI - "Station Status"
+galaxia.gui.status_valid=Valid
+galaxia.gui.status_invalid=Invalid
+galaxia.gui.status_yes=Yes
+galaxia.gui.status_no=No
 
 # Elements - "Tooltip"
 galaxia.tooltip.oxygen_mask.desc=Allows the use of oxygen tanks to breathe in low oxygen environments
@@ -465,21 +487,3 @@ galaxia.system_asset.tooltip.status=Status: %s
 galaxia.system_asset.tooltip.warning=Warning: %s
 galaxia.system_asset.tooltip.construction=Construction: %d%%
 
-#### Station Controller
-galaxia.gui.station_controller.title=Station Controller
-galaxia.gui.station_controller.status=Structure Valid
-galaxia.gui.station_controller.refresh=Refresh
-galaxia.gui.station_controller.airlocks=Airlock Controllers
-galaxia.gui.station_controller.monitors=Station Monitors
-galaxia.gui.station_controller.none_found=None found
-
-#### Station Monitor
-galaxia.gui.station_monitor.title=Station Monitor
-galaxia.gui.station_monitor.status=Structure Valid
-galaxia.gui.station_monitor.controller=Controller: 
-
-#### Status
-galaxia.gui.status_valid=Valid
-galaxia.gui.status_invalid=Invalid
-galaxia.gui.status_yes=Yes
-galaxia.gui.status_no=No

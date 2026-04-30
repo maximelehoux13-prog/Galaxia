@@ -103,7 +103,7 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
             })).pos(10, 30))
             .child(new TextWidget<>(IKey.dynamic(() -> {
                 boolean oxy = oxygenatedSync.getBoolValue();
-                String oxygen = StatCollector.translateToLocal("galaxia.gui.station_controller.oxygen");
+                String oxygen = StatCollector.translateToLocal("galaxia.gui.station_monitor.oxygen");
                 String status = StatCollector
                     .translateToLocal(oxy ? "galaxia.gui.status_yes" : "galaxia.gui.status_no");
                 EnumChatFormatting color = oxy ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;

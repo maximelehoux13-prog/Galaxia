@@ -41,6 +41,7 @@ public enum GalaxiaBlocksEnum {
 
     // TE
     SILO_CONTROLLER(new BlockSilo(), TileEntitySilo.class, "silo_controller"),
+    AIRLOCK_CONTROLLER(new BlockAirlockController(), TileEntityAirlock.class, "airlock_controller"),
     STATION_CONTROLLER(new BlockStationController(), TileStationController.class, "station_controller"),
     STATION_MONITOR(new BlockStationMonitor(), TileStationMonitor.class, "station_monitor"),
     ASSEMBLER_CONTROLLER(new BlockModuleAssembler(), TileEntityModuleAssembler.class, "module_assembler_controller"),
@@ -49,14 +50,11 @@ public enum GalaxiaBlocksEnum {
     GANTRY_TERMINAL(new BlockGantryTerminal(), TileEntityGantryTerminal.class, "gantry_terminal"),
     ROCKET_TROPHY(new BlockRocketTrophy(), TileEntityRocketTrophy.class, "rocket_trophy"),
 
-    // AIRLOCK
-    AIRLOCK_CONTROLLER(new BlockAirlockController(), TileEntityAirlock.class, "airlock_controller"),
-    AIRLOCK_CASING(new BlockAirlockCasing(), "airlock_casing"),
-    AIRLOCK_DOOR(new BlockAirlockDoor(), "airlock_door"),
-
     // NON-TE
     SPACE_STATION_BLOCK(new BlockSpaceStation(), "space_station_block"),
     SPACE_STATION_GLASS(new BlockSpaceStationGlass(), "space_station_glass"),
+    AIRLOCK_CASING(new BlockAirlockCasing(), "airlock_casing"),
+    AIRLOCK_DOOR(new BlockAirlockDoor(), "airlock_door"),
 
     // MISC
     BLOCK_OF_PYRITE(new BlockConfigurable("resource/block_of_pyrite")),
