@@ -30,6 +30,8 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
 
     protected List<BlockPos> airlocks = new ArrayList<>();
     protected BlockPos here;
+
+    private boolean oxygenated = false;
     protected int oxygenLevel = 100;
 
     public TileStationBase() {
@@ -134,11 +136,15 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         return false;
     }
 
-    public boolean isOxygenated() {
-        return isOxygenated(new HashSet<>());
+    public void tick() {
+        oxygenated = checkOxygenLevels(new HashSet<>());
     }
 
-    private boolean isOxygenated(Set<BlockPos> visited) {
+    public boolean isOxygenated() {
+        return oxygenated;
+    }
+
+    private boolean checkOxygenLevels(Set<BlockPos> visited) {
         if (!structureValid) return false;
 
         // Prevent cycles
@@ -165,7 +171,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
                 TileStationBase other = otherPos.getTE(worldObj);
                 if (other == null) continue;
 
-                if (other.isOxygenated(visited)) {
+                if (other.checkOxygenLevels(visited)) {
                     foundOxygenPath = true;
                 }
             }

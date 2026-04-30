@@ -45,12 +45,7 @@ public class CelestialEventHandler {
         if (event.phase != TickEvent.Phase.END) return;
 
         for (CelestialAsset asset : CelestialAssetStore.allAssets()) {
-            // TODO: Ticks other assets
-            if (asset.kind != CelestialAsset.Kind.AUTOMATED_OUTPOST
-                && asset.kind != CelestialAsset.Kind.AUTOMATED_STATION) continue;
-
-            AutomatedFacility outpost = (AutomatedFacility) asset;
-            outpost.tick();
+            asset.tick();
         }
 
         LogisticStore.tickDeliveries();
