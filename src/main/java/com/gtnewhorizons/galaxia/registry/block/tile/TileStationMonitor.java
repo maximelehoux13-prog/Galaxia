@@ -5,6 +5,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.cleanroommc.modularui.widgets.TextWidget;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 
@@ -147,5 +148,27 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
     @Override
     public int getSearchRadius() {
         return ArbitraryShapeTile.super.getSearchRadius();
+    }
+
+    @Override
+    public void writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
+        if (mainController != null) {
+            nbt.setInteger("mainControllerX", mainController.x());
+            nbt.setInteger("mainControllerY", mainController.y());
+            nbt.setInteger("mainControllerZ", mainController.z());
+        }
+    }
+
+    @Override
+    public void readFromNBT(NBTTagCompound nbt) {
+        super.readFromNBT(nbt);
+        if (nbt.hasKey("mainControllerX") && nbt.hasKey("mainControllerY") && nbt.hasKey("mainControllerZ")) {
+            mainController = new BlockPos(
+                nbt.getInteger("mainControllerX"),
+                nbt.getInteger("mainControllerY"),
+                nbt.getInteger("mainControllerZ")
+            );
+        }
     }
 }

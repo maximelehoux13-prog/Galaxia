@@ -15,6 +15,8 @@ import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
 
 public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> {
 
@@ -30,7 +32,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     private AirlockState state = AirlockState.CLOSED;
 
     public static final int MAX_CONNECTIONS = 2;
-    private final List<BlockPos> stationControllers = new ArrayList<>(MAX_CONNECTIONS);
+    private List<BlockPos> stationControllers = new ArrayList<>(MAX_CONNECTIONS);
 
     /**
      * Controller is now on the BOTTOM layer of the structure.
@@ -129,6 +131,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
 
         if (stationControllers.contains(pos)) return;
         stationControllers.add(pos);
+        markDirty();
 
         if (stationControllers.size() >= MAX_CONNECTIONS) {
             for (BlockPos controllerPos : stationControllers) {
@@ -143,6 +146,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         if (!stationControllers.remove(pos)) {
             Galaxia.LOG.error("Invalid station controller to untrack");
         }
+        markDirty();
     }
 
     public void collectGraph(TileStationController controller, List<BlockPos> monitors) {
@@ -198,6 +202,19 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         closeDoor();
     }
 
+    @Override
+    protected boolean needsFormationOnReload() {
+        return false;
+    }
+
+    @Override
+    public void validate() {
+        super.validate();
+        if (!worldObj.isRemote) {
+            markStructureDirty();
+        }
+    }
+
     private void openDoor() {
         setDoorState(true);
     }
@@ -216,6 +233,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         super.writeToNBT(nbt);
 
         nbt.setInteger("state", state.ordinal());
+        nbt.setTag("stationControllers", blockPosListToNBT(stationControllers));
     }
 
     @Override
@@ -225,6 +243,10 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         int s = nbt.getInteger("state");
         if (s >= 0 && s < AirlockState.values().length) {
             state = AirlockState.values()[s];
+        }
+
+        if (nbt.hasKey("stationControllers")) {
+            stationControllers = blockPosListFromNBT(nbt.getTagList("stationControllers", Constants.NBT.TAG_COMPOUND));
         }
     }
 
@@ -253,5 +275,26 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         if (isChunkUnloading) {
             setDoorState(false);
         }
+    }
+
+    protected static NBTTagList blockPosListToNBT(List<BlockPos> positions) {
+        NBTTagList tagList = new NBTTagList();
+        for (BlockPos pos : positions) {
+            NBTTagCompound tag = new NBTTagCompound();
+            tag.setInteger("x", pos.x());
+            tag.setInteger("y", pos.y());
+            tag.setInteger("z", pos.z());
+            tagList.appendTag(tag);
+        }
+        return tagList;
+    }
+
+    protected static List<BlockPos> blockPosListFromNBT(NBTTagList tagList) {
+        List<BlockPos> positions = new ArrayList<>();
+        for (int i = 0; i < tagList.tagCount(); i++) {
+            NBTTagCompound tag = tagList.getCompoundTagAt(i);
+            positions.add(new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")));
+        }
+        return positions;
     }
 }

@@ -7,11 +7,13 @@ import java.util.UUID;
 
 import com.cleanroommc.modularui.widgets.TextWidget;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.cleanroommc.modularui.api.drawable.IKey;
@@ -249,6 +251,7 @@ public class TileStationController extends TileStationBase<TileStationController
                 backingStation.id()
                     .getLeastSignificantBits());
         }
+        nbt.setTag("monitors", blockPosListToNBT(monitors));
     }
 
     @Override
@@ -261,6 +264,11 @@ public class TileStationController extends TileStationBase<TileStationController
         if (nbt.hasKey("backingStationMost") && nbt.hasKey("backingStationLeast")) {
             backingStation = CelestialAsset.ID
                 .from(new UUID(nbt.getLong("backingStationMost"), nbt.getLong("backingStationLeast")));
+        }
+
+        if (nbt.hasKey("monitors")) {
+            monitors.clear();
+            monitors.addAll(blockPosListFromNBT(nbt.getTagList("monitors", Constants.NBT.TAG_COMPOUND)));
         }
     }
 

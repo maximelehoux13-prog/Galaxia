@@ -21,6 +21,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
 
     protected boolean structureValid = false;
     protected boolean isChunkUnloading = false;
+    private boolean reloadHappened = false;
 
     public abstract IStructureDefinition<T> getStructureDefinition();
 
@@ -160,7 +161,11 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
-        structureValid = !needsFormationOnReload() && nbt.getBoolean("structureValid");
+        structureValid = nbt.getBoolean("structureValid");
+        if (!reloadHappened && needsFormationOnReload()) {
+            structureValid = false;
+        }
+        reloadHappened = true;
         if (nbt.hasKey("facing")) {
             currentFacing = ExtendedFacing.byIndex(nbt.getInteger("facing"));
         }
