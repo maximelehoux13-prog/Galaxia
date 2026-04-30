@@ -168,6 +168,18 @@ public class TileStationController extends TileStationBase<TileStationController
     }
 
     @Override
+    public void tick() {
+        super.tick();
+
+        for (BlockPos pos : monitors) {
+            TileStationMonitor monitor = pos.getTE(worldObj);
+            if (monitor == null) continue; // Maybe remove
+
+            monitor.tick();
+        }
+    }
+
+    @Override
     public ModularPanel buildUI(PosGuiData data, PanelSyncManager syncManager, UISettings settings) {
         if (!worldObj.isRemote) {
             markStructureDirty();
@@ -287,4 +299,5 @@ public class TileStationController extends TileStationBase<TileStationController
             }
         }
     }
+
 }

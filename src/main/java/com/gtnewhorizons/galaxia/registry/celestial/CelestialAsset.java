@@ -174,6 +174,8 @@ public abstract class CelestialAsset implements Buildable {
         syncRevision++;
     }
 
+    public abstract void tick();
+
     public static Map<ItemStack, Long> defaultRequirements(CelestialAsset.Kind kind) {
         Map<ItemStack, Long> required = new LinkedHashMap<>();
         switch (kind) {
