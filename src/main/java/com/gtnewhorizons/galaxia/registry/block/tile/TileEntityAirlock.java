@@ -5,6 +5,9 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
@@ -204,7 +207,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
 
     @Override
     protected boolean needsFormationOnReload() {
-        return false;
+        return true;
     }
 
     @Override
@@ -213,6 +216,18 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         if (!worldObj.isRemote) {
             markStructureDirty();
         }
+    }
+
+    @Override
+    public Packet getDescriptionPacket() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        this.writeToNBT(nbt);
+        return new S35PacketUpdateTileEntity(xCoord, yCoord, zCoord, 0, nbt);
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
+        this.readFromNBT(pkt.func_148857_g());
     }
 
     private void openDoor() {

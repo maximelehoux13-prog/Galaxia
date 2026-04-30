@@ -26,11 +26,17 @@ public class Station extends CelestialAsset {
     @Override
     public void tick() {
         if (this.isDisabled()) return;
-        World world = Minecraft.getMinecraft().theWorld;
+        if (controller == null) return;
+
+        net.minecraft.server.MinecraftServer server = net.minecraft.server.MinecraftServer.getServer();
+        if (server == null) return;
+
+        int dimId = celestialObjectId.dimension().getId();
+        net.minecraft.world.WorldServer world = server.worldServerForDimension(dimId);
         if (world == null) return;
 
         TileStationController teController = controller.getTE(world);
-        if (teController == null) return; // TODO: Figure out what to do, it should never happen though
+        if (teController == null) return;
 
         teController.tick();
     }

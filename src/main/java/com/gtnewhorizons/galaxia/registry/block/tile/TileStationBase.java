@@ -42,7 +42,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
 
     @Override
     protected boolean needsFormationOnReload() {
-        return false;
+        return true;
     }
 
     @Override
