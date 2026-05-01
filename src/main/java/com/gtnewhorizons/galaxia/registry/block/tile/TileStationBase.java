@@ -71,6 +71,13 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         airlocks.clear();
     }
 
+    public void registerAirlock(int x, int y, int z) {
+        BlockPos airlock = new BlockPos(x, y, z);
+        if (!this.airlocks.contains(airlock)) {
+            this.airlocks.add(airlock);
+        }
+    }
+
     public boolean isValidDimension(World world) {
         CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(world.provider.dimensionId);
         return objectId != CelestialObjectId.INVALID;
@@ -95,7 +102,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         }
     }
 
-    public abstract boolean tryRebuildMonitorGraph();
+    public abstract boolean tryRebuildControllersGraph();
 
     public abstract int getSearchRadius();
 

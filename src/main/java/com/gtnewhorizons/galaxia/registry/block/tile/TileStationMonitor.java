@@ -1,10 +1,5 @@
 package com.gtnewhorizons.galaxia.registry.block.tile;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 
@@ -19,16 +14,13 @@ import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
-import com.gtnewhorizons.galaxia.api.BlockPos;
 import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeTile;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
-public class TileStationMonitor extends TileStationBase<TileStationMonitor>
+public class TileStationMonitor extends TileStationSecondary<TileStationMonitor>
     implements ArbitraryShapeTile<TileStationMonitor> {
-
-    private @Nullable BlockPos mainController;
 
     public final ArbitraryShapeDefinition<TileStationMonitor> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
         .<TileStationMonitor>builder()
@@ -41,10 +33,7 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
             if (tileEntity instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;
 
-                BlockPos airlockPos = new BlockPos(airlock.xCoord, airlock.yCoord, airlock.zCoord);
-                if (!this.airlocks.contains(airlockPos)) {
-                    this.airlocks.add(airlockPos);
-                }
+                registerAirlock(airlock.xCoord, airlock.yCoord, airlock.zCoord);
                 return true;
             }
             return false;
@@ -119,51 +108,9 @@ public class TileStationMonitor extends TileStationBase<TileStationMonitor>
                     })));
     }
 
-    public void collectGraph(TileStationController controller, List<BlockPos> monitors) {
-        mainController = controller.here;
-
-        for (BlockPos pos : airlocks) {
-            TileEntityAirlock airlock = pos.getTE(worldObj);
-            if (airlock == null) continue;
-
-            airlock.collectGraph(controller, monitors);
-        }
-    }
-
-    public boolean tryRebuildMonitorGraph() {
-        if (mainController != null) {
-            TileStationController controller = mainController.getTE(worldObj);
-            if (controller == null) return false;
-
-            return controller.tryRebuildMonitorGraph();
-        }
-
-        return false;
-    }
-
     @Override
     public int getSearchRadius() {
         return ArbitraryShapeTile.super.getSearchRadius();
     }
 
-    @Override
-    public void writeToNBT(NBTTagCompound nbt) {
-        super.writeToNBT(nbt);
-        if (mainController != null) {
-            nbt.setInteger("mainControllerX", mainController.x());
-            nbt.setInteger("mainControllerY", mainController.y());
-            nbt.setInteger("mainControllerZ", mainController.z());
-        }
-    }
-
-    @Override
-    public void readFromNBT(NBTTagCompound nbt) {
-        super.readFromNBT(nbt);
-        if (nbt.hasKey("mainControllerX") && nbt.hasKey("mainControllerY") && nbt.hasKey("mainControllerZ")) {
-            mainController = new BlockPos(
-                nbt.getInteger("mainControllerX"),
-                nbt.getInteger("mainControllerY"),
-                nbt.getInteger("mainControllerZ"));
-        }
-    }
 }

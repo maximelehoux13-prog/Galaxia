@@ -52,10 +52,7 @@ public class TileStationController extends TileStationBase<TileStationController
             if (tileEntity instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;
 
-                BlockPos airlockPos = new BlockPos(airlock.xCoord, airlock.yCoord, airlock.zCoord);
-                if (!this.airlocks.contains(airlockPos)) {
-                    this.airlocks.add(airlockPos);
-                }
+                registerAirlock(airlock.xCoord, airlock.yCoord, airlock.zCoord);
                 return true;
             }
             return false;
@@ -67,7 +64,7 @@ public class TileStationController extends TileStationBase<TileStationController
     public void onStructureFormed() {
         super.onStructureFormed();
 
-        tryRebuildMonitorGraph();
+        tryRebuildControllersGraph();
         // Avoid registering potentially duplicate station on reload
         if (backingStation == null) {
             CelestialObjectId objectId = GalaxiaCelestialAPI.getObjectFromDimension(this.worldObj.provider.dimensionId);
@@ -82,7 +79,7 @@ public class TileStationController extends TileStationBase<TileStationController
     }
 
     @Override
-    public boolean tryRebuildMonitorGraph() {
+    public boolean tryRebuildControllersGraph() {
         List<BlockPos> newMonitors = new ArrayList<>();
         for (BlockPos pos : airlocks) {
             TileEntityAirlock airlock = pos.getTE(worldObj);

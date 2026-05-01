@@ -42,11 +42,6 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
 
     public static final String STRUCTURE_PIECE_MAIN = "main";
 
-    public static final List<Block> VALID_BLOCKS = List.of(
-        GalaxiaBlocksEnum.AIRLOCK_CASING.get(),
-        GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(),
-        GalaxiaBlocksEnum.AIRLOCK_DOOR.get());
-
     public static final IStructureDefinition<TileEntityAirlock> STRUCTURE_DEFINITION = StructureDefinition
         .<TileEntityAirlock>builder()
         .addShape(
@@ -139,9 +134,9 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
 
         if (stationControllers.size() >= MAX_CONNECTIONS) {
             for (BlockPos controllerPos : stationControllers) {
-                TileStationBase base = controllerPos.getTE(worldObj);
+                TileStationBase<?> base = controllerPos.getTE(worldObj);
                 if (base == null) continue;
-                if (base.tryRebuildMonitorGraph()) return;
+                if (base.tryRebuildControllersGraph()) return;
             }
         }
     }
@@ -153,14 +148,14 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         markDirty();
     }
 
-    public void collectGraph(TileStationController controller, List<BlockPos> monitors) {
+    public void collectGraph(TileStationController controller, List<BlockPos> controllers) {
         for (BlockPos b : stationControllers) {
-            if (monitors.contains(b)) continue;
+            if (controllers.contains(b)) continue;
 
-            TileStationBase te = b.getTE(worldObj);
-            if (te instanceof TileStationMonitor monitor) {
-                monitors.add(b);
-                monitor.collectGraph(controller, monitors);
+            TileStationBase<?> te = b.getTE(worldObj);
+            if (te instanceof TileStationSecondary<?>secondary) {
+                controllers.add(b);
+                secondary.collectGraph(controller, controllers);
             }
         }
     }
