@@ -12,7 +12,6 @@ import com.gtnewhorizons.galaxia.registry.dimension.planets.BasePlanet;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Mars;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Moon;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Panspira;
-import com.gtnewhorizons.galaxia.registry.dimension.planets.Theia;
 import com.gtnewhorizons.galaxia.registry.dimension.planets.Vitris;
 
 import cpw.mods.fml.common.FMLLog;

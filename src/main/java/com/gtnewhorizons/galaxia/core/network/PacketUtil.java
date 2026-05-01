@@ -21,7 +21,6 @@ public final class PacketUtil {
 
     private PacketUtil() {}
 
-    private static final Logger LOG = LogManager.getLogger(PacketUtil.class);
     // ── String helpers ─────────────────────────────────────────────────────
 
     static void writeString(ByteBuf buf, String s) {
