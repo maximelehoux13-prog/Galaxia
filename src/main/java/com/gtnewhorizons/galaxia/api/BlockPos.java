@@ -1,4 +1,4 @@
-package com.gtnewhorizons.galaxia.registry.block;
+package com.gtnewhorizons.galaxia.api;
 
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;

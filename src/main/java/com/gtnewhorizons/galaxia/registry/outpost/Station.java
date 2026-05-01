@@ -3,7 +3,7 @@ package com.gtnewhorizons.galaxia.registry.outpost;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.WorldServer;
 
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
+import com.gtnewhorizons.galaxia.api.BlockPos;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;

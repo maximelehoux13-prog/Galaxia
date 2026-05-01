@@ -18,6 +18,7 @@ import com.gtnewhorizon.structurelib.alignment.constructable.ISurvivalConstructa
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
+import com.gtnewhorizons.galaxia.api.BlockPos;
 
 public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> extends TileEntity
     implements ISurvivalConstructable {
@@ -119,13 +120,9 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             false);
     }
 
-    protected void onStructureFormed() {
-        System.out.println("FORMED");
-    }
+    protected void onStructureFormed() {}
 
-    protected void onStructureDisformed() {
-        System.out.println("DESTROYED");
-    }
+    protected void onStructureDisformed() {}
 
     @Override
     public void updateEntity() {

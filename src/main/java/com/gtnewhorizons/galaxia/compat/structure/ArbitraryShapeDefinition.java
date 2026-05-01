@@ -18,10 +18,10 @@ import com.gtnewhorizon.structurelib.structure.IStructureElement;
 import com.gtnewhorizon.structurelib.structure.IStructureWalker;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
+import com.gtnewhorizons.galaxia.api.BlockPos;
 import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
 import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.core.Galaxia;
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -77,7 +77,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         if (fastRevalidate(tile)) return true;
         IntSet validBoundary = floodStructure(tile, world);
-        // debugSet(world, validBoundary, tile.xCoord, tile.yCoord, tile.zCoord, searchRadius);
 
         ForgeDirection placedFacing = tile.getPlacedFacing();
         structureBlocks.clear();
@@ -182,6 +181,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         return connectedStructure;
     }
 
+    // Don't remove for now, makes debugging easier
     private static void debugSet(World world, IntSet set, int xc, int yc, int zc, int searchRadius) {
         HashMap<BlockPos, Block> dbg = new HashMap<>();
         for (int coord : set) {

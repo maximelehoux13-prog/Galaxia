@@ -9,8 +9,8 @@ import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
 
+import com.gtnewhorizons.galaxia.api.BlockPos;
 import com.gtnewhorizons.galaxia.client.CelestialClient;
-import com.gtnewhorizons.galaxia.registry.block.BlockPos;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
