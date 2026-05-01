@@ -283,16 +283,16 @@ galaxia.gui.rocket_trophy.scale=Scale
 galaxia.gui.module_assembler.not_formed=Module Assembler not properly formed!
 
 # Elements - GUI - "Station Controller"
-X galaxia.gui.station_controller.title=Station Controller
-X galaxia.gui.station_controller.oxygen=Oxygen
-X galaxia.gui.station_controller.structure=Structure
-X galaxia.gui.station_controller.refresh=Refresh
+galaxia.gui.station_controller.title=Station Controller
+galaxia.gui.station_controller.oxygen=Oxygen
+galaxia.gui.station_controller.structure=Structure
+galaxia.gui.station_controller.refresh=Refresh
 
 # Elements - GUI - "Station Monitor"
-X galaxia.gui.station_monitor.title=Station Monitor
-X galaxia.gui.station_monitor.structure=Structure
-X galaxia.gui.station_monitor.oxygen=Oxygen
-X galaxia.gui.station_monitor.refresh=Refresh
+galaxia.gui.station_monitor.title=Station Monitor
+galaxia.gui.station_monitor.structure=Structure
+galaxia.gui.station_monitor.oxygen=Oxygen
+galaxia.gui.station_monitor.refresh=Refresh
 
 # Elements - GUI - "Station Status"
 galaxia.gui.status_valid=Valid
