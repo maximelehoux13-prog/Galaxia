@@ -37,4 +37,11 @@ public enum DimensionEnum {
         return this.translationKey;
     }
 
+    public static DimensionEnum fromId(int id) {
+        for (DimensionEnum e : values()) {
+            if (e.id == id) return e;
+        }
+
+        return null;
+    }
 }

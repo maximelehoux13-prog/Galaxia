@@ -5,11 +5,11 @@ import com.gtnewhorizons.galaxia.registry.dimension.builder.DimensionBuilder;
 import com.gtnewhorizons.galaxia.registry.dimension.builder.EffectBuilder;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.rocket.EnumTiers;
 
-public class Vitris extends BasePlanet {
+public class Overworld extends BasePlanet {
 
     @Override
     public DimensionEnum getPlanetEnum() {
-        return DimensionEnum.VITRIS;
+        return DimensionEnum.OVERWORLD;
     }
 
     @Override
