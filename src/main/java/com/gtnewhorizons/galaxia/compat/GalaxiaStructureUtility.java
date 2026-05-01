@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.compat;
 
+import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
+import com.gtnewhorizon.structurelib.structure.IStructureElement;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -10,6 +12,15 @@ import com.gtnewhorizon.structurelib.structure.IStructureElementNoPlacement;
 import com.gtnewhorizon.structurelib.structure.adders.ITileAdder;
 
 public class GalaxiaStructureUtility {
+
+    private static Class<?> navClass;
+    static {
+        try {
+            navClass = Class.forName("com.gtnewhorizon.structurelib.structure.IStructureNavigate");
+        } catch (ClassNotFoundException e) {
+            navClass = null;
+        }
+    }
 
     // TODO: This method should be upstreamed, but right now it would be annoying due to the feature freeze
     public static <T> IStructureElementNoPlacement<T> ofTileAdderCheckHints(ITileAdder<T> iTileAdder, Block hintBlock,
@@ -66,5 +77,9 @@ public class GalaxiaStructureUtility {
                 return true;
             }
         };
+    }
+
+    public static <T> boolean isStructureNavigate(IStructureElement<T> element) {
+        return navClass != null && navClass.isInstance(element);
     }
 }
