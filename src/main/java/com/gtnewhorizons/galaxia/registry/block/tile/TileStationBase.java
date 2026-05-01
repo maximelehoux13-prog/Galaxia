@@ -79,7 +79,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
     @Override
     public void writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
-        nbt.setTag("airlocks", blockPosListToNBT(airlocks));
+        nbt.setTag("airlocks", BlockPos.listToNBT(airlocks));
         nbt.setBoolean("oxygenated", oxygenated);
     }
 
@@ -88,7 +88,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         super.readFromNBT(nbt);
         this.here = new BlockPos(xCoord, yCoord, zCoord);
         if (nbt.hasKey("airlocks")) {
-            this.airlocks = blockPosListFromNBT(nbt.getTagList("airlocks", Constants.NBT.TAG_COMPOUND));
+            this.airlocks = BlockPos.listFromNBT(nbt.getTagList("airlocks", Constants.NBT.TAG_COMPOUND));
         }
         if (nbt.hasKey("oxygenated")) {
             this.oxygenated = nbt.getBoolean("oxygenated");

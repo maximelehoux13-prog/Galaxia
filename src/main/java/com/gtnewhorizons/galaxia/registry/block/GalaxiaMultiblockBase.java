@@ -1,12 +1,8 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
@@ -18,7 +14,6 @@ import com.gtnewhorizon.structurelib.alignment.constructable.ISurvivalConstructa
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
-import com.gtnewhorizons.galaxia.api.BlockPos;
 
 public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> extends TileEntity
     implements ISurvivalConstructable {
@@ -248,26 +243,5 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
     @Override
     public void onDataPacket(NetworkManager net, S35PacketUpdateTileEntity pkt) {
         this.readFromNBT(pkt.func_148857_g());
-    }
-
-    protected static NBTTagList blockPosListToNBT(List<BlockPos> positions) {
-        NBTTagList tagList = new NBTTagList();
-        for (BlockPos pos : positions) {
-            NBTTagCompound tag = new NBTTagCompound();
-            tag.setInteger("x", pos.x());
-            tag.setInteger("y", pos.y());
-            tag.setInteger("z", pos.z());
-            tagList.appendTag(tag);
-        }
-        return tagList;
-    }
-
-    protected static List<BlockPos> blockPosListFromNBT(NBTTagList tagList) {
-        List<BlockPos> positions = new ArrayList<>();
-        for (int i = 0; i < tagList.tagCount(); i++) {
-            NBTTagCompound tag = tagList.getCompoundTagAt(i);
-            positions.add(new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")));
-        }
-        return positions;
     }
 }

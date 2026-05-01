@@ -224,7 +224,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         super.writeToNBT(nbt);
 
         nbt.setInteger("state", state.ordinal());
-        nbt.setTag("stationControllers", blockPosListToNBT(stationControllers));
+        nbt.setTag("stationControllers", BlockPos.listToNBT(stationControllers));
     }
 
     @Override
@@ -237,7 +237,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         }
 
         if (nbt.hasKey("stationControllers")) {
-            stationControllers = blockPosListFromNBT(nbt.getTagList("stationControllers", Constants.NBT.TAG_COMPOUND));
+            stationControllers = BlockPos.listFromNBT(nbt.getTagList("stationControllers", Constants.NBT.TAG_COMPOUND));
         }
     }
 

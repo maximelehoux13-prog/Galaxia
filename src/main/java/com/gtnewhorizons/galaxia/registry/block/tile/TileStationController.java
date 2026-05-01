@@ -243,7 +243,7 @@ public class TileStationController extends TileStationBase<TileStationController
                 backingStation.id()
                     .getLeastSignificantBits());
         }
-        nbt.setTag("monitors", blockPosListToNBT(monitors));
+        nbt.setTag("monitors", BlockPos.listToNBT(monitors));
     }
 
     @Override
@@ -260,7 +260,7 @@ public class TileStationController extends TileStationBase<TileStationController
 
         if (nbt.hasKey("monitors")) {
             monitors.clear();
-            monitors.addAll(blockPosListFromNBT(nbt.getTagList("monitors", Constants.NBT.TAG_COMPOUND)));
+            monitors.addAll(BlockPos.listFromNBT(nbt.getTagList("monitors", Constants.NBT.TAG_COMPOUND)));
         }
     }
 
