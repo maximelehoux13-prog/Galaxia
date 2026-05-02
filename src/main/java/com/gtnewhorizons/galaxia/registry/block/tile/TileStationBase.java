@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
 import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
@@ -122,6 +123,10 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
         int searchRadius = getSearchRadius();
         if (Math.max(Math.abs(x - xCoord), Math.max(Math.abs(y - yCoord), Math.abs(z - zCoord))) > searchRadius)
             return false;
+
+        if (getStructureDefinition() instanceof ArbitraryShapeDefinition<?> def) {
+            return def.isInsideStructure(x, y, z);
+        }
 
         boolean top = false, bottom = false;
         for (int d = 1; d <= searchRadius; d++) {

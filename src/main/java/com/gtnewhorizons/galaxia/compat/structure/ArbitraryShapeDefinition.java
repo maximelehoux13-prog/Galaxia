@@ -110,6 +110,14 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         return structureElements;
     }
 
+    public boolean isInsideStructure(int x, int y, int z) {
+        if (tile == null) {
+            Galaxia.LOG.error("Structure is not formed yet");
+            return false;
+        }
+        return enclosedVisited.contains(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord);
+    }
+
     @Override
     public boolean isContainedInStructure(String shapeName, int x, int y, int z) {
         if (tile == null) {
@@ -129,6 +137,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         ForgeDirection placedFacing = tile.getPlacedFacing();
         structureBlocks.clear();
+        enclosedVisited.clear();
 
         boolean enclosed = checkEnclosed(tile, world, placedFacing);
         if (enclosed) {
@@ -138,9 +147,9 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         floodVisited.clear();
         validBoundaryBits.clear();
-        enclosedVisited.clear();
         chunkHasBoundary.clear();
         coarseInterior.clear();
+        coarseVisited.clear();
 
         return enclosed;
     }
@@ -312,8 +321,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
      * </ul>
      */
     private boolean checkEnclosed(T tile, World world, ForgeDirection placedFacing) {
-        enclosedVisited.clear();
-
         // Build chunk-level boundary map from the bits written by floodStructure.
         chunkHasBoundary.clear();
         validBoundaryBits
@@ -322,9 +329,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         final int sx = placedFacing.offsetX, sy = placedFacing.offsetY, sz = placedFacing.offsetZ;
         final int sr = searchRadius;
         final int xCoord = tile.xCoord, yCoord = tile.yCoord, zCoord = tile.zCoord;
-
-        coarseVisited.clear();
-        coarseInterior.clear();
 
         // Coarse AABB: floor-divide the block-level AABB into chunk space.
         final int caMinX = aabbMinX >> CHUNK_SHIFT, caMaxX = aabbMaxX >> CHUNK_SHIFT;
