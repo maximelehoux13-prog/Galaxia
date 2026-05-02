@@ -2,12 +2,12 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 4) in;
 
-layout(std430, binding = 1) buffer u {
-    restrict int U[];
+layout(std430, binding = 2) buffer v {
+    restrict int V[];
 };
 
-layout(std430, binding = 8) buffer uw {
-    restrict readonly int UW[];
+layout(std430, binding = 9) buffer vw {
+    restrict readonly int VW[];
 };
 
 uniform int maxWidth;
@@ -26,9 +26,9 @@ void main() {
     int zxwxh = z * wxh;
     int current = x + yxw + zxwxh;
 
-    int weight = UW[current];
+    int weight = VW[current];
 
     if (!(weight > zero)) return;
 
-    U[current] = int(float(U[current]) / float(weight) * exponent);
+    V[current] = int(float(V[current]) / float(weight) * exponent);
 }

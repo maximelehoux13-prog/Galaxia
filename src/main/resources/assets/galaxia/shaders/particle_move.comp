@@ -12,57 +12,30 @@ struct Particle {
     float w;
 };
 
-layout(std430, binding = 0) buffer FloatBuffer {
-    float vertices[];
-};
-
-layout(std430, binding = 1) buffer u {
-    restrict int U[];
-};
-
-layout(std430, binding = 2) buffer v {
-    restrict int V[];
-};
-
-layout(std430, binding = 3) buffer w {
-    restrict int W[];
-};
-
 layout(std430, binding = 6) buffer p {
     Particle P[];
 };
 
-layout(std430, binding = 11) buffer outcount {
-    int count;
+layout(std430, binding = 7) buffer n {
+    int index;
 };
 
-uniform int maxWidth;
-uniform int maxHeight;
+uniform uint width;
+uniform uint height;
+
+const float dT = 0.05; // standard minecraft tick delta time
 
 void main() {
-    int y = int(gl_GlobalInvocationID.y);
-    int z = int(gl_GlobalInvocationID.z);
-    int x = int(gl_GlobalInvocationID.x);
+    // width and height are given through uniforms for optimsation's sake
+    uvec3 id = gl_GlobalInvocationID;
 
-    int yxw = y * maxWidth;
-    int zxwxh = z * maxWidth * maxHeight;
-    int current = x + yxw + zxwxh;
+    int current = int(id.x + (id.y * width) + (id.z * width * height));
 
-    int dXpos = (x + 1) + yxw + zxwxh;
-    int dYpos = x + ((y + 1) * maxWidth) + zxwxh;
-    int dZpos = x + yxw + ((z + 1) * maxWidth * maxHeight);
-
-    float d =
-    (U[dXpos] - U[current] +
-    V[dYpos] - V[current] +
-    W[dZpos] - W[current]);
-
-    if (abs(d) < 1) return;
-
-    int now = atomicAdd(count, 1);
-
-
-    vertices[now * 3] = x;
-    vertices[now * 3 + 1] = y;
-    vertices[now * 3 + 2] = z;
+    if (current < index) {
+        Particle particle = P[current];
+        particle.x += particle.u * dT;
+        particle.y += particle.v * dT;
+        particle.z += particle.w * dT;
+        P[current] = particle;
+    }
 }

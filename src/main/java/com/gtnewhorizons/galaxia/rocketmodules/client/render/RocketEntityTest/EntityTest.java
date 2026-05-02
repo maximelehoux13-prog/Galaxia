@@ -23,6 +23,9 @@ public class EntityTest extends Entity {
     public static int toCellUProgram = 0;
     public static int toCellVProgram = 0;
     public static int toCellWProgram = 0;
+    public static int cellNormUProgram = 0;
+    public static int cellNormVProgram = 0;
+    public static int cellNormWProgram = 0;
 
     public static int moveProgram = 0;
     public static int exhaustProgram = 0;
@@ -105,13 +108,13 @@ public class EntityTest extends Entity {
         // instantiate U velocity data
         GL20.glUseProgram(uProgram);
         GL20.glUniform1i(GL20.glGetUniformLocation(uProgram, "maxHeight"), cubeLength * height);
-        GL20.glUniform1i(GL20.glGetUniformLocation(uProgram, "dX"), cubeLength * (width + 1));
+        GL20.glUniform1i(GL20.glGetUniformLocation(uProgram, "dX"), (cubeLength * width) + 1);
         GL43.glDispatchCompute(width + 1, height, width); // overall MAC grid is [X+1, Y+1, Z+1]
 
         // instantiate V velocity data
         GL20.glUseProgram(vProgram);
         GL20.glUniform1i(GL20.glGetUniformLocation(vProgram, "maxWidth"), cubeLength * width);
-        GL20.glUniform1i(GL20.glGetUniformLocation(vProgram, "dY"), cubeLength * (height + 1));
+        GL20.glUniform1i(GL20.glGetUniformLocation(vProgram, "dY"), (cubeLength * height) + 1);
         GL43.glDispatchCompute(width, height + 1, width);
 
         // instantiate W velocity data
@@ -175,7 +178,8 @@ public class EntityTest extends Entity {
         GL20.glUniform1i(GL20.glGetUniformLocation(program, "maxWidth"), cubeLength * width);
         GL20.glUniform1i(GL20.glGetUniformLocation(program, "maxHeight"), cubeLength * height);
 
-        GL43.glDispatchCompute(width / 8, height / 8, width / 4);
+        //GL43.glDispatchCompute(width / (int)(8.0 * spacing), height / (int)(8.0 * spacing), width / (int)(4.0 * spacing));
+        GL43.glDispatchCompute(width / 4, height / 4, width / 2);
 
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 
@@ -222,15 +226,15 @@ public class EntityTest extends Entity {
 
         GL20.glUseProgram(toCellWProgram);
 
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "width"), width / 4 * 8);
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "height"), height / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellWProgram, "width"), width / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellWProgram, "height"), height / 4 * 8);
 
-        GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxWidth"), cubeLength * width);
-        GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxHeight"), cubeLength * height);
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellWProgram, "maxWidth"), cubeLength * width);
+        GL20.glUniform1i(GL20.glGetUniformLocation(toCellWProgram, "maxHeight"), cubeLength * height);
 
-        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxWidthDNeg"), (cubeLength * width) - 1);
-        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxHeightDNeg"), (cubeLength * height) - 1);
-        GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "wxh"), (cubeLength * width) * (cubeLength * height));
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellWProgram, "maxWidthDNeg"), (cubeLength * width) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellWProgram, "maxHeightDNeg"), (cubeLength * height) - 1);
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellWProgram, "wxh"), (cubeLength * width) * (cubeLength * height));
 
         GL43.glDispatchCompute(width / 4, height / 4, width / 4);
 
@@ -238,7 +242,30 @@ public class EntityTest extends Entity {
 
 
         // distribute the velocity so that weight = 1 per cell
+        GL20.glUseProgram(cellNormUProgram);
 
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormUProgram, "maxWidth"), (cubeLength * width) + 1);
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormUProgram, "maxHeight"), cubeLength * height);
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormUProgram, "wxh"), ((cubeLength * width) + 1) * (cubeLength * height));
+        GL43.glDispatchCompute((width / (int)(8.0 * spacing)) + 1, height / (int)(8.0 * spacing), width / (int)(4.0 * spacing));
+
+
+        GL20.glUseProgram(cellNormVProgram);
+
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormVProgram, "maxWidth"), cubeLength * width);
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormVProgram, "maxHeight"), (cubeLength * height) + 1);
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormVProgram, "wxh"), (cubeLength * width) * ((cubeLength * height) + 1));
+        GL43.glDispatchCompute(width / (int)(8.0 * spacing), (height / (int)(8.0 * spacing)) + 1, width / (int)(4.0 * spacing));
+
+
+        GL20.glUseProgram(cellNormWProgram);
+
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormWProgram, "maxWidth"), cubeLength * width);
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormWProgram, "maxHeight"), cubeLength * height);
+        GL20.glUniform1i(GL20.glGetUniformLocation(cellNormWProgram, "wxh"), cubeLength * width * cubeLength * height);
+        GL43.glDispatchCompute(width / (int)(8.0 * spacing), height / (int)(8.0 * spacing), (width / (int)(4.0 * spacing)) + 1);
+
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     private void moveParticles() {
@@ -405,6 +432,15 @@ public class EntityTest extends Entity {
         }
         if (toCellWProgram == 0) {
             toCellWProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle_to_cell_w.comp");
+        }
+        if (cellNormUProgram == 0) {
+            cellNormUProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/cell_normalization_u.comp");
+        }
+        if (cellNormVProgram == 0) {
+            cellNormVProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/cell_normalization_v.comp");
+        }
+        if (cellNormWProgram == 0) {
+            cellNormWProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/cell_normalization_w.comp");
         }
     }
 

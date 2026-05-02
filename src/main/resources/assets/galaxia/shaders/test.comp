@@ -38,15 +38,20 @@ void main() {
     int dYpos = x + ((y + 1) * maxWidth) + zxwxh;
     int dZpos = x + yxw + ((z + 1) * maxWidth * maxHeight);
 
-    float d =
-    (U[dXpos] - U[current] +
-    V[dYpos] - V[current] +
-    W[dZpos] - W[current]);
+    /*
+    bool d =
+    ((abs(U[dXpos]) > 0) ||
+    (abs(U[current]) > 0) ||
+    (abs(V[dYpos]) > 0) ||
+    (abs(V[current]) > 0) ||
+    (abs(W[dZpos]) > 0) ||
+    (abs(W[current] > 0)));*/
 
-    if (abs(d) < 1) return;
+    int vIndex = x + (y * maxWidth) + (z * maxWidth * (maxHeight + 1));
+
+    if (abs(V[vIndex]) <= 0) return;
 
     int now = atomicAdd(count, 1);
-
 
     vertices[now * 3] = x;
     vertices[now * 3 + 1] = y;
