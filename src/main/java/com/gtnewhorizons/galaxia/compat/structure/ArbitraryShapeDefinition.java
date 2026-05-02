@@ -6,15 +6,18 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import net.minecraft.block.Block;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
+import com.gtnewhorizon.structurelib.structure.IItemSource;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.IStructureElement;
 import com.gtnewhorizon.structurelib.structure.IStructureWalker;
+import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
@@ -157,12 +160,15 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     @Override
     public boolean hints(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing, int x,
         int y, int z, int offsetX, int offsetY, int offsetZ) {
+        // TODO: In addition to normal building, there should also be leak detection that marks `enclosedVisted` near
+        //  the boundary
         return false;
     }
 
     @Override
     public boolean build(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing, int x,
         int y, int z, int offsetX, int offsetY, int offsetZ) {
+        // TODO: Build a big cube the size specified in the trigger
         return false;
     }
 
@@ -174,16 +180,15 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public int survivalBuild(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget,
-        com.gtnewhorizon.structurelib.structure.IItemSource source, net.minecraft.entity.player.EntityPlayerMP player,
-        boolean hintsOnly) {
+        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, IItemSource source,
+        EntityPlayerMP player, boolean hintsOnly) {
         return -1;
     }
 
     @Override
     public int survivalBuild(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget,
-        com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment env, boolean hintsOnly) {
+        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, ISurvivalBuildEnvironment env,
+        boolean hintsOnly) {
         return -1;
     }
 
@@ -197,7 +202,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         World world = tile.worldObj();
         if (world == null || world.isRemote) return true;
 
-        final int xCoord = tile.xCoord, yCoord = tile.yCoord, zCoord = tile.zCoord;
         final boolean[] valid = { true };
 
         structureBlocks.forEach((lx, ly, lz) -> {
@@ -205,9 +209,9 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             if (!isValidBoundary(
                 tile,
                 world,
-                LocalCoord.worldX(lx, xCoord),
-                LocalCoord.worldY(ly, yCoord),
-                LocalCoord.worldZ(lz, zCoord))) valid[0] = false;
+                LocalCoord.worldX(lx, tile.xCoord),
+                LocalCoord.worldY(ly, tile.yCoord),
+                LocalCoord.worldZ(lz, tile.zCoord))) valid[0] = false;
         });
 
         return valid[0];
