@@ -69,6 +69,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
             teLock.untrackStationController(this.here);
         }
         airlocks.clear();
+        oxygenated = false;
     }
 
     public void registerAirlock(int x, int y, int z) {
