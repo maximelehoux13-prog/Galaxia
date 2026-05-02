@@ -44,6 +44,7 @@ public class BlockStationController extends Block implements ITileEntityProvider
             ForgeDirection[] dirs = { ForgeDirection.NORTH, ForgeDirection.EAST, ForgeDirection.SOUTH,
                 ForgeDirection.WEST };
             sm.setPlacedFacing(dirs[f]);
+            sm.setFacing(dirs[f]);
         }
     }
 
