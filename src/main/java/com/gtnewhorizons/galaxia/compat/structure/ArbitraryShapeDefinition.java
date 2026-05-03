@@ -369,7 +369,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             .forEach((lx, ly, lz) -> chunkHasBoundary.add(lx >> CHUNK_SHIFT, ly >> CHUNK_SHIFT, lz >> CHUNK_SHIFT));
 
         final int sx = placedFacing.offsetX, sy = placedFacing.offsetY, sz = placedFacing.offsetZ;
-        // sr is used only for IntQueue pack/unpack — it must stay as searchRadius.
         final int sr = searchRadius;
         final int er = enclosedRadius; // radius of the adaptive persistent bitsets
         final int xCoord = tile.xCoord, yCoord = tile.yCoord, zCoord = tile.zCoord;
@@ -418,16 +417,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         IntQueue fineBFS = new IntQueue();
 
         coarseInterior.forEach((cx, cy, cz) -> {
-            int bx0 = cx << CHUNK_SHIFT, by0 = cy << CHUNK_SHIFT, bz0 = cz << CHUNK_SHIFT;
-            for (int dx = 0; dx < CHUNK_SIZE; dx++) {
-                for (int dy = 0; dy < CHUNK_SIZE; dy++) {
-                    for (int dz = 0; dz < CHUNK_SIZE; dz++) {
-                        int lx = bx0 + dx, ly = by0 + dy, lz = bz0 + dz;
-                        // Use enclosedRadius (er) — the adaptive allocation size — not searchRadius.
-                        if (LocalCoord.isInBounds(lx, ly, lz, er)) enclosedVisited.add(lx, ly, lz);
-                    }
-                }
-            }
             for (int d = 0; d < 6; d++) {
                 int ncx = cx + DIR_DX[d], ncy = cy + DIR_DY[d], ncz = cz + DIR_DZ[d];
                 if (chunkHasBoundary.contains(ncx, ncy, ncz)) {
@@ -456,6 +445,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
                     || nlz < aabbMinZ
                     || nlz > aabbMaxZ) return false;
 
+                if (isInCoarseInterior(nlx, nly, nlz)) continue;
                 if (!enclosedVisited.add(nlx, nly, nlz)) continue;
 
                 if (validBoundaryBits.contains(nlx, nly, nlz)) {
@@ -473,6 +463,14 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         }
 
         return !structureBlocks.isEmpty() && structureBlocks.size() >= 6;
+    }
+
+    private boolean isInCoarseInterior(int lx, int ly, int lz) {
+        return coarseInterior.contains(
+            lx >> CHUNK_SHIFT,
+            ly >> CHUNK_SHIFT,
+            lz >> CHUNK_SHIFT
+        );
     }
 
     /**
