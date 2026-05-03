@@ -19,13 +19,15 @@ public class EntityTest extends Entity {
     public static int vProgram = 0;
     public static int wProgram = 0;
     public static int projectionProgram = 0;
-    public static int scalarProgram = 0;
+    public static int flagProgram = 0;
     public static int toCellUProgram = 0;
     public static int toCellVProgram = 0;
     public static int toCellWProgram = 0;
     public static int cellNormUProgram = 0;
     public static int cellNormVProgram = 0;
     public static int cellNormWProgram = 0;
+    public static int cellFillProgram = 0;
+    public static int cellFluidFillProgram = 0;
 
     public static int moveProgram = 0;
     public static int exhaustProgram = 0;
@@ -43,7 +45,7 @@ public class EntityTest extends Entity {
     public int ssboWW;
     public int ssboOUTCount;
 
-    final int width = 8 * 10;
+    final int width = 10 * 8;
     final int height = 8 * 12;
     final float spacing = 0.5f;
     final int cubeLength = (int) (1.0f / spacing);
@@ -95,15 +97,10 @@ public class EntityTest extends Entity {
         // setting input variables, effectively (maxWidth = cubeLength * width)
         GL20.glUniform1i(GL20.glGetUniformLocation(cellProgram, "maxWidth"), cubeLength * width);
         GL20.glUniform1i(GL20.glGetUniformLocation(cellProgram, "maxHeight"), cubeLength * height);
-        GL43.glDispatchCompute(width, height, width); // dispatch across all cells (2x2x2, because 1/h = 2)
+        // dispatch across all cells (8x8x4 local, h = 2)
+        GL43.glDispatchCompute(width / 4, height / 4, width / 2);
 
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT); // wait for completion
-
-        // generate full cell struct data
-        GL20.glUseProgram(scalarProgram);
-        GL20.glUniform1i(GL20.glGetUniformLocation(scalarProgram, "maxWidth"), cubeLength * width);
-        GL20.glUniform1i(GL20.glGetUniformLocation(scalarProgram, "maxHeight"), cubeLength * height);
-        GL43.glDispatchCompute(width / 2, height / 2, width / 2); // dispatch across all cells (4x4x4)
 
         // instantiate U velocity data
         GL20.glUseProgram(uProgram);
@@ -141,8 +138,43 @@ public class EntityTest extends Entity {
 
         resetCellVelocities(); // set all velocities and their weights to 0
 
-        // to do: set all cells to either solid or air
-        // to do: then for each particle, if its cell is an air cell, make it a fluid cell
+        // set all cells to either solid or air
+
+        GL20.glUseProgram(cellFillProgram);
+
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFillProgram, "maxWidth"), cubeLength * width);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFillProgram, "maxHeight"), cubeLength * height);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFillProgram, "wxh"), cubeLength * width * cubeLength * height);
+
+        GL43.glDispatchCompute(width / 4, height / 4, width / 2);
+
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+
+        // then for each particle, if its cell is an air cell, make it a fluid cell
+
+        GL20.glUseProgram(cellFluidFillProgram);
+
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFluidFillProgram, "width"), 10 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFluidFillProgram, "height"), 10 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFluidFillProgram, "maxWidth"), cubeLength * width);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFluidFillProgram, "maxHeight"), cubeLength * height);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(cellFluidFillProgram, "wxh"), cubeLength * width * cubeLength * height);
+
+        GL43.glDispatchCompute(10, 10, 10);
+
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+
+        // then save the flags for each fluid cell on what the surrounding cells are, to minimise repeated global reads
+
+        GL20.glUseProgram(flagProgram);
+
+        GL30.glUniform1ui(GL20.glGetUniformLocation(flagProgram, "maxWidth"), cubeLength * width);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(flagProgram, "maxHeight"), cubeLength * height);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(flagProgram, "wxh"), cubeLength * width * cubeLength * height);
+
+        GL43.glDispatchCompute(width, height / 4, width / 4);
+
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 
         transferToCells();
 
@@ -173,7 +205,11 @@ public class EntityTest extends Entity {
 
         GL20.glUseProgram(program);
 
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboOUTCount);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
+
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, ssboOUT);
+        GL43.glClearBufferData(GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32F, GL11.GL_RED, GL11.GL_FLOAT, zero);
 
         GL20.glUniform1i(GL20.glGetUniformLocation(program, "maxWidth"), cubeLength * width);
         GL20.glUniform1i(GL20.glGetUniformLocation(program, "maxHeight"), cubeLength * height);
@@ -193,8 +229,8 @@ public class EntityTest extends Entity {
         GL20.glUseProgram(toCellUProgram);
 
         // same thread width as before for particles
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellUProgram, "width"), width / 4 * 8);
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellUProgram, "height"), height / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellUProgram, "width"), 10 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellUProgram, "height"), 10 * 8);
 
         // various uniforms to be precomputed outside the loop (more details in the shader code)
         GL20.glUniform1i(GL20.glGetUniformLocation(toCellUProgram, "maxWidth"), cubeLength * width);
@@ -205,13 +241,13 @@ public class EntityTest extends Entity {
         GL20.glUniform1f(GL20.glGetUniformLocation(toCellUProgram, "maxWidthDPos"), (cubeLength * width) + 1);
         GL20.glUniform1f(GL20.glGetUniformLocation(toCellUProgram, "wxh"), ((cubeLength * width) + 1) * (cubeLength * height));
 
-        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+        GL43.glDispatchCompute(10, 10, 10);
 
 
         GL20.glUseProgram(toCellVProgram);
 
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "width"), width / 4 * 8);
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "height"), height / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "width"), 10 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellVProgram, "height"), 10 * 8);
 
         GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxWidth"), cubeLength * width);
         GL20.glUniform1i(GL20.glGetUniformLocation(toCellVProgram, "maxHeight"), cubeLength * height);
@@ -221,22 +257,22 @@ public class EntityTest extends Entity {
         GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "maxHeightDPos"), (cubeLength * height) + 1);
         GL20.glUniform1f(GL20.glGetUniformLocation(toCellVProgram, "wxh"), (cubeLength * width) * ((cubeLength * height) + 1));
 
-        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+        GL43.glDispatchCompute(10, 10, 10);
 
 
         GL20.glUseProgram(toCellWProgram);
 
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellWProgram, "width"), width / 4 * 8);
-        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellWProgram, "height"), height / 4 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellWProgram, "width"), 10 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(toCellWProgram, "height"), 10 * 8);
 
         GL20.glUniform1i(GL20.glGetUniformLocation(toCellWProgram, "maxWidth"), cubeLength * width);
         GL20.glUniform1i(GL20.glGetUniformLocation(toCellWProgram, "maxHeight"), cubeLength * height);
 
         GL20.glUniform1f(GL20.glGetUniformLocation(toCellWProgram, "maxWidthDNeg"), (cubeLength * width) - 1);
         GL20.glUniform1f(GL20.glGetUniformLocation(toCellWProgram, "maxHeightDNeg"), (cubeLength * height) - 1);
-        GL20.glUniform1f(GL20.glGetUniformLocation(toCellWProgram, "wxh"), (cubeLength * width) * (cubeLength * height));
+        GL20.glUniform1f(GL20.glGetUniformLocation(toCellWProgram, "wxh"), cubeLength * width * cubeLength * height);
 
-        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+        GL43.glDispatchCompute(10, 10, 10);
 
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -272,14 +308,14 @@ public class EntityTest extends Entity {
         GL20.glUseProgram(moveProgram);
 
         // passing precomputed thread width and height values,
-        // I dispatch x = width / 4 and y = height / 4. internally the local size of
-        // the shader is 8x8x4, so thread width = (width / 4) * 8
-        // and thread height = (height / 4) * 8
-        GL30.glUniform1ui(GL20.glGetUniformLocation(moveProgram, "width"), width / 4 * 8);
-        GL30.glUniform1ui(GL20.glGetUniformLocation(moveProgram, "height"), height / 4 * 8);
+        // I dispatch x = 10 and y = 10. internally the local size of
+        // the shader is 8x8x4, so thread width = 10 * 8
+        // and thread height = 10 * 8
+        GL30.glUniform1ui(GL20.glGetUniformLocation(moveProgram, "width"), 10 * 8);
+        GL30.glUniform1ui(GL20.glGetUniformLocation(moveProgram, "height"), 10 * 8);
 
-        // unknown array size (local 8x8x4)
-        GL43.glDispatchCompute(width / 4, height / 4, width / 4);
+        // unknown array size (local 8x8x4, total 256000 max particles)
+        GL43.glDispatchCompute(10, 10, 10);
 
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
     }
@@ -346,13 +382,13 @@ public class EntityTest extends Entity {
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboS);
         GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER,
             width * width * height * perCube,
-            GL15.GL_STATIC_DRAW); // cell s value
+            GL15.GL_DYNAMIC_COPY); // cell s value
 
 
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboScalar);
         GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER,
             width * width * height * perCube * 2 * 4,
-            GL15.GL_STATIC_DRAW); // cell data
+            GL15.GL_DYNAMIC_COPY); // cell data
 
 
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssboParticle);
@@ -415,8 +451,8 @@ public class EntityTest extends Entity {
         if (wProgram == 0) {
             wProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/winit.comp");
         }
-        if (scalarProgram == 0) {
-            scalarProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/scalar.comp");
+        if (flagProgram == 0) {
+            flagProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/cell_flags.comp");
         }
         if (moveProgram == 0) {
             moveProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/particle_move.comp");
@@ -441,6 +477,12 @@ public class EntityTest extends Entity {
         }
         if (cellNormWProgram == 0) {
             cellNormWProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/cell_normalization_w.comp");
+        }
+        if (cellFillProgram == 0) {
+            cellFillProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/cell_fill.comp");
+        }
+        if (cellFluidFillProgram == 0) {
+            cellFluidFillProgram = ShaderHelper.createComputeProgram("/assets/galaxia/shaders/cell_fluid_fill.comp");
         }
     }
 
