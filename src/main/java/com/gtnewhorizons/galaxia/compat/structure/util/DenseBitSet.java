@@ -16,25 +16,32 @@ public final class DenseBitSet {
     private static final int WORDS_PER_PAGE = PAGE_SIZE >>> 6;
 
     private final long[][] pages;
-    private final int radius;
-    private final int stride;
-    private final int strideSquared;
+    private final int minX, minY, minZ;
+    private final int lenX, lenY, lenZ;
+    private final int strideY;
+    private final int strideX;
     private final int totalBits;
 
     private int size;
 
-    public DenseBitSet(int radius) {
-        this.radius = radius;
-        this.stride = 2 * radius + 1;
-        this.strideSquared = stride * stride;
-        this.totalBits = strideSquared * stride;
+    public DenseBitSet(int minX, int minY, int minZ, int lenX, int lenY, int lenZ) {
+        this.minX = minX;
+        this.minY = minY;
+        this.minZ = minZ;
+        this.lenX = lenX;
+        this.lenY = lenY;
+        this.lenZ = lenZ;
+
+        this.strideY = this.lenZ;
+        this.strideX = this.lenY * this.lenZ;
+        this.totalBits = this.lenX * this.strideX;
 
         int numPages = (totalBits + PAGE_SIZE - 1) >>> PAGE_SHIFT;
         this.pages = new long[numPages][];
     }
 
     private int index(int lx, int ly, int lz) {
-        return (lx + radius) * strideSquared + (ly + radius) * stride + (lz + radius);
+        return (lx - minX) * strideX + (ly - minY) * strideY + (lz - minZ);
     }
 
     public boolean add(int lx, int ly, int lz) {
@@ -87,9 +94,11 @@ public final class DenseBitSet {
     }
 
     public void forEach(CoordConsumer consumer) {
-        final int ss = strideSquared;
-        final int st = stride;
-        final int r = radius;
+        final int sx = strideX;
+        final int sy = strideY;
+        final int mx = minX;
+        final int my = minY;
+        final int mz = minZ;
 
         for (int pi = 0; pi < pages.length; pi++) {
             long[] page = pages[pi];
@@ -105,7 +114,7 @@ public final class DenseBitSet {
 
                     if (idx >= totalBits) break;
 
-                    consumer.accept(idx / ss - r, (idx % ss) / st - r, idx % st - r);
+                    consumer.accept(idx / sx + mx, (idx % sx) / sy + my, idx % sy + mz);
 
                     word &= word - 1L;
                 }

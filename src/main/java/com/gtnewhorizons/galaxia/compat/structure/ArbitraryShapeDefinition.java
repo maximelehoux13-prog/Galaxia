@@ -1,10 +1,12 @@
 package com.gtnewhorizons.galaxia.compat.structure;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.gtnewhorizons.galaxia.compat.structure.util.DenseBitSet;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -20,7 +22,6 @@ import com.gtnewhorizon.structurelib.structure.IStructureWalker;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
-import com.gtnewhorizons.galaxia.compat.structure.util.DenseBitSet;
 import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
 import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.core.Galaxia;
@@ -53,7 +54,10 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     // ── Persistent bitsets — sized to the actual structure AABB ───────────────
     private DenseBitSet structureBlocks; // valid boundary blocks that passed check
     private DenseBitSet enclosedVisited; // every block inside the closed volume
-    private int enclosedRadius = -1;
+
+    // Bounds of the currently allocated persistent bitsets
+    private int encMinX, encMinY, encMinZ;
+    private int encLenX = -1, encLenY = -1, encLenZ = -1;
 
     /**
      * AABB of valid-boundary blocks found by the most recent floodStructure call.
@@ -130,15 +134,20 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public boolean check(T tile, String shapeName, World world, ExtendedFacing extendedFacing, int x, int y, int z,
-        int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
+                         int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
         // Not really happy with this fast path since it can't detect shrinkage, but will do for now.
         if (fastRevalidate(tile)) return true;
         if (floodVisited == null) {
-            this.floodVisited = new DenseBitSet(searchRadius);
-            this.validBoundaryBits = new DenseBitSet(searchRadius);
-            this.chunkHasBoundary = new DenseBitSet(coarseRadius);
-            this.coarseVisited = new DenseBitSet(coarseRadius);
-            this.coarseInterior = new DenseBitSet(coarseRadius);
+            int sr = searchRadius;
+            int srLen = 2 * sr + 1;
+            this.floodVisited = new DenseBitSet(-sr, -sr, -sr, srLen, srLen, srLen);
+            this.validBoundaryBits = new DenseBitSet(-sr, -sr, -sr, srLen, srLen, srLen);
+
+            int cr = coarseRadius;
+            int crLen = 2 * cr + 1;
+            this.chunkHasBoundary = new DenseBitSet(-cr, -cr, -cr, crLen, crLen, crLen);
+            this.coarseVisited = new DenseBitSet(-cr, -cr, -cr, crLen, crLen, crLen);
+            this.coarseInterior = new DenseBitSet(-cr, -cr, -cr, crLen, crLen, crLen);
         }
         floodStructure(tile, world);
 
@@ -171,7 +180,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public boolean hints(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing, int x,
-        int y, int z, int offsetX, int offsetY, int offsetZ) {
+                         int y, int z, int offsetX, int offsetY, int offsetZ) {
         // TODO: In addition to normal building, there should also be leak detection that marks `enclosedVisted` near
         // the boundary
         return false;
@@ -179,34 +188,34 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public boolean build(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing, int x,
-        int y, int z, int offsetX, int offsetY, int offsetZ) {
+                         int y, int z, int offsetX, int offsetY, int offsetZ) {
         // TODO: Build a big cube the size specified in the trigger
         return false;
     }
 
     @Override
     public boolean buildOrHints(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-        int x, int y, int z, int offsetX, int offsetY, int offsetZ, boolean hintsOnly) {
+                                int x, int y, int z, int offsetX, int offsetY, int offsetZ, boolean hintsOnly) {
         return false;
     }
 
     @Override
     public int survivalBuild(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, IItemSource source,
-        EntityPlayerMP player, boolean hintsOnly) {
+                             int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, IItemSource source,
+                             EntityPlayerMP player, boolean hintsOnly) {
         return -1;
     }
 
     @Override
     public int survivalBuild(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, ISurvivalBuildEnvironment env,
-        boolean hintsOnly) {
+                             int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, ISurvivalBuildEnvironment env,
+                             boolean hintsOnly) {
         return -1;
     }
 
     @Override
     public void iterate(String shapeName, World world, ExtendedFacing extendedFacing, int x, int y, int z, int offsetX,
-        int offsetY, int offsetZ, IStructureWalker<T> walker) {}
+                        int offsetY, int offsetZ, IStructureWalker<T> walker) {}
 
     private boolean fastRevalidate(T tile) {
         if (!tile.isStructureValid() || structureBlocks.isEmpty()) return false;
@@ -239,19 +248,23 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
      * are cleared in place, avoiding allocation churn on repeated validation.
      */
     private void resizeOrClearEnclosedBitsets() {
-        // spotless:off
-        int needed = Math.max(
-            Math.max(Math.max(-aabbMinX, aabbMaxX),
-                Math.max(-aabbMinY, aabbMaxY)),
-            Math.max(-aabbMinZ, aabbMaxZ));
-        // spotless:on
-        if (needed == enclosedRadius) {
+        int neededLenX = aabbMaxX - aabbMinX + 1;
+        int neededLenY = aabbMaxY - aabbMinY + 1;
+        int neededLenZ = aabbMaxZ - aabbMinZ + 1;
+
+        if (neededLenX == encLenX && neededLenY == encLenY && neededLenZ == encLenZ &&
+            aabbMinX == encMinX && aabbMinY == encMinY && aabbMinZ == encMinZ) {
             structureBlocks.clear();
             enclosedVisited.clear();
         } else {
-            structureBlocks = new DenseBitSet(needed);
-            enclosedVisited = new DenseBitSet(needed);
-            enclosedRadius = needed;
+            structureBlocks = new DenseBitSet(aabbMinX, aabbMinY, aabbMinZ, neededLenX, neededLenY, neededLenZ);
+            enclosedVisited = new DenseBitSet(aabbMinX, aabbMinY, aabbMinZ, neededLenX, neededLenY, neededLenZ);
+            encMinX = aabbMinX;
+            encMinY = aabbMinY;
+            encMinZ = aabbMinZ;
+            encLenX = neededLenX;
+            encLenY = neededLenY;
+            encLenZ = neededLenZ;
         }
     }
 
@@ -369,7 +382,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         final int sx = placedFacing.offsetX, sy = placedFacing.offsetY, sz = placedFacing.offsetZ;
         final int sr = searchRadius;
-        final int er = enclosedRadius; // radius of the adaptive persistent bitsets
         final int xCoord = tile.xCoord, yCoord = tile.yCoord, zCoord = tile.zCoord;
 
         final int caMinX = aabbMinX >> CHUNK_SHIFT, caMaxX = aabbMaxX >> CHUNK_SHIFT;
@@ -419,13 +431,16 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             for (int d = 0; d < 6; d++) {
                 int ncx = cx + DIR_DX[d], ncy = cy + DIR_DY[d], ncz = cz + DIR_DZ[d];
                 if (chunkHasBoundary.contains(ncx, ncy, ncz)) {
-                    enqueueFace(ncx, ncy, ncz, d, fineBFS, sr, er);
+                    enqueueFace(ncx, ncy, ncz, d, fineBFS, sr);
                 }
             }
         });
 
-        if (!coarseInterior.contains(csx, csy, csz) && LocalCoord.isInBounds(sx, sy, sz, er)
-            && enclosedVisited.add(sx, sy, sz)) {
+        if (!coarseInterior.contains(csx, csy, csz) &&
+            sx >= aabbMinX && sx <= aabbMaxX &&
+            sy >= aabbMinY && sy <= aabbMaxY &&
+            sz >= aabbMinZ && sz <= aabbMaxZ &&
+            enclosedVisited.add(sx, sy, sz)) {
             fineBFS.enqueue(LocalCoord.pack(sx, sy, sz, sr));
         }
 
@@ -481,28 +496,32 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
      * Blocks already marked visited (from another adjacent interior chunk that
      * already seeded this face) are silently skipped by {@link #tryEnqueue}.
      */
-    private void enqueueFace(int ncx, int ncy, int ncz, int d, IntQueue bfs, int sr, int er) {
+    private void enqueueFace(int ncx, int ncy, int ncz, int d, IntQueue bfs, int sr) {
         int bx0 = ncx << CHUNK_SHIFT, by0 = ncy << CHUNK_SHIFT, bz0 = ncz << CHUNK_SHIFT;
         int dx = DIR_DX[d], dy = DIR_DY[d], dz = DIR_DZ[d];
 
         if (dx != 0) {
             int fx = (dx > 0) ? bx0 : bx0 + CHUNK_SIZE - 1;
             for (int iy = 0; iy < CHUNK_SIZE; iy++)
-                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(fx, by0 + iy, bz0 + iz, bfs, sr, er);
+                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(fx, by0 + iy, bz0 + iz, bfs, sr);
         } else if (dy != 0) {
             int fy = (dy > 0) ? by0 : by0 + CHUNK_SIZE - 1;
             for (int ix = 0; ix < CHUNK_SIZE; ix++)
-                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(bx0 + ix, fy, bz0 + iz, bfs, sr, er);
+                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(bx0 + ix, fy, bz0 + iz, bfs, sr);
         } else {
             int fz = (dz > 0) ? bz0 : bz0 + CHUNK_SIZE - 1;
             for (int ix = 0; ix < CHUNK_SIZE; ix++)
-                for (int iy = 0; iy < CHUNK_SIZE; iy++) tryEnqueue(bx0 + ix, by0 + iy, fz, bfs, sr, er);
+                for (int iy = 0; iy < CHUNK_SIZE; iy++) tryEnqueue(bx0 + ix, by0 + iy, fz, bfs, sr);
         }
     }
 
-    private void tryEnqueue(int lx, int ly, int lz, IntQueue bfs, int sr, int er) {
-        if (LocalCoord.isInBounds(lx, ly, lz, er) && enclosedVisited.add(lx, ly, lz))
+    private void tryEnqueue(int lx, int ly, int lz, IntQueue bfs, int sr) {
+        if (lx >= aabbMinX && lx <= aabbMaxX &&
+            ly >= aabbMinY && ly <= aabbMaxY &&
+            lz >= aabbMinZ && lz <= aabbMaxZ &&
+            enclosedVisited.add(lx, ly, lz)) {
             bfs.enqueue(LocalCoord.pack(lx, ly, lz, sr));
+        }
     }
 
     public static class Builder<T extends TileEntity & ArbitraryShapeTile<T>> {
@@ -523,7 +542,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         public Builder<T> addControllerBlock(Block controller) {
             return addElement(
                 GalaxiaStructureUtility.ofTileAdderCheckHintsAnyMeta(
-                    (c, te) -> te.xCoord == c.xCoord && te.yCoord == c.yCoord && te.zCoord == c.zCoord,
+                    (c, te) -> te != null && te.xCoord == c.xCoord && te.yCoord == c.yCoord && te.zCoord == c.zCoord,
                     controller,
                     0));
         }

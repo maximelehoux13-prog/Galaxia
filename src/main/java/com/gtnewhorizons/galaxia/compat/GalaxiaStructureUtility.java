@@ -61,7 +61,7 @@ public class GalaxiaStructureUtility {
             public boolean check(T t, World world, int x, int y, int z) {
                 TileEntity tileEntity = world.getTileEntity(x, y, z);
                 // This used to check if it's a GT tile. Since this is now an standalone mod we no longer do this
-                return iTileAdder.apply(t, tileEntity);
+                return couldBeValid(t, world, x, y, z, null) && iTileAdder.apply(t, tileEntity);
             }
 
             @Override
