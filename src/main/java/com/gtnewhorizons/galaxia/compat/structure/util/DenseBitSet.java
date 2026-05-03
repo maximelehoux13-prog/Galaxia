@@ -6,6 +6,7 @@ public final class DenseBitSet {
 
     @FunctionalInterface
     public interface CoordConsumer {
+
         void accept(int lx, int ly, int lz);
     }
 
@@ -33,9 +34,7 @@ public final class DenseBitSet {
     }
 
     private int index(int lx, int ly, int lz) {
-        return (lx + radius) * strideSquared
-            + (ly + radius) * stride
-            + (lz + radius);
+        return (lx + radius) * strideSquared + (ly + radius) * stride + (lz + radius);
     }
 
     public boolean add(int lx, int ly, int lz) {
@@ -106,11 +105,7 @@ public final class DenseBitSet {
 
                     if (idx >= totalBits) break;
 
-                    consumer.accept(
-                        idx / ss - r,
-                        (idx % ss) / st - r,
-                        idx % st - r
-                    );
+                    consumer.accept(idx / ss - r, (idx % ss) / st - r, idx % st - r);
 
                     word &= word - 1L;
                 }

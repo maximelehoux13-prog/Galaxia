@@ -19,7 +19,6 @@ import com.gtnewhorizon.structurelib.structure.IStructureElement;
 import com.gtnewhorizon.structurelib.structure.IStructureWalker;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
-import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
 import com.gtnewhorizons.galaxia.compat.structure.util.DenseBitSet;
 import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
@@ -466,11 +465,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     }
 
     private boolean isInCoarseInterior(int lx, int ly, int lz) {
-        return coarseInterior.contains(
-            lx >> CHUNK_SHIFT,
-            ly >> CHUNK_SHIFT,
-            lz >> CHUNK_SHIFT
-        );
+        return coarseInterior.contains(lx >> CHUNK_SHIFT, ly >> CHUNK_SHIFT, lz >> CHUNK_SHIFT);
     }
 
     /**
@@ -526,7 +521,11 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         }
 
         public Builder<T> addControllerBlock(Block controller) {
-            return addElement(StructureUtility.ofBlockAnyMeta(controller));
+            return addElement(
+                GalaxiaStructureUtility.ofTileAdderCheckHintsAnyMeta(
+                    (c, te) -> te.xCoord == c.xCoord && te.yCoord == c.yCoord && te.zCoord == c.zCoord,
+                    controller,
+                    0));
         }
 
         public Builder<T> addElement(IStructureElement<T> element) {
