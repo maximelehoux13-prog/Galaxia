@@ -43,7 +43,7 @@ public class BlockAirlockController extends Block implements ITileEntityProvider
             ForgeDirection.WEST };
         airlock.setPlacedFacing(dirs[f]);
         airlock.setFacing(dirs[f]);
-   }
+    }
 
     @Override
     public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,

@@ -47,10 +47,14 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     private final IStructureElement<T>[] structureElements;
     private final int numElements;
 
-    private final DenseBitSet structureBlocks;
-    private final DenseBitSet floodVisited;
-    private final DenseBitSet validBoundaryBits;
-    private final DenseBitSet enclosedVisited;
+    // ── Temporary bitsets — sized to searchRadius, cleared after every check() ─
+    private DenseBitSet floodVisited;
+    private DenseBitSet validBoundaryBits;
+
+    // ── Persistent bitsets — sized to the actual structure AABB ───────────────
+    private DenseBitSet structureBlocks; // valid boundary blocks that passed check
+    private DenseBitSet enclosedVisited; // every block inside the closed volume
+    private int enclosedRadius = -1;
 
     /**
      * AABB of valid-boundary blocks found by the most recent floodStructure call.
@@ -70,9 +74,9 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     // max chunk index = ceil(searchRadius / CHUNK_SIZE) + 1 slack
     private final int coarseRadius;
 
-    private final DenseBitSet chunkHasBoundary;
-    private final DenseBitSet coarseVisited;
-    private final DenseBitSet coarseInterior;
+    private DenseBitSet chunkHasBoundary;
+    private DenseBitSet coarseVisited;
+    private DenseBitSet coarseInterior;
 
     public static <T extends TileEntity & ArbitraryShapeTile<T>> Builder<T> builder() {
         return new Builder<>();
@@ -92,19 +96,14 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             throw new IllegalArgumentException("Search radius too large: " + searchRadius);
         }
         // spotless:off
-        this.searchRadius = searchRadius;
+        this.searchRadius      = searchRadius;
         this.structureElements = structureElement.toArray(new IStructureElement[0]);
         this.numElements       = this.structureElements.length;
 
-        this.structureBlocks   = new DenseBitSet(searchRadius);
-        this.floodVisited      = new DenseBitSet(searchRadius);
-        this.validBoundaryBits = new DenseBitSet(searchRadius);
-        this.enclosedVisited   = new DenseBitSet(searchRadius);
+        this.structureBlocks   = null;
+        this.enclosedVisited   = null;
 
-        this.coarseRadius     = (searchRadius >> CHUNK_SHIFT) + 2;
-        this.chunkHasBoundary = new DenseBitSet(coarseRadius);
-        this.coarseVisited    = new DenseBitSet(coarseRadius);
-        this.coarseInterior   = new DenseBitSet(coarseRadius);
+        this.coarseRadius       = (searchRadius >> CHUNK_SHIFT) + 2;
         // spotless:on
     }
 
@@ -135,25 +134,39 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
         // Not really happy with this fast path since it can't detect shrinkage, but will do for now.
         if (fastRevalidate(tile)) return true;
-
+        if (floodVisited == null) {
+            this.floodVisited = new DenseBitSet(searchRadius);
+            this.validBoundaryBits = new DenseBitSet(searchRadius);
+            this.chunkHasBoundary = new DenseBitSet(coarseRadius);
+            this.coarseVisited = new DenseBitSet(coarseRadius);
+            this.coarseInterior = new DenseBitSet(coarseRadius);
+        }
         floodStructure(tile, world);
 
-        ForgeDirection placedFacing = tile.getPlacedFacing();
-        structureBlocks.clear();
-        enclosedVisited.clear();
+        // Size (or reuse) the two persistent bitsets to exactly the discovered AABB,
+        // then clear them so checkEnclosed() starts fresh.
+        resizeOrClearEnclosedBitsets();
 
+        ForgeDirection placedFacing = tile.getPlacedFacing();
         boolean enclosed = checkEnclosed(tile, world, placedFacing);
         if (enclosed) {
             this.tile = tile;
             this.volume = enclosedVisited.size();
+
+            floodVisited = null;
+            validBoundaryBits = null;
+            chunkHasBoundary = null;
+            coarseVisited = null;
+            coarseInterior = null;
+        } else {
+            // Discard all temporary state; enclosedVisited and structureBlocks are
+            // intentionally kept for isInsideStructure / fastRevalidate queries.
+            floodVisited.clear();
+            validBoundaryBits.clear();
+            chunkHasBoundary.clear();
+            coarseVisited.clear();
+            coarseInterior.clear();
         }
-
-        floodVisited.clear();
-        validBoundaryBits.clear();
-        chunkHasBoundary.clear();
-        coarseInterior.clear();
-        coarseVisited.clear();
-
         return enclosed;
     }
 
@@ -161,7 +174,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     public boolean hints(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing, int x,
         int y, int z, int offsetX, int offsetY, int offsetZ) {
         // TODO: In addition to normal building, there should also be leak detection that marks `enclosedVisted` near
-        //  the boundary
+        // the boundary
         return false;
     }
 
@@ -215,6 +228,32 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         });
 
         return valid[0];
+    }
+
+    /**
+     * <p>
+     * The required radius is the Chebyshev distance from the origin to the
+     * farthest corner of the AABB
+     *
+     * <p>
+     * When the radius is unchanged from the previous check the existing arrays
+     * are cleared in place, avoiding allocation churn on repeated validation.
+     */
+    private void resizeOrClearEnclosedBitsets() {
+        // spotless:off
+        int needed = Math.max(
+            Math.max(Math.max(-aabbMinX, aabbMaxX),
+                Math.max(-aabbMinY, aabbMaxY)),
+            Math.max(-aabbMinZ, aabbMaxZ));
+        // spotless:on
+        if (needed == enclosedRadius) {
+            structureBlocks.clear();
+            enclosedVisited.clear();
+        } else {
+            structureBlocks = new DenseBitSet(needed);
+            enclosedVisited = new DenseBitSet(needed);
+            enclosedRadius = needed;
+        }
     }
 
     /**
@@ -325,16 +364,16 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
      * </ul>
      */
     private boolean checkEnclosed(T tile, World world, ForgeDirection placedFacing) {
-        // Build chunk-level boundary map from the bits written by floodStructure.
         chunkHasBoundary.clear();
         validBoundaryBits
             .forEach((lx, ly, lz) -> chunkHasBoundary.add(lx >> CHUNK_SHIFT, ly >> CHUNK_SHIFT, lz >> CHUNK_SHIFT));
 
         final int sx = placedFacing.offsetX, sy = placedFacing.offsetY, sz = placedFacing.offsetZ;
+        // sr is used only for IntQueue pack/unpack — it must stay as searchRadius.
         final int sr = searchRadius;
+        final int er = enclosedRadius; // radius of the adaptive persistent bitsets
         final int xCoord = tile.xCoord, yCoord = tile.yCoord, zCoord = tile.zCoord;
 
-        // Coarse AABB: floor-divide the block-level AABB into chunk space.
         final int caMinX = aabbMinX >> CHUNK_SHIFT, caMaxX = aabbMaxX >> CHUNK_SHIFT;
         final int caMinY = aabbMinY >> CHUNK_SHIFT, caMaxY = aabbMaxY >> CHUNK_SHIFT;
         final int caMinZ = aabbMinZ >> CHUNK_SHIFT, caMaxZ = aabbMaxZ >> CHUNK_SHIFT;
@@ -365,14 +404,10 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             for (int d = 0; d < 6; d++) {
                 int ncx = cx + DIR_DX[d], ncy = cy + DIR_DY[d], ncz = cz + DIR_DZ[d];
 
-                // A pure-air chunk escaped the structure's bounding box:
-                // the interior is not enclosed.
                 if (ncx < caMinX || ncx > caMaxX || ncy < caMinY || ncy > caMaxY || ncz < caMinZ || ncz > caMaxZ)
                     return false;
 
                 if (!coarseVisited.add(ncx, ncy, ncz)) continue;
-
-                // Wall chunk: stop here — the fine BFS will handle it.
                 if (chunkHasBoundary.contains(ncx, ncy, ncz)) continue;
 
                 coarseInterior.add(ncx, ncy, ncz);
@@ -382,40 +417,30 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         IntQueue fineBFS = new IntQueue();
 
-        // For every interior chunk: mark all its blocks visited in bulk, then
-        // enqueue the interior-facing face of each adjacent boundary chunk.
-        // Both happen in one forEach pass to avoid iterating coarseInterior twice.
         coarseInterior.forEach((cx, cy, cz) -> {
-            // Bulk-mark: 64 bitset writes per chunk, no BFS overhead.
             int bx0 = cx << CHUNK_SHIFT, by0 = cy << CHUNK_SHIFT, bz0 = cz << CHUNK_SHIFT;
             for (int dx = 0; dx < CHUNK_SIZE; dx++) {
                 for (int dy = 0; dy < CHUNK_SIZE; dy++) {
                     for (int dz = 0; dz < CHUNK_SIZE; dz++) {
                         int lx = bx0 + dx, ly = by0 + dy, lz = bz0 + dz;
-                        if (LocalCoord.isInBounds(lx, ly, lz, sr)) enclosedVisited.add(lx, ly, lz);
+                        // Use enclosedRadius (er) — the adaptive allocation size — not searchRadius.
+                        if (LocalCoord.isInBounds(lx, ly, lz, er)) enclosedVisited.add(lx, ly, lz);
                     }
                 }
             }
-            // Seed fine BFS from the face of each adjacent boundary chunk.
             for (int d = 0; d < 6; d++) {
                 int ncx = cx + DIR_DX[d], ncy = cy + DIR_DY[d], ncz = cz + DIR_DZ[d];
                 if (chunkHasBoundary.contains(ncx, ncy, ncz)) {
-                    enqueueFace(ncx, ncy, ncz, d, fineBFS, sr);
+                    enqueueFace(ncx, ncy, ncz, d, fineBFS, sr, er);
                 }
             }
         });
 
-        // Fallback seed: if the starting block is NOT already pre-marked
-        // (i.e. it sits inside a wall/boundary chunk rather than a pure-air
-        // interior chunk), seed it directly so the fine BFS can start.
-        if (!coarseInterior.contains(csx, csy, csz) && LocalCoord.isInBounds(sx, sy, sz, sr)
+        if (!coarseInterior.contains(csx, csy, csz) && LocalCoord.isInBounds(sx, sy, sz, er)
             && enclosedVisited.add(sx, sy, sz)) {
             fineBFS.enqueue(LocalCoord.pack(sx, sy, sz, sr));
         }
 
-        // Because every block in every coarseInterior chunk was pre-marked in
-        // Phase 2, `enclosedVisited.add` returns false for them and they are
-        // skipped automatically — no explicit chunk test is needed here.
         while (!fineBFS.isEmpty()) {
             int cur = fineBFS.dequeue();
             int lx = LocalCoord.unpackX(cur, sr);
@@ -425,8 +450,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             for (int d = 0; d < 6; d++) {
                 int nlx = lx + DIR_DX[d], nly = ly + DIR_DY[d], nlz = lz + DIR_DZ[d];
 
-                // Block-level AABB escape: catches fine-grained holes not visible
-                // at chunk granularity (e.g. a missing block in an otherwise solid wall).
                 if (nlx < aabbMinX || nlx > aabbMaxX
                     || nly < aabbMinY
                     || nly > aabbMaxY
@@ -435,7 +458,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
                 if (!enclosedVisited.add(nlx, nly, nlz)) continue;
 
-                if (validBoundaryBits.contains(nlx, nly, nlz) && !structureBlocks.contains(nlx, nly, nlz)) {
+                if (validBoundaryBits.contains(nlx, nly, nlz)) {
                     int nwx = LocalCoord.worldX(nlx, xCoord);
                     int nwy = LocalCoord.worldY(nly, yCoord);
                     int nwz = LocalCoord.worldZ(nlz, zCoord);
@@ -465,27 +488,27 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
      * Blocks already marked visited (from another adjacent interior chunk that
      * already seeded this face) are silently skipped by {@link #tryEnqueue}.
      */
-    private void enqueueFace(int ncx, int ncy, int ncz, int d, IntQueue bfs, int sr) {
+    private void enqueueFace(int ncx, int ncy, int ncz, int d, IntQueue bfs, int sr, int er) {
         int bx0 = ncx << CHUNK_SHIFT, by0 = ncy << CHUNK_SHIFT, bz0 = ncz << CHUNK_SHIFT;
         int dx = DIR_DX[d], dy = DIR_DY[d], dz = DIR_DZ[d];
 
         if (dx != 0) {
             int fx = (dx > 0) ? bx0 : bx0 + CHUNK_SIZE - 1;
             for (int iy = 0; iy < CHUNK_SIZE; iy++)
-                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(fx, by0 + iy, bz0 + iz, bfs, sr);
+                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(fx, by0 + iy, bz0 + iz, bfs, sr, er);
         } else if (dy != 0) {
             int fy = (dy > 0) ? by0 : by0 + CHUNK_SIZE - 1;
             for (int ix = 0; ix < CHUNK_SIZE; ix++)
-                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(bx0 + ix, fy, bz0 + iz, bfs, sr);
+                for (int iz = 0; iz < CHUNK_SIZE; iz++) tryEnqueue(bx0 + ix, fy, bz0 + iz, bfs, sr, er);
         } else {
             int fz = (dz > 0) ? bz0 : bz0 + CHUNK_SIZE - 1;
             for (int ix = 0; ix < CHUNK_SIZE; ix++)
-                for (int iy = 0; iy < CHUNK_SIZE; iy++) tryEnqueue(bx0 + ix, by0 + iy, fz, bfs, sr);
+                for (int iy = 0; iy < CHUNK_SIZE; iy++) tryEnqueue(bx0 + ix, by0 + iy, fz, bfs, sr, er);
         }
     }
 
-    private void tryEnqueue(int lx, int ly, int lz, IntQueue bfs, int sr) {
-        if (LocalCoord.isInBounds(lx, ly, lz, sr) && enclosedVisited.add(lx, ly, lz))
+    private void tryEnqueue(int lx, int ly, int lz, IntQueue bfs, int sr, int er) {
+        if (LocalCoord.isInBounds(lx, ly, lz, er) && enclosedVisited.add(lx, ly, lz))
             bfs.enqueue(LocalCoord.pack(lx, ly, lz, sr));
     }
 
