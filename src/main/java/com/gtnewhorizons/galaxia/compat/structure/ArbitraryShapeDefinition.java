@@ -1,12 +1,10 @@
 package com.gtnewhorizons.galaxia.compat.structure;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.gtnewhorizons.galaxia.compat.structure.util.DenseBitSet;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -22,6 +20,7 @@ import com.gtnewhorizon.structurelib.structure.IStructureWalker;
 import com.gtnewhorizon.structurelib.structure.ISurvivalBuildEnvironment;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
+import com.gtnewhorizons.galaxia.compat.structure.util.DenseBitSet;
 import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
 import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.core.Galaxia;
@@ -134,7 +133,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public boolean check(T tile, String shapeName, World world, ExtendedFacing extendedFacing, int x, int y, int z,
-                         int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
+        int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
         // Not really happy with this fast path since it can't detect shrinkage, but will do for now.
         if (fastRevalidate(tile)) return true;
         if (floodVisited == null) {
@@ -180,7 +179,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public boolean hints(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing, int x,
-                         int y, int z, int offsetX, int offsetY, int offsetZ) {
+        int y, int z, int offsetX, int offsetY, int offsetZ) {
         // TODO: In addition to normal building, there should also be leak detection that marks `enclosedVisted` near
         // the boundary
         return false;
@@ -188,34 +187,34 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public boolean build(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing, int x,
-                         int y, int z, int offsetX, int offsetY, int offsetZ) {
+        int y, int z, int offsetX, int offsetY, int offsetZ) {
         // TODO: Build a big cube the size specified in the trigger
         return false;
     }
 
     @Override
     public boolean buildOrHints(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-                                int x, int y, int z, int offsetX, int offsetY, int offsetZ, boolean hintsOnly) {
+        int x, int y, int z, int offsetX, int offsetY, int offsetZ, boolean hintsOnly) {
         return false;
     }
 
     @Override
     public int survivalBuild(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-                             int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, IItemSource source,
-                             EntityPlayerMP player, boolean hintsOnly) {
+        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, IItemSource source,
+        EntityPlayerMP player, boolean hintsOnly) {
         return -1;
     }
 
     @Override
     public int survivalBuild(T tile, ItemStack trigger, String shapeName, World world, ExtendedFacing extendedFacing,
-                             int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, ISurvivalBuildEnvironment env,
-                             boolean hintsOnly) {
+        int x, int y, int z, int offsetX, int offsetY, int offsetZ, int elementBudget, ISurvivalBuildEnvironment env,
+        boolean hintsOnly) {
         return -1;
     }
 
     @Override
     public void iterate(String shapeName, World world, ExtendedFacing extendedFacing, int x, int y, int z, int offsetX,
-                        int offsetY, int offsetZ, IStructureWalker<T> walker) {}
+        int offsetY, int offsetZ, IStructureWalker<T> walker) {}
 
     private boolean fastRevalidate(T tile) {
         if (!tile.isStructureValid() || structureBlocks.isEmpty()) return false;
@@ -252,8 +251,11 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         int neededLenY = aabbMaxY - aabbMinY + 1;
         int neededLenZ = aabbMaxZ - aabbMinZ + 1;
 
-        if (neededLenX == encLenX && neededLenY == encLenY && neededLenZ == encLenZ &&
-            aabbMinX == encMinX && aabbMinY == encMinY && aabbMinZ == encMinZ) {
+        if (neededLenX == encLenX && neededLenY == encLenY
+            && neededLenZ == encLenZ
+            && aabbMinX == encMinX
+            && aabbMinY == encMinY
+            && aabbMinZ == encMinZ) {
             structureBlocks.clear();
             enclosedVisited.clear();
         } else {
@@ -436,11 +438,13 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             }
         });
 
-        if (!coarseInterior.contains(csx, csy, csz) &&
-            sx >= aabbMinX && sx <= aabbMaxX &&
-            sy >= aabbMinY && sy <= aabbMaxY &&
-            sz >= aabbMinZ && sz <= aabbMaxZ &&
-            enclosedVisited.add(sx, sy, sz)) {
+        if (!coarseInterior.contains(csx, csy, csz) && sx >= aabbMinX
+            && sx <= aabbMaxX
+            && sy >= aabbMinY
+            && sy <= aabbMaxY
+            && sz >= aabbMinZ
+            && sz <= aabbMaxZ
+            && enclosedVisited.add(sx, sy, sz)) {
             fineBFS.enqueue(LocalCoord.pack(sx, sy, sz, sr));
         }
 
@@ -516,10 +520,12 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     }
 
     private void tryEnqueue(int lx, int ly, int lz, IntQueue bfs, int sr) {
-        if (lx >= aabbMinX && lx <= aabbMaxX &&
-            ly >= aabbMinY && ly <= aabbMaxY &&
-            lz >= aabbMinZ && lz <= aabbMaxZ &&
-            enclosedVisited.add(lx, ly, lz)) {
+        if (lx >= aabbMinX && lx <= aabbMaxX
+            && ly >= aabbMinY
+            && ly <= aabbMaxY
+            && lz >= aabbMinZ
+            && lz <= aabbMaxZ
+            && enclosedVisited.add(lx, ly, lz)) {
             bfs.enqueue(LocalCoord.pack(lx, ly, lz, sr));
         }
     }
