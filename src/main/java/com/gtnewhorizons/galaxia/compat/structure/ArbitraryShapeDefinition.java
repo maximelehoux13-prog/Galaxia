@@ -225,7 +225,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
         structureBlocks.forEach((lx, ly, lz) -> {
             if (!valid[0]) return;
-            if (!isValidBoundary(
+            if (!couldBeValidBoundary(
                 tile,
                 world,
                 LocalCoord.worldX(lx, tile.xCoord),
@@ -302,7 +302,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
                 if (!LocalCoord.isInBounds(nlx, nly, nlz, sr)) continue;
                 if (!floodVisited.add(nlx, nly, nlz)) continue;
 
-                if (!isValidBoundary(
+                if (!couldBeValidBoundary(
                     tile,
                     world,
                     LocalCoord.worldX(nlx, xCoord),
@@ -325,7 +325,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         if (lz > aabbMaxZ) aabbMaxZ = lz;
     }
 
-    private boolean isValidBoundary(T tile, World world, int x, int y, int z) {
+    private boolean couldBeValidBoundary(T tile, World world, int x, int y, int z) {
         Block b = world.getBlock(x, y, z);
         IStructureElement<T> element = structureElements.get(b);
         if (element == null) return false;
