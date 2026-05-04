@@ -237,6 +237,10 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             for (int d = 0; d < 6; d++) {
                 int nx = lx + DIR_DX[d], ny = ly + DIR_DY[d], nz = lz + DIR_DZ[d];
                 if (structureBlocks.contains(nx, ny, nz)) continue;
+                // If outside the structure, then don't care for changes
+                if (enclosedVisited != null && !enclosedVisited.contains(nx, ny, nz) && !isInCoarseInterior(nx, ny, nz))
+                    continue;
+
                 if (couldBeValidBoundary(
                     tile,
                     world,
