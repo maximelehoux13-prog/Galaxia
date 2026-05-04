@@ -579,7 +579,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
                 if (c == '+' || c == '-' || c == ' ') continue;
                 IStructureElement<D> element = sourceElements.get(c);
                 if (element == null) continue;
-                if (!this.elements.contains(element) && !GalaxiaStructureUtility.isStructureNavigate(element)) {
+                if (!this.elements.contains(element) && !element.isNavigating()) {
                     this.elements.add((IStructureElement<T>) element);
                 }
             }
