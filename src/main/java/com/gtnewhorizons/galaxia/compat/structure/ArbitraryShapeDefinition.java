@@ -138,8 +138,6 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     @Override
     public boolean check(T tile, String shapeName, World world, ExtendedFacing extendedFacing, int x, int y, int z,
         int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
-        // Not really happy with this fast path since it can't detect shrinkage, but will do for now.
-
         if (fastRevalidate(tile)) return true;
         if (floodVisited == null) {
             int sr = searchRadius;
@@ -212,6 +210,10 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     public void iterate(String shapeName, World world, ExtendedFacing extendedFacing, int x, int y, int z, int offsetX,
         int offsetY, int offsetZ, IStructureWalker<T> walker) {}
 
+    /**
+     * Checks if any of the known boundary blocks are still valid. Also checks if any of the neighboring *air* blocks
+     * are still invalid. If they aren't something might have changed in the structure shell, so needs full revalidation
+     */
     private boolean fastRevalidate(T tile) {
         if (structureBlocks == null || !tile.isStructureValid() || structureBlocks.isEmpty()) return false;
 
@@ -227,7 +229,24 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
                 world,
                 LocalCoord.worldX(lx, tile.xCoord),
                 LocalCoord.worldY(ly, tile.yCoord),
-                LocalCoord.worldZ(lz, tile.zCoord))) valid[0] = false;
+                LocalCoord.worldZ(lz, tile.zCoord))) {
+
+                valid[0] = false;
+                return;
+            }
+            for (int d = 0; d < 6; d++) {
+                int nx = lx + DIR_DX[d], ny = ly + DIR_DY[d], nz = lz + DIR_DZ[d];
+                if (structureBlocks.contains(nx, ny, nz)) continue;
+                if (couldBeValidBoundary(
+                    tile,
+                    world,
+                    LocalCoord.worldX(nx, tile.xCoord),
+                    LocalCoord.worldY(ny, tile.yCoord),
+                    LocalCoord.worldZ(nz, tile.zCoord))) {
+                    valid[0] = false;
+                    return;
+                }
+            }
         });
 
         return valid[0];
