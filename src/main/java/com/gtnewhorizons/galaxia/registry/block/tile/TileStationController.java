@@ -21,7 +21,6 @@ import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
-import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.api.BlockPos;
 import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
@@ -47,7 +46,7 @@ public class TileStationController extends TileStationBase<TileStationController
         .addControllerBlock(GalaxiaBlocksEnum.STATION_CONTROLLER.get())
         .addElements(
             BASE_VALID_BLOCKS.stream()
-                .map(b -> StructureUtility.ofBlock(b, 0)))
+                .map(b -> GalaxiaStructureUtility.ofBlock(b, 0)))
         .addElement(GalaxiaStructureUtility.ofTileAdderCheckHints((_, tileEntity) -> {
             if (tileEntity instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;

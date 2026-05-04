@@ -12,6 +12,7 @@ import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.api.BlockPos;
+import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
@@ -54,9 +55,9 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
                 { "CRC" }
             }))
             // spotless:on
-        .addElement('C', StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CASING.get(), 0))
-        .addElement('R', StructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
-        .addElement('D', StructureUtility.ofBlockAnyMeta(GalaxiaBlocksEnum.AIRLOCK_DOOR.get()))
+        .addElement('C', GalaxiaStructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CASING.get(), 0))
+        .addElement('R', GalaxiaStructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
+        .addElement('D', GalaxiaStructureUtility.ofBlockAnyMeta(GalaxiaBlocksEnum.AIRLOCK_DOOR.get()))
         .build();
 
     @Override

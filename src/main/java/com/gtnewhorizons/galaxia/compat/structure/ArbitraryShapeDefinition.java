@@ -1,8 +1,8 @@
 package com.gtnewhorizons.galaxia.compat.structure;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import net.minecraft.block.Block;
@@ -43,8 +43,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     private T tile;
     private int volume;
 
-    private final IStructureElement<T>[] structureElements;
-    private final int numElements;
+    private final Map<Block, IStructureElement<T>> structureElements;
 
     // ── Temporary bitsets — sized to searchRadius, cleared after every check() ─
     private DenseBitSet floodVisited;
@@ -93,14 +92,13 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     }
 
     @SuppressWarnings("unchecked")
-    private ArbitraryShapeDefinition(List<IStructureElement<T>> structureElement, int searchRadius) {
+    private ArbitraryShapeDefinition(Map<Block, IStructureElement<T>> structureElement, int searchRadius) {
         if (searchRadius > LocalCoord.MAX_SEARCH_RADIUS) {
             throw new IllegalArgumentException("Search radius too large: " + searchRadius);
         }
         // spotless:off
         this.searchRadius      = searchRadius;
-        this.structureElements = structureElement.toArray(new IStructureElement[0]);
-        this.numElements       = this.structureElements.length;
+        this.structureElements = structureElement;
 
         this.structureBlocks   = null;
         this.enclosedVisited   = null;
@@ -111,7 +109,8 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     @Override
     public IStructureElement<T>[] getStructureFor(String s) {
-        return structureElements;
+        return structureElements.values()
+            .toArray(new IStructureElement[0]);
     }
 
     public boolean isInsideStructure(int x, int y, int z) {
@@ -327,21 +326,17 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     }
 
     private boolean isValidBoundary(T tile, World world, int x, int y, int z) {
-        final IStructureElement<T>[] elems = structureElements;
-        final int n = numElements;
-        for (int i = 0; i < n; i++) {
-            if (elems[i].couldBeValid(tile, world, x, y, z, null)) return true;
-        }
-        return false;
+        Block b = world.getBlock(x, y, z);
+        IStructureElement<T> element = structureElements.get(b);
+        if (element == null) return false;
+        return element.couldBeValid(tile, world, x, y, z, null);
     }
 
     private boolean checkValidBoundary(T tile, World world, int x, int y, int z) {
-        final IStructureElement<T>[] elems = structureElements;
-        final int n = numElements;
-        for (int i = 0; i < n; i++) {
-            if (elems[i].check(tile, world, x, y, z)) return true;
-        }
-        return false;
+        Block b = world.getBlock(x, y, z);
+        IStructureElement<T> element = structureElements.get(b);
+        if (element == null) return false;
+        return element.check(tile, world, x, y, z);
     }
 
     /**
@@ -532,7 +527,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
     public static class Builder<T extends TileEntity & ArbitraryShapeTile<T>> {
 
-        private final List<IStructureElement<T>> elements = new ArrayList<>();
+        private final Map<Block, IStructureElement<T>> elements = new HashMap<>();
         private int searchRadius = LocalCoord.SEARCH_RADIUS;
 
         private Builder() {}
@@ -553,13 +548,13 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
                     0));
         }
 
-        public Builder<T> addElement(IStructureElement<T> element) {
-            elements.add(element);
+        public Builder<T> addElement(IExtendedStructureElement<T> element) {
+            elements.put(element.getValidBlock(), element);
             return this;
         }
 
-        public Builder<T> addElements(Stream<IStructureElement<T>> elements) {
-            this.elements.addAll(elements.toList());
+        public Builder<T> addElements(Stream<IExtendedStructureElement<T>> elements) {
+            this.elements.putAll(elements.collect(Collectors.toMap(IExtendedStructureElement::getValidBlock, e -> e)));
             return this;
         }
 
@@ -578,9 +573,10 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             for (char c : encodedShape.toCharArray()) {
                 if (c == '+' || c == '-' || c == ' ') continue;
                 IStructureElement<D> element = sourceElements.get(c);
-                if (element == null) continue;
-                if (!this.elements.contains(element) && !element.isNavigating()) {
-                    this.elements.add((IStructureElement<T>) element);
+                if (element instanceof IExtendedStructureElement<D>el && !element.isNavigating()) {
+                    this.elements.put(el.getValidBlock(), (IStructureElement<T>) element);
+                } else {
+                    Galaxia.LOG.error("Trying to embed invalid structure elements, ignoring it");
                 }
             }
             return this;
