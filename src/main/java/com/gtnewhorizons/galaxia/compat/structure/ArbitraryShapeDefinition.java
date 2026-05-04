@@ -76,8 +76,8 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     private final int coarseRadius;
 
     private DenseBitSet chunkHasBoundary;
-    private DenseBitSet coarseVisited;
-    private DenseBitSet coarseInterior;
+    private final DenseBitSet coarseVisited;
+    private final DenseBitSet coarseInterior;
 
     public static <T extends TileEntity & ArbitraryShapeTile<T>> Builder<T> builder() {
         return new Builder<>();
@@ -104,6 +104,10 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         this.enclosedVisited   = null;
 
         this.coarseRadius       = (searchRadius >> CHUNK_SHIFT) + 2;
+        int crLen = 2 * coarseRadius + 1;
+        this.chunkHasBoundary = new DenseBitSet(-coarseRadius, -coarseRadius, -coarseRadius, crLen, crLen, crLen);
+        this.coarseVisited = new DenseBitSet(-coarseRadius, -coarseRadius, -coarseRadius, crLen, crLen, crLen);
+        this.coarseInterior = new DenseBitSet(-coarseRadius, -coarseRadius, -coarseRadius, crLen, crLen, crLen);
         // spotless:on
     }
 
@@ -118,7 +122,8 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             Galaxia.LOG.error("Structure is not formed yet");
             return false;
         }
-        return enclosedVisited.contains(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord);
+        return enclosedVisited.contains(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord)
+            || isInCoarseInterior(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord);
     }
 
     @Override
@@ -134,19 +139,16 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     public boolean check(T tile, String shapeName, World world, ExtendedFacing extendedFacing, int x, int y, int z,
         int offsetX, int offsetY, int offsetZ, boolean forceCheckAllBlocks) {
         // Not really happy with this fast path since it can't detect shrinkage, but will do for now.
+
         if (fastRevalidate(tile)) return true;
         if (floodVisited == null) {
             int sr = searchRadius;
             int srLen = 2 * sr + 1;
             this.floodVisited = new DenseBitSet(-sr, -sr, -sr, srLen, srLen, srLen);
             this.validBoundaryBits = new DenseBitSet(-sr, -sr, -sr, srLen, srLen, srLen);
-
-            int cr = coarseRadius;
-            int crLen = 2 * cr + 1;
-            this.chunkHasBoundary = new DenseBitSet(-cr, -cr, -cr, crLen, crLen, crLen);
-            this.coarseVisited = new DenseBitSet(-cr, -cr, -cr, crLen, crLen, crLen);
-            this.coarseInterior = new DenseBitSet(-cr, -cr, -cr, crLen, crLen, crLen);
         }
+        coarseInterior.clear();
+        coarseVisited.clear();
         floodStructure(tile, world);
 
         // Size (or reuse) the two persistent bitsets to exactly the discovered AABB,
@@ -157,21 +159,18 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         boolean enclosed = checkEnclosed(tile, world, placedFacing);
         if (enclosed) {
             this.tile = tile;
-            this.volume = enclosedVisited.size();
+            this.volume = (enclosedVisited.size() + coarseVisited.size() * coarseRadius * coarseRadius * coarseRadius)
+                - structureElements.size();
 
             floodVisited = null;
             validBoundaryBits = null;
             chunkHasBoundary = null;
-            coarseVisited = null;
-            coarseInterior = null;
         } else {
             // Discard all temporary state; enclosedVisited and structureBlocks are
             // intentionally kept for isInsideStructure / fastRevalidate queries.
             floodVisited.clear();
             validBoundaryBits.clear();
             chunkHasBoundary.clear();
-            coarseVisited.clear();
-            coarseInterior.clear();
         }
         return enclosed;
     }
@@ -216,7 +215,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
         int offsetY, int offsetZ, IStructureWalker<T> walker) {}
 
     private boolean fastRevalidate(T tile) {
-        if (!tile.isStructureValid() || structureBlocks.isEmpty()) return false;
+        if (structureBlocks == null || !tile.isStructureValid() || structureBlocks.isEmpty()) return false;
 
         World world = tile.worldObj();
         if (world == null || world.isRemote) return true;

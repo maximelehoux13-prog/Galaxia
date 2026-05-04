@@ -27,8 +27,8 @@ import com.gtnewhorizon.structurelib.util.ItemStackPredicate;
 import com.gtnewhorizons.galaxia.compat.structure.IExtendedStructureElement;
 
 // TODO: This probably could be upstreamed, don't know if IExtendedStructureElement would be accepted though, but I
-//       need something for efficiently selecting the IStructureElement to perform the block check and normal
-//       IStructureElement can't query the valid block
+// need something for efficiently selecting the IStructureElement to perform the block check and normal
+// IStructureElement can't query the valid block
 public class GalaxiaStructureUtility {
 
     public static <T> IExtendedStructureElement<T> ofTileAdderCheckHints(ITileAdder<T> iTileAdder, Block hintBlock,
