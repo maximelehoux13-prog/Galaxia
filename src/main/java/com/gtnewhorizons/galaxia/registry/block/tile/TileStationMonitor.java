@@ -13,7 +13,6 @@ import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.TextWidget;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
-import com.gtnewhorizon.structurelib.structure.StructureUtility;
 import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeTile;
@@ -28,7 +27,7 @@ public class TileStationMonitor extends TileStationSecondary<TileStationMonitor>
         .addControllerBlock(GalaxiaBlocksEnum.STATION_MONITOR.get())
         .addElements(
             BASE_VALID_BLOCKS.stream()
-                .map(b -> StructureUtility.ofBlock(b, 0)))
+                .map(b -> GalaxiaStructureUtility.ofBlock(b, 0)))
         .addElement(GalaxiaStructureUtility.ofTileAdderCheckHints((_, tileEntity) -> {
             if (tileEntity instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;

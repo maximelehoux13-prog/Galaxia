@@ -75,7 +75,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
     // max chunk index = ceil(searchRadius / CHUNK_SIZE) + 1 slack
     private final int coarseRadius;
 
-    private DenseBitSet chunkHasBoundary;
+    private final DenseBitSet chunkHasBoundary;
     private final DenseBitSet coarseVisited;
     private final DenseBitSet coarseInterior;
 
@@ -164,13 +164,11 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
 
             floodVisited = null;
             validBoundaryBits = null;
-            chunkHasBoundary = null;
         } else {
             // Discard all temporary state; enclosedVisited and structureBlocks are
             // intentionally kept for isInsideStructure / fastRevalidate queries.
             floodVisited.clear();
             validBoundaryBits.clear();
-            chunkHasBoundary.clear();
         }
         return enclosed;
     }
@@ -293,23 +291,31 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             int ly = LocalCoord.unpackY(cur, sr);
             int lz = LocalCoord.unpackZ(cur, sr);
 
-            for (int i = 0; i < 6; i++) {
-                int nlx = lx + DIR_DX[i];
-                int nly = ly + DIR_DY[i];
-                int nlz = lz + DIR_DZ[i];
+            // Here we want to check also the diagonals to add support for disconnected structures like diagonals
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        // Skip the center point (the current block itself)
+                        if (dx == 0 && dy == 0 && dz == 0) continue;
 
-                if (!LocalCoord.isInBounds(nlx, nly, nlz, sr)) continue;
-                if (!floodVisited.add(nlx, nly, nlz)) continue;
+                        int nlx = lx + dx;
+                        int nly = ly + dy;
+                        int nlz = lz + dz;
 
-                if (!couldBeValidBoundary(
-                    tile,
-                    world,
-                    LocalCoord.worldX(nlx, xCoord),
-                    LocalCoord.worldY(nly, yCoord),
-                    LocalCoord.worldZ(nlz, zCoord))) continue;
+                        if (!LocalCoord.isInBounds(nlx, nly, nlz, sr)) continue;
+                        if (!floodVisited.add(nlx, nly, nlz)) continue;
 
-                addToBoundary(nlx, nly, nlz);
-                floodBFS.enqueue(LocalCoord.pack(nlx, nly, nlz, sr));
+                        if (!couldBeValidBoundary(
+                            tile,
+                            world,
+                            LocalCoord.worldX(nlx, xCoord),
+                            LocalCoord.worldY(nly, yCoord),
+                            LocalCoord.worldZ(nlz, zCoord))) continue;
+
+                        addToBoundary(nlx, nly, nlz);
+                        floodBFS.enqueue(LocalCoord.pack(nlx, nly, nlz, sr));
+                    }
+                }
             }
         }
     }
