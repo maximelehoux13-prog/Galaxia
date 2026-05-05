@@ -158,26 +158,6 @@ public final class CelestialAssetStore {
         return all;
     }
 
-    public CelestialAsset createAssetInConstructionInternal(UUID teamId, CelestialObjectId celestialObjectId,
-        String displayName, CelestialAsset.Kind kind) {
-
-        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.CONSTRUCTION_SITE);
-        asset.setDisplayName(displayName);
-
-        registerAssetInternal(teamId, asset);
-        return asset;
-    }
-
-    public CelestialAsset createOperationalAssetInternal(UUID teamId, CelestialObjectId celestialObjectId,
-        String displayName, CelestialAsset.Kind kind) {
-
-        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.OPERATIONAL);
-        asset.setDisplayName(displayName);
-
-        registerAssetInternal(teamId, asset);
-        return asset;
-    }
-
     public boolean destroyAssetInternal(CelestialAsset.ID assetId) {
         CelestialAsset asset = byId.get(assetId);
         if (asset == null) return false;

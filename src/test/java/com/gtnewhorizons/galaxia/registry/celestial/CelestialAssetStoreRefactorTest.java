@@ -190,8 +190,10 @@ final class CelestialAssetStoreRefactorTest {
         assertNotNull(store.findAssetInternal(operational.assetId));
 
         // Construction site can be cancelled
-        CelestialAsset construction = store
-            .createAssetInConstructionInternal(TEAM_A, BODY_1, "test", CelestialAsset.Kind.AUTOMATED_OUTPOST);
+        CelestialAsset construction = CelestialAsset
+            .create(BODY_1, CelestialAsset.Kind.AUTOMATED_OUTPOST, Buildable.Status.CONSTRUCTION_SITE);
+        construction.setDisplayName("test");
+        store.registerAssetInternal(TEAM_A, construction);
         assertTrue(store.cancelConstructionInternal(construction.assetId));
         assertNull(store.findAssetInternal(construction.assetId));
     }
@@ -199,8 +201,10 @@ final class CelestialAssetStoreRefactorTest {
     @Test
     void renameAsset() {
         CelestialAssetStore store = newStore();
-        CelestialAsset asset = store
-            .createAssetInConstructionInternal(TEAM_A, BODY_1, "OldName", CelestialAsset.Kind.AUTOMATED_OUTPOST);
+        CelestialAsset asset = CelestialAsset
+            .create(BODY_1, CelestialAsset.Kind.AUTOMATED_OUTPOST, Buildable.Status.CONSTRUCTION_SITE);
+        asset.setDisplayName("OldName");
+        store.registerAssetInternal(TEAM_A, asset);
         assertTrue(store.renameAssetInternal(asset.assetId, "NewName"));
         assertEquals("NewName", asset.displayName());
 
@@ -230,8 +234,10 @@ final class CelestialAssetStoreRefactorTest {
     @Test
     void createAssetInConstruction() {
         CelestialAssetStore store = newStore();
-        CelestialAsset asset = store
-            .createAssetInConstructionInternal(TEAM_A, BODY_1, "My Outpost", CelestialAsset.Kind.AUTOMATED_OUTPOST);
+        CelestialAsset asset = CelestialAsset
+            .create(BODY_1, CelestialAsset.Kind.AUTOMATED_OUTPOST, Buildable.Status.CONSTRUCTION_SITE);
+        asset.setDisplayName("My Outpost");
+        store.registerAssetInternal(TEAM_A, asset);
         assertNotNull(asset);
         assertEquals(Buildable.Status.CONSTRUCTION_SITE, asset.status());
         assertEquals("My Outpost", asset.displayName());
@@ -241,8 +247,10 @@ final class CelestialAssetStoreRefactorTest {
     @Test
     void createOperationalAsset() {
         CelestialAssetStore store = newStore();
-        CelestialAsset asset = store
-            .createOperationalAssetInternal(TEAM_A, BODY_1, "My Outpost", CelestialAsset.Kind.AUTOMATED_OUTPOST);
+        CelestialAsset asset = CelestialAsset
+            .create(BODY_1, CelestialAsset.Kind.AUTOMATED_OUTPOST, Buildable.Status.OPERATIONAL);
+        asset.setDisplayName("My Outpost");
+        store.registerAssetInternal(TEAM_A, asset);
         assertNotNull(asset);
         assertEquals(Buildable.Status.OPERATIONAL, asset.status());
     }
@@ -250,8 +258,10 @@ final class CelestialAssetStoreRefactorTest {
     @Test
     void isOwnedByChecksTeamMatch() {
         CelestialAssetStore store = newStore();
-        CelestialAsset asset = store
-            .createAssetInConstructionInternal(TEAM_A, BODY_1, "test", CelestialAsset.Kind.AUTOMATED_OUTPOST);
+        CelestialAsset asset = CelestialAsset
+            .create(BODY_1, CelestialAsset.Kind.AUTOMATED_OUTPOST, Buildable.Status.CONSTRUCTION_SITE);
+        asset.setDisplayName("test");
+        store.registerAssetInternal(TEAM_A, asset);
         assertTrue(store.isOwnedByInternal(TEAM_A, asset.assetId));
         assertFalse(store.isOwnedByInternal(TEAM_B, asset.assetId));
         assertFalse(store.isOwnedByInternal(TEAM_A, CelestialAsset.ID.create()));
