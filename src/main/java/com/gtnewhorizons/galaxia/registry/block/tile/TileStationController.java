@@ -196,7 +196,7 @@ public class TileStationController extends TileStationBase<TileStationController
                 String status = StatCollector
                     .translateToLocal(valid ? "galaxia.gui.status_valid" : "galaxia.gui.status_invalid");
                 EnumChatFormatting color = valid ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
-                return structure + ": " + color + status;
+                return structure + ": " + color + status + EnumChatFormatting.RESET;
             })).pos(10, 30))
             .child(new TextWidget<>(IKey.dynamic(() -> {
                 boolean oxy = oxygenatedSync.getBoolValue();
@@ -204,7 +204,7 @@ public class TileStationController extends TileStationBase<TileStationController
                 String status = StatCollector
                     .translateToLocal(oxy ? "galaxia.gui.status_yes" : "galaxia.gui.status_no");
                 EnumChatFormatting color = oxy ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
-                return oxygen + ": " + color + status;
+                return oxygen + ": " + color + status + EnumChatFormatting.RESET;
             })).pos(10, 50))
             .child(
                 new ButtonWidget<>().size(190, 30)
