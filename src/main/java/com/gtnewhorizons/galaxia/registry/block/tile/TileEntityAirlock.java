@@ -150,12 +150,12 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     }
 
     public void collectGraph(TileStationController controller, List<BlockPos> controllers) {
-        for (BlockPos b : stationControllers) {
-            if (controllers.contains(b)) continue;
+        for (BlockPos pos : stationControllers) {
+            if (controllers.contains(pos)) continue;
 
-            TileStationBase<?> te = b.getTE(worldObj);
+            TileStationBase<?> te = pos.getTE(worldObj);
             if (te instanceof TileStationSecondary<?>secondary) {
-                controllers.add(b);
+                controllers.add(pos);
                 secondary.collectGraph(controller, controllers);
             }
         }
