@@ -46,7 +46,7 @@ public final class CelestialAssetStore {
     // ── Static convenience wrappers (delegate to SERVER) ──
 
     public static void registerAsset(UUID teamId, CelestialAsset asset) {
-        SERVER.addInternal(teamId, asset);
+        SERVER.registerAssetInternal(teamId, asset);
     }
 
     public static UUID getTeamId(CelestialAsset.ID assetId) {
@@ -73,14 +73,16 @@ public final class CelestialAssetStore {
         return SERVER.allAssetsInternal();
     }
 
-    public static CelestialAsset createAssetInConstruction(UUID teamId, CelestialObjectId celestialObjectId,
-        String displayName, CelestialAsset.Kind kind) {
-        return SERVER.createAssetInConstructionInternal(teamId, celestialObjectId, displayName, kind);
+    public static boolean disableAsset(CelestialAsset.ID assetId) {
+        return SERVER.updateAssetStatusInternal(assetId, Buildable.Status.DISABLED);
     }
 
-    public static CelestialAsset createOperationalAsset(UUID teamId, CelestialObjectId celestialObjectId,
-        String displayName, CelestialAsset.Kind kind) {
-        return SERVER.createOperationalAssetInternal(teamId, celestialObjectId, displayName, kind);
+    public static boolean enableAsset(CelestialAsset.ID assetId) {
+        return SERVER.updateAssetStatusInternal(assetId, Buildable.Status.OPERATIONAL);
+    }
+
+    public static boolean updateAssetStatus(CelestialAsset.ID assetId, Buildable.Status newStatus) {
+        return SERVER.updateAssetStatusInternal(assetId, newStatus);
     }
 
     public static boolean destroyAsset(CelestialAsset.ID assetId) {
@@ -117,7 +119,7 @@ public final class CelestialAssetStore {
 
     // ── Instance methods ──
 
-    public void addInternal(UUID teamId, CelestialAsset asset) {
+    public void registerAssetInternal(UUID teamId, CelestialAsset asset) {
         Map<CelestialObjectId, Set<CelestialAsset>> byBody = stateByBody
             .computeIfAbsent(teamId, k -> new LinkedHashMap<>());
 
@@ -162,7 +164,7 @@ public final class CelestialAssetStore {
         CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.CONSTRUCTION_SITE);
         asset.setDisplayName(displayName);
 
-        addInternal(teamId, asset);
+        registerAssetInternal(teamId, asset);
         return asset;
     }
 
@@ -172,7 +174,7 @@ public final class CelestialAssetStore {
         CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, Buildable.Status.OPERATIONAL);
         asset.setDisplayName(displayName);
 
-        addInternal(teamId, asset);
+        registerAssetInternal(teamId, asset);
         return asset;
     }
 
@@ -198,16 +200,16 @@ public final class CelestialAssetStore {
         return true;
     }
 
-    public static boolean disableAsset(CelestialAsset.ID assetId) {
-        return updateAssetStatus(assetId, Buildable.Status.DISABLED);
+    public boolean disableAssetInternal(CelestialAsset.ID assetId) {
+        return updateAssetStatusInternal(assetId, Buildable.Status.DISABLED);
     }
 
-    public static boolean enableAsset(CelestialAsset.ID assetId) {
-        return updateAssetStatus(assetId, Buildable.Status.OPERATIONAL);
+    public boolean enableAssetInternal(CelestialAsset.ID assetId) {
+        return updateAssetStatusInternal(assetId, Buildable.Status.OPERATIONAL);
     }
 
-    public static boolean updateAssetStatus(CelestialAsset.ID assetId, Buildable.Status newStatus) {
-        CelestialAsset asset = BY_ID.get(assetId);
+    public boolean updateAssetStatusInternal(CelestialAsset.ID assetId, Buildable.Status newStatus) {
+        CelestialAsset asset = byId.get(assetId);
         if (asset == null) return false;
 
         assert newStatus == Buildable.Status.DISABLED

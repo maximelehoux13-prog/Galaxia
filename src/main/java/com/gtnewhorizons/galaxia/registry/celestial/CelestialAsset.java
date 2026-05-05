@@ -1,9 +1,11 @@
 package com.gtnewhorizons.galaxia.registry.celestial;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.init.Blocks;
@@ -65,6 +67,8 @@ public abstract class CelestialAsset implements Buildable {
     private String displayName;
 
     private int syncRevision;
+    private final Set<UUID> syncedPlayerIds = new HashSet<>();
+    private boolean dirty = true;
 
     public static CelestialAsset create(CelestialObjectId celestialObjectId, Kind kind, boolean operational) {
         return create(celestialObjectId, kind, operational ? Status.OPERATIONAL : Status.CONSTRUCTION_SITE);
@@ -137,6 +141,7 @@ public abstract class CelestialAsset implements Buildable {
     @Override
     public void updateStatus(Status status) {
         this.status = status;
+        markDirty();
     }
 
     public String displayName() {
@@ -194,6 +199,27 @@ public abstract class CelestialAsset implements Buildable {
             }
         }
         return required;
+    }
+
+    public boolean needsFullSyncFor(UUID playerId) {
+        return isDirty() || !syncedPlayerIds.contains(playerId);
+    }
+
+    public void markSyncedFor(UUID playerId) {
+        syncedPlayerIds.add(playerId);
+    }
+
+    public void markDirty() {
+        syncedPlayerIds.clear();
+        dirty = true;
+    }
+
+    public boolean isDirty() {
+        return dirty;
+    }
+
+    public void clean() {
+        dirty = false;
     }
 
     @Override

@@ -25,7 +25,6 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObject;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
-import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleInstance;
@@ -73,20 +72,6 @@ public final class CelestialClient {
         return result;
     }
 
-    // ── Client-side asset creation (delegates to CLIENT store) ──
-
-    public static CelestialAsset createAssetInConstruction(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind) {
-        return CelestialAssetStore.CLIENT
-            .createAssetInConstructionInternal(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind);
-    }
-
-    public static CelestialAsset createOperationalAsset(CelestialObjectId celestialObjectId, String displayName,
-        CelestialAsset.Kind kind) {
-        return CelestialAssetStore.CLIENT
-            .createOperationalAssetInternal(TempTeamCompat.getTeam(), celestialObjectId, displayName, kind);
-    }
-
     // ── Logistics mirror ──
 
     private static final List<LogisticsDelivery> deliveries = new ArrayList<>();
@@ -98,10 +83,6 @@ public final class CelestialClient {
 
     private CelestialClient() {}
 
-    public static List<CelestialAsset> getState(CelestialObjectId celestialObjectId) {
-        return CelestialAssetStore.getState(TempTeamCompat.getTeam(), celestialObjectId);
-    }
-
     public static void registerAsset(CelestialObjectId celestialObjectId, CelestialAsset asset) {
 
         Galaxia.GALAXIA_NETWORK.sendToServer(switch (asset.kind) {
@@ -110,23 +91,11 @@ public final class CelestialClient {
             case AUTOMATED_STATION, AUTOMATED_OUTPOST -> AssetCreateRequestPacket
                 .createFacility(celestialObjectId, asset.displayName(), asset.kind, asset.isOperational());
         });
-        CelestialAssetStore.registerAsset(TempTeamCompat.getTeam(), asset);
-    }
-
-    public static CelestialAsset getByAssetId(CelestialAsset.ID assetId) {
-        return CelestialAssetStore.findAsset(assetId);
+        CelestialAssetStore.CLIENT.registerAssetInternal(TempTeamCompat.getTeam(), asset);
     }
 
     public static void add(CelestialAsset state) {
-        CelestialAssetStore.registerAsset(TempTeamCompat.getTeam(), state);
-    }
-
-    public static List<AutomatedFacility> allOutposts() {
-        return CelestialAssetStore.allAssets()
-            .stream()
-            .filter(a -> a instanceof AutomatedFacility)
-            .map(a -> (AutomatedFacility) a)
-            .collect(Collectors.toList());
+        CelestialAssetStore.CLIENT.registerAssetInternal(TempTeamCompat.getTeam(), state);
     }
 
     public static void clear() {

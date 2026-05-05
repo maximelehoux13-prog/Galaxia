@@ -48,14 +48,14 @@ final class CelestialAssetStoreRefactorTest {
 
         // Add to SERVER, CLIENT should be empty
         CelestialAsset asset = createAsset(BODY_1);
-        server.addInternal(TEAM_A, asset);
+        server.registerAssetInternal(TEAM_A, asset);
 
         assertNotNull(server.findAssetInternal(asset.assetId), "SERVER should have the asset");
         assertNull(client.findAssetInternal(asset.assetId), "CLIENT should NOT have the asset");
 
         // Add to CLIENT, SERVER should have both
         CelestialAsset clientAsset = createAsset(BODY_2);
-        client.addInternal(TEAM_A, clientAsset);
+        client.registerAssetInternal(TEAM_A, clientAsset);
 
         assertEquals(
             1,
@@ -80,7 +80,7 @@ final class CelestialAssetStoreRefactorTest {
         CelestialAssetStore.clear();
         // Static methods should operate on SERVER
         CelestialAsset asset = createAsset(BODY_1);
-        CelestialAssetStore.add(TEAM_A, asset);
+        CelestialAssetStore.registerAsset(TEAM_A, asset);
 
         assertNotNull(CelestialAssetStore.findAsset(asset.assetId), "static findAsset should find asset on SERVER");
         assertNull(
@@ -107,7 +107,7 @@ final class CelestialAssetStoreRefactorTest {
         CelestialAssetStore store = newStore();
         CelestialAsset asset = createAsset(BODY_1);
 
-        store.addInternal(TEAM_A, asset);
+        store.registerAssetInternal(TEAM_A, asset);
         assertSame(asset, store.findAssetInternal(asset.assetId));
         assertEquals(TEAM_A, store.getTeamIdInternal(asset.assetId));
     }
@@ -119,9 +119,9 @@ final class CelestialAssetStoreRefactorTest {
         CelestialAsset a2 = createAsset(BODY_2);
         CelestialAsset a3 = createAsset(BODY_1);
 
-        store.addInternal(TEAM_A, a1);
-        store.addInternal(TEAM_A, a2);
-        store.addInternal(TEAM_A, a3);
+        store.registerAssetInternal(TEAM_A, a1);
+        store.registerAssetInternal(TEAM_A, a2);
+        store.registerAssetInternal(TEAM_A, a3);
 
         List<CelestialAsset> body1Assets = store.getStateInternal(TEAM_A, BODY_1);
         assertEquals(2, body1Assets.size(), "TEAM_A should have 2 assets on BODY_1");
@@ -140,8 +140,8 @@ final class CelestialAssetStoreRefactorTest {
         CelestialAsset a1 = createAsset(BODY_1);
         CelestialAsset a2 = createAsset(BODY_2);
 
-        store.addInternal(TEAM_A, a1);
-        store.addInternal(TEAM_A, a2);
+        store.registerAssetInternal(TEAM_A, a1);
+        store.registerAssetInternal(TEAM_A, a2);
 
         Map<CelestialObjectId, Set<CelestialAsset>> teamAssets = store.getTeamAssetsInternal(TEAM_A);
         assertEquals(2, teamAssets.size());
@@ -155,8 +155,8 @@ final class CelestialAssetStoreRefactorTest {
         CelestialAsset a1 = createAsset(BODY_1);
         CelestialAsset a2 = createAsset(BODY_2);
 
-        store.addInternal(TEAM_A, a1);
-        store.addInternal(TEAM_B, a2);
+        store.registerAssetInternal(TEAM_A, a1);
+        store.registerAssetInternal(TEAM_B, a2);
 
         List<CelestialAsset> all = store.allAssetsInternal();
         assertEquals(2, all.size());
@@ -166,7 +166,7 @@ final class CelestialAssetStoreRefactorTest {
     void destroyAssetRemovesFromAllMaps() {
         CelestialAssetStore store = newStore();
         CelestialAsset asset = createAsset(BODY_1);
-        store.addInternal(TEAM_A, asset);
+        store.registerAssetInternal(TEAM_A, asset);
 
         assertTrue(store.destroyAssetInternal(asset.assetId));
         assertNull(store.findAssetInternal(asset.assetId));
@@ -183,7 +183,7 @@ final class CelestialAssetStoreRefactorTest {
     void cancelConstructionOnlyForConstructionSites() {
         CelestialAssetStore store = newStore();
         CelestialAsset operational = createAsset(BODY_1);
-        store.addInternal(TEAM_A, operational);
+        store.registerAssetInternal(TEAM_A, operational);
 
         // Operational asset cannot be cancelled
         assertFalse(store.cancelConstructionInternal(operational.assetId));
@@ -212,8 +212,8 @@ final class CelestialAssetStoreRefactorTest {
     @Test
     void clearRemovesAllState() {
         CelestialAssetStore store = newStore();
-        store.addInternal(TEAM_A, createAsset(BODY_1));
-        store.addInternal(TEAM_B, createAsset(BODY_2));
+        store.registerAssetInternal(TEAM_A, createAsset(BODY_1));
+        store.registerAssetInternal(TEAM_B, createAsset(BODY_2));
         assertEquals(
             2,
             store.allAssetsInternal()
@@ -264,8 +264,8 @@ final class CelestialAssetStoreRefactorTest {
         CelestialAssetStore.CLIENT.clearInternal();
 
         // Add to SERVER and CLIENT
-        CelestialAssetStore.SERVER.addInternal(TEAM_A, createAsset(BODY_1));
-        CelestialAssetStore.CLIENT.addInternal(TEAM_A, createAsset(BODY_2));
+        CelestialAssetStore.SERVER.registerAssetInternal(TEAM_A, createAsset(BODY_1));
+        CelestialAssetStore.CLIENT.registerAssetInternal(TEAM_A, createAsset(BODY_2));
 
         assertEquals(
             1,
@@ -294,8 +294,9 @@ final class CelestialAssetStoreRefactorTest {
 
     @Test
     void staticAddToConstructionInventory() {
-        CelestialAsset asset = CelestialAssetStore
-            .createAssetInConstruction(TEAM_A, BODY_1, "test", CelestialAsset.Kind.AUTOMATED_OUTPOST);
+        CelestialAsset asset = CelestialAsset.create(BODY_1, CelestialAsset.Kind.AUTOMATED_OUTPOST, false);
+        asset.setDisplayName("test");
+        CelestialAssetStore.registerAsset(TEAM_A, asset);
         assertNotNull(asset);
         assertSame(asset, CelestialAssetStore.findAsset(asset.assetId));
         assertEquals(Buildable.Status.CONSTRUCTION_SITE, asset.status());

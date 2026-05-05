@@ -22,6 +22,7 @@ public class Station extends CelestialAsset {
 
     public void setController(BlockPos controller) {
         this.controller = controller;
+        markDirty();
     }
 
     @Override

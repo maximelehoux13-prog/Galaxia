@@ -82,11 +82,14 @@ public class CelestialEventHandler {
 
             List<AssetSyncPacket> playerOutpostPackets = new ArrayList<>();
             for (CelestialAsset asset : aggregatedAssets) {
-                playerOutpostPackets.addAll(AssetSyncPacket.figureOutWhatToSend(outpost, playerId));
+                playerOutpostPackets.addAll(AssetSyncPacket.figureOutWhatToSend(asset, playerId));
             }
             // TODO: make aggregate packet for this
             for (AssetSyncPacket pkt : playerOutpostPackets) {
                 Galaxia.GALAXIA_NETWORK.sendTo(pkt, player);
+            }
+            for (CelestialAsset asset : aggregatedAssets) {
+                asset.clean();
             }
 
             List<LogisticsDelivery> relevantDeliveries = LogisticStore.activeDeliveries()

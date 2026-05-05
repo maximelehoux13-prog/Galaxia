@@ -65,6 +65,14 @@ public final class DenseBitSet {
         return true;
     }
 
+    private boolean inBounds(int x, int y, int z) {
+        return x >= minX && x < minX + lenX && y >= minY && y < minY + lenY && z >= minZ && z < minZ + lenZ;
+    }
+
+    public boolean containsChecked(int x, int y, int z) {
+        return inBounds(x, y, z) && contains(x, y, z);
+    }
+
     public boolean contains(int lx, int ly, int lz) {
         int idx = index(lx, ly, lz);
 
