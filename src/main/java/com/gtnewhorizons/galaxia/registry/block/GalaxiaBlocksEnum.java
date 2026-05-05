@@ -12,11 +12,11 @@ import com.gtnewhorizons.galaxia.registry.block.special.BlockFumarole;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStation;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStationGlass;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockStationController;
-import com.gtnewhorizons.galaxia.registry.block.special.BlockStationMonitor;
+import com.gtnewhorizons.galaxia.registry.block.special.BlockStationRoom;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityAirlock;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityFumarole;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
-import com.gtnewhorizons.galaxia.registry.block.tile.TileStationMonitor;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationRoom;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.BlockRocketTrophy;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.TileEntityModuleAssembler;
 import com.gtnewhorizons.galaxia.registry.rocketmodules.tileentities.TileEntityRocketTrophy;
@@ -43,7 +43,7 @@ public enum GalaxiaBlocksEnum {
     SILO_CONTROLLER(new BlockSilo(), TileEntitySilo.class, "silo_controller"),
     AIRLOCK_CONTROLLER(new BlockAirlockController(), TileEntityAirlock.class, "airlock_controller"),
     STATION_CONTROLLER(new BlockStationController(), TileStationController.class, "station_controller"),
-    STATION_MONITOR(new BlockStationMonitor(), TileStationMonitor.class, "station_monitor"),
+    STATION_ROOM(new BlockStationRoom(), TileStationRoom.class, "station_room"),
     ASSEMBLER_CONTROLLER(new BlockModuleAssembler(), TileEntityModuleAssembler.class, "module_assembler_controller"),
     FUMAROLE(new BlockFumarole(), TileEntityFumarole.class, "tenebrae_fumarole"),
     GANTRY(new BlockGantry(), TileEntityGantry.class, "gantry_block"),

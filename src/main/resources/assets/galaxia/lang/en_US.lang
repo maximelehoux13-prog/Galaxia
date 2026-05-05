@@ -141,7 +141,7 @@ tile.tenebrae_lava.name=Tenebrae Lava
 # Blocks - "Tile Entities"
 tile.module_controller.name=Station Module Controller
 tile.station_controller.name=Station Controller
-tile.station_monitor.name=Station Monitor
+tile.station_room.name=Station Room
 tile.silo_controller.name=Rocket Silo
 tile.module_assembler_controller.name=Module Assembler
 tile.tenebrae_fumarole.name=Fumarole

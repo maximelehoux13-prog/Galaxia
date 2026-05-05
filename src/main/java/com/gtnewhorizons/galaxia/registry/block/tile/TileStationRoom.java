@@ -18,13 +18,13 @@ import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeDefinition;
 import com.gtnewhorizons.galaxia.compat.structure.ArbitraryShapeTile;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
-public class TileStationMonitor extends TileStationSecondary<TileStationMonitor>
-    implements ArbitraryShapeTile<TileStationMonitor> {
+public class TileStationRoom extends TileStationSecondary<TileStationRoom>
+    implements ArbitraryShapeTile<TileStationRoom> {
 
-    public final ArbitraryShapeDefinition<TileStationMonitor> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
-        .<TileStationMonitor>builder()
+    public final ArbitraryShapeDefinition<TileStationRoom> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
+        .<TileStationRoom>builder()
         .withSearchRadius(16)
-        .addControllerBlock(GalaxiaBlocksEnum.STATION_MONITOR.get())
+        .addControllerBlock(GalaxiaBlocksEnum.STATION_ROOM.get())
         .addElements(
             BASE_VALID_BLOCKS.stream()
                 .map(b -> GalaxiaStructureUtility.ofBlock(b, 0)))
@@ -46,7 +46,7 @@ public class TileStationMonitor extends TileStationSecondary<TileStationMonitor>
     }
 
     @Override
-    public IStructureDefinition<TileStationMonitor> getStructureDefinition() {
+    public IStructureDefinition<TileStationRoom> getStructureDefinition() {
         return STRUCTURE_DEFINITION;
     }
 
@@ -76,14 +76,14 @@ public class TileStationMonitor extends TileStationSecondary<TileStationMonitor>
         BooleanSyncValue oxygenatedSync = new BooleanSyncValue(() -> isOxygenated(), () -> isOxygenated());
         syncManager.syncValue("oxygenated", 0, oxygenatedSync);
 
-        return new ModularPanel("galaxia:station_monitor").size(210, 130)
+        return new ModularPanel("galaxia:station_room").size(210, 130)
             .child(
-                IKey.str(StatCollector.translateToLocal("galaxia.gui.station_monitor.title"))
+                IKey.str(StatCollector.translateToLocal("galaxia.gui.station_room.title"))
                     .asWidget()
                     .pos(8, 8))
             .child(new TextWidget<>(IKey.dynamic(() -> {
                 boolean valid = structureValidSync.getBoolValue();
-                String structure = StatCollector.translateToLocal("galaxia.gui.station_monitor.structure");
+                String structure = StatCollector.translateToLocal("galaxia.gui.station_room.structure");
                 String status = StatCollector
                     .translateToLocal(valid ? "galaxia.gui.status_valid" : "galaxia.gui.status_invalid");
                 EnumChatFormatting color = valid ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
@@ -91,7 +91,7 @@ public class TileStationMonitor extends TileStationSecondary<TileStationMonitor>
             })).pos(10, 30))
             .child(new TextWidget<>(IKey.dynamic(() -> {
                 boolean oxy = oxygenatedSync.getBoolValue();
-                String oxygen = StatCollector.translateToLocal("galaxia.gui.station_monitor.oxygen");
+                String oxygen = StatCollector.translateToLocal("galaxia.gui.station_room.oxygen");
                 String status = StatCollector
                     .translateToLocal(oxy ? "galaxia.gui.status_yes" : "galaxia.gui.status_no");
                 EnumChatFormatting color = oxy ? EnumChatFormatting.GREEN : EnumChatFormatting.RED;
@@ -100,7 +100,7 @@ public class TileStationMonitor extends TileStationSecondary<TileStationMonitor>
             .child(
                 new ButtonWidget<>().size(190, 30)
                     .pos(10, 85)
-                    .overlay(IKey.str(StatCollector.translateToLocal("galaxia.gui.station_monitor.refresh")))
+                    .overlay(IKey.str(StatCollector.translateToLocal("galaxia.gui.station_room.refresh")))
                     .syncHandler(new InteractionSyncHandler().setOnMousePressed(mouseData -> {
                         if (mouseData.mouseButton != 0 || worldObj.isRemote) return;
                         markStructureDirty();

@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import com.gtnewhorizons.galaxia.registry.block.tile.TileStationRoom;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -12,19 +13,18 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.cleanroommc.modularui.factory.GuiFactories;
-import com.gtnewhorizons.galaxia.registry.block.tile.TileStationMonitor;
 
-public class BlockStationMonitor extends Block implements ITileEntityProvider {
+public class BlockStationRoom extends Block implements ITileEntityProvider {
 
-    public BlockStationMonitor() {
+    public BlockStationRoom() {
         super(Material.iron);
-        this.setBlockName("station_monitor");
+        this.setBlockName("station_room");
         this.setBlockTextureName("galaxia:space_station/space_station_block_2");
     }
 
     @Override
     public TileEntity createNewTileEntity(World worldIn, int meta) {
-        return new TileStationMonitor();
+        return new TileStationRoom();
     }
 
     @Override
@@ -32,7 +32,7 @@ public class BlockStationMonitor extends Block implements ITileEntityProvider {
 
         if (placer instanceof EntityPlayer player) {
             TileEntity te = world.getTileEntity(x, y, z);
-            if (!(te instanceof TileStationMonitor sm)) return;
+            if (!(te instanceof TileStationRoom sm)) return;
 
             int f = MathHelper.floor_double((placer.rotationYaw * 4.0F / 360.0F) + 0.5D) & 3;
             ForgeDirection[] dirs = { ForgeDirection.NORTH, ForgeDirection.EAST, ForgeDirection.SOUTH,
@@ -46,7 +46,7 @@ public class BlockStationMonitor extends Block implements ITileEntityProvider {
         float hitY, float hitZ) {
         if (worldIn.isRemote) return true;
         TileEntity te = worldIn.getTileEntity(x, y, z);
-        if (!(te instanceof TileStationMonitor)) return false;
+        if (!(te instanceof TileStationRoom)) return false;
 
         GuiFactories.tileEntity()
             .open(player, x, y, z);

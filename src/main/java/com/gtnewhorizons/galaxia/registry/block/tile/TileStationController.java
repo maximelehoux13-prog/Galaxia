@@ -113,7 +113,7 @@ public class TileStationController extends TileStationBase<TileStationController
     public int getVolume() {
         int own = ArbitraryShapeTile.super.getVolume();
         return monitors.stream()
-            .map(pos -> (TileStationMonitor) pos.getTE(worldObj))
+            .map(pos -> (TileStationRoom) pos.getTE(worldObj))
             .filter(Objects::nonNull)
             .mapToInt(ArbitraryShapeTile::getVolume)
             .sum() + own;
@@ -153,7 +153,7 @@ public class TileStationController extends TileStationBase<TileStationController
         if (isInside(x, y, z)) return isOxygenated();
 
         for (BlockPos pos : monitors) {
-            TileStationMonitor monitor = pos.getTE(worldObj);
+            TileStationRoom monitor = pos.getTE(worldObj);
             if (monitor == null) continue; // Maybe remove
             if (monitor.isInside(x, y, z)) return monitor.isOxygenated();
         }
@@ -166,7 +166,7 @@ public class TileStationController extends TileStationBase<TileStationController
         super.tick();
 
         for (BlockPos pos : monitors) {
-            TileStationMonitor monitor = pos.getTE(worldObj);
+            TileStationRoom monitor = pos.getTE(worldObj);
             if (monitor == null) continue; // Maybe remove
 
             monitor.tick();
@@ -214,7 +214,7 @@ public class TileStationController extends TileStationBase<TileStationController
                         if (mouseData.mouseButton != 0 || worldObj.isRemote) return;
                         markStructureDirty();
                         for (BlockPos b : monitors) {
-                            TileStationMonitor monitor = b.getTE(worldObj);
+                            TileStationRoom monitor = b.getTE(worldObj);
                             if (monitor != null) {
                                 System.out.println(monitor.here);
                             }
