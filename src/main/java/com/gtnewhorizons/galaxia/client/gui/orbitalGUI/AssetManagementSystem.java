@@ -316,7 +316,7 @@ public final class AssetManagementSystem {
                     true);
                 return;
             }
-            CelestialAssetStore.destroyAsset(state.pendingAssetDestruction.asset().assetId);
+            CelestialAssetStore.CLIENT.destroyAssetInternal(state.pendingAssetDestruction.asset().assetId);
             // TODO: Localize
             callbacks.showActionStatus("Asset destroyed");
             state.pendingAssetDestruction = null;
@@ -347,7 +347,8 @@ public final class AssetManagementSystem {
 
         void confirmPendingConstructionCancellation(OrbitalAssetUiState state) {
             if (state.pendingConstructionCancellation == null) return;
-            CelestialAssetStore.startDeconstruction(state.pendingConstructionCancellation.asset().assetId);
+            CelestialAssetStore.CLIENT
+                .startDeconstructionInternal(state.pendingConstructionCancellation.asset().assetId);
             // TODO: Localize
             callbacks.showActionStatus("Construction site converted to deconstruction");
             state.pendingConstructionCancellation = null;
@@ -387,7 +388,7 @@ public final class AssetManagementSystem {
                 closePendingAssetRename(state);
                 return;
             }
-            if (CelestialAssetStore.renameAsset(state.pendingAssetRename.asset().assetId, renamed)) {
+            if (CelestialAssetStore.CLIENT.renameAssetInternal(state.pendingAssetRename.asset().assetId, renamed)) {
                 // TODO: Localize
                 callbacks.showActionStatus("Asset renamed");
                 closePendingAssetRename(state);
@@ -2225,6 +2226,10 @@ public final class AssetManagementSystem {
                 case HAMMER -> "Balances item reserves and exports excess inventory to other stations.";
                 case MINER -> "Generates one ore per second from this body's available deposits.";
                 case POWER -> "Adds extra power generation to support modules and logistics.";
+                case STORAGE -> "Increases station item storage capacity. Adjacent modules boost each other.";
+                case TANK -> "Increases station fluid storage capacity. Adjacent modules boost each other.";
+                case BATTERY -> "Increases station energy buffer capacity. Adjacent modules boost each other.";
+                case MAINTENANCE_BAY -> "Passively maintains station systems. Reduces wear over time.";
             };
         }
 
@@ -2800,7 +2805,7 @@ public final class AssetManagementSystem {
                 return;
             }
             if (callbacks.isCreativeBuildModeEnabled()) {
-                CelestialAssetStore.cancelConstruction(asset.assetId);
+                CelestialAssetStore.CLIENT.cancelConstructionInternal(asset.assetId);
                 callbacks.showActionStatus("Construction canceled");
                 return;
             }
@@ -2808,7 +2813,7 @@ public final class AssetManagementSystem {
                 callbacks.openPendingConstructionCancellation(asset);
                 return;
             }
-            CelestialAssetStore.cancelConstruction(asset.assetId);
+            CelestialAssetStore.CLIENT.cancelConstructionInternal(asset.assetId);
             callbacks.showActionStatus("Construction canceled");
         }
 

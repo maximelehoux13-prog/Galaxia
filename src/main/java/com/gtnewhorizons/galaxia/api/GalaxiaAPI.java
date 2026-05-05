@@ -5,6 +5,10 @@ import static com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry.G
 
 import java.util.Set;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import javax.annotation.Nonnull;
 
 import net.minecraft.entity.Entity;
@@ -23,6 +27,8 @@ import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.capabilities.ZeroGMovementProvider;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
+import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.dimension.DimensionDef;
 import com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry;
@@ -35,6 +41,10 @@ import com.gtnewhorizons.galaxia.registry.items.baubles.ItemSporeFilter;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemThermalProtection;
 import com.gtnewhorizons.galaxia.registry.items.baubles.ItemWitherProtection;
 import com.gtnewhorizons.galaxia.registry.outpost.Station;
+import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
+import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
+import com.gtnewhorizons.galaxia.registry.outpost.station.CapacityCluster;
+import com.gtnewhorizons.galaxia.registry.outpost.station.StationTileCoord;
 
 import baubles.api.BaublesApi;
 
@@ -308,6 +318,39 @@ public final class GalaxiaAPI {
             }
         }
         return found;
+    }
+
+    /**
+     * Returns the capacity clusters for the given facility and capacity module kind.
+     *
+     * @param facilityId the facility asset ID
+     * @param kind       the capacity module kind (STORAGE, TANK, BATTERY)
+     * @return list of capacity clusters; empty if the facility is not found, has no layout,
+     *         or the kind is not a capacity module
+     */
+    public static List<CapacityCluster> getCapacityClusters(CelestialAsset.ID facilityId, FacilityModuleKind kind) {
+        CelestialAsset asset = CelestialAssetStore.findAsset(facilityId);
+        if (!(asset instanceof AutomatedFacility facility) || !facility.hasStationLayout()) {
+            return Collections.emptyList();
+        }
+        return facility.layoutCache()
+            .getCapacityClusters(kind);
+    }
+
+    /**
+     * Returns the cached maintenance coverage coordinates for the given facility.
+     * Coverage tiles are the 8 surrounding tiles of each enabled Maintenance Bay.
+     *
+     * @param facilityId the facility asset ID
+     * @return set of covered tile coordinates; empty if the facility is not found or has no layout
+     */
+    public static Set<StationTileCoord> getMaintenanceCoverage(CelestialAsset.ID facilityId) {
+        CelestialAsset asset = CelestialAssetStore.findAsset(facilityId);
+        if (!(asset instanceof AutomatedFacility facility) || !facility.hasStationLayout()) {
+            return Collections.emptySet();
+        }
+        return facility.layoutCache()
+            .getMaintenanceCoverage();
     }
 
     public static boolean isInGalaxiaDimension(Entity e) {
