@@ -1,8 +1,13 @@
 package com.gtnewhorizons.galaxia.core.network;
 
+import java.util.UUID;
+
 import net.minecraft.entity.player.EntityPlayerMP;
 
-import com.gtnewhorizons.galaxia.core.Galaxia;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
@@ -24,8 +29,11 @@ import io.netty.buffer.ByteBuf;
  */
 public final class LogisticsConfigUpdatePacket implements IMessage {
 
+    private static final Logger LOG = LogManager.getLogger("Galaxia");
+
     private CelestialAsset.ID assetId;
     private String resourceKey;
+    private ItemStackWrapper resource;
     private int minReserve;
     private int orderSize;
     private boolean isImportEnabled;
@@ -38,6 +46,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
         LogisticsResourceConfig config) {
         this.assetId = assetId;
         this.resourceKey = resource.toKey();
+        this.resource = resource;
         this.minReserve = config.minReserve();
         this.orderSize = config.orderSize();
         this.isImportEnabled = config.isImportEnabled();
@@ -49,6 +58,7 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
         LogisticsConfigUpdatePacket packet = new LogisticsConfigUpdatePacket();
         packet.assetId = assetId;
         packet.resourceKey = resource.toKey();
+        packet.resource = resource;
         packet.minReserve = 0;
         packet.orderSize = 1;
         packet.isImportEnabled = false;
@@ -79,58 +89,51 @@ public final class LogisticsConfigUpdatePacket implements IMessage {
         removeEntry = buf.readBoolean();
     }
 
-    public static final class Handler implements IMessageHandler<LogisticsConfigUpdatePacket, IMessage> {
+    public static class Handler implements IMessageHandler<LogisticsConfigUpdatePacket, IMessage> {
 
         @Override
-        public IMessage onMessage(LogisticsConfigUpdatePacket packet, MessageContext ctx) {
+        public IMessage onMessage(LogisticsConfigUpdatePacket message, MessageContext ctx) {
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
-            if (player == null) return null;
+            UUID teamId = TempTeamCompat.getTeam(player);
+            return message.apply(teamId);
+        }
+    }
 
-            // SimpleNetworkWrapper guarantees onMessage runs on the main server thread
-            // for SERVER-bound packets, so direct mutation is safe (same as DestinationSetPacket).
-            String playerName = player.getGameProfile()
-                .getName();
-            AutomatedFacility state = CelestialAssetStore.findAsset(packet.assetId) instanceof AutomatedFacility o ? o
-                : null;
-            if (state == null) {
-                Galaxia.LOG.warn(
-                    "[Logistics] LogisticsConfigUpdate: unknown assetId {} from player {}",
-                    packet.assetId,
-                    playerName);
-                return null;
-            }
+    public AssetSyncPacket apply(UUID teamId) {
+        AutomatedFacility state = CelestialAssetStore.findAsset(assetId) instanceof AutomatedFacility o ? o : null;
+        if (state == null || !CelestialAssetStore.isOwnedBy(teamId, assetId)) {
+            LOG.warn("[Logistics] LogisticsConfigUpdate: unknown or unauthorized assetId {}", assetId);
+            return null;
+        }
 
-            if (!packet.removeEntry && packet.orderSize <= 0) {
-                Galaxia.LOG
-                    .warn("[Logistics] LogisticsConfigUpdate rejected: orderSize must be > 0 (player {})", playerName);
-                return null;
-            }
-            if (!packet.removeEntry && packet.minReserve < 0) {
-                Galaxia.LOG.warn(
-                    "[Logistics] LogisticsConfigUpdate rejected: minReserve must be >= 0 (player {})",
-                    playerName);
-                return null;
-            }
+        if (!removeEntry && orderSize <= 0) {
+            LOG.warn("[Logistics] LogisticsConfigUpdate rejected: orderSize must be >0");
+            return null;
+        }
+        if (!removeEntry && minReserve < 0) {
+            LOG.warn("[Logistics] LogisticsConfigUpdate rejected: minReserve must be >=0");
+            return null;
+        }
 
-            ItemStackWrapper resource = ItemStackWrapper.fromKey(packet.resourceKey);
-            if (packet.removeEntry) {
-                state.logisticsConfig.reset(resource);
-                return AssetSyncPacket.logisticsConfigRemoved(packet.assetId, packet.resourceKey);
-            } else {
-                LogisticsResourceConfig config = new LogisticsResourceConfig(
-                    packet.minReserve,
-                    packet.orderSize,
-                    packet.isImportEnabled,
-                    packet.isSupplyEnabled);
-                state.logisticsConfig.set(resource, config);
-                return AssetSyncPacket.logisticsConfigUpdated(
-                    packet.assetId,
-                    packet.resourceKey,
-                    config.minReserve(),
-                    config.orderSize(),
-                    config.isImportEnabled(),
-                    config.isSupplyEnabled());
-            }
+        ItemStackWrapper resource = this.resource != null ? this.resource : ItemStackWrapper.fromKey(resourceKey);
+        if (resource == null) return null;
+        if (removeEntry) {
+            state.logisticsConfig.reset(resource);
+            return AssetSyncPacket.logisticsConfigRemoved(assetId, resourceKey);
+        } else {
+            LogisticsResourceConfig config = new LogisticsResourceConfig(
+                minReserve,
+                orderSize,
+                isImportEnabled,
+                isSupplyEnabled);
+            state.logisticsConfig.set(resource, config);
+            return AssetSyncPacket.logisticsConfigUpdated(
+                assetId,
+                resourceKey,
+                config.minReserve(),
+                config.orderSize(),
+                config.isImportEnabled(),
+                config.isSupplyEnabled());
         }
     }
 }

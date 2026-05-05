@@ -1,5 +1,7 @@
 package com.gtnewhorizons.galaxia.core.network;
 
+import java.util.UUID;
+
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import com.gtnewhorizons.galaxia.api.BlockPos;
@@ -75,6 +77,21 @@ public final class AssetCreateRequestPacket implements IMessage {
         }
     }
 
+    public AssetSyncPacket apply(UUID teamId) {
+        CelestialAsset asset = CelestialAsset.create(celestialObjectId, kind, operational);
+        asset.setDisplayName(displayName);
+        if (kind == CelestialAsset.Kind.STATION) {
+            Station station = (Station) asset;
+            station.setController(controller);
+        }
+
+        CelestialAssetStore.registerAsset(teamId, asset);
+
+        Galaxia.LOG.info("[Outpost] Created asset {} ({}) at {}", asset.assetId, kind, celestialObjectId);
+
+        return AssetSyncPacket.fullSync(asset);
+    }
+
     public static final class Handler implements IMessageHandler<AssetCreateRequestPacket, IMessage> {
 
         @Override
@@ -83,25 +100,7 @@ public final class AssetCreateRequestPacket implements IMessage {
             if (player == null) return null;
 
             var teamId = TempTeamCompat.getTeam(player);
-
-            CelestialAsset asset = CelestialAsset.create(packet.celestialObjectId, packet.kind, packet.operational);
-            asset.setDisplayName(packet.displayName);
-            if (packet.kind == CelestialAsset.Kind.STATION) {
-                Station station = (Station) asset;
-                station.setController(packet.controller);
-            }
-
-            CelestialAssetStore.registerAsset(teamId, asset);
-
-            Galaxia.LOG.info(
-                "[Outpost] Created asset {} ({}) at {} for player {}",
-                asset.assetId,
-                packet.kind,
-                packet.celestialObjectId,
-                player.getGameProfile()
-                    .getName());
-
-            return AssetSyncPacket.fullSync(asset);
+            return packet.apply(teamId);
         }
     }
 }
