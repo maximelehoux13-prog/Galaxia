@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
@@ -38,7 +39,8 @@ public class TileStationController extends TileStationBase<TileStationController
     private UUID owner;
     private CelestialAsset.ID backingStation;
 
-    private final List<BlockPos> monitors = new ArrayList<>();
+    // Always call `clearBrokenSecondaries` before accessing it
+    private final List<BlockPos> secondaries = new ArrayList<>();
 
     public final ArbitraryShapeDefinition<TileStationController> STRUCTURE_DEFINITION = ArbitraryShapeDefinition
         .<TileStationController>builder()
@@ -88,8 +90,8 @@ public class TileStationController extends TileStationBase<TileStationController
         }
 
         if (!newMonitors.isEmpty()) {
-            monitors.clear();
-            monitors.addAll(newMonitors);
+            secondaries.clear();
+            secondaries.addAll(newMonitors);
             return true;
         }
         return false;
@@ -106,15 +108,15 @@ public class TileStationController extends TileStationBase<TileStationController
         if (backingStation != null) {
             CelestialAssetStore.disableAsset(backingStation);
         }
-        monitors.clear();
+        secondaries.clear();
     }
 
     @Override
     public int getVolume() {
         int own = ArbitraryShapeTile.super.getVolume();
-        return monitors.stream()
+        clearBrokenSecondaries();
+        return secondaries.stream()
             .map(pos -> (TileStationRoom) pos.getTE(worldObj))
-            .filter(Objects::nonNull)
             .mapToInt(ArbitraryShapeTile::getVolume)
             .sum() + own;
     }
@@ -152,22 +154,37 @@ public class TileStationController extends TileStationBase<TileStationController
     public boolean hasOxygen(int x, int y, int z) {
         if (isInside(x, y, z)) return isOxygenated();
 
-        for (BlockPos pos : monitors) {
-            TileStationRoom monitor = pos.getTE(worldObj);
-            if (monitor == null) continue; // Maybe remove
-            if (monitor.isInside(x, y, z)) return monitor.isOxygenated();
+        clearBrokenSecondaries();
+        for (BlockPos pos : secondaries) {
+            TileStationSecondary<?> secondary = pos.getTE(worldObj);
+            if (secondary.isInside(x, y, z)) return secondary.isOxygenated();
         }
 
         return false;
+    }
+
+    private void clearBrokenSecondaries() {
+        for (int i = secondaries.size() - 1; i > 0; i--) {
+            BlockPos pos = secondaries.get(i);
+            if (pos == null) {
+                secondaries.remove(i);
+                continue;
+            }
+            TileStationSecondary<?> secondary = pos.getTE(worldObj);
+            if (secondary == null) {
+                secondaries.remove(i);
+            }
+        }
     }
 
     @Override
     public void tick() {
         super.tick();
 
-        for (BlockPos pos : monitors) {
+        clearBrokenSecondaries();
+        for (BlockPos pos : secondaries) {
             TileStationRoom monitor = pos.getTE(worldObj);
-            if (monitor == null) continue; // Maybe remove
+            if (monitor == null) continue;
 
             monitor.tick();
         }
@@ -213,7 +230,7 @@ public class TileStationController extends TileStationBase<TileStationController
                     .syncHandler(new InteractionSyncHandler().setOnMousePressed(mouseData -> {
                         if (mouseData.mouseButton != 0 || worldObj.isRemote) return;
                         markStructureDirty();
-                        for (BlockPos b : monitors) {
+                        for (BlockPos b : secondaries) {
                             TileStationRoom monitor = b.getTE(worldObj);
                             if (monitor != null) {
                                 System.out.println(monitor.here);
@@ -239,7 +256,7 @@ public class TileStationController extends TileStationBase<TileStationController
                 backingStation.id()
                     .getLeastSignificantBits());
         }
-        nbt.setTag("monitors", BlockPos.listToNBT(monitors));
+        nbt.setTag("secondaries", BlockPos.listToNBT(secondaries));
     }
 
     @Override
@@ -254,9 +271,9 @@ public class TileStationController extends TileStationBase<TileStationController
                 .from(new UUID(nbt.getLong("backingStationMost"), nbt.getLong("backingStationLeast")));
         }
 
-        if (nbt.hasKey("monitors")) {
-            monitors.clear();
-            monitors.addAll(BlockPos.listFromNBT(nbt.getTagList("monitors", Constants.NBT.TAG_COMPOUND)));
+        if (nbt.hasKey("secondaries")) {
+            secondaries.clear();
+            secondaries.addAll(BlockPos.listFromNBT(nbt.getTagList("secondaries", Constants.NBT.TAG_COMPOUND)));
         }
     }
 
