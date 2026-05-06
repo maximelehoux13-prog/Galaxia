@@ -97,7 +97,7 @@ public class TileStationController extends TileStationBase<TileStationController
 
     @Override
     public int getSearchRadius() {
-        return ArbitraryShapeTile.super.getSearchRadius();
+        return STRUCTURE_DEFINITION.getSearchRadius();
     }
 
     @Override

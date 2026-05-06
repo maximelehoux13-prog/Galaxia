@@ -122,8 +122,8 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             Galaxia.LOG.error("Structure is not formed yet");
             return false;
         }
-        return enclosedVisited.contains(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord)
-            || isInCoarseInterior(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord);
+        return enclosedVisited.containsChecked(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord)
+            || isInCoarseInteriorChecked(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord);
     }
 
     @Override
@@ -132,7 +132,7 @@ public class ArbitraryShapeDefinition<T extends TileEntity & ArbitraryShapeTile<
             Galaxia.LOG.error("Structure is not formed yet");
             return false;
         }
-        return structureBlocks.contains(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord);
+        return structureBlocks.containsChecked(x - tile.xCoord, y - tile.yCoord, z - tile.zCoord);
     }
 
     @Override

@@ -109,7 +109,7 @@ public class TileStationRoom extends TileStationSecondary<TileStationRoom>
 
     @Override
     public int getSearchRadius() {
-        return ArbitraryShapeTile.super.getSearchRadius();
+        return STRUCTURE_DEFINITION.getSearchRadius();
     }
 
 }

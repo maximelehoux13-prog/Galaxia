@@ -120,7 +120,7 @@ public abstract class TileStationBase<T extends GalaxiaMultiblockBase<T>> extend
     }
 
     public boolean isInside(int x, int y, int z) {
-        int searchRadius = getSearchRadius();
+        int searchRadius = getSearchRadius() * 2;
         if (Math.max(Math.abs(x - xCoord), Math.max(Math.abs(y - yCoord), Math.abs(z - zCoord))) > searchRadius)
             return false;
 
