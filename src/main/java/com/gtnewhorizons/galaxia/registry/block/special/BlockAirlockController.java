@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -20,6 +21,7 @@ public class BlockAirlockController extends Block implements ITileEntityProvider
         this.setHardness(1.5F);
         this.setBlockName("airlock_controller");
         this.setBlockTextureName("galaxia:machine/airlock_controller");
+        this.setCreativeTab(Galaxia.creativeTab);
     }
 
     @Override

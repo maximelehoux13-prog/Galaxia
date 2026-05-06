@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
@@ -28,6 +29,7 @@ public class BlockAirlockDoor extends Block {
 
         setHardness(2.0F);
         setResistance(10.0F);
+        this.setCreativeTab(Galaxia.creativeTab);
     }
 
     @Override

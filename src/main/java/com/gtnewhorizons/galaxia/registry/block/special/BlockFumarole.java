@@ -2,6 +2,7 @@ package com.gtnewhorizons.galaxia.registry.block.special;
 
 import java.util.List;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -30,6 +31,7 @@ public class BlockFumarole extends Block implements ITileEntityProvider {
 
         this.setTickRandomly(true);
         this.setBlockName("tenebrae_fumarole");
+        this.setCreativeTab(Galaxia.creativeTab);
     }
 
     @Override

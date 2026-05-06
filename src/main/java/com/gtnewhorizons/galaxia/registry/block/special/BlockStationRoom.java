@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -20,6 +21,7 @@ public class BlockStationRoom extends Block implements ITileEntityProvider {
         super(Material.iron);
         this.setBlockName("station_room");
         this.setBlockTextureName("galaxia:space_station/space_station_block_2");
+        this.setCreativeTab(Galaxia.creativeTab);
     }
 
     @Override

@@ -5,11 +5,9 @@ import net.minecraft.tileentity.TileEntity;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockConfigurable;
-import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockCasing;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockController;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockFumarole;
-import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStation;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockSpaceStationGlass;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockStationController;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockStationRoom;
@@ -51,9 +49,7 @@ public enum GalaxiaBlocksEnum {
     ROCKET_TROPHY(new BlockRocketTrophy(), TileEntityRocketTrophy.class, "rocket_trophy"),
 
     // NON-TE
-    SPACE_STATION_BLOCK(new BlockSpaceStation(), "space_station_block"),
     SPACE_STATION_GLASS(new BlockSpaceStationGlass(), "space_station_glass"),
-    AIRLOCK_CASING(new BlockAirlockCasing(), "airlock_casing"),
     AIRLOCK_DOOR(new BlockAirlockDoor(), "airlock_door"),
 
     // MISC
@@ -71,9 +67,14 @@ public enum GalaxiaBlocksEnum {
             .opaque()),
     RUSTY_PANEL(new BlockConfigurable("rusty_panel")),
     RUSTY_SHEETMETAL(new BlockConfigurable("rusty_sheetmetal")),
-    SPACE_STATION_PANEL(new BlockConfigurable("space_station/space_station_panel")),
+    SPACE_STATION_PANEL(new BlockConfigurable("space_station/space_station_panel")
+        .opaque()),
     RESEARCH_OUTPOST_CASING(new BlockConfigurable("machine/research_outpost_casing")),
     LAUNCHPAD_CASING(new BlockConfigurable("machine/launchpad")),
+    AIRLOCK_CASING(new BlockConfigurable("machine/airlock_casing")
+        .opaque()),
+    SPACE_STATION_BLOCK(new BlockConfigurable("space_station/space_station_block")
+        .opaque()),
 
     ; // leave trailing semicolon
 
