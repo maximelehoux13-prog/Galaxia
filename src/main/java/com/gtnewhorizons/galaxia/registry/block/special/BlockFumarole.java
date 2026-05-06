@@ -2,7 +2,6 @@ package com.gtnewhorizons.galaxia.registry.block.special;
 
 import java.util.List;
 
-import com.gtnewhorizons.galaxia.core.Galaxia;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -16,6 +15,7 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
+import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityFumarole;
 
 import cpw.mods.fml.relauncher.Side;
