@@ -56,13 +56,6 @@ import gregtech.api.GregTechAPI;
  */
 public final class GalaxiaAPI {
 
-    public static final int[] B;
-
-    static {
-        B = new int[32];
-        for (int i = 0; i < B.length; i++) B[i] = 1 << i;
-    }
-
     /**
      * The List of Blocks, which can conduct Machine Block Updates
      */
@@ -431,7 +424,7 @@ public final class GalaxiaAPI {
             if (id != null) {
                 if (id == -1) // for all-meta registrations, also with meta > 32
                     return true;
-                return (id & B[blockMetadata]) != 0;
+                return (id & (1 << blockMetadata)) != 0;
             }
         }
         return false;
