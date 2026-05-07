@@ -11,9 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nonnull;
 
-import com.gtnewhorizons.galaxia.compat.GTUtility;
-import com.gtnewhorizons.galaxia.core.threads.RunnableMachineUpdate;
-import gregtech.api.GregTechAPI;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -22,11 +19,14 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
+import net.minecraft.world.World;
 
+import com.gtnewhorizons.galaxia.compat.GTUtility;
 import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.config.ConfigPlayer;
 import com.gtnewhorizons.galaxia.core.network.OxygenSyncPacket;
+import com.gtnewhorizons.galaxia.core.threads.RunnableMachineUpdate;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileStationController;
 import com.gtnewhorizons.galaxia.registry.capabilities.ZeroGMovementProvider;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
@@ -49,7 +49,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.station.CapacityCluster;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationTileCoord;
 
 import baubles.api.BaublesApi;
-import net.minecraft.world.World;
+import gregtech.api.GregTechAPI;
 
 /**
  * API underpinning planetary mechanics
@@ -422,9 +422,9 @@ public final class GalaxiaAPI {
     }
 
     public static boolean isMachineBlock(Block block, int blockMetadata) {
-       if (GTUtility.isGTLoaded) {
-           return GregTechAPI.isMachineBlock(block, blockMetadata);
-       }
+        if (GTUtility.isGTLoaded) {
+            return GregTechAPI.isMachineBlock(block, blockMetadata);
+        }
 
         if (block != null) {
             Integer id = sMachineIDs.get(block);

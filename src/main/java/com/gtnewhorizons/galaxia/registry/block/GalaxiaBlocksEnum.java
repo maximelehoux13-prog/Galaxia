@@ -1,10 +1,10 @@
 package com.gtnewhorizons.galaxia.registry.block;
 
-import com.gtnewhorizons.galaxia.registry.block.base.BlockCasing;
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
+import com.gtnewhorizons.galaxia.registry.block.base.BlockCasing;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockConfigurable;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockController;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
