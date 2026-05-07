@@ -8,6 +8,7 @@ import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemSporeFilter.B
 import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemThermalProtection.BAUBLE_TYPE_THERMAL_PROTECTION;
 import static com.gtnewhorizons.galaxia.registry.items.baubles.ItemWitherProtection.BAUBLE_TYPE_WITHER_PROTECTION;
 
+import com.google.common.util.concurrent.CycleDetectingLockFactory;
 import net.minecraftforge.common.MinecraftForge;
 
 import com.gtnewhorizons.galaxia.compat.GregTechCompat;
@@ -36,7 +37,11 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class CommonProxy {
+
+    public final ReentrantLock TICK_LOCK = new ReentrantLock();
 
     // preInit "Run before anything else. Read your config, create blocks, items,
     // etc, and register them with the

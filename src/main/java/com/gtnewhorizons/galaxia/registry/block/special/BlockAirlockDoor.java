@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import com.gtnewhorizons.galaxia.registry.block.base.BlockUpdatable;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
@@ -16,7 +17,7 @@ import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 
-public class BlockAirlockDoor extends Block {
+public class BlockAirlockDoor extends BlockUpdatable {
 
     public static final int META_CLOSED = 0;
     public static final int META_OPEN = 1;

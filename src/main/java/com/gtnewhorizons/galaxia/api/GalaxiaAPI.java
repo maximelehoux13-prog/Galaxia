@@ -5,10 +5,16 @@ import static com.gtnewhorizons.galaxia.registry.dimension.SolarSystemRegistry.G
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nonnull;
 
+import com.gtnewhorizons.galaxia.compat.GTUtility;
+import com.gtnewhorizons.galaxia.core.threads.RunnableMachineUpdate;
+import gregtech.api.GregTechAPI;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -43,11 +49,24 @@ import com.gtnewhorizons.galaxia.registry.outpost.station.CapacityCluster;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationTileCoord;
 
 import baubles.api.BaublesApi;
+import net.minecraft.world.World;
 
 /**
  * API underpinning planetary mechanics
  */
 public final class GalaxiaAPI {
+
+    public static final int[] B;
+
+    static {
+        B = new int[32];
+        for (int i = 0; i < B.length; i++) B[i] = 1 << i;
+    }
+
+    /**
+     * The List of Blocks, which can conduct Machine Block Updates
+     */
+    public static final Map<Block, Integer> sMachineIDs = new ConcurrentHashMap<>();
 
     /**
      * Gets the gravity on the planet, or returns 1 if failed
@@ -402,4 +421,51 @@ public final class GalaxiaAPI {
         return false;
     }
 
+    public static boolean isMachineBlock(Block block, int blockMetadata) {
+       if (GTUtility.isGTLoaded) {
+           return GregTechAPI.isMachineBlock(block, blockMetadata);
+       }
+
+        if (block != null) {
+            Integer id = sMachineIDs.get(block);
+            if (id != null) {
+                if (id == -1) // for all-meta registrations, also with meta > 32
+                    return true;
+                return (id & B[blockMetadata]) != 0;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Adds a Multi-Machine Block, like my Machine Casings for example. You should call @causeMachineUpdate
+     * in @Block.breakBlock and in {@link Block#onBlockAdded} of your registered Block. You don't need to register
+     * TileEntities which implement {@link com.gtnewhorizons.galaxia.registry.interfaces.IMachineBlockUpdateable}
+     *
+     * @param aBlock the Block
+     * @param aMeta  the Metadata of the Blocks as Bitmask! -1 or ~0 for all Meta-values
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    public static boolean registerMachineBlock(Block aBlock, int aMeta) {
+        if (aBlock == null) return false;
+        sMachineIDs.put(aBlock, aMeta);
+        return true;
+    }
+
+    /**
+     * Causes a Machineblock Update This update will cause surrounding MultiBlock Machines to update their
+     * Configuration. You should call this Function in @Block.breakBlock and in @Block.onBlockAdded of your Machine.
+     *
+     * @param aWorld is being the World
+     * @param aX     is the X-Coord of the update causing Block
+     * @param aY     is the Y-Coord of the update causing Block
+     * @param aZ     is the Z-Coord of the update causing Block
+     */
+    public static boolean causeMachineUpdate(World aWorld, int aX, int aY, int aZ) {
+        if (aWorld != null && !aWorld.isRemote) { // World might be null during World-gen
+            RunnableMachineUpdate.setMachineUpdateValues(aWorld, aX, aY, aZ);
+            return true;
+        }
+        return false;
+    }
 }

@@ -1,5 +1,6 @@
 package com.gtnewhorizons.galaxia.registry.block.special;
 
+import com.gtnewhorizons.galaxia.registry.block.base.BlockUpdatable;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
@@ -14,7 +15,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityAirlock;
 
-public class BlockAirlockController extends Block implements ITileEntityProvider {
+public class BlockAirlockController extends BlockUpdatable implements ITileEntityProvider {
 
     public BlockAirlockController() {
         super(Material.rock);
