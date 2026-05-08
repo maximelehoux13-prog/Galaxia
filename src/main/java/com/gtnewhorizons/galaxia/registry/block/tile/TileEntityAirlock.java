@@ -7,7 +7,6 @@ import net.minecraft.block.Block;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.Constants;
 
-import com.gtnewhorizon.structurelib.alignment.enumerable.ExtendedFacing;
 import com.gtnewhorizon.structurelib.structure.IStructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureDefinition;
 import com.gtnewhorizon.structurelib.structure.StructureUtility;
@@ -16,7 +15,7 @@ import com.gtnewhorizons.galaxia.compat.GalaxiaStructureUtility;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaMultiblockBase;
-import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
+import com.gtnewhorizons.galaxia.registry.block.base.BlockOpenable;
 
 public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> {
 
@@ -37,11 +36,19 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     /**
      * Controller is now on the BOTTOM layer of the structure.
      */
-    public static final int CONTROLLER_OFFSET_X = 1;
-    public static final int CONTROLLER_OFFSET_Y = 3;
+    public static final int CONTROLLER_OFFSET_X = 2;
+    public static final int CONTROLLER_OFFSET_Y = 2;
     public static final int CONTROLLER_OFFSET_Z = 0;
 
+    public static final int MAXIMUM_RADIUS = 8;
     public static final String STRUCTURE_PIECE_MAIN = "main";
+    public static final String STRUCTURE_EDGE = "edge";
+    public static final String STRUCTURE_CENTER = "center";
+
+    public static final int INVALID = -1;
+
+    public int halfHeight = INVALID;
+    public int halfWidth = INVALID;
 
     public static final IStructureDefinition<TileEntityAirlock> STRUCTURE_DEFINITION = StructureDefinition
         .<TileEntityAirlock>builder()
@@ -49,12 +56,15 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
             STRUCTURE_PIECE_MAIN,
             // spotless:off
             StructureUtility.transpose(new String[][] {
-                { "CCC" },
-                { "CDC" },
-                { "CDC" },
-                { "CRC" }
+                { "CCCCC" },
+                { "CDDDC" },
+                { "CDRDC" },
+                { "CDDDC" },
+                { "CCCCC" },
             }))
             // spotless:on
+        .addShape(STRUCTURE_EDGE, new String[][] { { "C" } })
+        .addShape(STRUCTURE_CENTER, new String[][] { { "D" } })
         .addElement('C', GalaxiaStructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CASING.get(), 0))
         .addElement('R', GalaxiaStructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
         .addElement('D', GalaxiaStructureUtility.ofBlockAnyMeta(GalaxiaBlocksEnum.AIRLOCK_DOOR.get()))
@@ -163,33 +173,34 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
 
     @Override
     protected boolean checkStructure() {
-        if (worldObj == null || worldObj.isRemote) return structureValid;
-        for (ExtendedFacing facing : ExtendedFacing.values()) {
-            boolean valid = getStructureDefinition().check(
-                this,
-                STRUCTURE_PIECE_MAIN,
-                worldObj,
-                facing,
-                xCoord,
-                yCoord,
-                zCoord,
-                getControllerOffsetX(),
-                getControllerOffsetY(),
-                getControllerOffsetZ(),
-                false);
+        int halfWidth = 0, halfHeight = 0;
 
-            if (valid) {
-                if (currentFacing != facing) {
-                    // This forces a call to onStructureFormed
-                    structureValid = false;
+        // Find a corner
+        while (halfWidth < MAXIMUM_RADIUS) {
+            halfWidth += 1;
+            if (checkPiece(STRUCTURE_EDGE, halfWidth, 0, 0)) break;
+        }
 
-                    currentFacing = facing;
-                }
-                return true;
+        while (halfHeight < MAXIMUM_RADIUS) {
+            halfHeight += 1;
+            if (checkPiece(STRUCTURE_EDGE, 0, halfHeight, 0)) break;
+        }
+
+        for (int x = -halfWidth; x <= halfWidth; x++) {
+            for (int y = -halfHeight; y <= halfHeight; y++) {
+                // Skip the controller itself
+                if (x == 0 && y == 0) continue;
+
+                boolean isEdge = (Math.abs(x) == halfWidth || Math.abs(y) == halfHeight);
+                String expected = isEdge ? STRUCTURE_EDGE : STRUCTURE_CENTER;
+                if (!checkPiece(expected, x, y, 0)) return false;
             }
         }
 
-        return false;
+        this.halfWidth = halfWidth;
+        this.halfHeight = halfHeight;
+
+        return true;
     }
 
     @Override
@@ -200,6 +211,8 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     @Override
     protected void onStructureDisformed() {
         closeDoor();
+        this.halfHeight = INVALID;
+        this.halfWidth = INVALID;
     }
 
     private void openDoor() {
@@ -240,16 +253,29 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
     private void setDoorState(boolean open) {
         state = open ? AirlockState.OPEN : AirlockState.CLOSED;
 
-        for (int x = xCoord - 1; x <= xCoord + 1; x++) {
-            for (int y = yCoord; y <= yCoord + 3; y++) {
-                for (int z = zCoord - 1; z <= zCoord + 1; z++) {
+        final int hw = halfWidth - 1;
+        final int hh = halfHeight - 1;
 
-                    Block block = worldObj.getBlock(x, y, z);
-
-                    if (block instanceof BlockAirlockDoor) {
-                        ((BlockAirlockDoor) block).setOpen(worldObj, x, y, z, open);
-                    }
-                }
+        for (int x = -hw; x <= hw; x++) {
+            for (int y = -hh; y <= hh; y++) {
+                STRUCTURE_DEFINITION.iterate(
+                    STRUCTURE_CENTER,
+                    worldObj,
+                    currentFacing,
+                    xCoord,
+                    yCoord,
+                    zCoord,
+                    x,
+                    y,
+                    0,
+                    (_, w, ox, oy, oz, _, _, _) -> {
+                        Block b = w.getBlock(ox, oy, oz);
+                        if (b instanceof BlockOpenable door) {
+                            door.setOpen(w, ox, oy, oz, open);
+                            return true;
+                        }
+                        return false;
+                    });
             }
         }
 

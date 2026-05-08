@@ -5,6 +5,7 @@ import net.minecraft.tileentity.TileEntity;
 
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.base.BlockConfigurable;
+import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockCasing;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockController;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockAirlockDoor;
 import com.gtnewhorizons.galaxia.registry.block.special.BlockFumarole;
@@ -71,8 +72,7 @@ public enum GalaxiaBlocksEnum {
         .opaque()),
     RESEARCH_OUTPOST_CASING(new BlockConfigurable("machine/research_outpost_casing")),
     LAUNCHPAD_CASING(new BlockConfigurable("machine/launchpad")),
-    AIRLOCK_CASING(new BlockConfigurable("machine/airlock_casing")
-        .opaque()),
+    AIRLOCK_CASING(new BlockAirlockCasing()),
     SPACE_STATION_BLOCK(new BlockConfigurable("space_station/space_station_block")
         .opaque()),
 

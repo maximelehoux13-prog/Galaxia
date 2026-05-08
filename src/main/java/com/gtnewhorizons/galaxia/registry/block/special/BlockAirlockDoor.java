@@ -3,11 +3,6 @@ package com.gtnewhorizons.galaxia.registry.block.special;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.Facing;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
-import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -15,11 +10,12 @@ import com.gtnewhorizons.galaxia.compat.structure.util.IntQueue;
 import com.gtnewhorizons.galaxia.compat.structure.util.LocalCoord;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.registry.block.GalaxiaBlocksEnum;
+import com.gtnewhorizons.galaxia.registry.block.base.BlockOpenable;
+import com.gtnewhorizons.galaxia.registry.block.tile.TileEntityAirlock;
 
-public class BlockAirlockDoor extends Block {
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 
-    public static final int META_CLOSED = 0;
-    public static final int META_OPEN = 1;
+public class BlockAirlockDoor extends BlockOpenable {
 
     public BlockAirlockDoor() {
         super(Material.iron);
@@ -33,93 +29,37 @@ public class BlockAirlockDoor extends Block {
     }
 
     @Override
-    public boolean isOpaqueCube() {
-        return false;
-    }
-
-    @Override
-    public boolean renderAsNormalBlock() {
-        return false;
-    }
-
-    @Override
-    public int getLightOpacity() {
-        return 0;
-    }
-
-    @Override
-    public boolean shouldSideBeRendered(IBlockAccess world, int x, int y, int z, int side) {
-        // TODO: This is a complete hack
-        int meta = world.getBlockMetadata(
-            x - Facing.offsetsXForSide[side],
-            y - Facing.offsetsYForSide[side],
-            z - Facing.offsetsZForSide[side]);
-
-        return meta == META_CLOSED;
-    }
-
-    @Override
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
-        int meta = world.getBlockMetadata(x, y, z);
-
-        if (meta == META_OPEN) {
-            return null;
-        }
-
-        return AxisAlignedBB.getBoundingBox(x, y, z, x + 1, y + 1, z + 1);
-    }
-
-    @Override
-    public boolean canCollideCheck(int meta, boolean hitIfLiquid) {
-        return true;
-    }
-
-    public void setOpen(World world, int x, int y, int z, boolean open) {
-        int meta = open ? META_OPEN : META_CLOSED;
-
-        world.setBlockMetadataWithNotify(x, y, z, meta, 3);
-    }
-
-    public boolean isOpen(IBlockAccess world, int x, int y, int z) {
-        return world.getBlockMetadata(x, y, z) == META_OPEN;
-    }
-
-    @Override
-    public MovingObjectPosition collisionRayTrace(World world, int x, int y, int z, Vec3 start, Vec3 end) {
-        int meta = world.getBlockMetadata(x, y, z);
-
-        if (meta == META_OPEN) {
-            return null;
-        }
-
-        return super.collisionRayTrace(world, x, y, z, start, end);
-    }
-
-    private static final int AIRLOCK_FLOOD_RADIUS = 8;
-
-    @Override
     public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float hitX,
         float hitY, float hitZ) {
         if (world.isRemote) return true;
+        searchAndOpenDoor(world, x, y, z);
+        return false;
+    }
+
+    public static void searchAndOpenDoor(World world, int x, int y, int z) {
+        final int searchRadius = TileEntityAirlock.MAXIMUM_RADIUS + 1;
 
         IntQueue floodBFS = new IntQueue();
-        int start = LocalCoord.pack(0, 0, 0, AIRLOCK_FLOOD_RADIUS);
-        floodBFS.enqueue(start);
+        IntOpenHashSet visited = new IntOpenHashSet();
 
+        int start = LocalCoord.pack(0, 0, 0, searchRadius);
+        visited.add(start);
+        floodBFS.enqueue(start);
         while (!floodBFS.isEmpty()) {
             int cur = floodBFS.dequeue();
-            int lx = LocalCoord.unpackX(cur, AIRLOCK_FLOOD_RADIUS);
-            int ly = LocalCoord.unpackY(cur, AIRLOCK_FLOOD_RADIUS);
-            int lz = LocalCoord.unpackZ(cur, AIRLOCK_FLOOD_RADIUS);
+            int lx = LocalCoord.unpackX(cur, searchRadius);
+            int ly = LocalCoord.unpackY(cur, searchRadius);
+            int lz = LocalCoord.unpackZ(cur, searchRadius);
 
             for (ForgeDirection d : ForgeDirection.VALID_DIRECTIONS) {
                 int nlx = lx + d.offsetX;
                 int nly = ly + d.offsetY;
                 int nlz = lz + d.offsetZ;
 
-                if (!LocalCoord.isInBounds(nlx, nly, nlz, AIRLOCK_FLOOD_RADIUS)) continue;
+                if (!LocalCoord.isInBounds(nlx, nly, nlz, searchRadius)) continue;
 
-                int np = LocalCoord.pack(nlx, nly, nlz, AIRLOCK_FLOOD_RADIUS);
+                int np = LocalCoord.pack(nlx, nly, nlz, searchRadius);
+                if (visited.contains(np)) continue;
 
                 int wx = LocalCoord.worldX(nlx, x);
                 int wy = LocalCoord.worldY(nly, y);
@@ -127,15 +67,15 @@ public class BlockAirlockDoor extends Block {
 
                 Block b = world.getBlock(wx, wy, wz);
 
-                if (b == GalaxiaBlocksEnum.AIRLOCK_DOOR.get()) {
+                if (b == GalaxiaBlocksEnum.AIRLOCK_DOOR.get() || b == GalaxiaBlocksEnum.AIRLOCK_CASING.get()) {
+                    visited.add(np);
                     floodBFS.enqueue(np);
                 } else if (b == GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get()) {
                     BlockAirlockController controller = (BlockAirlockController) b;
-                    return controller.toggleDoor(world, wx, wy, wz);
+                    controller.toggleDoor(world, wx, wy, wz);
+                    return;
                 }
             }
         }
-
-        return false;
     }
 }

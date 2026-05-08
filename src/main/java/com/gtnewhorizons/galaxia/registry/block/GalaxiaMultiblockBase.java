@@ -72,6 +72,21 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
             false);
     }
 
+    protected final boolean checkPiece(String piece, int horizontalOffset, int verticalOffset, int depthOffset) {
+        return getStructureDefinition().check(
+            (T) this,
+            piece,
+            worldObj,
+            currentFacing,
+            xCoord,
+            yCoord,
+            zCoord,
+            horizontalOffset,
+            verticalOffset,
+            depthOffset,
+            false);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public void construct(ItemStack trigger, boolean hintsOnly) {
@@ -122,7 +137,7 @@ public abstract class GalaxiaMultiblockBase<T extends GalaxiaMultiblockBase<T>> 
     @Override
     public void updateEntity() {
         super.updateEntity();
-        if (worldObj.isRemote) return;
+        if (worldObj == null || worldObj.isRemote) return;
 
         if (mCheckTimer <= 0) {
             final boolean valid = checkStructure();
