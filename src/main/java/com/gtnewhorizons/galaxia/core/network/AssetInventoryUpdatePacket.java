@@ -117,8 +117,10 @@ public final class AssetInventoryUpdatePacket implements IMessage {
             long amount = state.inventory.getAmount(resource);
             if (amount > 0) {
                 state.inventory.add(resource, -amount);
+                state.bumpSyncRevision();
                 LOG.info("[Logistics] Removed {} x {} from outpost {}", amount, resource, assetId);
-                return AssetSyncPacket.inventoryUpdate(assetId, resourceKey, -amount);
+                return AssetSyncPacket.inventoryUpdate(assetId, resourceKey, -amount)
+                    .withSyncRevision(state.getSyncRevision());
             }
         } else {
             long effectiveDelta = delta;
@@ -126,8 +128,10 @@ public final class AssetInventoryUpdatePacket implements IMessage {
                 effectiveDelta = Math.min(delta, Integer.MAX_VALUE);
             }
             state.inventory.add(resource, effectiveDelta);
+            state.bumpSyncRevision();
             LOG.info("[Logistics] Inventory update: {} x {} on outpost {}", effectiveDelta, resource, assetId);
-            return AssetSyncPacket.inventoryUpdate(assetId, resourceKey, effectiveDelta);
+            return AssetSyncPacket.inventoryUpdate(assetId, resourceKey, effectiveDelta)
+                .withSyncRevision(state.getSyncRevision());
         }
         return null;
     }

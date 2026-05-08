@@ -26,10 +26,10 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleRegistry;
 import com.gtnewhorizons.galaxia.registry.outpost.module.HammerVariant;
 import com.gtnewhorizons.galaxia.registry.outpost.module.IParallelModule;
 import com.gtnewhorizons.galaxia.registry.outpost.module.IRecipeModule;
-import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleInstance;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModulePriority;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleTier;
+import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.NotDoablePolicy;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSchedulerMode;
@@ -41,6 +41,8 @@ import com.gtnewhorizons.galaxia.registry.outpost.station.PlacedTile;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationLayout;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationTileCoord;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationTileState;
+import com.gtnewhorizons.galaxia.registry.outpost.station.settings.MinerSettings;
+import com.gtnewhorizons.galaxia.registry.outpost.station.settings.SettingsGroup;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -61,7 +63,7 @@ public final class AssetSyncPacket implements IMessage {
     public static final byte LAYOUT_TILE_UPDATED = 8;
     public static final byte LAYOUT_TILE_REMOVED = 9;
     public static final byte ASSET_REMOVED = 10;
-    public static final byte MINER_VOID_CONFIG_UPDATED = 11;
+    public static final byte SETTINGS_GROUP_UPDATED = 11;
 
     private CelestialAsset.ID assetId;
     private byte syncType;
@@ -86,13 +88,17 @@ public final class AssetSyncPacket implements IMessage {
     private String resourceKey;
     private long inventoryDelta;
     private LogisticsResourceConfig logConfig;
-    private int minerVoidChancePercent;
 
     private StationTileCoord tileCoord;
     private StationTileState tileState;
     private ModuleInstance.ID tileModuleId;
 
     private BlockPos stationControllerPos;
+
+    private short settingsGroupId;
+    private FacilityModuleKind settingsGroupKind;
+    private String settingsGroupName;
+    private MinerSettings minerSettings;
 
     public AssetSyncPacket() {}
 
@@ -134,6 +140,13 @@ public final class AssetSyncPacket implements IMessage {
         pkt.energyStored = state.getEnergyStored();
         pkt.fullSyncDeltas = new ArrayList<>();
 
+        state.settingsGroups()
+            .groups()
+            .values()
+            .stream()
+            .sorted(java.util.Comparator.comparingInt(SettingsGroup::id))
+            .forEach(group -> pkt.fullSyncDeltas.add(settingsGroupUpdated(state.assetId, group)));
+
         List<ModuleInstance> modules = state.modules();
         for (int i = 0; i < modules.size(); i++) {
             pkt.fullSyncDeltas.add(moduleAdded(state.assetId, i, modules.get(i)));
@@ -161,11 +174,6 @@ public final class AssetSyncPacket implements IMessage {
                     cfg.orderSize(),
                     cfg.isImportEnabled(),
                     cfg.isSupplyEnabled()));
-        }
-
-        for (Map.Entry<String, Integer> e : state.minerVoidChances()
-            .entrySet()) {
-            pkt.fullSyncDeltas.add(minerVoidConfigUpdated(state.assetId, e.getKey(), e.getValue()));
         }
 
         StationLayout layout = state.stationLayout();
@@ -241,6 +249,21 @@ public final class AssetSyncPacket implements IMessage {
         return pkt;
     }
 
+    public static AssetSyncPacket settingsGroupUpdated(CelestialAsset.ID assetId, SettingsGroup group) {
+        AssetSyncPacket pkt = new AssetSyncPacket();
+        pkt.assetId = assetId;
+        pkt.syncType = SETTINGS_GROUP_UPDATED;
+        pkt.settingsGroupId = group.id();
+        pkt.settingsGroupKind = group.kind();
+        pkt.settingsGroupName = group.displayName();
+        if (group.settings() instanceof MinerSettings settings) {
+            pkt.minerSettings = settings.copy();
+        } else {
+            throw new IllegalStateException("Unsupported settings group payload " + group.settings());
+        }
+        return pkt;
+    }
+
     public static AssetSyncPacket layoutTileUpdated(CelestialAsset.ID assetId, StationTileCoord coord,
         PlacedTile tile) {
         AssetSyncPacket pkt = new AssetSyncPacket();
@@ -260,18 +283,6 @@ public final class AssetSyncPacket implements IMessage {
         return pkt;
     }
 
-    public static AssetSyncPacket minerVoidConfigUpdated(CelestialAsset.ID assetId, String oreKey, int percent) {
-        AssetSyncPacket pkt = new AssetSyncPacket();
-        pkt.assetId = assetId;
-        pkt.syncType = MINER_VOID_CONFIG_UPDATED;
-        pkt.resourceKey = Objects.requireNonNull(oreKey, "oreKey");
-        if (percent < 0 || percent > 100) {
-            throw new IllegalArgumentException("miner void chance percent out of range: " + percent);
-        }
-        pkt.minerVoidChancePercent = percent;
-        return pkt;
-    }
-
     /**
      * Decides what to sync for the given facility and player. Returns a list of packets
      * (full sync or individual deltas) and updates the facility's dirty/sync state.
@@ -284,7 +295,6 @@ public final class AssetSyncPacket implements IMessage {
                 facility.markSyncedFor(playerId);
                 facility.drainDirtyModules();
                 facility.drainRemovedIds();
-                facility.drainDirtyMinerVoidChances();
                 return packets;
             }
             if (!facility.isDirty()) {
@@ -298,12 +308,6 @@ public final class AssetSyncPacket implements IMessage {
             for (ModuleInstance m : facility.drainDirtyModules()) {
                 int idx = facility.moduleIndex(m.id);
                 packets.add(moduleAdded(facility.assetId, idx, m).withSyncRevision(facility.getSyncRevision()));
-            }
-            for (Map.Entry<String, Integer> e : facility.drainDirtyMinerVoidChances()
-                .entrySet()) {
-                packets.add(
-                    minerVoidConfigUpdated(facility.assetId, e.getKey(), e.getValue())
-                        .withSyncRevision(facility.getSyncRevision()));
             }
         } else if (asset instanceof Station station) {
             if (station.needsFullSyncFor(playerId)) {
@@ -421,9 +425,11 @@ public final class AssetSyncPacket implements IMessage {
                 if (hasModule) PacketUtil.writeId(buf, tileModuleId);
             }
             case LAYOUT_TILE_REMOVED -> PacketUtil.writeStationTileCoord(buf, tileCoord);
-            case MINER_VOID_CONFIG_UPDATED -> {
-                PacketUtil.writeString(buf, resourceKey);
-                buf.writeByte(minerVoidChancePercent);
+            case SETTINGS_GROUP_UPDATED -> {
+                buf.writeShort(settingsGroupId);
+                PacketUtil.writeEnum(buf, settingsGroupKind);
+                PacketUtil.writeString(buf, settingsGroupName);
+                writeMinerSettingsPayload(buf, minerSettings);
             }
         }
     }
@@ -453,13 +459,11 @@ public final class AssetSyncPacket implements IMessage {
                 tileModuleId = buf.readBoolean() ? PacketUtil.readModuleId(buf) : null;
             }
             case LAYOUT_TILE_REMOVED -> tileCoord = PacketUtil.readStationTileCoord(buf);
-            case MINER_VOID_CONFIG_UPDATED -> {
-                resourceKey = PacketUtil.readString(buf);
-                minerVoidChancePercent = buf.readUnsignedByte();
-                if (minerVoidChancePercent > 100) {
-                    throw new IllegalArgumentException(
-                        "miner void chance percent out of range: " + minerVoidChancePercent);
-                }
+            case SETTINGS_GROUP_UPDATED -> {
+                settingsGroupId = buf.readShort();
+                settingsGroupKind = PacketUtil.readEnum(buf, FacilityModuleKind.class);
+                settingsGroupName = PacketUtil.readString(buf);
+                minerSettings = readMinerSettingsPayload(buf, "settingsGroup=" + settingsGroupId);
             }
         }
     }
@@ -544,6 +548,28 @@ public final class AssetSyncPacket implements IMessage {
         }
         module.updateStatus(status);
         return module;
+    }
+
+    private static void writeMinerSettingsPayload(ByteBuf buf, MinerSettings settings) {
+        buf.writeInt(
+            settings.blacklistedOreKeys()
+                .size());
+        for (String oreKey : settings.blacklistedOreKeys()) {
+            PacketUtil.writeString(buf, oreKey);
+        }
+    }
+
+    private static MinerSettings readMinerSettingsPayload(ByteBuf buf, String context) {
+        int count = buf.readInt();
+        if (count < 0 || count > 4096) {
+            throw new IllegalStateException(
+                "Network decoded invalid miner blacklist count " + count + " for " + context);
+        }
+        MinerSettings settings = new MinerSettings();
+        for (int i = 0; i < count; i++) {
+            settings.setOreBlacklisted(PacketUtil.readString(buf), true);
+        }
+        return settings;
     }
 
     private static void writeLogisticsConfig(ByteBuf buf, LogisticsResourceConfig cfg) {
@@ -697,6 +723,7 @@ public final class AssetSyncPacket implements IMessage {
                 if (layout != null && module.anchorOrNull() != null) {
                     layout.place(module);
                 }
+                Handler.syncModuleGroupMembership(state, module);
             }
             case MODULE_REMOVED -> {
                 state.removeModule(packet.moduleId);
@@ -708,6 +735,11 @@ public final class AssetSyncPacket implements IMessage {
                     .size()) {
                     state.modulesInternal()
                         .set(packet.moduleIndex, packet.moduleData);
+                    StationLayout layout = state.stationLayout();
+                    if (layout != null && packet.moduleData.anchorOrNull() != null) {
+                        layout.place(packet.moduleData);
+                    }
+                    Handler.syncModuleGroupMembership(state, packet.moduleData);
                 }
             }
             case INVENTORY_UPDATE -> {
@@ -738,8 +770,12 @@ public final class AssetSyncPacket implements IMessage {
                 StationLayout layout = state.stationLayout();
                 if (layout != null) layout.remove(packet.tileCoord);
             }
-            case MINER_VOID_CONFIG_UPDATED -> state
-                .setMinerVoidChancePercent(packet.resourceKey, packet.minerVoidChancePercent);
+            case SETTINGS_GROUP_UPDATED -> state.settingsGroups()
+                .sync(
+                    packet.settingsGroupId,
+                    packet.settingsGroupKind,
+                    packet.settingsGroupName,
+                    packet.minerSettings.copy());
         }
     }
 
@@ -794,7 +830,8 @@ public final class AssetSyncPacket implements IMessage {
                     state.setEnergyStored(packet.energyStored);
 
                     state.clearModules();
-                    state.setMinerVoidChances(java.util.Collections.emptyMap());
+                    state.settingsGroups()
+                        .clear();
                     state.inventory.clear();
                     state.logisticsConfig.clear();
                     StationLayout layout = state.stationLayout();
@@ -827,6 +864,7 @@ public final class AssetSyncPacket implements IMessage {
                     if (layout != null && module.anchorOrNull() != null) {
                         layout.place(module);
                     }
+                    syncModuleGroupMembership(state, module);
                 }
                 case MODULE_REMOVED -> {
                     state.removeModule(packet.moduleId);
@@ -838,6 +876,11 @@ public final class AssetSyncPacket implements IMessage {
                         .size()) {
                         state.modulesInternal()
                             .set(packet.moduleIndex, packet.moduleData);
+                        StationLayout layout = state.stationLayout();
+                        if (layout != null && packet.moduleData.anchorOrNull() != null) {
+                            layout.place(packet.moduleData);
+                        }
+                        syncModuleGroupMembership(state, packet.moduleData);
                     }
                 }
                 case INVENTORY_UPDATE -> {
@@ -869,8 +912,12 @@ public final class AssetSyncPacket implements IMessage {
                     StationLayout layout = state.stationLayout();
                     if (layout != null) layout.remove(packet.tileCoord);
                 }
-                case MINER_VOID_CONFIG_UPDATED -> state
-                    .setMinerVoidChancePercent(packet.resourceKey, packet.minerVoidChancePercent);
+                case SETTINGS_GROUP_UPDATED -> state.settingsGroups()
+                    .sync(
+                        packet.settingsGroupId,
+                        packet.settingsGroupKind,
+                        packet.settingsGroupName,
+                        packet.minerSettings.copy());
             }
         }
 
@@ -880,6 +927,21 @@ public final class AssetSyncPacket implements IMessage {
                 if (m.id.equals(id)) return m;
             }
             return null;
+        }
+
+        private static void syncModuleGroupMembership(AutomatedFacility state, ModuleInstance module) {
+            if (module.groupId() == 0 || module.anchorOrNull() == null) return;
+            SettingsGroup group = state.settingsGroups()
+                .get(module.groupId());
+            if (group == null) {
+                throw new IllegalStateException(
+                    "Client received module " + module.id + " for missing settings group " + module.groupId());
+            }
+            if (!group.members()
+                .contains(module.anchorOrNull())) {
+                state.settingsGroups()
+                    .addMember(module.groupId(), module.anchor());
+            }
         }
     }
 }
