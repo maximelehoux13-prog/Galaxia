@@ -19,17 +19,17 @@ public abstract class BlockOpenable extends Block {
     }
 
     @Override
-    public boolean isOpaqueCube() {
+    public final boolean isOpaqueCube() {
         return false;
     }
 
     @Override
-    public boolean renderAsNormalBlock() {
+    public final boolean renderAsNormalBlock() {
         return false;
     }
 
     @Override
-    public int getLightOpacity() {
+    public final int getLightOpacity() {
         return 0;
     }
 
@@ -45,7 +45,7 @@ public abstract class BlockOpenable extends Block {
     }
 
     @Override
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+    public final AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
         int meta = world.getBlockMetadata(x, y, z);
 
         if (meta == META_OPEN) {
@@ -56,7 +56,7 @@ public abstract class BlockOpenable extends Block {
     }
 
     @Override
-    public boolean canCollideCheck(int meta, boolean hitIfLiquid) {
+    public final boolean canCollideCheck(int meta, boolean hitIfLiquid) {
         return true;
     }
 
@@ -71,7 +71,7 @@ public abstract class BlockOpenable extends Block {
     }
 
     @Override
-    public MovingObjectPosition collisionRayTrace(World world, int x, int y, int z, Vec3 start, Vec3 end) {
+    public final MovingObjectPosition collisionRayTrace(World world, int x, int y, int z, Vec3 start, Vec3 end) {
         int meta = world.getBlockMetadata(x, y, z);
 
         if (meta == META_OPEN) {
