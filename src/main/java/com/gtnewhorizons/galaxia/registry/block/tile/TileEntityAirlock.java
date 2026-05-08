@@ -58,7 +58,7 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
             StructureUtility.transpose(new String[][] {
                 { "CCCCC" },
                 { "CDDDC" },
-                { "CDRDC" },
+                { "CD~DC" },
                 { "CDDDC" },
                 { "CCCCC" },
             }))
@@ -66,7 +66,6 @@ public class TileEntityAirlock extends GalaxiaMultiblockBase<TileEntityAirlock> 
         .addShape(STRUCTURE_EDGE, new String[][] { { "C" } })
         .addShape(STRUCTURE_CENTER, new String[][] { { "D" } })
         .addElement('C', GalaxiaStructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CASING.get(), 0))
-        .addElement('R', GalaxiaStructureUtility.ofBlock(GalaxiaBlocksEnum.AIRLOCK_CONTROLLER.get(), 0))
         .addElement('D', GalaxiaStructureUtility.ofBlockAnyMeta(GalaxiaBlocksEnum.AIRLOCK_DOOR.get()))
         .build();
 

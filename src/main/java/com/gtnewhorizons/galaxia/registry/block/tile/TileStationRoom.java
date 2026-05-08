@@ -28,7 +28,7 @@ public class TileStationRoom extends TileStationSecondary<TileStationRoom>
         .addElements(
             BASE_VALID_BLOCKS.stream()
                 .map(b -> GalaxiaStructureUtility.ofBlock(b, 0)))
-        .addElement(GalaxiaStructureUtility.ofTileAdderCheckHints((_, tileEntity) -> {
+        .addElement(GalaxiaStructureUtility.ofTileAdderCheckHintsAnyMeta((_, tileEntity) -> {
             if (tileEntity instanceof TileEntityAirlock airlock) {
                 if (!airlock.isStructureValid()) return false;
 
