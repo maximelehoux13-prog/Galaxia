@@ -843,8 +843,11 @@ public final class AssetSyncPacket implements IMessage {
 
                 }
             }
-            asset.updateStatus(packet.assetStatus);
 
+            if (!packet.displayName.isBlank()) {
+                asset.setDisplayName(packet.displayName);
+            }
+            asset.updateStatus(packet.assetStatus);
             asset.setSyncRevision(packet.syncRevision);
         }
 
