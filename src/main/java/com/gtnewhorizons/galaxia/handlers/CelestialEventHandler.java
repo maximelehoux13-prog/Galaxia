@@ -140,7 +140,7 @@ public class CelestialEventHandler {
                 LogisticsResourceConfig requesterCfg = requester.logisticsConfig.get(resource);
                 if (requesterCfg == null) continue;
                 final long requesterStock = requester.inventory.getAmount(resource);
-                final long inboundInTransit = getInboundInTransitAmount(requester.assetId, resource);
+                final long inboundInTransit = LogisticStore.inboundInTransitAmount(requester.assetId, resource);
                 final long requestedAmount = Math
                     .max(0L, requesterCfg.minReserve() - requesterStock - inboundInTransit);
 
@@ -212,13 +212,4 @@ public class CelestialEventHandler {
         }
     }
 
-    private long getInboundInTransitAmount(CelestialAsset.ID toAssetId, ItemStackWrapper resource) {
-        long total = 0L;
-        for (LogisticsDelivery task : LogisticStore.activeDeliveries()) {
-            if (!toAssetId.equals(task.data.toAssetId())) continue;
-            if (!resource.equals(task.data.resourceId())) continue;
-            total += task.data.amount();
-        }
-        return total;
-    }
 }
