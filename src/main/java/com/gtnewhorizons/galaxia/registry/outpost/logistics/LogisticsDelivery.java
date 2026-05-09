@@ -88,6 +88,22 @@ public class LogisticsDelivery {
         return this;
     }
 
+    public LogisticsDelivery withAmount(long amount) {
+        return new LogisticsDelivery(
+            deliveryId,
+            new Data(
+                data.fromAssetId,
+                data.toAssetId,
+                data.resourceId,
+                amount,
+                data.scope,
+                data.fromBodyId,
+                data.toBodyId,
+                data.departureOrbitalTime,
+                data.tofOrbitalSeconds),
+            remainingTicks);
+    }
+
     public boolean isArrived() {
         return this.remainingTicks <= 0;
     }

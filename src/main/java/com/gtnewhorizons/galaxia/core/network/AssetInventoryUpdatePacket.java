@@ -108,7 +108,12 @@ public final class AssetInventoryUpdatePacket {
             if (creativeOnly) {
                 effectiveDelta = Math.min(delta, Integer.MAX_VALUE);
             }
-            state.inventory.add(resource, effectiveDelta);
+            if (effectiveDelta > 0L) {
+                effectiveDelta = state.insertInventory(resource, effectiveDelta);
+            } else {
+                state.inventory.add(resource, effectiveDelta);
+            }
+            if (effectiveDelta == 0L) return null;
             state.bumpSyncRevision();
             LOG.info("[Logistics] Inventory update: {} x {} on outpost {}", effectiveDelta, resource, assetId);
             return AssetSyncPacket.inventoryUpdate(assetId, resourceKey, effectiveDelta)

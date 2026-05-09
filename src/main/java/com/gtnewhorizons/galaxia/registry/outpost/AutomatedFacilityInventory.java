@@ -68,6 +68,14 @@ public final class AutomatedFacilityInventory {
         return Collections.unmodifiableMap(new LinkedHashMap<>(amounts));
     }
 
+    public long totalItems() {
+        long total = 0L;
+        for (long amount : amounts.values()) {
+            total += amount;
+        }
+        return total;
+    }
+
     public long getFluidAmount(String fluidName) {
         if (fluidName == null) return 0L;
         Long v = fluidAmounts.get(fluidName);

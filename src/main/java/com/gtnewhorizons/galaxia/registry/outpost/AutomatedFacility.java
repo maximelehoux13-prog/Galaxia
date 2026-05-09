@@ -26,6 +26,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperati
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperationPlan;
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperationState;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleMiner;
+import com.gtnewhorizons.galaxia.registry.outpost.station.CapacityCluster;
 import com.gtnewhorizons.galaxia.registry.outpost.station.LayoutCacheBundle;
 import com.gtnewhorizons.galaxia.registry.outpost.station.MutationKind;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationLayout;
@@ -62,6 +63,7 @@ public final class AutomatedFacility extends CelestialAsset {
     private final Set<UUID> syncedPlayerIds = new HashSet<>();
 
     public static final long MAX_ENERGY = 8_000_000L;
+    public static final long BASE_ITEM_CAPACITY = 1000L;
 
     public AutomatedFacility(CelestialAsset.ID assetId, CelestialObjectId celestialBodyId, Kind kind, Status status) {
         super(assetId, celestialBodyId, kind, status, null);
@@ -250,6 +252,34 @@ public final class AutomatedFacility extends CelestialAsset {
         return true;
     }
 
+    public long itemInventoryCapacity() {
+        long capacity = BASE_ITEM_CAPACITY;
+        for (CapacityCluster cluster : layoutCache.getCapacityClusters(FacilityModuleKind.STORAGE)) {
+            capacity += cluster.effectiveCapacity();
+        }
+        return capacity;
+    }
+
+    public long usedItemInventoryCapacity() {
+        return inventory.totalItems();
+    }
+
+    public long remainingItemInventoryCapacity() {
+        return Math.max(0L, itemInventoryCapacity() - usedItemInventoryCapacity());
+    }
+
+    public boolean isItemInventoryFull() {
+        return remainingItemInventoryCapacity() <= 0L;
+    }
+
+    public long insertInventory(ItemStackWrapper item, long amount) {
+        if (item == null || amount <= 0L) return 0L;
+        long accepted = Math.min(amount, remainingItemInventoryCapacity());
+        if (accepted <= 0L) return 0L;
+        inventory.add(item, accepted);
+        return accepted;
+    }
+
     public boolean tryReserveAvailableOperationMaterials(ModuleInstance module,
         Map<ItemStackWrapper, Long> materialCost) {
         ModuleOperationState operation = requireWaitingOperation(module);
@@ -313,11 +343,20 @@ public final class AutomatedFacility extends CelestialAsset {
     public boolean flushModuleOperationRefund(ModuleInstance module) {
         ModuleOperationState operation = requireOperation(module);
         if (operation.phase() != ModuleOperationPhase.REFUNDING) return false;
+        Map<String, Long> remaining = new java.util.LinkedHashMap<>();
+        boolean changed = false;
         for (Map.Entry<String, Long> entry : operation.refundBuffer()
             .entrySet()) {
-            inventory.add(requireItemKey(entry.getKey(), module), entry.getValue());
+            ItemStackWrapper item = requireItemKey(entry.getKey(), module);
+            long accepted = insertInventory(item, entry.getValue());
+            if (accepted > 0L) changed = true;
+            long leftover = entry.getValue() - accepted;
+            if (leftover > 0L) remaining.put(entry.getKey(), leftover);
         }
-        if (isCompletionRefund(operation)) {
+        if (!changed) return false;
+        if (!remaining.isEmpty()) {
+            module.setOperation(operation.withRefundBuffer(remaining));
+        } else if (isCompletionRefund(operation)) {
             module.clearOperation();
         } else {
             module.setOperation(operation.finishRefunding());

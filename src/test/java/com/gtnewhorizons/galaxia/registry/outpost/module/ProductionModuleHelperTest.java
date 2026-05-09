@@ -207,6 +207,56 @@ final class ProductionModuleHelperTest {
         assertEquals(144, belowGuard.inventory.getFluidAmount("galaxia.production.chanced_output"));
     }
 
+    @Test
+    void executeDoesNotConsumeInputsWhenSelectedItemOutputsWouldOverflowInventory() {
+        AutomatedFacility station = station();
+        Item fillerItem = new Item();
+        Item inputItem = new Item();
+        Item outputItem = new Item();
+        ItemStackWrapper fillerResource = new ItemStackWrapper(fillerItem, 0, null);
+        ItemStackWrapper inputResource = new ItemStackWrapper(inputItem, 0, null);
+        ItemStackWrapper outputResource = new ItemStackWrapper(outputItem, 0, null);
+        station.inventory.add(fillerResource, 999);
+        station.inventory.add(inputResource, 1);
+
+        ProductionModuleHelper.execute(
+            null,
+            station,
+            itemOutputModule(inputItem, outputItem, 2, Integer.MAX_VALUE),
+            new FixedRandom(4999),
+            new HashMap<>(),
+            new HashMap<>());
+
+        assertEquals(999, station.inventory.getAmount(fillerResource));
+        assertEquals(1, station.inventory.getAmount(inputResource));
+        assertEquals(0, station.inventory.getAmount(outputResource));
+    }
+
+    @Test
+    void executeCanUseFreedInputCapacityForSelectedItemOutputs() {
+        AutomatedFacility station = station();
+        Item fillerItem = new Item();
+        Item inputItem = new Item();
+        Item outputItem = new Item();
+        ItemStackWrapper fillerResource = new ItemStackWrapper(fillerItem, 0, null);
+        ItemStackWrapper inputResource = new ItemStackWrapper(inputItem, 0, null);
+        ItemStackWrapper outputResource = new ItemStackWrapper(outputItem, 0, null);
+        station.inventory.add(fillerResource, 999);
+        station.inventory.add(inputResource, 1);
+
+        ProductionModuleHelper.execute(
+            null,
+            station,
+            itemOutputModule(inputItem, outputItem, 1, Integer.MAX_VALUE),
+            new FixedRandom(4999),
+            new HashMap<>(),
+            new HashMap<>());
+
+        assertEquals(999, station.inventory.getAmount(fillerResource));
+        assertEquals(0, station.inventory.getAmount(inputResource));
+        assertEquals(1, station.inventory.getAmount(outputResource));
+    }
+
     private static AutomatedFacility station() {
         return new AutomatedFacility(
             CelestialAsset.ID.create(),

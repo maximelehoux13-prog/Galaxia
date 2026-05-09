@@ -77,6 +77,13 @@ public final class ProductionModuleHelper {
             return;
         }
 
+        Map<ItemStackWrapper, Long> selectedOutputs = selectedOutputs(outputWrappers, outputs, outputChances, random);
+        if (!canFitSelectedItemOutputs(outpost, selectedOutputs, requiredInputs)) {
+            advanceScheduler(config, recipeModule);
+            return;
+        }
+        Map<String, Long> selectedFluidOutputs = selectedFluidOutputs(fluidOutputs, fluidOutputChances, random);
+
         // Consume inputs
         for (Map.Entry<ItemStackWrapper, Long> e : requiredInputs.entrySet()) {
             inv.add(e.getKey(), -e.getValue());
@@ -89,12 +96,9 @@ public final class ProductionModuleHelper {
             }
         }
 
-        Map<ItemStackWrapper, Long> selectedOutputs = selectedOutputs(outputWrappers, outputs, outputChances, random);
-        Map<String, Long> selectedFluidOutputs = selectedFluidOutputs(fluidOutputs, fluidOutputChances, random);
-
         // Produce outputs
         for (Map.Entry<ItemStackWrapper, Long> e : selectedOutputs.entrySet()) {
-            inv.add(e.getKey(), e.getValue());
+            outpost.insertInventory(e.getKey(), e.getValue());
         }
 
         if (fluidOutputs != null) {
@@ -142,6 +146,20 @@ public final class ProductionModuleHelper {
             if (inv.getAmount(wrappers[i]) >= outputGuard) return false;
         }
         return true;
+    }
+
+    private static boolean canFitSelectedItemOutputs(AutomatedFacility outpost, Map<ItemStackWrapper, Long> outputs,
+        Map<ItemStackWrapper, Long> inputs) {
+        long outputAmount = 0L;
+        for (long amount : outputs.values()) {
+            outputAmount += amount;
+        }
+        if (outputAmount <= 0L) return true;
+        long freedByInputs = 0L;
+        for (long amount : inputs.values()) {
+            freedByInputs += amount;
+        }
+        return outputAmount <= outpost.remainingItemInventoryCapacity() + freedByInputs;
     }
 
     private static boolean allowsFluidOutputs(AutomatedFacilityInventory inv, FluidStack[] stacks, int outputGuard) {

@@ -17,6 +17,7 @@ import com.gtnewhorizons.galaxia.client.gui.orbitalGUI.DrawableCommand;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleInstance;
+import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperationPhase;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationTileCoord;
 
@@ -160,6 +161,15 @@ final class ModuleConfigModalSupport {
     static @Nullable ModuleInstance module(CelestialAsset.ID assetId, ModuleInstance.ID moduleId) {
         int moduleIndex = moduleIndex(assetId, moduleId);
         return moduleIndex >= 0 ? module(assetId, moduleIndex) : null;
+    }
+
+    static boolean refundBlockedByFullInventory(CelestialAsset.ID assetId, ModuleInstance module) {
+        AutomatedFacility facility = facility(assetId);
+        return facility != null && module != null
+            && module.operationOrNull() != null
+            && module.operationOrNull()
+                .phase() == ModuleOperationPhase.REFUNDING
+            && facility.isItemInventoryFull();
     }
 
     static String formatEu(long amount) {

@@ -86,7 +86,9 @@ final class HammerConfigModalWidget extends ParentWidget<HammerConfigModalWidget
             .phase()) {
             case WAITING_FOR_MATERIALS -> "Module is waiting for materials";
             case BUILDING -> "Module is upgrading";
-            case REFUNDING -> "Module is refunding";
+            case REFUNDING -> ModuleConfigModalSupport.refundBlockedByFullInventory(assetId, module)
+                ? "Inventory full; refund paused"
+                : "Module is refunding";
             case COMPLETE -> "Upgrade complete";
             case CANCELLED -> "Upgrade cancelled";
         };

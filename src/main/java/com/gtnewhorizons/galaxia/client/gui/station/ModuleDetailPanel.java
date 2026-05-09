@@ -25,6 +25,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleInstance;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleTier;
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.HammerModuleOperation;
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.IModuleOperation;
+import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperationPhase;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.station.PlacedTile;
@@ -150,7 +151,7 @@ public final class ModuleDetailPanel extends ParentWidget<ModuleDetailPanel> {
 
         if (module.component() instanceof ModuleHammer hammer) {
             lineY += SECTION_GAP;
-            lineY = drawHammerOverview(module, hammer, x, lineY, width);
+            lineY = drawHammerOverview(facility, module, hammer, x, lineY, width);
         }
 
         if (module.component() instanceof IRecipeModule recipeModule) {
@@ -174,7 +175,8 @@ public final class ModuleDetailPanel extends ParentWidget<ModuleDetailPanel> {
         return y + fr.FONT_HEIGHT + 3;
     }
 
-    private int drawHammerOverview(ModuleInstance module, ModuleHammer hammer, int x, int y, int width) {
+    private int drawHammerOverview(AutomatedFacility facility, ModuleInstance module, ModuleHammer hammer, int x, int y,
+        int width) {
         int panelX = x + CONTENT_PADDING;
         int panelW = width - CONTENT_PADDING * 2;
         int lineY = y;
@@ -212,9 +214,12 @@ public final class ModuleDetailPanel extends ParentWidget<ModuleDetailPanel> {
             .phase()
             .isTerminal()) {
             lineY = drawLine(
-                "Operation: " + module.operationOrNull()
-                    .phase()
-                    .name(),
+                facility.isItemInventoryFull() && module.operationOrNull()
+                    .phase() == ModuleOperationPhase.REFUNDING
+                        ? "Inventory full; refund paused"
+                        : "Operation: " + module.operationOrNull()
+                            .phase()
+                            .name(),
                 panelX,
                 lineY,
                 EnumColors.MAP_COLOR_TEXT_WARNING.getColor());
