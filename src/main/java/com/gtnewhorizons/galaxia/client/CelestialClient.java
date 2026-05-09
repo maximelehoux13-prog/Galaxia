@@ -319,6 +319,11 @@ public final class CelestialClient {
         StarmapActionSyncHandler.sendInventoryUpdate(packet);
     }
 
+    public static void removeInventoryAmount(CelestialAsset.ID assetId, ItemStackWrapper resource, long amount) {
+        AssetInventoryUpdatePacket packet = AssetInventoryUpdatePacket.removeAmount(assetId, resource, amount);
+        StarmapActionSyncHandler.sendInventoryUpdate(packet);
+    }
+
     public static void updateLogisticsConfig(CelestialAsset.ID assetId, ItemStackWrapper resource,
         LogisticsResourceConfig config) {
         LogisticsConfigUpdatePacket packet = new LogisticsConfigUpdatePacket(assetId, resource, config);

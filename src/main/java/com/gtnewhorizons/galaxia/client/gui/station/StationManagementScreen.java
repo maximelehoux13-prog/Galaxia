@@ -78,6 +78,7 @@ public final class StationManagementScreen implements IGuiHolder<GuiData> {
             LEFT_PANEL_WIDTH + PADDING * 2,
             PADDING * 2,
             tilePickerController);
+        StationInventoryPanelWidget inventoryPanel = new StationInventoryPanelWidget(assetId);
         StationMapWidget map = new StationMapWidget(
             assetId,
             coord -> ModulePickerScreen.open(assetId, coord, creativeBuildMode),
@@ -86,7 +87,8 @@ public final class StationManagementScreen implements IGuiHolder<GuiData> {
             PADDING,
             PADDING,
             visionLayer,
-            (mouseX, mouseY) -> configController.isOpen() && configController.containsMouse(mouseX, mouseY),
+            (mouseX, mouseY) -> (configController.isOpen() && configController.containsMouse(mouseX, mouseY))
+                || inventoryPanel.isPointInPanel(mouseX - (LEFT_PANEL_WIDTH + PADDING * 2), mouseY - PADDING),
             tilePickerController);
 
         panel.child(
@@ -114,6 +116,11 @@ public final class StationManagementScreen implements IGuiHolder<GuiData> {
                 .top(PADDING * 2)
                 .width(StationTilePickerControlsWidget.WIDTH)
                 .height(StationTilePickerControlsWidget.HEIGHT));
+        panel.child(
+            inventoryPanel.left(LEFT_PANEL_WIDTH + PADDING * 2)
+                .top(PADDING)
+                .width(StationInventoryPanelWidget.PANEL_WIDTH)
+                .height(StationInventoryPanelWidget.PANEL_HEIGHT + StationInventoryPanelWidget.BUTTON_HEIGHT + 4));
         panel.child(
             new ModalInputBlocker(configController).left(0)
                 .top(0)
