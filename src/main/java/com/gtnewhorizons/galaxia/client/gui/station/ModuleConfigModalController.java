@@ -4,6 +4,7 @@ import com.cleanroommc.modularui.screen.ModularPanel;
 import com.cleanroommc.modularui.widget.ParentWidget;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.outpost.module.HammerVariant;
+import com.gtnewhorizons.galaxia.registry.outpost.module.IRecipeModule;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleInstance;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleTier;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
@@ -16,7 +17,8 @@ final class ModuleConfigModalController {
         HAMMER,
         MODULE_UPGRADE,
         LOGISTICS,
-        MINER_BLACKLIST
+        MINER_BLACKLIST,
+        RECIPE_CONFIG
     }
 
     private final ModularPanel host;
@@ -126,6 +128,22 @@ final class ModuleConfigModalController {
         host.child(widget);
     }
 
+    void openRecipeConfig(int moduleIndex) {
+        ModuleInstance module = ModuleConfigModalSupport.module(assetId, moduleIndex);
+        if (module == null || !(module.component() instanceof IRecipeModule)) return;
+        close();
+        this.kind = Kind.RECIPE_CONFIG;
+        this.moduleId = module.id;
+
+        RecipeConfigModalWidget widget = new RecipeConfigModalWidget(assetId, this);
+        widget.left(x)
+            .top(y)
+            .width(RecipeConfigModalWidget.WIDTH)
+            .height(RecipeConfigModalWidget.HEIGHT);
+        this.modal = widget;
+        host.child(widget);
+    }
+
     void close() {
         if (modal != null) {
             host.remove(modal);
@@ -169,6 +187,7 @@ final class ModuleConfigModalController {
             case MODULE_UPGRADE -> retargetModuleUpgrade(module);
             case LOGISTICS -> retargetLogistics(module);
             case MINER_BLACKLIST -> retargetMinerBlacklist(module);
+            case RECIPE_CONFIG -> retargetRecipeConfig(module);
             case NONE -> {}
         }
     }
@@ -187,6 +206,10 @@ final class ModuleConfigModalController {
 
     boolean isLogisticsOpen() {
         return kind == Kind.LOGISTICS;
+    }
+
+    boolean isRecipeConfigOpen() {
+        return kind == Kind.RECIPE_CONFIG;
     }
 
     int moduleIndex() {
@@ -301,6 +324,14 @@ final class ModuleConfigModalController {
         minerBlacklistPage = 0;
         minerSettingsGroupMenuOpen = false;
         moduleOperationCancelArmed = false;
+    }
+
+    private void retargetRecipeConfig(ModuleInstance module) {
+        if (!(module.component() instanceof IRecipeModule)) {
+            close();
+            return;
+        }
+        moduleId = module.id;
     }
 
 }

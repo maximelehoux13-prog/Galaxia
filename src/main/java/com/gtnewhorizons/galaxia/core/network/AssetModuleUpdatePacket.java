@@ -43,6 +43,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleTierOpe
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleMiner;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSchedulerMode;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotList;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
@@ -378,6 +379,7 @@ public final class AssetModuleUpdatePacket {
         CANCEL_MODULE_OPERATION,
         COPY_MINER_SETTINGS,
         PLAN_MODULE_UPGRADE_TARGETS,
+        SET_RECIPE_SCHEDULER_MODE,
         ADD_RECIPE_SLOT,
         UPDATE_RECIPE_SLOT,
         REMOVE_RECIPE_SLOT
@@ -405,7 +407,8 @@ public final class AssetModuleUpdatePacket {
                 }
                 case PLAN_MINER_FOCUS_TIER -> buf.writeByte(bytePayload);
                 case SET_MINER_FOCUS_ORE -> PacketUtil.writeString(buf, stringPayload);
-                case SET_ALLOW_SHOOTING_MODE, SET_HAMMER_VARIANT, SET_ROUTE_PRIORITY -> buf.writeByte(bytePayload);
+                case SET_ALLOW_SHOOTING_MODE, SET_HAMMER_VARIANT, SET_ROUTE_PRIORITY, SET_RECIPE_SCHEDULER_MODE -> buf
+                    .writeByte(bytePayload);
                 case PLAN_HAMMER_UPGRADE -> {
                     if (rawPayload == null || rawPayload.length != HAMMER_UPGRADE_PAYLOAD_BYTES) {
                         throw new IllegalArgumentException("invalid hammer upgrade payload");
@@ -469,7 +472,8 @@ public final class AssetModuleUpdatePacket {
             }
             case PLAN_MINER_FOCUS_TIER -> bytePayload = buf.readByte();
             case SET_MINER_FOCUS_ORE -> stringPayload = PacketUtil.readString(buf);
-            case SET_ALLOW_SHOOTING_MODE, SET_HAMMER_VARIANT, SET_ROUTE_PRIORITY -> bytePayload = buf.readByte();
+            case SET_ALLOW_SHOOTING_MODE, SET_HAMMER_VARIANT, SET_ROUTE_PRIORITY, SET_RECIPE_SCHEDULER_MODE -> bytePayload = buf
+                .readByte();
             case PLAN_HAMMER_UPGRADE -> {
                 if (buf.readableBytes() < HAMMER_UPGRADE_PAYLOAD_BYTES) {
                     throw new IllegalArgumentException("missing hammer upgrade payload");
@@ -675,6 +679,7 @@ public final class AssetModuleUpdatePacket {
             case CANCEL_MODULE_OPERATION -> state.cancelModuleOperation(module);
             case COPY_MINER_SETTINGS -> handleCopyMinerSettings(packet, state, module);
             case PLAN_MODULE_UPGRADE_TARGETS -> handleModuleUpgradeTargets(packet, state, module, creative);
+            case SET_RECIPE_SCHEDULER_MODE -> handleRecipeSchedulerMode(packet, state, module);
             case ADD_RECIPE_SLOT, UPDATE_RECIPE_SLOT, REMOVE_RECIPE_SLOT -> handleRecipeSlot(packet, state, module);
         }
     }
@@ -924,6 +929,19 @@ public final class AssetModuleUpdatePacket {
         if (planModuleTierUpgrade(state, target, payload.targetTier(), creative) && !creative) {
             state.markModuleDirty(target.id);
         }
+    }
+
+    private static void handleRecipeSchedulerMode(AssetModuleUpdatePacket packet, AutomatedFacility state,
+        ModuleInstance module) {
+        if (!(module.component() instanceof IRecipeModule recipeModule)) return;
+        RecipeSchedulerMode mode = PacketUtil.enumFromByte(packet.bytePayload, RecipeSchedulerMode.class);
+        if (mode == null) throw new IllegalArgumentException("invalid recipe scheduler mode: " + packet.bytePayload);
+
+        RecipeConfig config = recipeModule.getRecipeConfig();
+        if (config == null) config = RecipeConfig.empty();
+        recipeModule
+            .setRecipeConfig(new RecipeConfig(config.slots(), mode, config.notDoablePolicy(), (byte) 0, (byte) 0));
+        state.markModuleDirty(module.id);
     }
 
     private static void handleRecipeSlot(AssetModuleUpdatePacket packet, AutomatedFacility state,
