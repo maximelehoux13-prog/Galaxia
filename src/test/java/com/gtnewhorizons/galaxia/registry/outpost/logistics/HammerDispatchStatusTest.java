@@ -32,6 +32,17 @@ final class HammerDispatchStatusTest {
     }
 
     @Test
+    void sendsOneConfiguredPackageWhenMoreItemsAreRequested() {
+        ModuleHammer hammer = hammer(AllowShootingConfig.ALWAYS, HammerVariant.BIG, 1_000_000L);
+        HammerDispatchStatus.Candidate candidate = candidate(64, 64, 32, 1.5, 20.0, 120.0);
+
+        HammerDispatchStatus.Status status = HammerDispatchStatus.evaluateCandidate(hammer, candidate);
+
+        assertEquals(HammerDispatchStatus.Code.READY, status.code());
+        assertEquals(32L, status.sendAmount());
+    }
+
+    @Test
     void reportsEnergyNeededWhenRouteCostExceedsPrivateBuffer() {
         ModuleHammer hammer = hammer(AllowShootingConfig.ALWAYS, HammerVariant.BIG, 500_000L);
         HammerDispatchStatus.Candidate candidate = candidate(64, 64, 32, 1.5, 80.0, 120.0);

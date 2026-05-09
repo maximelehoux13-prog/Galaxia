@@ -23,6 +23,7 @@ import com.gtnewhorizons.galaxia.registry.orbital.OrbitalTransferPlanner;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.HammerDispatchStatus;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
@@ -154,8 +155,8 @@ public class CelestialEventHandler {
                         int travelTime = 1;
                         double osu = 0;
 
-                        final long sendAmount = Math
-                            .min(Math.min(requestedAmount, availableSurplus), hammer.maxBatchSize());
+                        final long sendAmount = HammerDispatchStatus
+                            .dispatchAmount(hammer, availableSurplus, requestedAmount, requesterCfg.orderSize());
                         if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
 
                         double departureDv = 1;

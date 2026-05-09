@@ -113,8 +113,11 @@ public final class HammerDispatchStatus {
     }
 
     public static Status evaluateCandidate(ModuleHammer hammer, Candidate candidate) {
-        long sendAmount = Math
-            .min(Math.min(candidate.requestedAmount(), candidate.availableSurplus()), hammer.maxBatchSize());
+        long sendAmount = dispatchAmount(
+            hammer,
+            candidate.availableSurplus(),
+            candidate.requestedAmount(),
+            candidate.orderSize());
         if (sendAmount < candidate.orderSize() || sendAmount <= 0L) {
             return new Status(
                 Code.ORDER_BELOW_PACKAGE_SIZE,
@@ -147,6 +150,10 @@ public final class HammerDispatchStatus {
                 candidate.orderSize());
         }
         return new Status(Code.READY, requiredEnergy, hammer.energyStored(), sendAmount, candidate.orderSize());
+    }
+
+    public static long dispatchAmount(ModuleHammer hammer, long availableSurplus, long requestedAmount, int orderSize) {
+        return Math.min(Math.min(Math.min(requestedAmount, availableSurplus), orderSize), hammer.maxBatchSize());
     }
 
     private static Candidate candidateFor(AutomatedFacility supplier, AutomatedFacility requester,
