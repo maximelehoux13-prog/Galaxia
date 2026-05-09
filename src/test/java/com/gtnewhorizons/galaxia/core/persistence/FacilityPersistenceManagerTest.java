@@ -210,6 +210,31 @@ final class FacilityPersistenceManagerTest {
     }
 
     @Test
+    void minerFocusTierWithoutOreRoundTripsThroughPersistence() {
+        FacilityPersistenceManager manager = new FacilityPersistenceManager();
+        AutomatedFacility station = createStationWithFullLayout();
+        ModuleMiner miner = (ModuleMiner) station.modules()
+            .get(1)
+            .component();
+        miner.setFocus(MinerFocusTier.II, null, 1200);
+
+        FacilityPersistenceManager.FacilityStateJson encoded = manager.encodeFacilityState(station);
+        AutomatedFacility decoded = new AutomatedFacility(
+            station.assetId,
+            station.celestialObjectId,
+            station.kind,
+            station.status());
+        manager.decodeFacilityState(decoded, encoded);
+
+        ModuleMiner decodedMiner = (ModuleMiner) decoded.modules()
+            .get(1)
+            .component();
+        assertEquals(MinerFocusTier.II, decodedMiner.focusTier());
+        assertNull(decodedMiner.focusOreKeyOrNull());
+        assertEquals(0, decodedMiner.focusAlignmentProgress());
+    }
+
+    @Test
     void minerSettingsGroupRoundTripsThroughPersistence() {
         FacilityPersistenceManager manager = new FacilityPersistenceManager();
         AutomatedFacility station = createStationWithFullLayout();

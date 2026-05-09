@@ -116,8 +116,9 @@ public final class ModuleMiner extends TieredModuleComponent implements IParalle
         if (focusTier == null) {
             throw new IllegalArgumentException("Miner focus tier must not be null");
         }
+        String normalizedFocusOreKey = normalizeFocusOreKey(focusOreKey);
         if (focusTier == MinerFocusTier.NONE) {
-            if (normalizeFocusOreKey(focusOreKey) != null) {
+            if (normalizedFocusOreKey != null) {
                 throw new IllegalArgumentException("Miner focus ore must be null when focus tier is NONE");
             }
             this.focusTier = focusTier;
@@ -126,8 +127,9 @@ public final class ModuleMiner extends TieredModuleComponent implements IParalle
             return;
         }
         this.focusTier = focusTier;
-        this.focusOreKey = normalizeFocusOreKey(focusOreKey);
-        this.focusAlignmentProgress = Math.clamp(focusAlignmentProgress, 0, MinerFocusTier.ALIGNMENT_REQUIRED_TICKS);
+        this.focusOreKey = normalizedFocusOreKey;
+        this.focusAlignmentProgress = normalizedFocusOreKey == null ? 0
+            : Math.clamp(focusAlignmentProgress, 0, MinerFocusTier.ALIGNMENT_REQUIRED_TICKS);
     }
 
     public void setFocusOre(String focusOreKey) {
@@ -144,13 +146,13 @@ public final class ModuleMiner extends TieredModuleComponent implements IParalle
         focusAlignmentProgress = 0;
     }
 
-    private static String normalizeFocusOreKey(String focusOreKey) {
-        return focusOreKey == null || focusOreKey.isBlank() ? null : focusOreKey;
-    }
-
     private void advanceFocusAlignment() {
         if (focusTier == MinerFocusTier.NONE || focusOreKey == null) return;
         focusAlignmentProgress = Math.min(MinerFocusTier.ALIGNMENT_REQUIRED_TICKS, focusAlignmentProgress + 1);
+    }
+
+    private static String normalizeFocusOreKey(String focusOreKey) {
+        return focusOreKey == null || focusOreKey.isBlank() ? null : focusOreKey;
     }
 
     private int effectiveFocusBonusFor(String oreKey) {

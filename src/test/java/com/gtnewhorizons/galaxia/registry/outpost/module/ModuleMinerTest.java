@@ -3,6 +3,7 @@ package com.gtnewhorizons.galaxia.registry.outpost.module;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,6 +65,17 @@ final class ModuleMinerTest {
 
         assertTrue(ModuleMiner.shouldVoidOre(miner, facility, "ore:iron"));
         assertFalse(ModuleMiner.shouldVoidOre(miner, facility, "ore:copper"));
+    }
+
+    @Test
+    void activeFocusTierCanExistWithoutSelectedOre() {
+        ModuleMiner miner = (ModuleMiner) createMiner().component();
+
+        miner.setFocus(MinerFocusTier.II, null, 1200);
+
+        assertEquals(MinerFocusTier.II, miner.focusTier());
+        assertNull(miner.focusOreKeyOrNull());
+        assertEquals(0, miner.focusAlignmentProgress());
     }
 
     @Test
