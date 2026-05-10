@@ -2268,7 +2268,7 @@ public class OrbitalView {
         private void drawHammerTrajectoryLoadDebug(int widgetWidth) {
             if (!isCreativeModeAvailable()) return;
             CelestialClient.HammerTrajectoryLoadSample sample = CelestialClient.hammerTrajectoryLoadSample();
-            String text = "traj ms/tick own=" + formatDebugMillis(sample.ownMsPerTick())
+            String text = "route ms/tick own=" + formatDebugMillis(sample.ownMsPerTick())
                 + " all="
                 + formatDebugMillis(sample.allMsPerTick());
 
@@ -2336,10 +2336,10 @@ public class OrbitalView {
 
         private String formatStressBenchmarkBreakdown(InterplanetaryTransferSystem.LambertStressReport report) {
             int runs = Math.max(1, report.executedSimulations());
-            return "ms/czynność: scan=" + formatDecimal2(nanosToMillisPerRun(report.routeScanNanos(), runs))
-                + " traj="
+            return "ms/action: scan=" + formatDecimal2(nanosToMillisPerRun(report.routeScanNanos(), runs))
+                + " sample="
                 + formatDecimal2(nanosToMillisPerRun(report.trajectorySampleNanos(), runs))
-                + " inne="
+                + " other="
                 + formatDecimal2(nanosToMillisPerRun(report.otherNanos(), runs))
                 + "\nscan: hoh="
                 + formatDecimal2(nanosToMillisPerRun(report.hohmannNanos(), runs))
@@ -2353,7 +2353,7 @@ public class OrbitalView {
                 + formatDecimal2(nanosToMillisPerRun(report.lambertNanos(), runs))
                 + " acc="
                 + formatDecimal2(nanosToMillisPerRun(report.acceptNanos(), runs))
-                + " narzut="
+                + " overhead="
                 + formatDecimal2(nanosToMillisPerRun(report.scanOverheadNanos(), runs))
                 + " cand="
                 + report.scanCandidateCount()
