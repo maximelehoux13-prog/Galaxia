@@ -120,6 +120,44 @@ final class OrbitalTransferClientStateTest {
         fail("Expected at least one fixed-time default transfer where the cheapest Lambert branch is retrograde");
     }
 
+    @Test
+    void lambertStressReportAcceptsFirstValidTransferCandidate() {
+        CelestialRegistry.freezeAndBake();
+        CelestialObject root = GalaxiaCelestialAPI.getPrimaryRoot();
+        CelestialObject star = GalaxiaCelestialAPI.get(CelestialObjectId.VAEL)
+            .orElseThrow();
+
+        InterplanetaryTransferSystem.LambertStressReport report = InterplanetaryTransferSystem
+            .runLambertStress(root, star, 8850.0, 32, Double.MAX_VALUE);
+
+        assertEquals(32, report.executedSimulations());
+        assertTrue(report.hasEnoughPlanets());
+        assertTrue(report.hasSuccesses());
+    }
+
+    @Test
+    void trajectorySamplerKeepsEccentricTransfersOnLambertEndpoint() {
+        double[] xs = new double[96];
+        double[] ys = new double[96];
+
+        int pointCount = InterplanetaryTransferSystem.sampleTransferArcInto(
+            0.0,
+            0.0,
+            0.5641535081906672,
+            0.1822451582246629,
+            0.008106056580890142,
+            -1.775548501211689,
+            59.469599437341095,
+            1.0,
+            xs,
+            ys,
+            96);
+
+        assertEquals(96, pointCount);
+        assertEquals(-0.0343398527204353, xs[pointCount - 1], 2e-3);
+        assertEquals(1.476195470219518, ys[pointCount - 1], 2e-3);
+    }
+
     private static double cheapestDepartureAngularMomentum(CelestialObject root, CelestialObject star,
         CelestialObject source, CelestialObject destination, double departureTime, double tof) {
         OrbitalMechanics.OrbitalState starAtDep = OrbitalMechanics.resolveWorldState(root, star, departureTime);

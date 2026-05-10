@@ -92,6 +92,8 @@ record InterplanetaryTransferJob(String transferId, String displayName, String i
 
 public final class InterplanetaryTransferSystem {
 
+    private static final int TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT = 64;
+
     private static final int PREVIEW_TRAJECTORY_SAMPLES = 96;
 
     private InterplanetaryTransferSystem() {}
@@ -214,10 +216,13 @@ public final class InterplanetaryTransferSystem {
         int sampleCount = Math.max(2, Math.min(n, Math.min(outXs.length, outYs.length)));
         if (sampleCount <= 0) return 0;
         OrbitalMechanics.OrbitalState state = new OrbitalMechanics.OrbitalState(rx1, ry1, vx1, vy1);
-        double dt = tof / (sampleCount - 1);
-        for (int i = 0; i < sampleCount; i++) {
-            if (i > 0) {
-                state = OrbitalMechanics.propagateTwoBodyState(state, mu, dt);
+        double segmentDt = tof / (sampleCount - 1);
+        double integrationDt = segmentDt / TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT;
+        outXs[0] = ax + state.x();
+        outYs[0] = ay + state.y();
+        for (int i = 1; i < sampleCount; i++) {
+            for (int step = 0; step < TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT; step++) {
+                state = OrbitalMechanics.propagateTwoBodyState(state, mu, integrationDt);
                 if (state == null) return i;
             }
             outXs[i] = ax + state.x();
@@ -310,7 +315,7 @@ public final class InterplanetaryTransferSystem {
             star,
             departureTime,
             minPeriapsis,
-            (current, best) -> current.totalDv() <= dvLimit && current.tof() < best.tof());
+            (current, best) -> current.totalDv() <= dvLimit && (!best.isValid() || current.tof() < best.tof()));
 
         return result.isValid() ? result.totalDv() : -1.0;
     }
