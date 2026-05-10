@@ -2195,7 +2195,22 @@ public class OrbitalView {
                     "Stress: " + report.executedSimulations()
                         + " runs, 0 solved within 500 dV in "
                         + elapsedMs
-                        + " ms");
+                        + " ms\n"
+                        + formatStressBenchmarkBreakdown(report));
+                return;
+            }
+
+            if (report.hasTrajectoryFailures()) {
+                showActionStatus(
+                    "Stress: " + report.trajectoryFailures()
+                        + " trajectory failures / "
+                        + report.successfulTransfers()
+                        + " solved in "
+                        + elapsedMs
+                        + "ms avg="
+                        + formatDecimal1(elapsedMs / (double) Math.max(1, report.executedSimulations()))
+                        + "ms/run\n"
+                        + formatStressBenchmarkBreakdown(report));
                 return;
             }
 
@@ -2211,7 +2226,10 @@ public class OrbitalView {
                     + formatDecimal1(report.worstTotalDv())
                     + " time="
                     + elapsedMs
-                    + "ms");
+                    + "ms avg="
+                    + formatDecimal1(elapsedMs / (double) Math.max(1, report.executedSimulations()))
+                    + "ms/run\n"
+                    + formatStressBenchmarkBreakdown(report));
         }
 
         private void drawAssetIcon(CelestialAsset.Kind kind, int x, int y, int size, float alpha) {
@@ -2225,7 +2243,10 @@ public class OrbitalView {
                 return;
             }
             // TODO: COLOR
-            Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(actionStatusMessage, 12, 24, 0xFFD9E0FF);
+            String[] lines = actionStatusMessage.split("\\R");
+            for (int i = 0; i < lines.length; i++) {
+                Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(lines[i], 12, 36 + i * 11, 0xFFD9E0FF);
+            }
         }
 
         private void drawViewStatusLabel(CelestialObject viewRoot, int widgetWidth) {
@@ -2287,6 +2308,42 @@ public class OrbitalView {
         private String formatDecimal1(double value) {
             long scaled = Math.round(value * 10.0);
             return (scaled / 10L) + "." + Math.abs(scaled % 10L);
+        }
+
+        private String formatDecimal2(double value) {
+            long scaled = Math.round(value * 100.0);
+            return (scaled / 100L) + "." + Math.abs((scaled / 10L) % 10L) + Math.abs(scaled % 10L);
+        }
+
+        private String formatStressBenchmarkBreakdown(InterplanetaryTransferSystem.LambertStressReport report) {
+            int runs = Math.max(1, report.executedSimulations());
+            return "ms/czynność: scan=" + formatDecimal2(nanosToMillisPerRun(report.routeScanNanos(), runs))
+                + " traj="
+                + formatDecimal2(nanosToMillisPerRun(report.trajectorySampleNanos(), runs))
+                + " inne="
+                + formatDecimal2(nanosToMillisPerRun(report.otherNanos(), runs))
+                + "\nscan: hoh="
+                + formatDecimal2(nanosToMillisPerRun(report.hohmannNanos(), runs))
+                + " dep="
+                + formatDecimal2(nanosToMillisPerRun(report.departureResolveNanos(), runs))
+                + " arr="
+                + formatDecimal2(nanosToMillisPerRun(report.arrivalResolveNanos(), runs))
+                + " geom="
+                + formatDecimal2(nanosToMillisPerRun(report.geometryNanos(), runs))
+                + " lam="
+                + formatDecimal2(nanosToMillisPerRun(report.lambertNanos(), runs))
+                + " acc="
+                + formatDecimal2(nanosToMillisPerRun(report.acceptNanos(), runs))
+                + " narzut="
+                + formatDecimal2(nanosToMillisPerRun(report.scanOverheadNanos(), runs))
+                + " cand="
+                + report.scanCandidateCount()
+                + " lamCalls="
+                + report.lambertPairCount() * 2;
+        }
+
+        private double nanosToMillisPerRun(long nanos, int runs) {
+            return nanos / 1_000_000.0 / Math.max(1, runs);
         }
 
         private void updateRenameFieldLayout() {

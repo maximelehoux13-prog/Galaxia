@@ -133,6 +133,14 @@ final class OrbitalTransferClientStateTest {
         assertEquals(32, report.executedSimulations());
         assertTrue(report.hasEnoughPlanets());
         assertTrue(report.hasSuccesses());
+        assertEquals(0, report.trajectoryFailures());
+        assertTrue(report.totalNanos() > 0);
+        assertTrue(report.routeScanNanos() > 0);
+        assertTrue(report.trajectorySampleNanos() > 0);
+        assertTrue(report.arrivalResolveNanos() > 0);
+        assertTrue(report.lambertNanos() > 0);
+        assertTrue(report.scanCandidateCount() > 0);
+        assertTrue(report.lambertPairCount() > 0);
     }
 
     @Test
