@@ -16,16 +16,22 @@ import net.minecraftforge.fluids.FluidStack;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
+import com.cleanroommc.modularui.api.drawable.IDrawable;
+import com.cleanroommc.modularui.api.widget.Interactable;
+import com.cleanroommc.modularui.drawable.UITexture;
 import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
 import com.cleanroommc.modularui.theme.WidgetThemeEntry;
 import com.cleanroommc.modularui.value.StringValue;
 import com.cleanroommc.modularui.widget.ParentWidget;
-import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.cleanroommc.modularui.widget.sizer.Unit;
 import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.gtnewhorizons.galaxia.client.CelestialClient;
 import com.gtnewhorizons.galaxia.client.EnumColors;
 import com.gtnewhorizons.galaxia.client.gui.orbitalGUI.BorderedRect;
 import com.gtnewhorizons.galaxia.client.gui.station.recipe.RecipeInputScreen;
+import com.gtnewhorizons.galaxia.compat.recipe.GTRecipeChance;
+import com.gtnewhorizons.galaxia.compat.recipe.GTRecipeMapId;
+import com.gtnewhorizons.galaxia.compat.recipe.GTRecipeMapLayout;
 import com.gtnewhorizons.galaxia.core.network.AssetModuleUpdatePacket;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
@@ -37,10 +43,12 @@ import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 
+import gregtech.api.modularui2.GTGuiTextures;
+
 final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget> {
 
     static final int WIDTH = 440;
-    static final int HEIGHT = 248;
+    static final int HEIGHT = 320;
 
     private static final int BODY_TOP = ModuleConfigModalSupport.HEADER_HEIGHT + 10;
     private static final int ROW_TOP = BODY_TOP + 32;
@@ -64,19 +72,23 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
     private static final int MODE_BUTTON_WIDTH = 96;
     private static final int ADD_BUTTON_WIDTH = 52;
     private static final int CLOSE_BUTTON_WIDTH = 54;
-    private static final int DETAIL_ITEM_INPUT_X = 24;
-    private static final int DETAIL_ITEM_OUTPUT_X = 260;
-    private static final int DETAIL_ITEM_Y = 62;
-    private static final int DETAIL_ITEM_SLOT_SIZE = 20;
-    private static final int DETAIL_ITEM_GAP = 24;
-    private static final int DETAIL_FLUID_INPUT_X = 24;
-    private static final int DETAIL_FLUID_OUTPUT_X = 260;
-    private static final int DETAIL_FLUID_Y = 142;
-    private static final int DETAIL_FLUID_WIDTH = 116;
-    private static final int DETAIL_FLUID_HEIGHT = 20;
-    private static final int DETAIL_CONTROL_Y = 198;
-    private static final int DETAIL_AMOUNT_X = 130;
+    private static final int DETAIL_TITLE_Y = BODY_TOP + 4;
+    private static final int DETAIL_RECIPE_WIDGET_X = ModuleConfigModalSupport.PANEL_PADDING;
+    private static final int DETAIL_RECIPE_WIDGET_Y = BODY_TOP + 22;
+    private static final int DETAIL_RECIPE_WIDGET_WIDTH = WIDTH - ModuleConfigModalSupport.PANEL_PADDING * 2;
+    private static final int DETAIL_RECIPE_WIDGET_HEIGHT = 180;
+    private static final int DETAIL_RECIPE_SCALE = 1;
+    private static final int DETAIL_CONTROL_Y = DETAIL_RECIPE_WIDGET_Y + DETAIL_RECIPE_WIDGET_HEIGHT + 24;
     private static final int DETAIL_AMOUNT_WIDTH = 72;
+    private static final int DETAIL_ACTIONS_WIDTH = DETAIL_AMOUNT_WIDTH + 6 + 48 + 4 + 54;
+    private static final int DETAIL_AMOUNT_X = (WIDTH - DETAIL_ACTIONS_WIDTH) / 2;
+    private static final int DETAIL_SLOT_SIZE = 18;
+    private static final int BOUND_MARKER_SIZE = 5;
+    private static final int BOUND_MARKER_INSET = 1;
+    private static final int BOUND_MARKER_WARNING = 0xFFFFFF00;
+    private static final int BOUND_MARKER_BLOCKING = 0xFFFF2020;
+    private static final int DETAIL_ITEM_SLOT_COUNT = 9;
+    private static final int DETAIL_FLUID_SLOT_COUNT = 4;
     private static final Pattern INTEGER_PATTERN = Pattern.compile("[0-9]*");
 
     private final CelestialAsset.ID assetId;
@@ -85,6 +97,7 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
     private int boundsSlotIndex = -1;
     private @Nullable BoundTarget selectedBoundTarget;
     private String boundAmountInput = "";
+    private @Nullable TextFieldWidget boundAmountField;
 
     RecipeConfigModalWidget(CelestialAsset.ID assetId, ModuleConfigModalController controller) {
         this.assetId = assetId;
@@ -114,31 +127,11 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
                     .size(REMOVE_WIDTH, BUTTON_HEIGHT));
         }
 
-        for (int i = 0; i < 9; i++) {
-            int slot = i;
-            child(
-                boundSlotButton(new BoundTarget(BoundSide.INPUT, BoundResource.ITEM, slot))
-                    .pos(DETAIL_ITEM_INPUT_X + (i % 3) * DETAIL_ITEM_GAP, DETAIL_ITEM_Y + (i / 3) * DETAIL_ITEM_GAP)
-                    .size(DETAIL_ITEM_SLOT_SIZE, DETAIL_ITEM_SLOT_SIZE));
-            child(
-                boundSlotButton(new BoundTarget(BoundSide.OUTPUT, BoundResource.ITEM, slot))
-                    .pos(DETAIL_ITEM_OUTPUT_X + (i % 3) * DETAIL_ITEM_GAP, DETAIL_ITEM_Y + (i / 3) * DETAIL_ITEM_GAP)
-                    .size(DETAIL_ITEM_SLOT_SIZE, DETAIL_ITEM_SLOT_SIZE));
-        }
-        for (int i = 0; i < 4; i++) {
-            int slot = i;
-            child(
-                boundSlotButton(new BoundTarget(BoundSide.INPUT, BoundResource.FLUID, slot))
-                    .pos(DETAIL_FLUID_INPUT_X, DETAIL_FLUID_Y + i * DETAIL_ITEM_GAP)
-                    .size(DETAIL_FLUID_WIDTH, DETAIL_FLUID_HEIGHT));
-            child(
-                boundSlotButton(new BoundTarget(BoundSide.OUTPUT, BoundResource.FLUID, slot))
-                    .pos(DETAIL_FLUID_OUTPUT_X, DETAIL_FLUID_Y + i * DETAIL_ITEM_GAP)
-                    .size(DETAIL_FLUID_WIDTH, DETAIL_FLUID_HEIGHT));
-        }
-
         child(
-            boundAmountField().pos(DETAIL_AMOUNT_X, DETAIL_CONTROL_Y)
+            new RecipeBoundsViewWidget().pos(DETAIL_RECIPE_WIDGET_X, DETAIL_RECIPE_WIDGET_Y)
+                .size(DETAIL_RECIPE_WIDGET_WIDTH, DETAIL_RECIPE_WIDGET_HEIGHT));
+        child(
+            createBoundAmountField().pos(DETAIL_AMOUNT_X, DETAIL_CONTROL_Y)
                 .size(DETAIL_AMOUNT_WIDTH, BUTTON_HEIGHT));
         child(
             ModuleConfigModalSupport.button(this::canApplySelectedBound, "Set", this::applySelectedBound)
@@ -174,15 +167,22 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
                 .button(() -> controller.isRecipeConfigOpen() && !isBoundsOpen(), "Close", controller::close)
                 .pos(WIDTH - CLOSE_BUTTON_WIDTH - ModuleConfigModalSupport.PANEL_PADDING, FOOTER_Y)
                 .size(CLOSE_BUTTON_WIDTH, BUTTON_HEIGHT));
+        setEnabledIf(w -> controller.isRecipeConfigOpen());
     }
 
     @Override
     public boolean canHoverThrough() {
-        return false;
+        return !controller.isRecipeConfigOpen();
+    }
+
+    @Override
+    public boolean canClickThrough() {
+        return !controller.isRecipeConfigOpen();
     }
 
     @Override
     public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
+        if (!controller.isRecipeConfigOpen()) return;
         ModuleInstance module = selectedModule();
         String title = module != null ? ModuleConfigModalSupport.moduleTitle(module, "Recipes") : "Recipes";
         ModuleConfigModalSupport.drawFrame(title, WIDTH, HEIGHT);
@@ -337,12 +337,21 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
 
     private void updateSlotIndex(int slotIndex, RecipeSlot slot) {
         if (slotIndex < 0) return;
+        updateLocalSlot(slotIndex, slot);
         CelestialClient.updateModuleRecipeSlot(
             assetId,
             controller.moduleIndex(),
             AssetModuleUpdatePacket.ConfigAction.UPDATE_RECIPE_SLOT,
             (byte) slotIndex,
             slot);
+    }
+
+    private void updateLocalSlot(int slotIndex, RecipeSlot slot) {
+        RecipeConfig config = selectedConfig();
+        if (config == null || slotIndex >= config.slots()
+            .size()) return;
+        config.slots()
+            .set(slotIndex, slot);
     }
 
     private void cycleMode() {
@@ -391,29 +400,14 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
         return boundsSlotIndex >= 0 && boundsSlotIndex < slots.size() ? slots.get(boundsSlotIndex) : null;
     }
 
-    private ButtonWidget<?> boundSlotButton(BoundTarget target) {
-        return new ButtonWidget<>()
-            .background(
-                ModuleConfigModalSupport.drawable((ctx, x, y, w, h) -> drawBoundSlotButton(target, x, y, w, h, false)))
-            .hoverBackground(
-                ModuleConfigModalSupport.drawable((ctx, x, y, w, h) -> drawBoundSlotButton(target, x, y, w, h, true)))
-            .onMousePressed(mouseButton -> {
-                if (mouseButton != 0 || !canUseBoundTarget(target)) return false;
-                selectedBoundTarget = target;
-                boundAmountInput = currentBoundText(target);
-                return true;
-            })
-            .setEnabledIf(w -> canUseBoundTarget(target));
-    }
-
-    private TextFieldWidget boundAmountField() {
-        return new TextFieldWidget().setMaxLength(9)
+    private TextFieldWidget createBoundAmountField() {
+        boundAmountField = new TextFieldWidget().setMaxLength(9)
             .setPattern(INTEGER_PATTERN)
             .setDefaultNumber(0)
             .setNumbers(0, Integer.MAX_VALUE)
             .setFormatAsInteger(true)
             .acceptsExpressions(false)
-            .autoUpdateOnChange(false)
+            .autoUpdateOnChange(true)
             .setTextColor(EnumColors.MAP_COLOR_TEXT_TITLE.getColor())
             .hintColor(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
             .background(ModuleConfigModalSupport.drawable((ctx, x, y, w, h) -> {
@@ -429,6 +423,7 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
             .value(new StringValue.Dynamic(() -> boundAmountInput, text -> boundAmountInput = text == null ? "" : text))
             .setFocusOnGuiOpen(false)
             .setEnabledIf(w -> selectedBoundTarget != null && isBoundsOpen());
+        return boundAmountField;
     }
 
     private void drawBoundsView() {
@@ -438,25 +433,9 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
         ModuleConfigModalSupport.drawTrimmedLine(
             RecipeSlotUiModel.slotTitle(slot),
             ModuleConfigModalSupport.PANEL_PADDING,
-            BODY_TOP,
+            DETAIL_TITLE_Y,
             WIDTH - ModuleConfigModalSupport.PANEL_PADDING * 2,
             color);
-        ModuleConfigModalSupport.drawLine("Item inputs", DETAIL_ITEM_INPUT_X, DETAIL_ITEM_Y - 14, color);
-        ModuleConfigModalSupport
-            .drawCenteredLine("->", WIDTH / 2, DETAIL_ITEM_Y + 22, 40, EnumColors.MAP_COLOR_TEXT_SECTION.getColor());
-        ModuleConfigModalSupport.drawLine("Item outputs", DETAIL_ITEM_OUTPUT_X, DETAIL_ITEM_Y - 14, color);
-        ModuleConfigModalSupport.drawLine(
-            "Fluid inputs",
-            DETAIL_FLUID_INPUT_X,
-            DETAIL_FLUID_Y - 14,
-            EnumColors.MAP_COLOR_TEXT_MUTED.getColor());
-        ModuleConfigModalSupport
-            .drawCenteredLine("->", WIDTH / 2, DETAIL_FLUID_Y + 6, 40, EnumColors.MAP_COLOR_TEXT_SECTION.getColor());
-        ModuleConfigModalSupport.drawLine(
-            "Fluid outputs",
-            DETAIL_FLUID_OUTPUT_X,
-            DETAIL_FLUID_Y - 14,
-            EnumColors.MAP_COLOR_TEXT_MUTED.getColor());
 
         String selected = selectedBoundTarget == null ? "Select a slot"
             : boundDescription(selectedBoundTarget) + ": " + currentBoundText(selectedBoundTarget);
@@ -468,31 +447,10 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
             EnumColors.MAP_COLOR_TEXT_SECTION.getColor());
     }
 
-    private void drawBoundSlotButton(BoundTarget target, int x, int y, int w, int h, boolean hovered) {
-        if (!canUseBoundTarget(target)) return;
-        boolean selected = target.equals(selectedBoundTarget);
-        int bg = selected || hovered ? EnumColors.MAP_COLOR_BTN_ENABLED_HOVERED.getColor()
-            : EnumColors.MAP_COLOR_BTN_ENABLED_DEFAULT.getColor();
-        BorderedRect.draw(x, y, w, h, bg, EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor());
-        if (target.resource() == BoundResource.ITEM) {
-            ItemStack stack = itemStack(target);
-            if (stack != null) {
-                renderItemIcon(stack, x + 2, y + 2);
-            }
-        } else {
-            FluidStack stack = fluidStack(target);
-            String label = stack == null ? "" : fluidLabel(stack);
-            ModuleConfigModalSupport
-                .drawTrimmedLine(label, x + 3, y + 6, w - 6, EnumColors.MAP_COLOR_TEXT_BODY.getColor());
-        }
-        drawBoundMarker(target, x + w - 7, y + 1);
-    }
-
     private void drawBoundMarker(BoundTarget target, int x, int y) {
         if (!hasBound(target)) return;
-        int color = isBoundBlocking(target) ? EnumColors.MAP_COLOR_TEXT_DANGER.getColor()
-            : EnumColors.MAP_COLOR_TEXT_WARNING.getColor();
-        Minecraft.getMinecraft().fontRenderer.drawStringWithShadow("*", x, y, color);
+        int color = isBoundBlocking(target) ? BOUND_MARKER_BLOCKING : BOUND_MARKER_WARNING;
+        net.minecraft.client.gui.Gui.drawRect(x, y, x + BOUND_MARKER_SIZE, y + BOUND_MARKER_SIZE, color);
     }
 
     private boolean canUseBoundTarget(BoundTarget target) {
@@ -502,20 +460,32 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
 
     private void selectFirstBoundTarget() {
         selectedBoundTarget = null;
-        for (BoundSide side : BoundSide.values()) {
-            for (BoundResource resource : BoundResource.values()) {
-                int limit = resource == BoundResource.ITEM ? 9 : 4;
-                for (int i = 0; i < limit; i++) {
-                    BoundTarget candidate = new BoundTarget(side, resource, i);
-                    if (canUseBoundTarget(candidate)) {
-                        selectedBoundTarget = candidate;
-                        boundAmountInput = currentBoundText(candidate);
-                        return;
-                    }
-                }
-            }
+        GTRecipeMapLayout layout = detailLayout();
+        BoundTarget candidate = firstVisibleBoundTarget(layout.itemInputs(), BoundSide.INPUT, BoundResource.ITEM);
+        if (candidate == null)
+            candidate = firstVisibleBoundTarget(layout.itemOutputs(), BoundSide.OUTPUT, BoundResource.ITEM);
+        if (candidate == null)
+            candidate = firstVisibleBoundTarget(layout.fluidInputs(), BoundSide.INPUT, BoundResource.FLUID);
+        if (candidate == null)
+            candidate = firstVisibleBoundTarget(layout.fluidOutputs(), BoundSide.OUTPUT, BoundResource.FLUID);
+        if (candidate != null) {
+            selectedBoundTarget = candidate;
+            boundAmountInput = currentBoundText(candidate);
+            syncBoundAmountFieldText();
+            focusBoundAmountField();
+            return;
         }
         boundAmountInput = "";
+        syncBoundAmountFieldText();
+    }
+
+    private @Nullable BoundTarget firstVisibleBoundTarget(List<GTRecipeMapLayout.Slot> slots, BoundSide side,
+        BoundResource resource) {
+        for (GTRecipeMapLayout.Slot slot : slots) {
+            BoundTarget candidate = new BoundTarget(side, resource, slot.index());
+            if (canUseBoundTarget(candidate)) return candidate;
+        }
+        return null;
     }
 
     private boolean canApplySelectedBound() {
@@ -530,7 +500,7 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
         if (!canApplySelectedBound()) return;
         long amount;
         try {
-            amount = Long.parseLong(boundAmountInput);
+            amount = Long.parseLong(currentBoundAmountInput());
         } catch (NumberFormatException ignored) {
             return;
         }
@@ -538,6 +508,8 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
         RecipeSlot slot = boundsSlot();
         if (slot == null) return;
         RecipeSlotBounds bounds = updateBound(slot.bounds(), selectedBoundTarget, amount);
+        boundAmountInput = Long.toString(amount);
+        syncBoundAmountFieldText();
         updateSlotIndex(
             boundsSlotIndex,
             new RecipeSlot(slot.recipe(), slot.enabled(), bounds, slot.priority(), slot.orderSize()));
@@ -549,9 +521,22 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
         if (slot == null) return;
         RecipeSlotBounds bounds = clearBound(slot.bounds(), selectedBoundTarget);
         boundAmountInput = "";
+        syncBoundAmountFieldText();
         updateSlotIndex(
             boundsSlotIndex,
             new RecipeSlot(slot.recipe(), slot.enabled(), bounds, slot.priority(), slot.orderSize()));
+    }
+
+    private String currentBoundAmountInput() {
+        return boundAmountField != null ? boundAmountField.getText() : boundAmountInput;
+    }
+
+    private void syncBoundAmountFieldText() {
+        if (boundAmountField != null) boundAmountField.setText(boundAmountInput);
+    }
+
+    private void focusBoundAmountField() {
+        if (boundAmountField != null && getContext() != null) getContext().focus(boundAmountField);
     }
 
     private String currentBoundText(BoundTarget target) {
@@ -668,6 +653,10 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
 
     private @Nullable ItemStack itemStack(BoundTarget target) {
         RecipeSlot slot = boundsSlot();
+        return slot != null ? itemStack(slot, target) : null;
+    }
+
+    private @Nullable ItemStack itemStack(RecipeSlot slot, BoundTarget target) {
         if (slot == null || target.resource() != BoundResource.ITEM) return null;
         ItemStack[] stacks = target.side() == BoundSide.INPUT ? slot.recipe()
             .inputs()
@@ -682,12 +671,23 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
 
     private @Nullable FluidStack fluidStack(BoundTarget target) {
         RecipeSlot slot = boundsSlot();
+        return slot != null ? fluidStack(slot, target) : null;
+    }
+
+    private @Nullable FluidStack fluidStack(RecipeSlot slot, BoundTarget target) {
         if (slot == null || target.resource() != BoundResource.FLUID) return null;
         FluidStack[] stacks = target.side() == BoundSide.INPUT ? slot.recipe()
             .fluidInputs()
             : slot.recipe()
                 .fluidOutputs();
         return target.index() >= 0 && stacks != null && target.index() < stacks.length ? stacks[target.index()] : null;
+    }
+
+    private GTRecipeMapLayout detailLayout() {
+        IRecipeModule recipeModule = selectedRecipeModule();
+        GTRecipeMapId mapId = recipeModule != null ? GTRecipeMapId.fromRecipeMapName(recipeModule.getRecipeMapName())
+            : null;
+        return GTRecipeMapLayout.fromRecipeMap(GTRecipeMapId.findRecipeMap(mapId));
     }
 
     private @Nullable String fluidName(BoundTarget target) {
@@ -809,6 +809,391 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
         GL11.glPopMatrix();
         GL11.glPopAttrib();
         GL11.glColor4f(1f, 1f, 1f, 1f);
+    }
+
+    private static void renderItemIconScaled(ItemStack stack, int x, int y, int scale) {
+        if (stack == null) return;
+        GL11.glPushMatrix();
+        GL11.glTranslatef(x, y, 0.0F);
+        GL11.glScalef(scale, scale, 1.0F);
+        renderItemIcon(stack, 0, 0);
+        GL11.glPopMatrix();
+    }
+
+    private final class RecipeBoundsViewWidget extends ParentWidget<RecipeBoundsViewWidget> {
+
+        RecipeBoundsViewWidget() {
+            child(
+                new RecipeProgressWidget().left(this::progressX, Unit.Measure.PIXEL)
+                    .top(this::progressY, Unit.Measure.PIXEL)
+                    .width(this::progressWidth, Unit.Measure.PIXEL)
+                    .height(this::progressHeight, Unit.Measure.PIXEL)
+                    .setEnabledIf(
+                        w -> isBoundsOpen() && detailLayout().progress()
+                            .enabled()));
+            addSlotWidgets(BoundSide.INPUT, BoundResource.ITEM, DETAIL_ITEM_SLOT_COUNT);
+            addSlotWidgets(BoundSide.OUTPUT, BoundResource.ITEM, DETAIL_ITEM_SLOT_COUNT);
+            addSlotWidgets(BoundSide.INPUT, BoundResource.FLUID, DETAIL_FLUID_SLOT_COUNT);
+            addSlotWidgets(BoundSide.OUTPUT, BoundResource.FLUID, DETAIL_FLUID_SLOT_COUNT);
+        }
+
+        private void addSlotWidgets(BoundSide side, BoundResource resource, int count) {
+            for (int i = 0; i < count; i++) {
+                BoundTarget target = new BoundTarget(side, resource, i);
+                child(
+                    new RecipeBoundSlotWidget(target).left(() -> slotX(target), Unit.Measure.PIXEL)
+                        .top(() -> slotY(target), Unit.Measure.PIXEL)
+                        .width(this::slotSize, Unit.Measure.PIXEL)
+                        .height(this::slotSize, Unit.Measure.PIXEL)
+                        .setEnabledIf(w -> isVisibleBoundSlot(target)));
+            }
+        }
+
+        @Override
+        public boolean canHover() {
+            return false;
+        }
+
+        @Override
+        public boolean canHoverThrough() {
+            return true;
+        }
+
+        @Override
+        public boolean canClickThrough() {
+            return true;
+        }
+
+        @Override
+        public void onUpdate() {
+            super.onUpdate();
+            scheduleResize();
+            for (com.cleanroommc.modularui.api.widget.IWidget child : getChildren()) {
+                child.scheduleResize();
+            }
+        }
+
+        @Override
+        public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
+            if (boundsSlot() == null || !isBoundsOpen()) return;
+            GTRecipeMapLayout layout = detailLayout();
+            GTGuiTextures.BACKGROUND_STANDARD.draw(
+                context,
+                cardX(layout),
+                cardY(layout),
+                cardWidth(layout) * viewScale(layout),
+                cardHeight(layout) * viewScale(layout),
+                widgetTheme.getTheme());
+        }
+
+        private boolean isVisibleBoundSlot(BoundTarget target) {
+            return boundsSlot() != null && layoutSlot(target) != null;
+        }
+
+        private int slotX(BoundTarget target) {
+            GTRecipeMapLayout layout = detailLayout();
+            GTRecipeMapLayout.Slot slot = layoutSlot(target);
+            return slot == null ? -1000 : cardX(layout) + slot.x() * viewScale(layout);
+        }
+
+        private int slotY(BoundTarget target) {
+            GTRecipeMapLayout layout = detailLayout();
+            GTRecipeMapLayout.Slot slot = layoutSlot(target);
+            return slot == null ? -1000 : cardY(layout) + slot.y() * viewScale(layout);
+        }
+
+        private int slotSize() {
+            return DETAIL_SLOT_SIZE * viewScale(detailLayout());
+        }
+
+        private int progressX() {
+            GTRecipeMapLayout layout = detailLayout();
+            return cardX(layout) + layout.progress()
+                .x() * viewScale(layout);
+        }
+
+        private int progressY() {
+            GTRecipeMapLayout layout = detailLayout();
+            return cardY(layout) + layout.progress()
+                .y() * viewScale(layout);
+        }
+
+        private int progressWidth() {
+            GTRecipeMapLayout layout = detailLayout();
+            return layout.progress()
+                .width() * viewScale(layout);
+        }
+
+        private int progressHeight() {
+            GTRecipeMapLayout layout = detailLayout();
+            return layout.progress()
+                .height() * viewScale(layout);
+        }
+
+        private int cardX(GTRecipeMapLayout layout) {
+            return (getArea().width - cardWidth(layout) * viewScale(layout)) / 2;
+        }
+
+        private int cardY(GTRecipeMapLayout layout) {
+            return (getArea().height - cardHeight(layout) * viewScale(layout)) / 2;
+        }
+
+        private int viewScale(GTRecipeMapLayout layout) {
+            return cardWidth(layout) * DETAIL_RECIPE_SCALE <= getArea().width
+                && cardHeight(layout) * DETAIL_RECIPE_SCALE <= getArea().height ? DETAIL_RECIPE_SCALE : 1;
+        }
+
+        private int cardWidth(GTRecipeMapLayout layout) {
+            return Math.max(layout.width(), maxSlotRight(layout));
+        }
+
+        private int cardHeight(GTRecipeMapLayout layout) {
+            return Math.max(layout.height(), maxSlotBottom(layout));
+        }
+
+        private int maxSlotRight(GTRecipeMapLayout layout) {
+            int right = 0;
+            right = Math.max(right, maxSlotRight(layout.itemInputs()));
+            right = Math.max(right, maxSlotRight(layout.itemOutputs()));
+            right = Math.max(right, maxSlotRight(layout.fluidInputs()));
+            right = Math.max(right, maxSlotRight(layout.fluidOutputs()));
+            return right + 6;
+        }
+
+        private int maxSlotRight(List<GTRecipeMapLayout.Slot> slots) {
+            int right = 0;
+            for (GTRecipeMapLayout.Slot slot : slots) {
+                right = Math.max(right, slot.x() + DETAIL_SLOT_SIZE);
+            }
+            return right;
+        }
+
+        private int maxSlotBottom(GTRecipeMapLayout layout) {
+            int bottom = 0;
+            bottom = Math.max(bottom, maxSlotBottom(layout.itemInputs()));
+            bottom = Math.max(bottom, maxSlotBottom(layout.itemOutputs()));
+            bottom = Math.max(bottom, maxSlotBottom(layout.fluidInputs()));
+            bottom = Math.max(bottom, maxSlotBottom(layout.fluidOutputs()));
+            return bottom + 6;
+        }
+
+        private int maxSlotBottom(List<GTRecipeMapLayout.Slot> slots) {
+            int bottom = 0;
+            for (GTRecipeMapLayout.Slot slot : slots) {
+                bottom = Math.max(bottom, slot.y() + DETAIL_SLOT_SIZE);
+            }
+            return bottom;
+        }
+
+        private @Nullable GTRecipeMapLayout.Slot layoutSlot(BoundTarget target) {
+            List<GTRecipeMapLayout.Slot> slots = switch (target.resource()) {
+                case ITEM -> target.side() == BoundSide.INPUT ? detailLayout().itemInputs()
+                    : detailLayout().itemOutputs();
+                case FLUID -> target.side() == BoundSide.INPUT ? detailLayout().fluidInputs()
+                    : detailLayout().fluidOutputs();
+            };
+            for (GTRecipeMapLayout.Slot slot : slots) {
+                if (slot.index() == target.index()) return slot;
+            }
+            return null;
+        }
+    }
+
+    private final class RecipeProgressWidget extends ParentWidget<RecipeProgressWidget> {
+
+        @Override
+        public boolean canHover() {
+            return false;
+        }
+
+        @Override
+        public boolean canHoverThrough() {
+            return true;
+        }
+
+        @Override
+        public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
+            GTRecipeMapLayout.Progress progress = detailLayout().progress();
+            if (!progress.enabled()) return;
+            UITexture texture = progress.texture();
+            if (texture == null) {
+                BorderedRect.draw(0, 0, getArea().width, getArea().height, 0xFF788398, 0xFFECF0FF);
+                Minecraft.getMinecraft().fontRenderer
+                    .drawString(">", getArea().width / 2 - 2, getArea().height / 2 - 4, 0xFFE6EAF6);
+                return;
+            }
+            texture.getSubArea(0, 0, 1, 0.5f)
+                .draw(context, 0, 0, getArea().width, getArea().height, widgetTheme.getTheme());
+            drawProgressFill(context, widgetTheme, texture, progress);
+        }
+
+        private void drawProgressFill(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme, UITexture texture,
+            GTRecipeMapLayout.Progress progress) {
+            float amount = (System.currentTimeMillis() % 1000L) / 1000.0f;
+            if (amount <= 0) return;
+            UITexture full = texture.getSubArea(0, 0.5f, 1, 1);
+            float u0 = 0f;
+            float v0 = 0f;
+            float u1 = 1f;
+            float v1 = 1f;
+            float x = 0f;
+            float y = 0f;
+            float width = getArea().width;
+            float height = getArea().height;
+            switch (progress.direction()) {
+                case RIGHT -> {
+                    u1 = amount;
+                    width *= amount;
+                }
+                case LEFT -> {
+                    u0 = 1f - amount;
+                    width *= amount;
+                    x = getArea().width - width;
+                }
+                case DOWN -> {
+                    v1 = amount;
+                    height *= amount;
+                }
+                case UP -> {
+                    v0 = 1f - amount;
+                    height *= amount;
+                    y = getArea().height - height;
+                }
+                default -> {}
+            }
+            full.drawSubArea(x, y, width, height, u0, v0, u1, v1, widgetTheme.getTheme());
+        }
+    }
+
+    private final class RecipeBoundSlotWidget extends ParentWidget<RecipeBoundSlotWidget> implements Interactable {
+
+        private final BoundTarget target;
+
+        RecipeBoundSlotWidget(BoundTarget target) {
+            this.target = target;
+        }
+
+        @Override
+        public boolean canHover() {
+            return isVisible();
+        }
+
+        @Override
+        public boolean canHoverThrough() {
+            return !isVisible();
+        }
+
+        @Override
+        public boolean canClickThrough() {
+            return !isVisible();
+        }
+
+        @Override
+        public Interactable.Result onMousePressed(int mouseButton) {
+            if (mouseButton != 0 || !canUseBoundTarget(target)) return Interactable.Result.IGNORE;
+            selectedBoundTarget = target;
+            boundAmountInput = currentBoundText(target);
+            syncBoundAmountFieldText();
+            focusBoundAmountField();
+            Interactable.playButtonClickSound();
+            return Interactable.Result.SUCCESS;
+        }
+
+        @Override
+        public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
+            if (!isVisible()) return;
+            int size = getArea().width;
+            IDrawable overlay = slotOverlay();
+            if (target.resource() == BoundResource.ITEM) {
+                GTGuiTextures.SLOT_ITEM_STANDARD.draw(context, 0, 0, size, size, widgetTheme.getTheme());
+            } else {
+                GTGuiTextures.SLOT_FLUID_STANDARD.draw(context, 0, 0, size, size, widgetTheme.getTheme());
+            }
+            if (overlay != null) overlay.draw(context, 0, 0, size, size, widgetTheme.getTheme());
+            drawSlotContent(context);
+            drawChanceText(size);
+            drawSlotHighlight(size);
+            drawBoundMarker(target, boundMarkerX(size), boundMarkerY(size));
+        }
+
+        private int boundMarkerX(int size) {
+            return target.resource() == BoundResource.ITEM ? BOUND_MARKER_INSET
+                : size - BOUND_MARKER_SIZE - BOUND_MARKER_INSET;
+        }
+
+        private int boundMarkerY(int size) {
+            return size - BOUND_MARKER_SIZE - BOUND_MARKER_INSET;
+        }
+
+        private void drawSlotContent(ModularGuiContext context) {
+            int scale = Math.max(1, getArea().width / DETAIL_SLOT_SIZE);
+            if (target.resource() == BoundResource.ITEM) {
+                ItemStack stack = itemStack(target);
+                if (stack != null) renderItemIconScaled(stack, scale, scale, scale);
+                return;
+            }
+            FluidStack stack = fluidStack(target);
+            if (stack == null) return;
+            GL11.glPushAttrib(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT);
+            try {
+                com.cleanroommc.modularui.drawable.GuiDraw
+                    .drawFluidTexture(stack, scale, scale, 16 * scale, 16 * scale, context.getCurrentDrawingZ());
+            } finally {
+                GL11.glPopAttrib();
+                GL11.glColor4f(1f, 1f, 1f, 1f);
+            }
+        }
+
+        private void drawSlotHighlight(int size) {
+            if (!canUseBoundTarget(target)) return;
+            boolean selected = target.equals(selectedBoundTarget);
+            if (!selected && !isHovering()) return;
+            int color = selected ? EnumColors.MAP_COLOR_BTN_BORDER_ENABLED.getColor() : 0x99FFFFFF;
+            BorderedRect.draw(-1, -1, size + 2, size + 2, 0x00000000, color);
+        }
+
+        private void drawChanceText(int size) {
+            String text = chanceText();
+            if (text == null) return;
+            GL11.glPushMatrix();
+            GL11.glScalef(0.5F, 0.5F, 1.0F);
+            int scaledX = Math.max(0, size * 2 - Minecraft.getMinecraft().fontRenderer.getStringWidth(text) - 1);
+            Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(text, scaledX, 1, 0xFFFFFF55);
+            GL11.glPopMatrix();
+        }
+
+        private @Nullable String chanceText() {
+            if (target.side() != BoundSide.OUTPUT) return null;
+            RecipeSlot slot = boundsSlot();
+            if (slot == null) return null;
+            int[] chances = target.resource() == BoundResource.ITEM ? slot.recipe()
+                .outputChances()
+                : slot.recipe()
+                    .fluidOutputChances();
+            return GTRecipeChance.optionalOutputLabel(chances, target.index());
+        }
+
+        private @Nullable IDrawable slotOverlay() {
+            GTRecipeMapLayout.Slot slot = layoutSlot(target);
+            return slot != null ? slot.overlay() : null;
+        }
+
+        private boolean isVisible() {
+            return isBoundsOpen() && layoutSlot(target) != null;
+        }
+
+        private @Nullable GTRecipeMapLayout.Slot layoutSlot(BoundTarget target) {
+            List<GTRecipeMapLayout.Slot> slots = switch (target.resource()) {
+                case ITEM -> target.side() == BoundSide.INPUT ? detailLayout().itemInputs()
+                    : detailLayout().itemOutputs();
+                case FLUID -> target.side() == BoundSide.INPUT ? detailLayout().fluidInputs()
+                    : detailLayout().fluidOutputs();
+            };
+            for (GTRecipeMapLayout.Slot slot : slots) {
+                if (slot.index() == target.index()) return slot;
+            }
+            return null;
+        }
     }
 
     private record BoundTarget(BoundSide side, BoundResource resource, int index) {}

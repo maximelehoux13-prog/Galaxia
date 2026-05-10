@@ -8,6 +8,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 
+import com.gtnewhorizons.galaxia.compat.recipe.GTRecipeChance;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacilityInventory;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
@@ -20,7 +21,6 @@ import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 public final class ProductionModuleHelper {
 
     private static final ItemStackWrapper[] EMPTY_WRAPPERS = new ItemStackWrapper[0];
-    private static final int GUARANTEED_OUTPUT_CHANCE = 10_000;
 
     private ProductionModuleHelper() {}
 
@@ -210,12 +210,7 @@ public final class ProductionModuleHelper {
     }
 
     private static boolean shouldProduceOutput(int[] chances, int index, Random random) {
-        if (chances == null || index >= chances.length) return true;
-        int chance = chances[index];
-        if (chance < 0) return true;
-        if (chance == 0) return false;
-        if (chance >= GUARANTEED_OUTPUT_CHANCE) return true;
-        return random.nextInt(GUARANTEED_OUTPUT_CHANCE) < chance;
+        return GTRecipeChance.shouldProduce(chances, index, random);
     }
 
     private static void advanceScheduler(RecipeConfig config, IRecipeModule recipeModule) {
