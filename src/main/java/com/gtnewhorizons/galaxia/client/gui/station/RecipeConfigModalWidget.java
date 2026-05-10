@@ -51,13 +51,13 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
     private static final int SLOT_X = 8;
     private static final int ENABLE_X = 30;
     private static final int RECIPE_X = 76;
-    private static final int BOUNDS_X = 232;
+    private static final int CONFIG_X = 232;
     private static final int PRIORITY_X = 304;
     private static final int ORDER_X = 350;
     private static final int REMOVE_X = 394;
     private static final int ENABLE_WIDTH = 40;
     private static final int RECIPE_WIDTH = 148;
-    private static final int BOUNDS_WIDTH = 64;
+    private static final int CONFIG_WIDTH = 64;
     private static final int SMALL_FIELD_WIDTH = 46;
     private static final int REMOVE_WIDTH = 38;
     private static final int PAGE_BUTTON_WIDTH = 28;
@@ -99,9 +99,9 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
                     .pos(ENABLE_X, rowY)
                     .size(ENABLE_WIDTH, BUTTON_HEIGHT));
             child(
-                ModuleConfigModalSupport.button(() -> canUseRow(rowIndex), "Bounds", () -> openBounds(rowIndex))
-                    .pos(BOUNDS_X, rowY)
-                    .size(BOUNDS_WIDTH, BUTTON_HEIGHT));
+                ModuleConfigModalSupport.button(() -> canUseRow(rowIndex), "Config", () -> openBounds(rowIndex))
+                    .pos(CONFIG_X, rowY)
+                    .size(CONFIG_WIDTH, BUTTON_HEIGHT));
             child(
                 numberField(rowIndex, Field.PRIORITY).pos(PRIORITY_X, rowY)
                     .size(SMALL_FIELD_WIDTH, BUTTON_HEIGHT));
@@ -228,8 +228,8 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
         int y = ROW_TOP - 12;
         ModuleConfigModalSupport.drawLine("#", SLOT_X, y, color);
         ModuleConfigModalSupport.drawLine("On", ENABLE_X + 9, y, color);
-        ModuleConfigModalSupport.drawLine("Recipe", RECIPE_X, y, color);
-        ModuleConfigModalSupport.drawLine("Bounds", BOUNDS_X + 8, y, color);
+        ModuleConfigModalSupport.drawLine("Flow", RECIPE_X, y, color);
+        ModuleConfigModalSupport.drawLine("Config", CONFIG_X + 8, y, color);
         ModuleConfigModalSupport.drawLine("Pri", PRIORITY_X + 11, y, color);
         ModuleConfigModalSupport.drawLine("Size", ORDER_X + 6, y, color);
     }
@@ -441,12 +441,22 @@ final class RecipeConfigModalWidget extends ParentWidget<RecipeConfigModalWidget
             BODY_TOP,
             WIDTH - ModuleConfigModalSupport.PANEL_PADDING * 2,
             color);
-        ModuleConfigModalSupport.drawLine("Inputs", DETAIL_ITEM_INPUT_X, DETAIL_ITEM_Y - 14, color);
-        ModuleConfigModalSupport.drawLine("Outputs", DETAIL_ITEM_OUTPUT_X, DETAIL_ITEM_Y - 14, color);
+        ModuleConfigModalSupport.drawLine("Item inputs", DETAIL_ITEM_INPUT_X, DETAIL_ITEM_Y - 14, color);
         ModuleConfigModalSupport
-            .drawLine("Items", DETAIL_ITEM_INPUT_X, DETAIL_ITEM_Y + 70, EnumColors.MAP_COLOR_TEXT_MUTED.getColor());
+            .drawCenteredLine("->", WIDTH / 2, DETAIL_ITEM_Y + 22, 40, EnumColors.MAP_COLOR_TEXT_SECTION.getColor());
+        ModuleConfigModalSupport.drawLine("Item outputs", DETAIL_ITEM_OUTPUT_X, DETAIL_ITEM_Y - 14, color);
+        ModuleConfigModalSupport.drawLine(
+            "Fluid inputs",
+            DETAIL_FLUID_INPUT_X,
+            DETAIL_FLUID_Y - 14,
+            EnumColors.MAP_COLOR_TEXT_MUTED.getColor());
         ModuleConfigModalSupport
-            .drawLine("Fluids", DETAIL_FLUID_INPUT_X, DETAIL_FLUID_Y - 14, EnumColors.MAP_COLOR_TEXT_MUTED.getColor());
+            .drawCenteredLine("->", WIDTH / 2, DETAIL_FLUID_Y + 6, 40, EnumColors.MAP_COLOR_TEXT_SECTION.getColor());
+        ModuleConfigModalSupport.drawLine(
+            "Fluid outputs",
+            DETAIL_FLUID_OUTPUT_X,
+            DETAIL_FLUID_Y - 14,
+            EnumColors.MAP_COLOR_TEXT_MUTED.getColor());
 
         String selected = selectedBoundTarget == null ? "Select a slot"
             : boundDescription(selectedBoundTarget) + ": " + currentBoundText(selectedBoundTarget);

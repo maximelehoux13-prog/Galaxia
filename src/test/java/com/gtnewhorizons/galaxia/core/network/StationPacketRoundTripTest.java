@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,12 +28,20 @@ import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleRegistry;
 import com.gtnewhorizons.galaxia.registry.outpost.module.HammerVariant;
+import com.gtnewhorizons.galaxia.registry.outpost.module.IRecipeModule;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleInstance;
 import com.gtnewhorizons.galaxia.registry.outpost.module.ModuleTier;
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.HammerModuleOperation;
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperationPlan;
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperationState;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.NotDoablePolicy;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSchedulerMode;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotList;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 import com.gtnewhorizons.galaxia.registry.outpost.station.ModuleShape;
 import com.gtnewhorizons.galaxia.registry.outpost.station.PlacedTile;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationLayout;
@@ -208,6 +217,41 @@ final class StationPacketRoundTripTest {
                 .require(groupId)
                 .isJoinable());
         assertTrue(client.isMinerOreBlacklisted(clientMiner, "ore:iron"));
+    }
+
+    @Test
+    void fullSyncRoundTripPreservesRecipeSnapshotPayload() {
+        AutomatedFacility server = createFacility();
+        ModuleInstance centrifuge = buildModule(server, FacilityModuleKind.CENTRIFUGE, StationTileCoord.of(1, 0));
+        Item inputItem = new Item();
+        Item outputItem = new Item();
+        RecipeSnapshot snapshot = RecipeSnapshot.resolved(
+            (byte) 1,
+            832,
+            new ItemStack[] { new ItemStack(inputItem, 2, 0) },
+            new ItemStack[] { new ItemStack(outputItem, 3, 0) },
+            null,
+            null,
+            200,
+            480);
+        RecipeSlotList slots = new RecipeSlotList();
+        slots.add(new RecipeSlot(snapshot, true, RecipeSlotBounds.empty(), (byte) 1, (byte) 1));
+        ((IRecipeModule) centrifuge.component()).setRecipeConfig(
+            new RecipeConfig(slots, RecipeSchedulerMode.PRIORITY, NotDoablePolicy.SKIP, (byte) 0, (byte) 0));
+
+        AutomatedFacility client = createFacility();
+        applyFullSyncFromPacket(client, roundTrip(AssetSyncPacket.fullSync(server)));
+
+        RecipeSnapshot clientSnapshot = ((IRecipeModule) client.modules()
+            .get(0)
+            .component()).getRecipeConfig()
+                .slots()
+                .get(0)
+                .recipe();
+        assertEquals(200, clientSnapshot.duration());
+        assertEquals(480, clientSnapshot.eut());
+        assertEquals(1, clientSnapshot.inputs().length);
+        assertEquals(1, clientSnapshot.outputs().length);
     }
 
     @Test

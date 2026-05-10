@@ -8,6 +8,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
 
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -71,6 +76,7 @@ public final class AssetSyncPacket implements IMessage {
     public static final byte SETTINGS_GROUP_UPDATED = 11;
 
     private static final int MAX_OPERATION_MAP_ENTRIES = 256;
+    private static final int MAX_RECIPE_STACKS = 64;
     private static final byte OPERATION_SPEC_TIER = 1;
     private static final byte OPERATION_SPEC_HAMMER = 2;
     private static final byte OPERATION_SPEC_MINER_FOCUS = 3;
@@ -725,6 +731,136 @@ public final class AssetSyncPacket implements IMessage {
         return amounts;
     }
 
+    private static void writeRecipeSnapshot(ByteBuf buf, RecipeSnapshot snapshot) {
+        buf.writeInt(snapshot.duration());
+        buf.writeInt(snapshot.eut());
+        writeItemStacks(buf, snapshot.inputs());
+        writeItemStacks(buf, snapshot.outputs());
+        writeIntArray(buf, snapshot.outputChances());
+        writeFluidStacks(buf, snapshot.fluidInputs());
+        writeFluidStacks(buf, snapshot.fluidOutputs());
+        writeIntArray(buf, snapshot.fluidOutputChances());
+    }
+
+    private static RecipeSnapshot readRecipeSnapshot(ByteBuf buf, byte recipeMapOrdinal, int recipeIndex,
+        long contentHash) {
+        int duration = buf.readInt();
+        int eut = buf.readInt();
+        ItemStack[] inputs = readItemStacks(buf);
+        ItemStack[] outputs = readItemStacks(buf);
+        int[] outputChances = readIntArray(buf);
+        FluidStack[] fluidInputs = readFluidStacks(buf);
+        FluidStack[] fluidOutputs = readFluidStacks(buf);
+        int[] fluidOutputChances = readIntArray(buf);
+        return new RecipeSnapshot(
+            recipeMapOrdinal,
+            recipeIndex,
+            contentHash,
+            inputs,
+            outputs,
+            fluidInputs,
+            fluidOutputs,
+            outputChances,
+            fluidOutputChances,
+            duration,
+            eut);
+    }
+
+    private static void writeItemStacks(ByteBuf buf, ItemStack[] stacks) {
+        if (stacks == null) {
+            buf.writeInt(-1);
+            return;
+        }
+        buf.writeInt(stacks.length);
+        for (ItemStack stack : stacks) {
+            buf.writeBoolean(stack != null);
+            if (stack == null) continue;
+            buf.writeInt(Item.getIdFromItem(stack.getItem()));
+            buf.writeInt(stack.getItemDamage());
+            buf.writeInt(stack.stackSize);
+        }
+    }
+
+    private static ItemStack[] readItemStacks(ByteBuf buf) {
+        int len = readRecipeArrayLength(buf);
+        if (len == -1) return null;
+        ItemStack[] stacks = new ItemStack[len];
+        for (int i = 0; i < len; i++) {
+            if (!buf.readBoolean()) continue;
+            Item item = Item.getItemById(buf.readInt());
+            int damage = buf.readInt();
+            int size = buf.readInt();
+            stacks[i] = item != null ? new ItemStack(item, size, damage) : null;
+        }
+        return stacks;
+    }
+
+    private static void writeFluidStacks(ByteBuf buf, FluidStack[] stacks) {
+        if (stacks == null) {
+            buf.writeInt(-1);
+            return;
+        }
+        buf.writeInt(stacks.length);
+        for (FluidStack stack : stacks) {
+            buf.writeBoolean(stack != null);
+            if (stack == null) continue;
+            PacketUtil.writeString(buf, fluidName(stack));
+            buf.writeInt(stack.amount);
+        }
+    }
+
+    private static FluidStack[] readFluidStacks(ByteBuf buf) {
+        int len = readRecipeArrayLength(buf);
+        if (len == -1) return null;
+        FluidStack[] stacks = new FluidStack[len];
+        for (int i = 0; i < len; i++) {
+            if (!buf.readBoolean()) continue;
+            String fluidName = PacketUtil.readString(buf);
+            int amount = buf.readInt();
+            Fluid fluid = FluidRegistry.getFluid(fluidName);
+            if (fluid != null) stacks[i] = new FluidStack(fluid, amount);
+        }
+        return stacks;
+    }
+
+    private static void writeIntArray(ByteBuf buf, int[] values) {
+        if (values == null) {
+            buf.writeInt(-1);
+            return;
+        }
+        buf.writeInt(values.length);
+        for (int value : values) {
+            buf.writeInt(value);
+        }
+    }
+
+    private static int[] readIntArray(ByteBuf buf) {
+        int len = readRecipeArrayLength(buf);
+        if (len == -1) return null;
+        int[] values = new int[len];
+        for (int i = 0; i < len; i++) {
+            values[i] = buf.readInt();
+        }
+        return values;
+    }
+
+    private static int readRecipeArrayLength(ByteBuf buf) {
+        int len = buf.readInt();
+        if (len < -1 || len > MAX_RECIPE_STACKS) {
+            throw new IllegalStateException("Invalid recipe array length: " + len);
+        }
+        return len;
+    }
+
+    private static String fluidName(FluidStack stack) {
+        try {
+            Fluid fluid = stack.getFluid();
+            return fluid != null ? fluid.getName() : "";
+        } catch (RuntimeException ignored) {
+            return "";
+        }
+    }
+
     private static void writeMinerSettingsPayload(ByteBuf buf, MinerSettings settings) {
         buf.writeInt(
             settings.blacklistedOreKeys()
@@ -786,6 +922,7 @@ public final class AssetSyncPacket implements IMessage {
             buf.writeByte(snap.recipeMapOrdinal());
             buf.writeInt(snap.recipeIndex());
             buf.writeLong(snap.contentHash());
+            writeRecipeSnapshot(buf, snap);
             buf.writeBoolean(slot.enabled());
             writeRecipeSlotBounds(buf, slot.bounds());
             buf.writeByte(slot.priority());
@@ -817,13 +954,13 @@ public final class AssetSyncPacket implements IMessage {
             byte mapOrdinal = buf.readByte();
             int recipeIndex = buf.readInt();
             long contentHash = buf.readLong();
+            RecipeSnapshot snapshot = readRecipeSnapshot(buf, mapOrdinal, recipeIndex, contentHash);
             boolean enabled = buf.readBoolean();
             RecipeSlotBounds bounds = readRecipeSlotBounds(buf);
             byte priority = buf.readByte();
             byte orderSize = buf.readByte();
 
-            RecipeSnapshot ref = RecipeSnapshot.unresolved(mapOrdinal, recipeIndex, contentHash);
-            RecipeSlot slot = new RecipeSlot(ref, enabled, bounds, priority, orderSize);
+            RecipeSlot slot = new RecipeSlot(snapshot, enabled, bounds, priority, orderSize);
             config.slots()
                 .add(slot);
         }
