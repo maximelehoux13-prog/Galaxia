@@ -45,6 +45,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleMiner;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSchedulerMode;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotList;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 import com.gtnewhorizons.galaxia.registry.outpost.station.MutationKind;
@@ -346,8 +347,7 @@ public final class AssetModuleUpdatePacket {
                 slot.recipe()
                     .fluidOutputChances());
             payloadBuf.writeBoolean(slot.enabled());
-            payloadBuf.writeInt(slot.inputGuard());
-            payloadBuf.writeInt(slot.outputGuard());
+            writeRecipeSlotBounds(payloadBuf, slot.bounds());
             payloadBuf.writeByte(slot.priority());
             payloadBuf.writeByte(slot.orderSize());
             pkt.rawPayload = new byte[payloadBuf.writerIndex()];
@@ -968,56 +968,39 @@ public final class AssetModuleUpdatePacket {
             return;
         }
 
-        // ADD or UPDATE: decode RecipeSlot from payload
-        if (packet.rawPayload.length < 25) {
+        if (packet.rawPayload.length < 2 + Integer.BYTES + Long.BYTES) {
             throw new IllegalArgumentException("truncated recipe slot payload");
         }
         byte recipeMapOrdinal = payloadBuf.readByte();
         int recipeIndex = payloadBuf.readInt();
         long contentHash = payloadBuf.readLong();
-        RecipeSnapshot ref;
-        boolean enabled;
-        int inputGuard;
-        int outputGuard;
-        byte priority;
-        byte orderSize;
-        if (packet.rawPayload.length == 25) {
-            enabled = payloadBuf.readBoolean();
-            inputGuard = payloadBuf.readInt();
-            outputGuard = payloadBuf.readInt();
-            priority = payloadBuf.readByte();
-            orderSize = payloadBuf.readByte();
-            ref = RecipeSnapshot.unresolved(recipeMapOrdinal, recipeIndex, contentHash);
-        } else {
-            int duration = payloadBuf.readInt();
-            int eut = payloadBuf.readInt();
-            ItemStack[] inputs = readItemStacks(payloadBuf);
-            ItemStack[] outputs = readItemStacks(payloadBuf);
-            int[] outputChances = readIntArray(payloadBuf);
-            FluidStack[] fluidInputs = readFluidStacks(payloadBuf);
-            FluidStack[] fluidOutputs = readFluidStacks(payloadBuf);
-            int[] fluidOutputChances = readIntArray(payloadBuf);
-            enabled = payloadBuf.readBoolean();
-            inputGuard = payloadBuf.readInt();
-            outputGuard = payloadBuf.readInt();
-            priority = payloadBuf.readByte();
-            orderSize = payloadBuf.readByte();
-            ref = new RecipeSnapshot(
-                recipeMapOrdinal,
-                recipeIndex,
-                contentHash,
-                inputs,
-                outputs,
-                fluidInputs,
-                fluidOutputs,
-                outputChances,
-                fluidOutputChances,
-                duration,
-                eut);
-        }
+        int duration = payloadBuf.readInt();
+        int eut = payloadBuf.readInt();
+        ItemStack[] inputs = readItemStacks(payloadBuf);
+        ItemStack[] outputs = readItemStacks(payloadBuf);
+        int[] outputChances = readIntArray(payloadBuf);
+        FluidStack[] fluidInputs = readFluidStacks(payloadBuf);
+        FluidStack[] fluidOutputs = readFluidStacks(payloadBuf);
+        int[] fluidOutputChances = readIntArray(payloadBuf);
+        boolean enabled = payloadBuf.readBoolean();
+        RecipeSlotBounds bounds = readRecipeSlotBounds(payloadBuf);
+        byte priority = payloadBuf.readByte();
+        byte orderSize = payloadBuf.readByte();
+        RecipeSnapshot ref = new RecipeSnapshot(
+            recipeMapOrdinal,
+            recipeIndex,
+            contentHash,
+            inputs,
+            outputs,
+            fluidInputs,
+            fluidOutputs,
+            outputChances,
+            fluidOutputChances,
+            duration,
+            eut);
         RecipeSnapshot validated = RecipeSlotPayloadValidator.validate(recipeModule, ref);
         if (validated == null) return;
-        RecipeSlot slot = new RecipeSlot(validated, enabled, inputGuard, outputGuard, priority, orderSize);
+        RecipeSlot slot = new RecipeSlot(validated, enabled, bounds, priority, orderSize);
 
         if (config == null) {
             config = RecipeConfig.empty();
@@ -1166,6 +1149,70 @@ public final class AssetModuleUpdatePacket {
             }
         }
         return stacks;
+    }
+
+    private static void writeRecipeSlotBounds(ByteBuf buf, RecipeSlotBounds bounds) {
+        writeItemBoundMap(buf, bounds.inputItemLowerBounds());
+        writeItemBoundMap(buf, bounds.outputItemUpperBounds());
+        writeStringBoundMap(buf, bounds.inputFluidLowerBounds());
+        writeStringBoundMap(buf, bounds.outputFluidUpperBounds());
+    }
+
+    private static RecipeSlotBounds readRecipeSlotBounds(ByteBuf buf) {
+        return new RecipeSlotBounds(
+            readItemBoundMap(buf),
+            readItemBoundMap(buf),
+            readStringBoundMap(buf),
+            readStringBoundMap(buf));
+    }
+
+    private static void writeItemBoundMap(ByteBuf buf, Map<ItemStackWrapper, Long> amounts) {
+        buf.writeInt(amounts.size());
+        for (Map.Entry<ItemStackWrapper, Long> entry : amounts.entrySet()) {
+            PacketUtil.writeString(
+                buf,
+                entry.getKey()
+                    .toKey());
+            buf.writeLong(entry.getValue());
+        }
+    }
+
+    private static Map<ItemStackWrapper, Long> readItemBoundMap(ByteBuf buf) {
+        int size = readRecipeBoundMapSize(buf);
+        java.util.LinkedHashMap<ItemStackWrapper, Long> amounts = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < size; i++) {
+            ItemStackWrapper item = ItemStackWrapper.fromKey(PacketUtil.readString(buf));
+            long amount = buf.readLong();
+            if (item != null && amount >= 0L) amounts.put(item, amount);
+        }
+        return amounts;
+    }
+
+    private static void writeStringBoundMap(ByteBuf buf, Map<String, Long> amounts) {
+        buf.writeInt(amounts.size());
+        for (Map.Entry<String, Long> entry : amounts.entrySet()) {
+            PacketUtil.writeString(buf, entry.getKey());
+            buf.writeLong(entry.getValue());
+        }
+    }
+
+    private static Map<String, Long> readStringBoundMap(ByteBuf buf) {
+        int size = readRecipeBoundMapSize(buf);
+        java.util.LinkedHashMap<String, Long> amounts = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < size; i++) {
+            String key = PacketUtil.readString(buf);
+            long amount = buf.readLong();
+            if (!key.isBlank() && amount >= 0L) amounts.put(key, amount);
+        }
+        return amounts;
+    }
+
+    private static int readRecipeBoundMapSize(ByteBuf buf) {
+        int size = buf.readInt();
+        if (size < 0 || size > MAX_RECIPE_STACKS) {
+            throw new IllegalArgumentException("invalid recipe bound map size: " + size);
+        }
+        return size;
     }
 
     private static String fluidName(FluidStack stack) {

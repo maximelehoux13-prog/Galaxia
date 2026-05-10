@@ -47,42 +47,39 @@ public final class ProductionModuleHelper {
 
         ItemStackWrapper[] inputWrappers = cachedWrappers(inputWrapperCache, recipe, inputs);
 
-        // Check input guard
         Map<ItemStackWrapper, Long> requiredInputs = requiredInputs(inputWrappers, inputs);
         for (Map.Entry<ItemStackWrapper, Long> e : requiredInputs.entrySet()) {
-            if (inv.getAmount(e.getKey()) < e.getValue() + slot.inputGuard()) {
+            if (inv.getAmount(e.getKey()) - e.getValue() < slot.bounds()
+                .inputItemLowerBound(e.getKey())) {
                 advanceScheduler(config, recipeModule);
                 return;
             }
         }
 
-        for (FluidStack fluid : fluidInputs == null ? new FluidStack[0] : fluidInputs) {
-            String fluidName = fluidName(fluid);
-            if (fluidName == null) continue;
-            if (inv.getFluidAmount(fluidName) < fluid.amount) {
+        Map<String, Long> requiredFluidInputs = requiredFluidInputs(fluidInputs);
+        for (Map.Entry<String, Long> e : requiredFluidInputs.entrySet()) {
+            if (inv.getFluidAmount(e.getKey()) - e.getValue() < slot.bounds()
+                .inputFluidLowerBound(e.getKey())) {
                 advanceScheduler(config, recipeModule);
                 return;
             }
         }
 
         ItemStackWrapper[] outputWrappers = cachedWrappers(outputWrapperCache, recipe, outputs);
-
-        // Output guard is a recipe start threshold, not a hard post-production cap.
-        if (!allowsItemOutputs(inv, outputWrappers, outputs, slot.outputGuard())) {
-            advanceScheduler(config, recipeModule);
-            return;
-        }
-        if (!allowsFluidOutputs(inv, fluidOutputs, slot.outputGuard())) {
-            advanceScheduler(config, recipeModule);
-            return;
-        }
-
         Map<ItemStackWrapper, Long> selectedOutputs = selectedOutputs(outputWrappers, outputs, outputChances, random);
+        Map<String, Long> selectedFluidOutputs = selectedFluidOutputs(fluidOutputs, fluidOutputChances, random);
+        if (!allowsItemOutputs(inv, selectedOutputs, slot)) {
+            advanceScheduler(config, recipeModule);
+            return;
+        }
+        if (!allowsFluidOutputs(inv, selectedFluidOutputs, slot)) {
+            advanceScheduler(config, recipeModule);
+            return;
+        }
         if (!canFitSelectedItemOutputs(outpost, selectedOutputs, requiredInputs)) {
             advanceScheduler(config, recipeModule);
             return;
         }
-        Map<String, Long> selectedFluidOutputs = selectedFluidOutputs(fluidOutputs, fluidOutputChances, random);
 
         // Consume inputs
         for (Map.Entry<ItemStackWrapper, Long> e : requiredInputs.entrySet()) {
@@ -138,12 +135,25 @@ public final class ProductionModuleHelper {
         return required;
     }
 
-    private static boolean allowsItemOutputs(AutomatedFacilityInventory inv, ItemStackWrapper[] wrappers,
-        ItemStack[] stacks, int outputGuard) {
-        if (stacks == null) return true;
-        for (int i = 0; i < wrappers.length && i < stacks.length; i++) {
-            if (wrappers[i] == null || stacks[i] == null || stacks[i].stackSize <= 0) continue;
-            if (inv.getAmount(wrappers[i]) >= outputGuard) return false;
+    private static Map<String, Long> requiredFluidInputs(FluidStack[] stacks) {
+        Map<String, Long> required = new LinkedHashMap<>();
+        if (stacks == null) return required;
+        for (FluidStack stack : stacks) {
+            String fluidName = fluidName(stack);
+            if (fluidName == null || stack.amount <= 0) continue;
+            required.merge(fluidName, (long) stack.amount, Long::sum);
+        }
+        return required;
+    }
+
+    private static boolean allowsItemOutputs(AutomatedFacilityInventory inv, Map<ItemStackWrapper, Long> outputs,
+        RecipeSlot slot) {
+        for (Map.Entry<ItemStackWrapper, Long> entry : outputs.entrySet()) {
+            if (!slot.bounds()
+                .hasOutputItemUpperBound(entry.getKey())) continue;
+            long upperBound = slot.bounds()
+                .outputItemUpperBound(entry.getKey());
+            if (inv.getAmount(entry.getKey()) + entry.getValue() > upperBound) return false;
         }
         return true;
     }
@@ -162,12 +172,14 @@ public final class ProductionModuleHelper {
         return outputAmount <= outpost.remainingItemInventoryCapacity() + freedByInputs;
     }
 
-    private static boolean allowsFluidOutputs(AutomatedFacilityInventory inv, FluidStack[] stacks, int outputGuard) {
-        if (stacks == null) return true;
-        for (FluidStack stack : stacks) {
-            String fluidName = fluidName(stack);
-            if (fluidName == null || stack.amount <= 0) continue;
-            if (inv.getFluidAmount(fluidName) >= outputGuard) return false;
+    private static boolean allowsFluidOutputs(AutomatedFacilityInventory inv, Map<String, Long> outputs,
+        RecipeSlot slot) {
+        for (Map.Entry<String, Long> entry : outputs.entrySet()) {
+            if (!slot.bounds()
+                .hasOutputFluidUpperBound(entry.getKey())) continue;
+            long upperBound = slot.bounds()
+                .outputFluidUpperBound(entry.getKey());
+            if (inv.getFluidAmount(entry.getKey()) + entry.getValue() > upperBound) return false;
         }
         return true;
     }

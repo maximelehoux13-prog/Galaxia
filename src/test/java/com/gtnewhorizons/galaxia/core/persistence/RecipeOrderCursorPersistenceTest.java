@@ -18,6 +18,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.recipe.NotDoablePolicy;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSchedulerMode;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 import com.gtnewhorizons.galaxia.registry.outpost.station.ModuleShape;
 import com.gtnewhorizons.galaxia.registry.outpost.station.StationTileCoord;
@@ -96,8 +97,10 @@ final class RecipeOrderCursorPersistenceTest {
         RecipeSlot firstSlot = loadedConfig.slots()
             .get(0);
         assertTrue(firstSlot.enabled(), "slot 0 enabled must survive");
-        assertEquals(10, firstSlot.inputGuard(), "slot 0 inputGuard must survive");
-        assertEquals(100, firstSlot.outputGuard(), "slot 0 outputGuard must survive");
+        assertTrue(
+            firstSlot.bounds()
+                .isEmpty(),
+            "slot 0 bounds must survive empty");
         assertEquals((byte) 5, firstSlot.priority(), "slot 0 priority must survive");
         assertEquals((byte) 2, firstSlot.orderSize(), "slot 0 orderSize must survive");
 
@@ -129,16 +132,19 @@ final class RecipeOrderCursorPersistenceTest {
         RecipeSlot slot1 = new RecipeSlot(
             RecipeSnapshot.unresolved((byte) 1, 0, 42L),
             true,
-            10,
-            100,
+            RecipeSlotBounds.empty(),
             (byte) 5,
             (byte) 2);
-        RecipeSlot slot2 = new RecipeSlot(RecipeSnapshot.unresolved((byte) 1, 1, 43L), true, 5, 50, (byte) 3, (byte) 4);
+        RecipeSlot slot2 = new RecipeSlot(
+            RecipeSnapshot.unresolved((byte) 1, 1, 43L),
+            true,
+            RecipeSlotBounds.empty(),
+            (byte) 3,
+            (byte) 4);
         RecipeSlot slot3 = new RecipeSlot(
             RecipeSnapshot.unresolved((byte) 1, 2, 44L),
             false,
-            0,
-            200,
+            RecipeSlotBounds.empty(),
             (byte) 1,
             (byte) 1);
         config.slots()

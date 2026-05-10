@@ -60,6 +60,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.recipe.NotDoablePolicy;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSchedulerMode;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotList;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 import com.gtnewhorizons.galaxia.registry.outpost.station.ModuleShape;
@@ -1294,7 +1295,15 @@ final class FacilityPersistenceManagerTest {
             320,
             480);
         RecipeSlotList slots = new RecipeSlotList();
-        slots.add(new RecipeSlot(snapshot, true, 11, 22, (byte) 3, (byte) 4));
+        slots.add(
+            new RecipeSlot(
+                snapshot,
+                true,
+                RecipeSlotBounds.empty()
+                    .withInputFluidLowerBound("galaxia.persistence.input", 11)
+                    .withOutputFluidUpperBound("galaxia.persistence.output", 22),
+                (byte) 3,
+                (byte) 4));
         recipeModule.setRecipeConfig(
             new RecipeConfig(slots, RecipeSchedulerMode.PRIORITY, NotDoablePolicy.SKIP, (byte) 0, (byte) 0));
 
@@ -1325,8 +1334,14 @@ final class FacilityPersistenceManagerTest {
         assertEquals(144, decodedSnapshot.fluidInputs()[0].amount);
         assertEquals("galaxia.persistence.output", fluidName(decodedSnapshot.fluidOutputs()[0]));
         assertEquals(72, decodedSnapshot.fluidOutputs()[0].amount);
-        assertEquals(11, decodedSlot.inputGuard());
-        assertEquals(22, decodedSlot.outputGuard());
+        assertEquals(
+            11,
+            decodedSlot.bounds()
+                .inputFluidLowerBound("galaxia.persistence.input"));
+        assertEquals(
+            22,
+            decodedSlot.bounds()
+                .outputFluidUpperBound("galaxia.persistence.output"));
         assertEquals(3, decodedSlot.priority());
         assertEquals(4, decodedSlot.orderSize());
     }

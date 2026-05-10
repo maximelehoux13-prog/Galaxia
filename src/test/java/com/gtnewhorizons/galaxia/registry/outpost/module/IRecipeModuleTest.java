@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 
 final class IRecipeModuleTest {
@@ -74,6 +75,11 @@ final class IRecipeModuleTest {
     }
 
     private static RecipeSlot slot(byte priority) {
-        return new RecipeSlot(RecipeSnapshot.unresolved((byte) 1, 0, 42L), true, 0, 0, priority, (byte) 1);
+        return new RecipeSlot(
+            RecipeSnapshot.unresolved((byte) 1, 0, 42L),
+            true,
+            RecipeSlotBounds.empty(),
+            priority,
+            (byte) 1);
     }
 }

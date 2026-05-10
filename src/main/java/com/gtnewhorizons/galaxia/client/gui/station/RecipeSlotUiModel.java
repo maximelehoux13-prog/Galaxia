@@ -13,7 +13,6 @@ import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 
 final class RecipeSlotUiModel {
 
-    static final int MAX_GUARD = 999_999;
     static final int MAX_BYTE_SETTING = Byte.MAX_VALUE;
 
     private RecipeSlotUiModel() {}
@@ -35,14 +34,11 @@ final class RecipeSlotUiModel {
 
     static String slotTitle(RecipeSlot slot) {
         RecipeSnapshot recipe = slot.recipe();
-        String output = itemSummary(recipe.outputs());
-        if (output != null) return output;
-        output = fluidSummary(recipe.fluidOutputs());
-        if (output != null) return output;
-        String input = itemSummary(recipe.inputs());
-        if (input != null) return input;
-        input = fluidSummary(recipe.fluidInputs());
-        if (input != null) return input;
+        String input = resourceSummary(recipe.inputs(), recipe.fluidInputs());
+        String output = resourceSummary(recipe.outputs(), recipe.fluidOutputs());
+        if (input != null || output != null) {
+            return (input != null ? input : "?") + " -> " + (output != null ? output : "?");
+        }
         return "Recipe #" + recipe.recipeIndex();
     }
 
@@ -65,6 +61,14 @@ final class RecipeSlotUiModel {
             return stack.stackSize > 1 ? stack.stackSize + "x " + name : name;
         }
         return null;
+    }
+
+    private static @Nullable String resourceSummary(@Nullable ItemStack[] items, @Nullable FluidStack[] fluids) {
+        String item = itemSummary(items);
+        String fluid = fluidSummary(fluids);
+        if (item == null) return fluid;
+        if (fluid == null) return item;
+        return item + " + " + fluid;
     }
 
     private static @Nullable String fluidSummary(@Nullable FluidStack[] stacks) {

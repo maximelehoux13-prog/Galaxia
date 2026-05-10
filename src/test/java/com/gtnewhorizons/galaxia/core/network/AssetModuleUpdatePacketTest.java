@@ -39,6 +39,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleTierOpe
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleMiner;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotList;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 import com.gtnewhorizons.galaxia.registry.outpost.station.ModuleShape;
@@ -79,8 +80,7 @@ final class AssetModuleUpdatePacketTest {
         RecipeSlot slot = new RecipeSlot(
             RecipeSnapshot.unresolved((byte) 1, 42, 12345L),
             true,
-            10,
-            100,
+            RecipeSlotBounds.empty(),
             (byte) 5,
             (byte) 8);
         AssetModuleUpdatePacket original = AssetModuleUpdatePacket.recipeSlotPayload(
@@ -102,8 +102,7 @@ final class AssetModuleUpdatePacketTest {
         assertNotNull(decoded.getRawPayload());
         assertTrue(decoded.getRawPayload().length > 25);
 
-        // Decode payload manually: slotIndex=3, recipeMapOrdinal=1, recipeIndex=42, contentHash=12345,
-        // enabled=true, inputGuard=10, outputGuard=100, priority=5, orderSize=8
+        // Decode payload manually: slotIndex=3, recipeMapOrdinal=1, recipeIndex=42, contentHash=12345.
         ByteBuf payloadBuf = Unpooled.wrappedBuffer(decoded.getRawPayload());
         assertEquals((byte) 3, payloadBuf.readByte()); // slotIndex
         assertEquals((byte) 1, payloadBuf.readByte()); // recipeMapOrdinal
@@ -118,8 +117,7 @@ final class AssetModuleUpdatePacketTest {
         assertEquals(-1, payloadBuf.readInt()); // fluid outputs
         assertEquals(-1, payloadBuf.readInt()); // fluid output chances
         assertTrue(payloadBuf.readBoolean()); // enabled
-        assertEquals(10, payloadBuf.readInt()); // inputGuard
-        assertEquals(100, payloadBuf.readInt()); // outputGuard
+        assertEmptyBounds(payloadBuf);
         assertEquals((byte) 5, payloadBuf.readByte()); // priority
         assertEquals((byte) 8, payloadBuf.readByte()); // orderSize
     }
@@ -143,8 +141,7 @@ final class AssetModuleUpdatePacketTest {
                 200,
                 512),
             true,
-            10,
-            100,
+            RecipeSlotBounds.empty(),
             (byte) 5,
             (byte) 8);
 
@@ -198,8 +195,7 @@ final class AssetModuleUpdatePacketTest {
         assertEquals(7500, payloadBuf.readInt());
 
         assertTrue(payloadBuf.readBoolean());
-        assertEquals(10, payloadBuf.readInt());
-        assertEquals(100, payloadBuf.readInt());
+        assertEmptyBounds(payloadBuf);
         assertEquals((byte) 5, payloadBuf.readByte());
         assertEquals((byte) 8, payloadBuf.readByte());
     }
@@ -233,8 +229,7 @@ final class AssetModuleUpdatePacketTest {
         RecipeSlot slot = new RecipeSlot(
             RecipeSnapshot.unresolved((byte) 2, 7, 999L),
             false,
-            5,
-            50,
+            RecipeSlotBounds.empty(),
             (byte) 1,
             (byte) 3);
         AssetModuleUpdatePacket original = AssetModuleUpdatePacket.recipeSlotPayload(
@@ -268,8 +263,7 @@ final class AssetModuleUpdatePacketTest {
         assertEquals(-1, payloadBuf.readInt()); // fluid outputs
         assertEquals(-1, payloadBuf.readInt()); // fluid output chances
         assertFalse(payloadBuf.readBoolean()); // enabled
-        assertEquals(5, payloadBuf.readInt()); // inputGuard
-        assertEquals(50, payloadBuf.readInt()); // outputGuard
+        assertEmptyBounds(payloadBuf);
         assertEquals((byte) 1, payloadBuf.readByte()); // priority
         assertEquals((byte) 3, payloadBuf.readByte()); // orderSize
     }
@@ -986,7 +980,12 @@ final class AssetModuleUpdatePacketTest {
     @Test
     void applyRecipeSlotMutation_addOnEmptyList_appendsAtZero() {
         RecipeSlotList slots = new RecipeSlotList();
-        RecipeSlot slot = new RecipeSlot(RecipeSnapshot.unresolved((byte) 1, 0, 1L), true, 0, 0, (byte) 1, (byte) 1);
+        RecipeSlot slot = new RecipeSlot(
+            RecipeSnapshot.unresolved((byte) 1, 0, 1L),
+            true,
+            RecipeSlotBounds.empty(),
+            (byte) 1,
+            (byte) 1);
 
         boolean changed = AssetModuleUpdatePacket
             .applyRecipeSlotMutation(slots, AssetModuleUpdatePacket.ConfigAction.ADD_RECIPE_SLOT, 0, slot);
@@ -999,7 +998,12 @@ final class AssetModuleUpdatePacketTest {
     @Test
     void applyRecipeSlotMutation_addWithGapIndexIsRejected() {
         RecipeSlotList slots = new RecipeSlotList();
-        RecipeSlot slot = new RecipeSlot(RecipeSnapshot.unresolved((byte) 1, 0, 1L), true, 0, 0, (byte) 1, (byte) 1);
+        RecipeSlot slot = new RecipeSlot(
+            RecipeSnapshot.unresolved((byte) 1, 0, 1L),
+            true,
+            RecipeSlotBounds.empty(),
+            (byte) 1,
+            (byte) 1);
 
         boolean changed = AssetModuleUpdatePacket
             .applyRecipeSlotMutation(slots, AssetModuleUpdatePacket.ConfigAction.ADD_RECIPE_SLOT, 1, slot);
@@ -1011,7 +1015,12 @@ final class AssetModuleUpdatePacketTest {
     @Test
     void applyRecipeSlotMutation_updateMissingSlotIsRejected() {
         RecipeSlotList slots = new RecipeSlotList();
-        RecipeSlot slot = new RecipeSlot(RecipeSnapshot.unresolved((byte) 1, 0, 1L), true, 0, 0, (byte) 1, (byte) 1);
+        RecipeSlot slot = new RecipeSlot(
+            RecipeSnapshot.unresolved((byte) 1, 0, 1L),
+            true,
+            RecipeSlotBounds.empty(),
+            (byte) 1,
+            (byte) 1);
 
         boolean changed = AssetModuleUpdatePacket
             .applyRecipeSlotMutation(slots, AssetModuleUpdatePacket.ConfigAction.UPDATE_RECIPE_SLOT, 0, slot);
@@ -1031,6 +1040,13 @@ final class AssetModuleUpdatePacketTest {
         facility.addModule(module);
         CelestialAssetStore.SERVER.addInternal(TEAM, facility);
         return facility;
+    }
+
+    private static void assertEmptyBounds(ByteBuf payloadBuf) {
+        assertEquals(0, payloadBuf.readInt()); // input item lower bounds
+        assertEquals(0, payloadBuf.readInt()); // output item upper bounds
+        assertEquals(0, payloadBuf.readInt()); // input fluid lower bounds
+        assertEquals(0, payloadBuf.readInt()); // output fluid upper bounds
     }
 
     private static AutomatedFacility addHammerFacilityToServer(ModuleTier tier) {

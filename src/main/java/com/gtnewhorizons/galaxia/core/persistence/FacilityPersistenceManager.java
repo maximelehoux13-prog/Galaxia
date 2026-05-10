@@ -68,6 +68,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.recipe.NotDoablePolicy;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSchedulerMode;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotList;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSnapshot;
 import com.gtnewhorizons.galaxia.registry.outpost.station.ModuleShape;
@@ -443,8 +444,7 @@ public final class FacilityPersistenceManager {
                                 .contentHash());
                         writeRecipeSnapshot(slotObj, slot.recipe());
                         slotObj.addProperty("enabled", slot.enabled());
-                        slotObj.addProperty("inputGuard", slot.inputGuard());
-                        slotObj.addProperty("outputGuard", slot.outputGuard());
+                        writeRecipeSlotBounds(slotObj, slot.bounds());
                         slotObj.addProperty("priority", slot.priority() & 0xFF);
                         slotObj.addProperty("orderSize", slot.orderSize() & 0xFF);
                         slotObj.addProperty("slotIndex", i);
@@ -993,6 +993,86 @@ public final class FacilityPersistenceManager {
             eut);
     }
 
+    private static void writeRecipeSlotBounds(JsonObject slotObj, RecipeSlotBounds bounds) {
+        JsonObject boundsObj = new JsonObject();
+        writeItemBoundMap(boundsObj, "inputItems", bounds.inputItemLowerBounds());
+        writeItemBoundMap(boundsObj, "outputItems", bounds.outputItemUpperBounds());
+        writeStringBoundMap(boundsObj, "inputFluids", bounds.inputFluidLowerBounds());
+        writeStringBoundMap(boundsObj, "outputFluids", bounds.outputFluidUpperBounds());
+        slotObj.add("bounds", boundsObj);
+    }
+
+    private static RecipeSlotBounds readRecipeSlotBounds(JsonObject slotObj) {
+        if (!slotObj.has("bounds") || !slotObj.get("bounds")
+            .isJsonObject()) {
+            return RecipeSlotBounds.empty();
+        }
+        JsonObject boundsObj = slotObj.getAsJsonObject("bounds");
+        return new RecipeSlotBounds(
+            readItemBoundMap(boundsObj, "inputItems"),
+            readItemBoundMap(boundsObj, "outputItems"),
+            readStringBoundMap(boundsObj, "inputFluids"),
+            readStringBoundMap(boundsObj, "outputFluids"));
+    }
+
+    private static void writeItemBoundMap(JsonObject target, String key, Map<ItemStackWrapper, Long> bounds) {
+        com.google.gson.JsonArray array = new com.google.gson.JsonArray();
+        for (Map.Entry<ItemStackWrapper, Long> entry : bounds.entrySet()) {
+            JsonObject obj = new JsonObject();
+            obj.addProperty(
+                "key",
+                entry.getKey()
+                    .toKey());
+            obj.addProperty("amount", entry.getValue());
+            array.add(obj);
+        }
+        target.add(key, array);
+    }
+
+    private static Map<ItemStackWrapper, Long> readItemBoundMap(JsonObject source, String key) {
+        Map<ItemStackWrapper, Long> bounds = new LinkedHashMap<>();
+        if (!source.has(key)) return bounds;
+        com.google.gson.JsonArray array = source.getAsJsonArray(key);
+        for (JsonElement element : array) {
+            if (element == null || element.isJsonNull()) continue;
+            JsonObject obj = element.getAsJsonObject();
+            ItemStackWrapper item = ItemStackWrapper.fromKey(
+                obj.get("key")
+                    .getAsString());
+            long amount = obj.get("amount")
+                .getAsLong();
+            if (item != null && amount >= 0L) bounds.put(item, amount);
+        }
+        return bounds;
+    }
+
+    private static void writeStringBoundMap(JsonObject target, String key, Map<String, Long> bounds) {
+        com.google.gson.JsonArray array = new com.google.gson.JsonArray();
+        for (Map.Entry<String, Long> entry : bounds.entrySet()) {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("key", entry.getKey());
+            obj.addProperty("amount", entry.getValue());
+            array.add(obj);
+        }
+        target.add(key, array);
+    }
+
+    private static Map<String, Long> readStringBoundMap(JsonObject source, String key) {
+        Map<String, Long> bounds = new LinkedHashMap<>();
+        if (!source.has(key)) return bounds;
+        com.google.gson.JsonArray array = source.getAsJsonArray(key);
+        for (JsonElement element : array) {
+            if (element == null || element.isJsonNull()) continue;
+            JsonObject obj = element.getAsJsonObject();
+            String boundKey = obj.get("key")
+                .getAsString();
+            long amount = obj.get("amount")
+                .getAsLong();
+            if (boundKey != null && !boundKey.isBlank() && amount >= 0L) bounds.put(boundKey, amount);
+        }
+        return bounds;
+    }
+
     private static void writeItemStacks(JsonObject target, String key, ItemStack[] stacks) {
         if (stacks == null) return;
         com.google.gson.JsonArray array = new com.google.gson.JsonArray();
@@ -1385,16 +1465,13 @@ public final class FacilityPersistenceManager {
                         .getAsLong();
                     boolean enabled = slotObj.get("enabled")
                         .getAsBoolean();
-                    int inputGuard = slotObj.get("inputGuard")
-                        .getAsInt();
-                    int outputGuard = slotObj.get("outputGuard")
-                        .getAsInt();
+                    RecipeSlotBounds bounds = readRecipeSlotBounds(slotObj);
                     byte priority = slotObj.get("priority")
                         .getAsByte();
                     byte orderSize = slotObj.get("orderSize")
                         .getAsByte();
                     RecipeSnapshot ref = readRecipeSnapshot(slotObj, recipeMapOrdinal, recipeIndex, contentHash);
-                    RecipeSlot slot = new RecipeSlot(ref, enabled, inputGuard, outputGuard, priority, orderSize);
+                    RecipeSlot slot = new RecipeSlot(ref, enabled, bounds, priority, orderSize);
                     int slotIndex = slotObj.has("slotIndex") ? slotObj.get("slotIndex")
                         .getAsInt() : i;
                     slots.setOrAppend(slotIndex, slot);

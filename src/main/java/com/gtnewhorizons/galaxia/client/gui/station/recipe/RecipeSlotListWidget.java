@@ -86,13 +86,11 @@ public class RecipeSlotListWidget extends ParentWidget<RecipeSlotListWidget> {
                     int enabledColor = slot.enabled() ? ENABLED_COLOR : DISABLED_COLOR;
                     fr.drawStringWithShadow(enabledChar, cx, y, enabledColor);
                     cx += fr.getStringWidth(enabledChar) + 2;
-                    String rest = "  in:" + slot.inputGuard()
-                        + "  out:"
-                        + slot.outputGuard()
-                        + "  pri:"
-                        + (slot.priority() & 0xFF)
+                    String rest = "  pri:" + (slot.priority() & 0xFF)
                         + "  size:"
-                        + (slot.orderSize() & 0xFF);
+                        + (slot.orderSize() & 0xFF)
+                        + (slot.bounds()
+                            .isEmpty() ? "" : "  bounds:*");
                     String trimmedRest = fr.trimStringToWidth(rest, maxWidth - (cx - x));
                     fr.drawStringWithShadow(trimmedRest, cx, y, TEXT_COLOR);
 
