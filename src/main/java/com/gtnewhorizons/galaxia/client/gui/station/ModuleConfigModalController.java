@@ -35,6 +35,8 @@ final class ModuleConfigModalController {
     private boolean moduleOperationCancelArmed;
     private boolean hammerUpgradeReserveItems;
     private boolean hammerUpgradeVoidRefund;
+    private boolean retargetQueued;
+    private ModuleInstance.ID queuedRetargetModuleId;
     private ModuleUpgradeSelection moduleUpgradeSelection = ModuleUpgradeSelection
         .hammer(HammerVariant.BASE, ModuleTier.EV);
 
@@ -174,6 +176,22 @@ final class ModuleConfigModalController {
         if (kind != Kind.NONE && moduleId != null && moduleIndex() < 0) {
             close();
         }
+    }
+
+    void processDeferredActions() {
+        if (retargetQueued) {
+            ModuleInstance module = queuedRetargetModuleId == null ? null
+                : ModuleConfigModalSupport.module(assetId, queuedRetargetModuleId);
+            retargetQueued = false;
+            queuedRetargetModuleId = null;
+            retargetTo(module);
+        }
+        closeIfTargetMissing();
+    }
+
+    void requestRetargetTo(ModuleInstance module) {
+        retargetQueued = true;
+        queuedRetargetModuleId = module == null ? null : module.id;
     }
 
     void retargetTo(ModuleInstance module) {

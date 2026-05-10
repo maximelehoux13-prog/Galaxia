@@ -82,7 +82,7 @@ public final class StationManagementScreen implements IGuiHolder<GuiData> {
         StationMapWidget map = new StationMapWidget(
             assetId,
             coord -> ModulePickerScreen.open(assetId, coord, creativeBuildMode),
-            tile -> configController.retargetTo(tile.isCore() ? null : tile.module()),
+            tile -> configController.requestRetargetTo(tile.isCore() ? null : tile.module()),
             LEFT_PANEL_WIDTH + PADDING,
             PADDING,
             PADDING,
@@ -182,7 +182,7 @@ public final class StationManagementScreen implements IGuiHolder<GuiData> {
         @Override
         public void onUpdate() {
             super.onUpdate();
-            controller.closeIfTargetMissing();
+            controller.processDeferredActions();
         }
 
         @Override
