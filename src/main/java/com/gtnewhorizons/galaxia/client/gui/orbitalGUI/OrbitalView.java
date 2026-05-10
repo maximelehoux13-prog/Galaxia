@@ -1,9 +1,11 @@
 package com.gtnewhorizons.galaxia.client.gui.orbitalGUI;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -1628,15 +1630,24 @@ public class OrbitalView {
         }
 
         private double getNearestOtherStarDistance(CelestialObject anchorStar) {
-            double[] anchorPos = getAbsoluteWorldPos(anchorStar);
+            return nearestOtherStarDistance(
+                anchorStar,
+                GalaxiaCelestialAPI.getChildren(root),
+                this::getAbsoluteWorldPos);
+        }
+
+        static double nearestOtherStarDistance(CelestialObject anchorStar, Collection<CelestialObject> galaxyBodies,
+            Function<CelestialObject, double[]> worldPositionProvider) {
+            if (anchorStar == null || galaxyBodies == null || worldPositionProvider == null) return Double.MAX_VALUE;
+            double[] anchorPos = worldPositionProvider.apply(anchorStar);
             if (anchorPos == null) return Double.MAX_VALUE;
             double nearestDistance = Double.MAX_VALUE;
-            for (CelestialObject child : GalaxiaCelestialAPI.getChildren(anchorStar)) {
-                if (child == anchorStar || child.objectClass() != CelestialObject.Class.STAR) continue;
-                double[] childPos = getAbsoluteWorldPos(child);
-                if (childPos == null) continue;
+            for (CelestialObject body : galaxyBodies) {
+                if (body == anchorStar || body.objectClass() != CelestialObject.Class.STAR) continue;
+                double[] bodyPos = worldPositionProvider.apply(body);
+                if (bodyPos == null) continue;
                 nearestDistance = Math
-                    .min(nearestDistance, Math.hypot(childPos[0] - anchorPos[0], childPos[1] - anchorPos[1]));
+                    .min(nearestDistance, Math.hypot(bodyPos[0] - anchorPos[0], bodyPos[1] - anchorPos[1]));
             }
             return nearestDistance;
         }
