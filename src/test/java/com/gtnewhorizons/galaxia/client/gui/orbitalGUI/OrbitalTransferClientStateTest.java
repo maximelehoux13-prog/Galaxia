@@ -1,6 +1,7 @@
 package com.gtnewhorizons.galaxia.client.gui.orbitalGUI;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,6 +57,33 @@ final class OrbitalTransferClientStateTest {
             iliaTransfer,
             state.transfersForSystem(iliaView)
                 .get(0));
+    }
+
+    @Test
+    void transferIsCulledWhenScreenTrajectoryFitsInsideDoublePackageIconWidth() {
+        InterplanetaryTransferJob tinyTransfer = transferWithTrajectory(
+            "tiny",
+            new double[] { 100.0, 106.0 },
+            new double[] { 200.0, 204.0 });
+        InterplanetaryTransferJob iconWideTransfer = transferWithTrajectory(
+            "wide",
+            new double[] { 100.0, 112.0 },
+            new double[] { 200.0, 200.0 });
+        InterplanetaryTransferJob doubleIconWideTransfer = transferWithTrajectory(
+            "double-wide",
+            new double[] { 100.0, 124.0 },
+            new double[] { 200.0, 200.0 });
+        InterplanetaryTransferSystem.OrbitalTransferRenderer.Callbacks identityProjection = identityProjection();
+
+        assertFalse(
+            InterplanetaryTransferSystem.OrbitalTransferRenderer
+                .shouldRenderTransferAtScreenScale(tinyTransfer, identityProjection, 24.0f));
+        assertFalse(
+            InterplanetaryTransferSystem.OrbitalTransferRenderer
+                .shouldRenderTransferAtScreenScale(iconWideTransfer, identityProjection));
+        assertTrue(
+            InterplanetaryTransferSystem.OrbitalTransferRenderer
+                .shouldRenderTransferAtScreenScale(doubleIconWideTransfer, identityProjection));
     }
 
     @Test
@@ -166,6 +194,48 @@ final class OrbitalTransferClientStateTest {
             new double[] { 0.0, 1.0 },
             2,
             TransferPackageKind.HAMMER);
+    }
+
+    private static InterplanetaryTransferJob transferWithTrajectory(String id, double[] xs, double[] ys) {
+        return new InterplanetaryTransferJob(
+            id,
+            "Simulation",
+            "Simulation",
+            null,
+            null,
+            null,
+            null,
+            10.0,
+            20.0,
+            xs,
+            ys,
+            Math.min(xs.length, ys.length),
+            TransferPackageKind.HAMMER);
+    }
+
+    private static InterplanetaryTransferSystem.OrbitalTransferRenderer.Callbacks identityProjection() {
+        return new InterplanetaryTransferSystem.OrbitalTransferRenderer.Callbacks() {
+
+            @Override
+            public float worldToScreenX(double worldX) {
+                return (float) worldX;
+            }
+
+            @Override
+            public float worldToScreenY(double worldY) {
+                return (float) worldY;
+            }
+
+            @Override
+            public double[] getWorldPosition(CelestialObject body) {
+                return null;
+            }
+
+            @Override
+            public double getServerOrbitalTime() {
+                return 0.0;
+            }
+        };
     }
 
     private static CelestialObject star(CelestialObjectId id, String name) {

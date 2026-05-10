@@ -641,6 +641,7 @@ public final class InterplanetaryTransferSystem {
         private static final int PREVIEW_PATH_COLOR = EnumColors.MAP_COLOR_TRANSFER_PREVIEW_PATH.getColor();
         private static final float DOT_HIT_RADIUS = 7.0f;
         private static final float PACKAGE_SPRITE_SIZE = 12.0f;
+        private static final float TRANSFER_CULL_SCREEN_SPAN = PACKAGE_SPRITE_SIZE * 2.0f;
 
         private final Callbacks callbacks;
         private final MutableTransferPoint transferPoint = new MutableTransferPoint();
@@ -659,6 +660,7 @@ public final class InterplanetaryTransferSystem {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             for (InterplanetaryTransferJob transfer : visibleTransfers) {
+                if (!shouldRenderTransferAtScreenScale(transfer, callbacks)) continue;
                 drawTransferPath(transfer, alpha);
             }
             GlStateManager.color(1f, 1f, 1f, 1f);
@@ -675,6 +677,7 @@ public final class InterplanetaryTransferSystem {
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             for (InterplanetaryTransferJob transfer : visibleTransfers) {
+                if (!shouldRenderTransferAtScreenScale(transfer, callbacks)) continue;
                 drawTransferDot(
                     transfer,
                     effectiveTransferTime(transfer, currentTime, callbacks.getServerOrbitalTime()),
@@ -712,6 +715,7 @@ public final class InterplanetaryTransferSystem {
             List<InterplanetaryTransferJob> visibleTransfers = state.transfersForSystem(visibleSystem);
             for (int i = visibleTransfers.size() - 1; i >= 0; i--) {
                 InterplanetaryTransferJob transfer = visibleTransfers.get(i);
+                if (!shouldRenderTransferAtScreenScale(transfer, callbacks)) continue;
                 double effectiveTime = effectiveTransferTime(transfer, currentTime, callbacks.getServerOrbitalTime());
                 if (!writeCurrentTransferPoint(transfer, effectiveTime, transferPoint) || !transferPoint.valid()) {
                     continue;
@@ -723,6 +727,33 @@ public final class InterplanetaryTransferSystem {
                 if (dx * dx + dy * dy <= DOT_HIT_RADIUS * DOT_HIT_RADIUS) return transfer;
             }
             return null;
+        }
+
+        static boolean shouldRenderTransferAtScreenScale(InterplanetaryTransferJob transfer, Callbacks callbacks) {
+            return shouldRenderTransferAtScreenScale(transfer, callbacks, TRANSFER_CULL_SCREEN_SPAN);
+        }
+
+        static boolean shouldRenderTransferAtScreenScale(InterplanetaryTransferJob transfer, Callbacks callbacks,
+            float minimumScreenSpan) {
+            if (transfer == null || callbacks == null || transfer.trajectoryPointCount() <= 0) return false;
+            float minX = Float.POSITIVE_INFINITY;
+            float minY = Float.POSITIVE_INFINITY;
+            float maxX = Float.NEGATIVE_INFINITY;
+            float maxY = Float.NEGATIVE_INFINITY;
+            boolean hasPoint = false;
+            for (int i = 0; i < transfer.trajectoryPointCount(); i++) {
+                float sx = callbacks.worldToScreenX(transfer.trajectoryXs()[i]);
+                float sy = callbacks.worldToScreenY(transfer.trajectoryYs()[i]);
+                if (!Float.isFinite(sx) || !Float.isFinite(sy)) continue;
+                minX = Math.min(minX, sx);
+                minY = Math.min(minY, sy);
+                maxX = Math.max(maxX, sx);
+                maxY = Math.max(maxY, sy);
+                hasPoint = true;
+            }
+            if (!hasPoint) return false;
+            float span = Math.max(maxX - minX, maxY - minY);
+            return span >= minimumScreenSpan;
         }
 
         private void drawTransferPath(InterplanetaryTransferJob transfer, float alpha) {
