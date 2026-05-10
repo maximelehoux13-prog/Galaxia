@@ -47,10 +47,10 @@ import cpw.mods.fml.common.Loader;
  * <p>
  * This API allows external mods to:
  * <ul>
- *   <li>Query planetary properties (gravity, air resistance, effects)</li>
- *   <li>Check player equipment and status (oxygen, temperature, protection)</li>
- *   <li>Access celestial asset data</li>
- *   <li>Work with facility dimensions</li>
+ * <li>Query planetary properties (gravity, air resistance, effects)</li>
+ * <li>Check player equipment and status (oxygen, temperature, protection)</li>
+ * <li>Access celestial asset data</li>
+ * <li>Work with facility dimensions</li>
  * </ul>
  * 
  * All methods are safe to call from any thread and handle null inputs gracefully.
@@ -180,7 +180,7 @@ public final class GalaxiaAPI {
         return false;
     }
 
-    public static boolean hasOxygenmask(@Nonnull EntityPlayer player) {
+    public static boolean hasOxygenMask(@Nonnull EntityPlayer player) {
         var baubles = BaublesApi.getBaubles(player);
         if (baubles == null) return false;
 
