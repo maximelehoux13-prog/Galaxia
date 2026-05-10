@@ -55,12 +55,14 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
     private static final int NAME_X = 24;
     private static final int NAME_WIDTH = 150;
     private static final int AMOUNT_X = 180;
-    private static final int AMOUNT_INPUT_X = 226;
+    private static final int ROW_RIGHT_PADDING = 8;
+    private static final int CONTROL_GAP = 4;
     private static final int AMOUNT_INPUT_WIDTH = 48;
-    private static final int MODE_BUTTON_X = 278;
     private static final int MODE_BUTTON_WIDTH = 54;
-    private static final int VOID_X = 336;
-    private static final int VOID_WIDTH = 38;
+    private static final int VOID_WIDTH = 44;
+    private static final int VOID_X = SCROLL_WIDTH - ROW_RIGHT_PADDING - VOID_WIDTH;
+    private static final int MODE_BUTTON_X = VOID_X - CONTROL_GAP - MODE_BUTTON_WIDTH;
+    private static final int AMOUNT_INPUT_X = MODE_BUTTON_X - CONTROL_GAP - AMOUNT_INPUT_WIDTH;
     private static final Pattern INTEGER_PATTERN = Pattern.compile("[0-9]*");
 
     private final @Nullable CelestialAsset.ID assetId;
