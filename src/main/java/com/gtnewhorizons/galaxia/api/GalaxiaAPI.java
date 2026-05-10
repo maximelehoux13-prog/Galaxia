@@ -180,7 +180,7 @@ public final class GalaxiaAPI {
         return false;
     }
 
-    public static boolean hasOxygenmask(@Nonnull EntityPlayer player) {
+    public static boolean hasOxygenMask(@Nonnull EntityPlayer player) {
         var baubles = BaublesApi.getBaubles(player);
         if (baubles == null) return false;
 
