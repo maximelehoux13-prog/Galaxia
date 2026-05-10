@@ -67,6 +67,12 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
 
     private final @Nullable CelestialAsset.ID assetId;
     private final ParentWidget<?> panelRoot = new ParentWidget<>();
+    private final VerticalScrollData scrollData = new VerticalScrollData();
+    private final ParentWidget<?> scrollContent = new ParentWidget<>().widthRel(1f);
+    private final TextWidget<?> emptyInventoryText = new TextWidget<>(IKey.str("Inventory is empty."))
+        .color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
+        .shadow(true)
+        .pos(8, 48);
     private final Map<String, Boolean> amountModes = new LinkedHashMap<>();
     private final Map<String, String> amountInputs = new LinkedHashMap<>();
     private boolean open;
@@ -82,6 +88,15 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
         panelRoot.pos(0, PANEL_Y)
             .size(PANEL_WIDTH, PANEL_HEIGHT)
             .setEnabled(false);
+        ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(SCROLL_X, SCROLL_Y)
+            .size(SCROLL_WIDTH, SCROLL_HEIGHT)
+            .background(
+                drawable(
+                    (ctx, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
+        scroll.child(scrollContent);
+        panelRoot.child(scroll);
+        emptyInventoryText.setEnabled(false);
+        panelRoot.child(emptyInventoryText);
         child(panelRoot);
     }
 
@@ -91,7 +106,6 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
         if (!open) {
             if (panelRoot.isEnabled()) {
                 panelRoot.setEnabled(false);
-                panelRoot.removeAll();
                 rowStructureSignature = "";
             }
             return;
@@ -136,38 +150,28 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
     }
 
     private void rebuildPanel(List<Map.Entry<ItemStackWrapper, Long>> rows) {
-        panelRoot.removeAll();
         panelRoot.setEnabled(true);
+        scrollContent.removeAll();
+        emptyInventoryText.setEnabled(rows.isEmpty());
         if (rows.isEmpty()) {
-            panelRoot.child(
-                new TextWidget<>(IKey.str("Inventory is empty.")).color(EnumColors.MAP_COLOR_TEXT_MUTED.getColor())
-                    .shadow(true)
-                    .pos(8, 48));
+            scrollContent.height(SCROLL_HEIGHT);
+            scrollData.setScrollSize(SCROLL_HEIGHT);
             panelRoot.scheduleResize();
             return;
         }
 
-        VerticalScrollData scrollData = new VerticalScrollData();
-        ScrollWidget<?> scroll = new ScrollWidget<>(scrollData).pos(SCROLL_X, SCROLL_Y)
-            .size(SCROLL_WIDTH, SCROLL_HEIGHT)
-            .background(
-                drawable(
-                    (ctx, x, y, w, h) -> Gui.drawRect(x, y, x + w, y + h, EnumColors.MAP_COLOR_SCROLL_BG.getColor())));
-        ParentWidget<?> content = new ParentWidget<>().widthRel(1f);
         int y = 0;
         for (Map.Entry<ItemStackWrapper, Long> row : rows) {
             String rowKey = row.getKey()
                 .toKey();
             amountModes.putIfAbsent(rowKey, false);
             amountInputs.putIfAbsent(rowKey, Long.toString(row.getValue()));
-            content.child(buildRow(row).pos(0, y));
+            scrollContent.child(buildRow(row).pos(0, y));
             y += ROW_HEIGHT + ROW_GAP;
         }
         int contentHeight = Math.max(SCROLL_HEIGHT, y);
-        content.height(contentHeight);
+        scrollContent.height(contentHeight);
         scrollData.setScrollSize(contentHeight);
-        scroll.child(content);
-        panelRoot.child(scroll);
         panelRoot.scheduleResize();
     }
 
