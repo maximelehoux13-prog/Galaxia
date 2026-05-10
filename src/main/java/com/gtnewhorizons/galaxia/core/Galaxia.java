@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import com.gtnewhorizons.galaxia.Tags;
 import com.gtnewhorizons.galaxia.core.network.AssetSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.DestinationSetPacket;
+import com.gtnewhorizons.galaxia.core.network.HammerTrajectoryLoadSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.HazardWarningPacket;
 import com.gtnewhorizons.galaxia.core.network.LogisticsSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.OxygenSyncPacket;
@@ -102,6 +103,8 @@ public final class Galaxia {
         GALAXIA_NETWORK.registerMessage(AssetSyncPacket.Handler.class, AssetSyncPacket.class, id++, Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(LogisticsSyncPacket.Handler.class, LogisticsSyncPacket.class, id++,
                 Side.CLIENT);
+        GALAXIA_NETWORK.registerMessage(HammerTrajectoryLoadSyncPacket.Handler.class,
+                HammerTrajectoryLoadSyncPacket.class, id++, Side.CLIENT);
         GALAXIA_NETWORK.registerMessage(RocketLaunchPacket.class, RocketLaunchPacket.class, id++, Side.SERVER);
         GALAXIA_NETWORK.registerMessage(RocketDestinationSyncPacket.Handler.class, RocketDestinationSyncPacket.class,
                 id++, Side.SERVER);

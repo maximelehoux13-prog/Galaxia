@@ -92,7 +92,8 @@ record InterplanetaryTransferJob(String transferId, String displayName, String i
 
 public final class InterplanetaryTransferSystem {
 
-    private static final int TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT = 64;
+    private static final int MAX_TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT = 16;
+    private static final double TRAJECTORY_INTEGRATION_TIME_SCALE_FRACTION = 0.03;
 
     private static final int PREVIEW_TRAJECTORY_SAMPLES = 96;
 
@@ -251,11 +252,12 @@ public final class InterplanetaryTransferSystem {
         if (sampleCount <= 0) return 0;
         OrbitalMechanics.OrbitalState state = new OrbitalMechanics.OrbitalState(rx1, ry1, vx1, vy1);
         double segmentDt = tof / (sampleCount - 1);
-        double integrationDt = segmentDt / TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT;
         outXs[0] = ax + state.x();
         outYs[0] = ay + state.y();
         for (int i = 1; i < sampleCount; i++) {
-            for (int step = 0; step < TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT; step++) {
+            int substeps = trajectoryIntegrationSubsteps(state, mu, segmentDt);
+            double integrationDt = segmentDt / substeps;
+            for (int step = 0; step < substeps; step++) {
                 state = OrbitalMechanics.propagateTwoBodyState(state, mu, integrationDt);
                 if (state == null) return i;
             }
@@ -263,6 +265,18 @@ public final class InterplanetaryTransferSystem {
             outYs[i] = ay + state.y();
         }
         return sampleCount;
+    }
+
+    private static int trajectoryIntegrationSubsteps(OrbitalMechanics.OrbitalState state, double mu, double segmentDt) {
+        if (state == null || mu <= 0.0 || segmentDt <= 0.0) return 1;
+        double radius = Math.hypot(state.x(), state.y());
+        if (radius <= 1e-9) return MAX_TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT;
+        double localTimeScale = Math.sqrt(radius * radius * radius / mu);
+        if (!Double.isFinite(localTimeScale) || localTimeScale <= 1e-9) {
+            return MAX_TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT;
+        }
+        int substeps = (int) Math.ceil(segmentDt / (localTimeScale * TRAJECTORY_INTEGRATION_TIME_SCALE_FRACTION));
+        return Math.max(1, Math.min(MAX_TRAJECTORY_INTEGRATION_SUBSTEPS_PER_SEGMENT, substeps));
     }
 
     // -----------------------------------------------------------------------

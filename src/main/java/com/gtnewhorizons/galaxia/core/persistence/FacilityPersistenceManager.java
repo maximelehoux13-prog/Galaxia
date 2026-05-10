@@ -42,6 +42,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.AllowShootingConfig;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.HammerTrajectoryLoadTracker;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
@@ -107,6 +108,7 @@ public final class FacilityPersistenceManager {
         worldSaveDir = saveHandler.getWorldDirectory();
         CelestialAssetStore.clear();
         LogisticStore.clearDeliveries();
+        HammerTrajectoryLoadTracker.reset();
         loadAll();
     }
 
@@ -125,6 +127,7 @@ public final class FacilityPersistenceManager {
         if (worldSaveDir != null) saveAll();
         CelestialAssetStore.clear();
         LogisticStore.clearDeliveries();
+        HammerTrajectoryLoadTracker.reset();
         worldSaveDir = null;
     }
 

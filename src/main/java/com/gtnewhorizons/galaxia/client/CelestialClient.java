@@ -51,6 +51,8 @@ public final class CelestialClient {
     @Deprecated
     public record TransferTarget(CelestialAsset.ID assetId, String displayName, CelestialObject hostBody) {}
 
+    public record HammerTrajectoryLoadSample(double ownMsPerTick, double allMsPerTick) {}
+
     // ── Client-side asset mirror (via CLIENT store) ──
 
     public static CelestialAsset getByAssetId(CelestialAsset.ID assetId) {
@@ -97,6 +99,7 @@ public final class CelestialClient {
     private static final List<LogisticsDelivery> deliveries = new ArrayList<>();
     private static int deliveryRevision = 0;
     private static int signalRevision = 0;
+    private static HammerTrajectoryLoadSample hammerTrajectoryLoadSample = new HammerTrajectoryLoadSample(0.0, 0.0);
 
     private static final Map<CelestialObjectId, Map<String, Long>> systemSignals = new LinkedHashMap<>();
     private static final Map<CelestialObjectId, Map<String, Long>> planetSignals = new LinkedHashMap<>();
@@ -108,6 +111,7 @@ public final class CelestialClient {
         deliveries.clear();
         deliveryRevision = 0;
         signalRevision = 0;
+        hammerTrajectoryLoadSample = new HammerTrajectoryLoadSample(0.0, 0.0);
     }
 
     public static void createModule(ID assetId, FacilityModuleKind kind, boolean creativeBuildModeEnabled) {
@@ -376,6 +380,14 @@ public final class CelestialClient {
 
     public static int clientDeliveryRevision() {
         return deliveryRevision;
+    }
+
+    public static void updateHammerTrajectoryLoad(double ownMsPerTick, double allMsPerTick) {
+        hammerTrajectoryLoadSample = new HammerTrajectoryLoadSample(ownMsPerTick, allMsPerTick);
+    }
+
+    public static HammerTrajectoryLoadSample hammerTrajectoryLoadSample() {
+        return hammerTrajectoryLoadSample;
     }
 
     // ── Helpers ──

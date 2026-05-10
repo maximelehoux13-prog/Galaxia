@@ -14,6 +14,7 @@ import com.gtnewhorizons.galaxia.api.GalaxiaCelestialAPI;
 import com.gtnewhorizons.galaxia.compat.TempTeamCompat;
 import com.gtnewhorizons.galaxia.core.Galaxia;
 import com.gtnewhorizons.galaxia.core.network.AssetSyncPacket;
+import com.gtnewhorizons.galaxia.core.network.HammerTrajectoryLoadSyncPacket;
 import com.gtnewhorizons.galaxia.core.network.LogisticsSyncPacket;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAsset;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialAssetStore;
@@ -24,6 +25,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
 import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.LogisticsResourceConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.HammerDispatchStatus;
+import com.gtnewhorizons.galaxia.registry.outpost.logistics.HammerTrajectoryLoadTracker;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticSignal;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticStore;
 import com.gtnewhorizons.galaxia.registry.outpost.logistics.LogisticsDelivery;
@@ -37,12 +39,15 @@ public class CelestialEventHandler {
 
     // TODO: Is there a centralized way to get ticks?
     private int syncCooldownTicks;
+    private int debugMetricsSyncCooldownTicks;
 
     public CelestialEventHandler() {}
 
     @SubscribeEvent
     public void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
+
+        HammerTrajectoryLoadTracker.beginTick();
 
         for (CelestialAsset asset : CelestialAssetStore.allAssets()) {
             // TODO: Ticks other assets
@@ -66,6 +71,13 @@ public class CelestialEventHandler {
             .entrySet()) {
 
             handleSignal(entry.getValue(), orbitalTime);
+        }
+
+        HammerTrajectoryLoadTracker.endTick();
+        debugMetricsSyncCooldownTicks--;
+        if (debugMetricsSyncCooldownTicks <= 0) {
+            debugMetricsSyncCooldownTicks = 10;
+            syncHammerTrajectoryLoadDebug();
         }
 
         syncCooldownTicks--;
@@ -102,6 +114,18 @@ public class CelestialEventHandler {
                 .collect(Collectors.toList());
 
             Galaxia.GALAXIA_NETWORK.sendTo(LogisticsSyncPacket.from(relevantDeliveries), player);
+        }
+    }
+
+    private void syncHammerTrajectoryLoadDebug() {
+        for (EntityPlayerMP player : MinecraftServer.getServer()
+            .getConfigurationManager().playerEntityList) {
+            if (player == null || !player.capabilities.isCreativeMode) continue;
+
+            UUID playerTeam = TempTeamCompat.getTeam(player);
+            HammerTrajectoryLoadTracker.Snapshot snapshot = HammerTrajectoryLoadTracker.snapshot(playerTeam);
+            Galaxia.GALAXIA_NETWORK
+                .sendTo(new HammerTrajectoryLoadSyncPacket(snapshot.ownMsPerTick(), snapshot.allMsPerTick()), player);
         }
     }
 
@@ -171,8 +195,21 @@ public class CelestialEventHandler {
                                 : null;
 
                             if (srcBody == null || dstBody == null || attractor == null) return false;
-                            OrbitalTransferPlanner.TransferRoute route = OrbitalTransferPlanner
-                                .computeRoute(root, attractor, srcBody, dstBody, orbitalTime, hammer.routePriority());
+                            UUID supplierTeam = CelestialAssetStore.getTeamId(supplier.assetId);
+                            OrbitalTransferPlanner.TransferRoute route;
+                            long routeStartNanos = System.nanoTime();
+                            try {
+                                route = OrbitalTransferPlanner.computeRoute(
+                                    root,
+                                    attractor,
+                                    srcBody,
+                                    dstBody,
+                                    orbitalTime,
+                                    hammer.routePriority());
+                            } finally {
+                                HammerTrajectoryLoadTracker
+                                    .recordRouteComputation(supplierTeam, System.nanoTime() - routeStartNanos);
+                            }
                             if (route == null) return false;
 
                             departureDv = route.departureDv();

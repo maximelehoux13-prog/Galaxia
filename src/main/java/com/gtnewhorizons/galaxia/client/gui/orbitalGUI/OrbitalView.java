@@ -1931,6 +1931,7 @@ public class OrbitalView {
             drawActionStatusMessage();
             sceneRenderer.drawViewTitleBanner(viewRoot, getArea().width);
             drawViewStatusLabel(viewRoot, getArea().width);
+            drawHammerTrajectoryLoadDebug(getArea().width);
             int localMouseX = getContext().getMouseX();
             int localMouseY = getContext().getMouseY();
             if (transfersHidden || dragging
@@ -2262,6 +2263,24 @@ public class OrbitalView {
             int statusX = Math.round(widgetWidth / 2f + titleWidth / 2f + 68f);
             int statusY = 18;
             mc.fontRenderer.drawStringWithShadow(statusText, statusX, statusY, EnumColors.MapStatusText.getColor());
+        }
+
+        private void drawHammerTrajectoryLoadDebug(int widgetWidth) {
+            if (!isCreativeModeAvailable()) return;
+            CelestialClient.HammerTrajectoryLoadSample sample = CelestialClient.hammerTrajectoryLoadSample();
+            String text = "traj ms/tick own=" + formatDebugMillis(sample.ownMsPerTick())
+                + " all="
+                + formatDebugMillis(sample.allMsPerTick());
+
+            Minecraft mc = Minecraft.getMinecraft();
+            int x = Math.max(12, widgetWidth - mc.fontRenderer.getStringWidth(text) - 12);
+            mc.fontRenderer.drawStringWithShadow(text, x, 36, 0xFF9FD7FF);
+        }
+
+        private String formatDebugMillis(double value) {
+            if (value < 1.0) return String.format(java.util.Locale.ROOT, "%.3f", value);
+            if (value < 10.0) return String.format(java.util.Locale.ROOT, "%.2f", value);
+            return String.format(java.util.Locale.ROOT, "%.1f", value);
         }
 
         private String formatCompactDecimal(double value, int maxDecimals) {
