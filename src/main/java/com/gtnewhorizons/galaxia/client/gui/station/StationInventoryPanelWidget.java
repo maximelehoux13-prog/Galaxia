@@ -70,7 +70,7 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
     private final Map<String, Boolean> amountModes = new LinkedHashMap<>();
     private final Map<String, String> amountInputs = new LinkedHashMap<>();
     private boolean open;
-    private String rowSignature = "";
+    private String rowStructureSignature = "";
 
     StationInventoryPanelWidget(@Nullable CelestialAsset.ID assetId) {
         this.assetId = assetId;
@@ -92,7 +92,7 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
             if (panelRoot.isEnabled()) {
                 panelRoot.setEnabled(false);
                 panelRoot.removeAll();
-                rowSignature = "";
+                rowStructureSignature = "";
             }
             return;
         }
@@ -102,10 +102,11 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
             return;
         }
         List<Map.Entry<ItemStackWrapper, Long>> rows = rows(facility);
-        String nextSignature = rowSignature(rows);
-        if (!panelRoot.isEnabled() || !nextSignature.equals(rowSignature)) {
+        refreshAmountInputs(rows);
+        String nextSignature = rowStructureSignature(rows);
+        if (!panelRoot.isEnabled() || !nextSignature.equals(rowStructureSignature)) {
             rebuildPanel(rows);
-            rowSignature = nextSignature;
+            rowStructureSignature = nextSignature;
         }
     }
 
@@ -297,14 +298,22 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
         return rows;
     }
 
-    private String rowSignature(List<Map.Entry<ItemStackWrapper, Long>> rows) {
+    private void refreshAmountInputs(List<Map.Entry<ItemStackWrapper, Long>> rows) {
+        for (Map.Entry<ItemStackWrapper, Long> row : rows) {
+            String rowKey = row.getKey()
+                .toKey();
+            if (!isAmountMode(rowKey)) {
+                amountInputs.put(rowKey, Long.toString(row.getValue()));
+            }
+        }
+    }
+
+    private String rowStructureSignature(List<Map.Entry<ItemStackWrapper, Long>> rows) {
         StringBuilder signature = new StringBuilder(rows.size() * 24);
         for (Map.Entry<ItemStackWrapper, Long> row : rows) {
             signature.append(
                 row.getKey()
                     .toKey())
-                .append(':')
-                .append(row.getValue())
                 .append(';');
         }
         return signature.toString();
