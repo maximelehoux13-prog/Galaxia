@@ -427,6 +427,20 @@ public final class InterplanetaryTransferSystem {
             return transfers;
         }
 
+        List<InterplanetaryTransferJob> transfersForSystem(CelestialObject orbitAnchorBody) {
+            if (orbitAnchorBody == null || transfers.isEmpty()) return java.util.Collections.emptyList();
+            List<InterplanetaryTransferJob> visibleTransfers = new ArrayList<>();
+            for (InterplanetaryTransferJob transfer : transfers) {
+                if (isSameOrbitAnchor(transfer.orbitAnchorBody(), orbitAnchorBody)) visibleTransfers.add(transfer);
+            }
+            return visibleTransfers;
+        }
+
+        private static boolean isSameOrbitAnchor(CelestialObject transferAnchor, CelestialObject visibleSystem) {
+            return transferAnchor == visibleSystem
+                || (transferAnchor != null && visibleSystem != null && transferAnchor.id() == visibleSystem.id());
+        }
+
         int version() {
             return version;
         }
@@ -522,19 +536,26 @@ public final class InterplanetaryTransferSystem {
             double r1y = srcState.y() - starAtDep.y();
             double r2x = dstState.x() - starAtArr.x();
             double r2y = dstState.y() - starAtArr.y();
+            double vsrcX = srcState.vx() - starAtDep.vx();
+            double vsrcY = srcState.vy() - starAtDep.vy();
+            double vdstX = dstState.vx() - starAtArr.vx();
+            double vdstY = dstState.vy() - starAtArr.vy();
+            double minPeriapsis = Math.max(0.05, star.spriteSize() * 0.5);
 
-            LambertTransfer.Solution sol = LambertTransfer.between(r1x, r1y, r2x, r2y)
+            LambertTransfer.Solution prograde = LambertTransfer.between(r1x, r1y, r2x, r2y)
                 .mu(mu)
                 .timeOfFlight(tof)
+                .minPeriapsis(minPeriapsis)
                 .prograde(true)
-                .solve();
-            if (!sol.valid()) {
-                sol = LambertTransfer.between(r1x, r1y, r2x, r2y)
-                    .mu(mu)
-                    .timeOfFlight(tof)
-                    .prograde(false)
-                    .solve();
-            }
+                .evaluateAgainst(vsrcX, vsrcY, vdstX, vdstY);
+            LambertTransfer.Solution retrograde = LambertTransfer.between(r1x, r1y, r2x, r2y)
+                .mu(mu)
+                .timeOfFlight(tof)
+                .minPeriapsis(minPeriapsis)
+                .prograde(false)
+                .evaluateAgainst(vsrcX, vsrcY, vdstX, vdstY);
+            LambertTransfer.Solution sol = prograde.valid()
+                && (!retrograde.valid() || prograde.totalDv() <= retrograde.totalDv()) ? prograde : retrograde;
 
             double[] trajectoryXs;
             double[] trajectoryYs;
@@ -628,28 +649,32 @@ public final class InterplanetaryTransferSystem {
             this.callbacks = callbacks;
         }
 
-        void drawTransferPaths(OrbitalTransferState state, double currentTime, float alpha) {
-            if (state.transfers()
-                .isEmpty() || alpha <= 0.01f) return;
+        void drawTransferPaths(OrbitalTransferState state, CelestialObject visibleSystem, double currentTime,
+            float alpha) {
+            if (alpha <= 0.01f) return;
             state.pruneFinishedTransfers(currentTime, callbacks.getServerOrbitalTime());
+            List<InterplanetaryTransferJob> visibleTransfers = state.transfersForSystem(visibleSystem);
+            if (visibleTransfers.isEmpty()) return;
             GlStateManager.disableTexture2D();
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            for (InterplanetaryTransferJob transfer : state.transfers()) {
+            for (InterplanetaryTransferJob transfer : visibleTransfers) {
                 drawTransferPath(transfer, alpha);
             }
             GlStateManager.color(1f, 1f, 1f, 1f);
             GlStateManager.enableTexture2D();
         }
 
-        void drawTransferDots(OrbitalTransferState state, double currentTime, float alpha) {
-            if (state.transfers()
-                .isEmpty() || alpha <= 0.01f) return;
+        void drawTransferDots(OrbitalTransferState state, CelestialObject visibleSystem, double currentTime,
+            float alpha) {
+            if (alpha <= 0.01f) return;
+            List<InterplanetaryTransferJob> visibleTransfers = state.transfersForSystem(visibleSystem);
+            if (visibleTransfers.isEmpty()) return;
             GlStateManager.disableDepth();
             GlStateManager.enableTexture2D();
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            for (InterplanetaryTransferJob transfer : state.transfers()) {
+            for (InterplanetaryTransferJob transfer : visibleTransfers) {
                 drawTransferDot(
                     transfer,
                     effectiveTransferTime(transfer, currentTime, callbacks.getServerOrbitalTime()),
@@ -682,12 +707,11 @@ public final class InterplanetaryTransferSystem {
             GlStateManager.enableTexture2D();
         }
 
-        InterplanetaryTransferJob findHoveredTransfer(OrbitalTransferState state, double currentTime, float mouseX,
-            float mouseY) {
-            for (int i = state.transfers()
-                .size() - 1; i >= 0; i--) {
-                InterplanetaryTransferJob transfer = state.transfers()
-                    .get(i);
+        InterplanetaryTransferJob findHoveredTransfer(OrbitalTransferState state, CelestialObject visibleSystem,
+            double currentTime, float mouseX, float mouseY) {
+            List<InterplanetaryTransferJob> visibleTransfers = state.transfersForSystem(visibleSystem);
+            for (int i = visibleTransfers.size() - 1; i >= 0; i--) {
+                InterplanetaryTransferJob transfer = visibleTransfers.get(i);
                 double effectiveTime = effectiveTransferTime(transfer, currentTime, callbacks.getServerOrbitalTime());
                 if (!writeCurrentTransferPoint(transfer, effectiveTime, transferPoint) || !transferPoint.valid()) {
                     continue;

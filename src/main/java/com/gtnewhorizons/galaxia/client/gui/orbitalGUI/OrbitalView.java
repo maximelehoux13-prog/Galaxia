@@ -1871,12 +1871,14 @@ public class OrbitalView {
             if (!transfersHidden) {
                 transferRenderer.drawTransferPaths(
                     transferState,
+                    viewRoot,
                     globalTime,
                     viewRoot.objectClass() == CelestialObject.Class.STAR
                         ? (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 2.5)
                         : 0f);
                 transferRenderer.drawTransferPaths(
                     clientSimulatedTransferState,
+                    viewRoot,
                     globalTime,
                     viewRoot.objectClass() == CelestialObject.Class.STAR
                         ? (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 2.5)
@@ -1896,12 +1898,14 @@ public class OrbitalView {
             if (!transfersHidden) {
                 transferRenderer.drawTransferDots(
                     transferState,
+                    viewRoot,
                     globalTime,
                     viewRoot.objectClass() == CelestialObject.Class.STAR
                         ? (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 2.5)
                         : 0f);
                 transferRenderer.drawTransferDots(
                     clientSimulatedTransferState,
+                    viewRoot,
                     globalTime,
                     viewRoot.objectClass() == CelestialObject.Class.STAR
                         ? (float) Math.max(0.0, 1.0 - viewState.isometricProgress * 2.5)
@@ -1927,11 +1931,12 @@ public class OrbitalView {
                 clientSimulatedTransferState.updateHoveredTransfer(null, localMouseX, localMouseY);
             } else {
                 InterplanetaryTransferJob hoveredSimulatedTransfer = transferRenderer
-                    .findHoveredTransfer(clientSimulatedTransferState, globalTime, localMouseX, localMouseY);
+                    .findHoveredTransfer(clientSimulatedTransferState, viewRoot, globalTime, localMouseX, localMouseY);
                 clientSimulatedTransferState.updateHoveredTransfer(hoveredSimulatedTransfer, localMouseX, localMouseY);
                 transferState.updateHoveredTransfer(
                     hoveredSimulatedTransfer == null
-                        ? transferRenderer.findHoveredTransfer(transferState, globalTime, localMouseX, localMouseY)
+                        ? transferRenderer
+                            .findHoveredTransfer(transferState, viewRoot, globalTime, localMouseX, localMouseY)
                         : null,
                     localMouseX,
                     localMouseY);
@@ -2000,9 +2005,9 @@ public class OrbitalView {
                 || contextMenuState.isOpen()
                 || transferSimulatorState.isWaitingForPick()) return null;
             InterplanetaryTransferJob simulatedTransfer = transferRenderer
-                .findHoveredTransfer(clientSimulatedTransferState, globalTime, mouseX, mouseY);
+                .findHoveredTransfer(clientSimulatedTransferState, viewRoot, globalTime, mouseX, mouseY);
             return simulatedTransfer == null
-                ? transferRenderer.findHoveredTransfer(transferState, globalTime, mouseX, mouseY)
+                ? transferRenderer.findHoveredTransfer(transferState, viewRoot, globalTime, mouseX, mouseY)
                 : simulatedTransfer;
         }
 
