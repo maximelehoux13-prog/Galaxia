@@ -60,30 +60,20 @@ final class OrbitalTransferClientStateTest {
     }
 
     @Test
-    void transferIsCulledWhenScreenTrajectoryFitsInsideDoublePackageIconWidth() {
-        InterplanetaryTransferJob tinyTransfer = transferWithTrajectory(
-            "tiny",
-            new double[] { 100.0, 106.0 },
-            new double[] { 200.0, 204.0 });
-        InterplanetaryTransferJob iconWideTransfer = transferWithTrajectory(
-            "wide",
-            new double[] { 100.0, 112.0 },
-            new double[] { 200.0, 200.0 });
-        InterplanetaryTransferJob doubleIconWideTransfer = transferWithTrajectory(
-            "double-wide",
-            new double[] { 100.0, 124.0 },
-            new double[] { 200.0, 200.0 });
-        InterplanetaryTransferSystem.OrbitalTransferRenderer.Callbacks identityProjection = identityProjection();
+    void transferIsCulledOnlyWhenBothEndpointBodiesAreCulled() {
+        CelestialObject source = planet(CelestialObjectId.ROMULUS, "Romulus");
+        CelestialObject destination = planet(CelestialObjectId.REMUS, "Remus");
+        InterplanetaryTransferJob transfer = transferBetween("sim:endpoints", source, destination);
 
         assertFalse(
             InterplanetaryTransferSystem.OrbitalTransferRenderer
-                .shouldRenderTransferAtScreenScale(tinyTransfer, identityProjection, 24.0f));
-        assertFalse(
-            InterplanetaryTransferSystem.OrbitalTransferRenderer
-                .shouldRenderTransferAtScreenScale(iconWideTransfer, identityProjection));
+                .shouldRenderTransferForEndpointVisibility(transfer, endpointVisibility()));
         assertTrue(
             InterplanetaryTransferSystem.OrbitalTransferRenderer
-                .shouldRenderTransferAtScreenScale(doubleIconWideTransfer, identityProjection));
+                .shouldRenderTransferForEndpointVisibility(transfer, endpointVisibility(source)));
+        assertTrue(
+            InterplanetaryTransferSystem.OrbitalTransferRenderer
+                .shouldRenderTransferForEndpointVisibility(transfer, endpointVisibility(destination)));
     }
 
     @Test
@@ -242,24 +232,26 @@ final class OrbitalTransferClientStateTest {
             TransferPackageKind.HAMMER);
     }
 
-    private static InterplanetaryTransferJob transferWithTrajectory(String id, double[] xs, double[] ys) {
+    private static InterplanetaryTransferJob transferBetween(String id, CelestialObject source,
+        CelestialObject destination) {
         return new InterplanetaryTransferJob(
             id,
             "Simulation",
             "Simulation",
             null,
-            null,
-            null,
+            source,
+            destination,
             null,
             10.0,
             20.0,
-            xs,
-            ys,
-            Math.min(xs.length, ys.length),
+            new double[] { 0.0, 1.0 },
+            new double[] { 0.0, 1.0 },
+            2,
             TransferPackageKind.HAMMER);
     }
 
-    private static InterplanetaryTransferSystem.OrbitalTransferRenderer.Callbacks identityProjection() {
+    private static InterplanetaryTransferSystem.OrbitalTransferRenderer.Callbacks endpointVisibility(
+        CelestialObject... renderedBodies) {
         return new InterplanetaryTransferSystem.OrbitalTransferRenderer.Callbacks() {
 
             @Override
@@ -281,6 +273,14 @@ final class OrbitalTransferClientStateTest {
             public double getServerOrbitalTime() {
                 return 0.0;
             }
+
+            @Override
+            public boolean isBodyRendered(CelestialObject body) {
+                for (CelestialObject renderedBody : renderedBodies) {
+                    if (renderedBody == body) return true;
+                }
+                return false;
+            }
         };
     }
 
@@ -289,6 +289,14 @@ final class OrbitalTransferClientStateTest {
             .id(id)
             .name(name)
             .objectClass(CelestialObject.Class.STAR)
+            .build();
+    }
+
+    private static CelestialObject planet(CelestialObjectId id, String name) {
+        return CelestialObject.builder()
+            .id(id)
+            .name(name)
+            .objectClass(CelestialObject.Class.PLANET)
             .build();
     }
 }

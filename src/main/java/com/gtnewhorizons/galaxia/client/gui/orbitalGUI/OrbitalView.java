@@ -685,6 +685,11 @@ public class OrbitalView {
                     public double getServerOrbitalTime() {
                         return OrbitalMapWidget.this.getServerOrbitalTime();
                     }
+
+                    @Override
+                    public boolean isBodyRendered(CelestialObject body) {
+                        return OrbitalMapWidget.this.isTransferEndpointRendered(body);
+                    }
                 });
             this.transferTooltipWidget = new InterplanetaryTransferSystem.OrbitalTransferTooltipWidget(
                 new InterplanetaryTransferSystem.OrbitalTransferTooltipWidget.Callbacks() {
@@ -1815,6 +1820,10 @@ public class OrbitalView {
 
         private boolean isVisibleInCurrentLayer(CelestialObject body) {
             return isDescendantOrSelf(viewRoot, body);
+        }
+
+        private boolean isTransferEndpointRendered(CelestialObject body) {
+            return body != null && isVisibleInCurrentLayer(body) && shouldRenderBodyAtCurrentZoom(body);
         }
 
         private boolean isDescendantOrSelf(CelestialObject ancestor, CelestialObject target) {
