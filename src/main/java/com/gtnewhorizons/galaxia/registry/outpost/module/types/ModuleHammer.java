@@ -20,6 +20,7 @@ public final class ModuleHammer implements IModuleComponent, IParallelModule {
     public static final long EU_PER_DV = 10_000L;
     public static final long MIN_SHOT_ENERGY_EU = EU_PER_DV;
     public static final int CHARGE_STEP_TICKS = 20;
+    public static final int ROUTE_PROBE_INTERVAL_TICKS = 20;
 
     private static final ModuleTier[] BASE_TIERS = { ModuleTier.EV, ModuleTier.IV, ModuleTier.LuV };
     private static final ModuleTier[] BIG_TIERS = { ModuleTier.LuV, ModuleTier.ZPM, ModuleTier.UV };
@@ -31,6 +32,8 @@ public final class ModuleHammer implements IModuleComponent, IParallelModule {
     private final int maxBatchSize;
     private OrbitalTransferPlanner.RoutePriority routePriority;
     private long energyStored;
+    private int shotCooldownTicks;
+    private int routeProbeCooldownTicks;
 
     private HammerVariant variant;
     private AllowShootingConfig config;
@@ -121,7 +124,38 @@ public final class ModuleHammer implements IModuleComponent, IParallelModule {
     }
 
     public boolean canFire() {
-        return energyStored >= MIN_SHOT_ENERGY_EU;
+        return shotCooldownTicks <= 0 && energyStored >= MIN_SHOT_ENERGY_EU;
+    }
+
+    public boolean canPlanRoute(ModuleInstance module) {
+        return module != null && canFire() && routeProbeCooldownTicks <= 0;
+    }
+
+    public void markRouteProbeAttempted() {
+        routeProbeCooldownTicks = ROUTE_PROBE_INTERVAL_TICKS;
+    }
+
+    public void markShotDispatched(ModuleInstance module) {
+        shotCooldownTicks = Math.max(1, chargeTicks(module));
+        routeProbeCooldownTicks = 0;
+    }
+
+    public void tickDispatchCooldowns() {
+        if (shotCooldownTicks > 0) shotCooldownTicks--;
+        if (routeProbeCooldownTicks > 0) routeProbeCooldownTicks--;
+    }
+
+    public int shotCooldownTicks() {
+        return shotCooldownTicks;
+    }
+
+    public int routeProbeCooldownTicks() {
+        return routeProbeCooldownTicks;
+    }
+
+    public void setDispatchCooldowns(int shotCooldownTicks, int routeProbeCooldownTicks) {
+        this.shotCooldownTicks = Math.max(0, shotCooldownTicks);
+        this.routeProbeCooldownTicks = Math.max(0, routeProbeCooldownTicks);
     }
 
     public long energyStored() {

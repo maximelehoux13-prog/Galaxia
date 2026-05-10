@@ -210,6 +210,32 @@ final class FacilityPersistenceManagerTest {
     }
 
     @Test
+    void hammerDispatchCooldownsRoundTripThroughPersistence() {
+        FacilityPersistenceManager manager = new FacilityPersistenceManager();
+        AutomatedFacility station = createStationWithFullLayout();
+        ModuleInstance module = station.modules()
+            .get(0);
+        module.setTier(ModuleTier.IV);
+        ModuleHammer hammer = (ModuleHammer) module.component();
+        hammer.markShotDispatched(module);
+        hammer.markRouteProbeAttempted();
+
+        FacilityPersistenceManager.FacilityStateJson encoded = manager.encodeFacilityState(station);
+        AutomatedFacility decoded = new AutomatedFacility(
+            station.assetId,
+            station.celestialObjectId,
+            station.kind,
+            station.status());
+        manager.decodeFacilityState(decoded, encoded);
+
+        ModuleHammer decodedHammer = (ModuleHammer) decoded.modules()
+            .get(0)
+            .component();
+        assertEquals(hammer.shotCooldownTicks(), decodedHammer.shotCooldownTicks());
+        assertEquals(hammer.routeProbeCooldownTicks(), decodedHammer.routeProbeCooldownTicks());
+    }
+
+    @Test
     void minerFocusTierWithoutOreRoundTripsThroughPersistence() {
         FacilityPersistenceManager manager = new FacilityPersistenceManager();
         AutomatedFacility station = createStationWithFullLayout();

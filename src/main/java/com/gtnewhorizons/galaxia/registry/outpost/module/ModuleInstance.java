@@ -56,6 +56,10 @@ public class ModuleInstance implements Buildable {
             return;
         }
 
+        if (component instanceof ModuleHammer hammer) {
+            hammer.tickDispatchCooldowns();
+        }
+
         this.ticks += 1;
         if (this.ticks >= this.cooldownTicks()) {
             this.definition.applyBehavior()

@@ -399,6 +399,8 @@ public final class FacilityPersistenceManager {
                     hammer.variant()
                         .name());
                 moduleData.addProperty("energyStored", hammer.energyStored());
+                moduleData.addProperty("shotCooldownTicks", hammer.shotCooldownTicks());
+                moduleData.addProperty("routeProbeCooldownTicks", hammer.routeProbeCooldownTicks());
             } else if (m.component() instanceof ModuleMiner miner) {
                 moduleData.addProperty(
                     "focusTier",
@@ -616,7 +618,11 @@ public final class FacilityPersistenceManager {
                                 "[PERSIST] Hammer module missing energyStored")
                             .getAsLong();
                         ModuleHammer.requireTier(variant, tier);
-                        module.setComponent(new ModuleHammer(kind, config, routePriority, variant, 64, energyStored));
+                        ModuleHammer hammer = new ModuleHammer(kind, config, routePriority, variant, 64, energyStored);
+                        hammer.setDispatchCooldowns(
+                            optionalInt(hammerData, "shotCooldownTicks", 0),
+                            optionalInt(hammerData, "routeProbeCooldownTicks", 0));
+                        module.setComponent(hammer);
                     }
                     case MINER -> {
                         if (!(module.component() instanceof ModuleMiner miner)) {
@@ -1021,6 +1027,11 @@ public final class FacilityPersistenceManager {
             stacks[i] = wrapper.toStack(amount);
         }
         return stacks;
+    }
+
+    private static int optionalInt(JsonObject source, String key, int fallback) {
+        return source != null && source.has(key) ? source.get(key)
+            .getAsInt() : fallback;
     }
 
     private static void writeIntArray(JsonObject target, String key, int[] values) {

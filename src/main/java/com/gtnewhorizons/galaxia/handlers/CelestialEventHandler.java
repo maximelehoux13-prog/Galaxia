@@ -154,6 +154,7 @@ public class CelestialEventHandler {
 
                 final boolean shareAnchor = GalaxiaCelestialAPI
                     .sharesPlanetaryAnchor(root, supplier.celestialObjectId, requester.celestialObjectId);
+                final boolean sameBody = supplier.celestialObjectId.equals(requester.celestialObjectId);
 
                 final ItemStackWrapper resource = request.resourceId();
                 final LogisticsResourceConfig supplierCfg = supplier.logisticsConfig.get(resource);
@@ -172,6 +173,7 @@ public class CelestialEventHandler {
                 final boolean success = supplier.allOperationalModules()
                     .filter(
                         m -> m.component() instanceof ModuleHammer h && h.canFire()
+                            && (sameBody || h.canPlanRoute(m))
                             && (shareAnchor || h.variant() == HammerVariant.BIG))
                     .anyMatch(m -> {
                         ModuleHammer hammer = (ModuleHammer) m.component();
@@ -185,7 +187,7 @@ public class CelestialEventHandler {
 
                         double departureDv = 1;
                         double shotDv = 1;
-                        if (!supplier.celestialObjectId.equals(requester.celestialObjectId)) {
+                        if (!sameBody) {
                             deliveryScope = LogisticSignal.Scope.SYSTEM;
                             CelestialObject srcBody = GalaxiaCelestialAPI
                                 .findBodyById(root, supplier.celestialObjectId);
@@ -197,6 +199,7 @@ public class CelestialEventHandler {
                             if (srcBody == null || dstBody == null || attractor == null) return false;
                             UUID supplierTeam = CelestialAssetStore.getTeamId(supplier.assetId);
                             OrbitalTransferPlanner.TransferRoute route;
+                            hammer.markRouteProbeAttempted();
                             long routeStartNanos = System.nanoTime();
                             try {
                                 route = OrbitalTransferPlanner.computeRoute(
@@ -228,6 +231,7 @@ public class CelestialEventHandler {
                         if (!hammer.trySpendShotEnergy(m, supplier, shotEnergy)) {
                             throw new IllegalStateException("HAMMER shot energy became inconsistent");
                         }
+                        hammer.markShotDispatched(m);
 
                         LogisticsDelivery task = LogisticsDelivery.createWithTrajectory(
                             supplier.assetId,
