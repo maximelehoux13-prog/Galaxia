@@ -998,17 +998,27 @@ public final class AssetModuleUpdatePacket {
             fluidOutputChances,
             duration,
             eut);
-        RecipeSnapshot validated = RecipeSlotPayloadValidator.validate(recipeModule, ref);
-        if (validated == null) return;
-        RecipeSlot slot = new RecipeSlot(validated, enabled, bounds, priority, orderSize);
-
         if (config == null) {
             config = RecipeConfig.empty();
             recipeModule.setRecipeConfig(config);
         }
 
+        RecipeSnapshot recipe = recipeForSlotMutation(action, config, slotIndex, recipeModule, ref);
+        if (recipe == null) return;
+        RecipeSlot slot = new RecipeSlot(recipe, enabled, bounds, priority, orderSize);
+
         if (!applyRecipeSlotMutation(config.slots(), action, slotIndex, slot)) return;
         state.markModuleDirty(module.id);
+    }
+
+    static @Nullable RecipeSnapshot recipeForSlotMutation(ConfigAction action, RecipeConfig config, int slotIndex,
+        IRecipeModule recipeModule, RecipeSnapshot ref) {
+        if (action == ConfigAction.UPDATE_RECIPE_SLOT) {
+            RecipeSlot existing = config.slots()
+                .getOrNull(slotIndex);
+            return existing != null ? existing.recipe() : null;
+        }
+        return RecipeSlotPayloadValidator.validate(recipeModule, ref);
     }
 
     private record ModuleUpgradeTargetsPayload(ModuleTier targetTier, @Nullable HammerVariant targetHammerVariant,

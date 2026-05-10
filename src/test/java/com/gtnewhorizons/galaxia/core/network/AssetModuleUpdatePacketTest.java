@@ -38,6 +38,7 @@ import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleOperati
 import com.gtnewhorizons.galaxia.registry.outpost.module.operation.ModuleTierOperation;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleHammer;
 import com.gtnewhorizons.galaxia.registry.outpost.module.types.ModuleMiner;
+import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeConfig;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlot;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotBounds;
 import com.gtnewhorizons.galaxia.registry.outpost.recipe.RecipeSlotList;
@@ -1027,6 +1028,24 @@ final class AssetModuleUpdatePacketTest {
 
         assertFalse(changed);
         assertTrue(slots.isEmpty());
+    }
+
+    @Test
+    void recipeForSlotMutation_updatePreservesExistingServerRecipe() {
+        RecipeSnapshot existingRecipe = RecipeSnapshot.unresolved((byte) 1, 0, 1L);
+        RecipeSnapshot clientRecipe = RecipeSnapshot.unresolved((byte) 2, 7, 999L);
+        RecipeConfig config = RecipeConfig.empty();
+        config.slots()
+            .add(new RecipeSlot(existingRecipe, true, RecipeSlotBounds.empty(), (byte) 1, (byte) 1));
+
+        RecipeSnapshot resolved = AssetModuleUpdatePacket.recipeForSlotMutation(
+            AssetModuleUpdatePacket.ConfigAction.UPDATE_RECIPE_SLOT,
+            config,
+            0,
+            null,
+            clientRecipe);
+
+        assertSame(existingRecipe, resolved);
     }
 
     private static AutomatedFacility addRecipeFacilityToServer() {
