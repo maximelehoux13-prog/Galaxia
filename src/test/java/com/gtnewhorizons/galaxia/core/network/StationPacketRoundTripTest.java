@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import net.minecraft.item.Item;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,6 +23,7 @@ import com.gtnewhorizons.galaxia.registry.celestial.CelestialObjectId;
 import com.gtnewhorizons.galaxia.registry.celestial.CelestialRegistry;
 import com.gtnewhorizons.galaxia.registry.interfaces.Buildable;
 import com.gtnewhorizons.galaxia.registry.outpost.AutomatedFacility;
+import com.gtnewhorizons.galaxia.registry.outpost.ItemStackWrapper;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleKind;
 import com.gtnewhorizons.galaxia.registry.outpost.module.FacilityModuleRegistry;
 import com.gtnewhorizons.galaxia.registry.outpost.module.HammerVariant;
@@ -99,6 +103,22 @@ final class StationPacketRoundTripTest {
     }
 
     // ── Delta sync ──
+
+    @Test
+    void dirtyInventoryDeltaSyncsAfterInitialFullSync() {
+        AutomatedFacility server = createFacility();
+        UUID playerId = UUID.randomUUID();
+        AssetSyncPacket.figureOutWhatToSend(server, playerId);
+        ItemStackWrapper resource = new ItemStackWrapper(new Item(), 0, null);
+
+        server.insertInventory(resource, 42);
+
+        List<AssetSyncPacket> deltas = AssetSyncPacket.figureOutWhatToSend(server, playerId);
+        assertEquals(1, deltas.size());
+        assertTrue(
+            AssetSyncPacket.figureOutWhatToSend(server, playerId)
+                .isEmpty());
+    }
 
     @Test
     void fullSyncRoundTripPreservesHammerVariant() {

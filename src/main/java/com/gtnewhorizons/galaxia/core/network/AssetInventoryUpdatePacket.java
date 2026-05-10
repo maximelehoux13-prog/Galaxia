@@ -97,7 +97,7 @@ public final class AssetInventoryUpdatePacket {
         if (delta == Long.MIN_VALUE) {
             long amount = state.inventory.getAmount(resource);
             if (amount > 0) {
-                state.inventory.add(resource, -amount);
+                state.addInventoryWithoutSync(resource, -amount);
                 state.bumpSyncRevision();
                 LOG.info("[Logistics] Removed {} x {} from outpost {}", amount, resource, assetId);
                 return AssetSyncPacket.inventoryUpdate(assetId, resourceKey, -amount)
@@ -109,9 +109,9 @@ public final class AssetInventoryUpdatePacket {
                 effectiveDelta = Math.min(delta, Integer.MAX_VALUE);
             }
             if (effectiveDelta > 0L) {
-                effectiveDelta = state.insertInventory(resource, effectiveDelta);
+                effectiveDelta = state.insertInventoryWithoutSync(resource, effectiveDelta);
             } else {
-                state.inventory.add(resource, effectiveDelta);
+                effectiveDelta = state.addInventoryWithoutSync(resource, effectiveDelta);
             }
             if (effectiveDelta == 0L) return null;
             state.bumpSyncRevision();

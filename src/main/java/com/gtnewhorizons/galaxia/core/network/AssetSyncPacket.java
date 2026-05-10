@@ -291,6 +291,7 @@ public final class AssetSyncPacket implements IMessage {
             facility.markSyncedFor(playerId);
             facility.drainDirtyModules();
             facility.drainRemovedIds();
+            facility.drainDirtyInventoryDeltas();
             return packets;
         }
         if (!facility.isDirty()) {
@@ -304,6 +305,15 @@ public final class AssetSyncPacket implements IMessage {
         for (ModuleInstance m : facility.drainDirtyModules()) {
             int idx = facility.moduleIndex(m.id);
             packets.add(moduleAdded(facility.assetId, idx, m).withSyncRevision(facility.getSyncRevision()));
+        }
+        for (Map.Entry<ItemStackWrapper, Long> delta : facility.drainDirtyInventoryDeltas()
+            .entrySet()) {
+            packets.add(
+                inventoryUpdate(
+                    facility.assetId,
+                    delta.getKey()
+                        .toKey(),
+                    delta.getValue()).withSyncRevision(facility.getSyncRevision()));
         }
         return packets;
     }

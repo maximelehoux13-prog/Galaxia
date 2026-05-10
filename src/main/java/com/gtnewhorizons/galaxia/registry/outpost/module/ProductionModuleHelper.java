@@ -86,7 +86,7 @@ public final class ProductionModuleHelper {
 
         // Consume inputs
         for (Map.Entry<ItemStackWrapper, Long> e : requiredInputs.entrySet()) {
-            inv.add(e.getKey(), -e.getValue());
+            outpost.addInventory(e.getKey(), -e.getValue());
         }
 
         if (fluidInputs != null) {

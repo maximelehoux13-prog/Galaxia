@@ -3,6 +3,7 @@ package com.gtnewhorizons.galaxia.registry.outpost;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,6 +61,7 @@ public final class AutomatedFacility extends CelestialAsset {
 
     private final Set<ModuleInstance.ID> dirtyModuleIds = new HashSet<>();
     private final Set<ModuleInstance.ID> dirtyRemovedIds = new HashSet<>();
+    private final Map<ItemStackWrapper, Long> dirtyInventoryDeltas = new LinkedHashMap<>();
     private final Set<UUID> syncedPlayerIds = new HashSet<>();
 
     public static final long MAX_ENERGY = 8_000_000L;
@@ -234,7 +236,7 @@ public final class AutomatedFacility extends CelestialAsset {
         }
         Map<String, Long> deposited = new java.util.LinkedHashMap<>();
         for (Map.Entry<ItemStackWrapper, Long> material : requested.entrySet()) {
-            if (!inventory.tryConsume(material.getKey(), material.getValue())) {
+            if (!tryConsumeInventory(material.getKey(), material.getValue())) {
                 throw new IllegalStateException(
                     "Operation material reservation became inconsistent for module " + module.id
                         + ", item="
@@ -273,11 +275,43 @@ public final class AutomatedFacility extends CelestialAsset {
     }
 
     public long insertInventory(ItemStackWrapper item, long amount) {
+        return insertInventory(item, amount, true);
+    }
+
+    public long insertInventoryWithoutSync(ItemStackWrapper item, long amount) {
+        return insertInventory(item, amount, false);
+    }
+
+    private long insertInventory(ItemStackWrapper item, long amount, boolean trackSync) {
         if (item == null || amount <= 0L) return 0L;
         long accepted = Math.min(amount, remainingItemInventoryCapacity());
         if (accepted <= 0L) return 0L;
         inventory.add(item, accepted);
+        if (trackSync) markInventoryDelta(item, accepted);
         return accepted;
+    }
+
+    public long addInventory(ItemStackWrapper item, long delta) {
+        return addInventory(item, delta, true);
+    }
+
+    public long addInventoryWithoutSync(ItemStackWrapper item, long delta) {
+        return addInventory(item, delta, false);
+    }
+
+    private long addInventory(ItemStackWrapper item, long delta, boolean trackSync) {
+        if (item == null || delta == 0L) return 0L;
+        long actual = inventory.add(item, delta);
+        if (actual != 0L && trackSync) markInventoryDelta(item, actual);
+        return actual;
+    }
+
+    public boolean tryConsumeInventory(ItemStackWrapper item, long amount) {
+        if (item == null) return false;
+        if (amount <= 0L) return true;
+        if (!inventory.tryConsume(item, amount)) return false;
+        markInventoryDelta(item, -amount);
+        return true;
     }
 
     public boolean tryReserveAvailableOperationMaterials(ModuleInstance module,
@@ -296,7 +330,7 @@ public final class AutomatedFacility extends CelestialAsset {
             long available = inventory.getAmount(material.getKey());
             long reserved = Math.min(available, remaining);
             if (reserved <= 0L) continue;
-            if (!inventory.tryConsume(material.getKey(), reserved)) {
+            if (!tryConsumeInventory(material.getKey(), reserved)) {
                 throw new IllegalStateException(
                     "Operation partial reservation became inconsistent for module " + module.id + ", item=" + itemKey);
             }
@@ -522,7 +556,7 @@ public final class AutomatedFacility extends CelestialAsset {
     }
 
     public boolean isDirty() {
-        return !dirtyModuleIds.isEmpty() || !dirtyRemovedIds.isEmpty();
+        return !dirtyModuleIds.isEmpty() || !dirtyRemovedIds.isEmpty() || !dirtyInventoryDeltas.isEmpty();
     }
 
     public boolean needsFullSyncFor(UUID playerId) {
@@ -543,10 +577,25 @@ public final class AutomatedFacility extends CelestialAsset {
         return result;
     }
 
+    public Map<ItemStackWrapper, Long> drainDirtyInventoryDeltas() {
+        Map<ItemStackWrapper, Long> result = new LinkedHashMap<>(dirtyInventoryDeltas);
+        dirtyInventoryDeltas.clear();
+        return result;
+    }
+
     public List<ModuleInstance.ID> drainRemovedIds() {
         List<ModuleInstance.ID> result = new ArrayList<>(dirtyRemovedIds);
         dirtyRemovedIds.clear();
         return result;
+    }
+
+    private void markInventoryDelta(ItemStackWrapper item, long delta) {
+        if (item == null || delta == 0L) return;
+        dirtyInventoryDeltas.merge(item, delta, Long::sum);
+        if (dirtyInventoryDeltas.getOrDefault(item, 0L) == 0L) {
+            dirtyInventoryDeltas.remove(item);
+        }
+        bumpSyncRevision();
     }
 
     public long getEnergyStored() {

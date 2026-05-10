@@ -29,10 +29,15 @@ final class ModuleConfigModalSupport {
     private ModuleConfigModalSupport() {}
 
     static void drawFrame(String title, int width, int height) {
-        net.minecraft.client.gui.Gui.drawRect(0, 0, width, height, EnumColors.MAP_COLOR_MODAL_BG.getColor());
-        net.minecraft.client.gui.Gui.drawRect(0, 0, width, HEADER_HEIGHT, EnumColors.MAP_COLOR_MODAL_HEADER.getColor());
-        BorderedRect.draw(0, 0, width, height, 0x00000000, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
-        drawLine(title, PANEL_PADDING, PANEL_PADDING, EnumColors.MAP_COLOR_TEXT_TITLE.getColor());
+        drawFrameAt(title, 0, 0, width, height);
+    }
+
+    static void drawFrameAt(String title, int x, int y, int width, int height) {
+        net.minecraft.client.gui.Gui.drawRect(x, y, x + width, y + height, EnumColors.MAP_COLOR_MODAL_BG.getColor());
+        net.minecraft.client.gui.Gui
+            .drawRect(x, y, x + width, y + HEADER_HEIGHT, EnumColors.MAP_COLOR_MODAL_HEADER.getColor());
+        BorderedRect.draw(x, y, width, height, 0x00000000, EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
+        drawLine(title, x + PANEL_PADDING, y + PANEL_PADDING, EnumColors.MAP_COLOR_TEXT_TITLE.getColor());
     }
 
     static ButtonWidget<?> button(String label, Runnable onClick) {

@@ -187,7 +187,7 @@ public class CelestialEventHandler {
 
                         if (sendAmount < requesterCfg.orderSize() || sendAmount <= 0) return false;
                         if (!hammer.canSpendShotEnergy(shotEnergy)) return false;
-                        if (!supplier.inventory.tryConsume(resource, sendAmount)) return false;
+                        if (!supplier.tryConsumeInventory(resource, sendAmount)) return false;
                         if (!hammer.trySpendShotEnergy(m, supplier, shotEnergy)) {
                             throw new IllegalStateException("HAMMER shot energy became inconsistent");
                         }

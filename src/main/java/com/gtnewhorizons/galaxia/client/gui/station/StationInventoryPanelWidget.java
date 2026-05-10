@@ -55,10 +55,10 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
     private static final int NAME_X = 24;
     private static final int NAME_WIDTH = 150;
     private static final int AMOUNT_X = 180;
-    private static final int MODE_X = 226;
-    private static final int MODE_WIDTH = 48;
-    private static final int AMOUNT_MODE_BUTTON_X = 278;
-    private static final int AMOUNT_MODE_BUTTON_WIDTH = 54;
+    private static final int AMOUNT_INPUT_X = 226;
+    private static final int AMOUNT_INPUT_WIDTH = 48;
+    private static final int MODE_BUTTON_X = 278;
+    private static final int MODE_BUTTON_WIDTH = 54;
     private static final int VOID_X = 336;
     private static final int VOID_WIDTH = 38;
     private static final Pattern INTEGER_PATTERN = Pattern.compile("[0-9]*");
@@ -125,16 +125,7 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
     public void drawBackground(ModularGuiContext context, WidgetThemeEntry<?> widgetTheme) {
         super.drawBackground(context, widgetTheme);
         if (!open) return;
-        BorderedRect.draw(
-            0,
-            PANEL_Y,
-            PANEL_WIDTH,
-            PANEL_HEIGHT,
-            EnumColors.MAP_COLOR_MODAL_BG.getColor(),
-            EnumColors.MAP_COLOR_MODAL_ACCENT.getColor());
-        Gui.drawRect(0, PANEL_Y, PANEL_WIDTH, PANEL_Y + HEADER_HEIGHT, EnumColors.MAP_COLOR_MODAL_HEADER.getColor());
-        ModuleConfigModalSupport
-            .drawLine("Station Inventory", 8, PANEL_Y + 8, EnumColors.MAP_COLOR_TEXT_TITLE.getColor());
+        ModuleConfigModalSupport.drawFrameAt("Station Inventory", 0, PANEL_Y, PANEL_WIDTH, PANEL_HEIGHT);
         ModuleConfigModalSupport
             .drawLine("Item", NAME_X + SCROLL_X, PANEL_Y + 32, EnumColors.MAP_COLOR_TEXT_MUTED.getColor());
         ModuleConfigModalSupport
@@ -207,16 +198,16 @@ final class StationInventoryPanelWidget extends ParentWidget<StationInventoryPan
                 .shadow(true)
                 .pos(AMOUNT_X, 8));
         rowWidget.child(
-            amountField(rowKey).pos(MODE_X, 3)
-                .size(MODE_WIDTH, 18));
+            amountField(rowKey).pos(AMOUNT_INPUT_X, 3)
+                .size(AMOUNT_INPUT_WIDTH, 18));
         rowWidget.child(
             ModuleConfigModalSupport.button(() -> isAmountMode(rowKey), "Amount", () -> setAmountMode(rowKey, false))
-                .pos(AMOUNT_MODE_BUTTON_X, 3)
-                .size(AMOUNT_MODE_BUTTON_WIDTH, 18));
+                .pos(MODE_BUTTON_X, 3)
+                .size(MODE_BUTTON_WIDTH, 18));
         rowWidget.child(
             ModuleConfigModalSupport.button(() -> !isAmountMode(rowKey), "ALL", () -> setAmountMode(rowKey, true))
-                .pos(MODE_X, 3)
-                .size(MODE_WIDTH, 18));
+                .pos(MODE_BUTTON_X, 3)
+                .size(MODE_BUTTON_WIDTH, 18));
         rowWidget.child(
             ModuleConfigModalSupport.button(() -> currentAmount(wrapper) > 0L, "Void", () -> voidRow(wrapper))
                 .pos(VOID_X, 3)
